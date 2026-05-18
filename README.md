@@ -42,7 +42,7 @@ The Obsidian vault remains a single vault but is organized by learning purpose:
 - `knowledge-vault/03 Business Product and Testing Thinking/` for BA, product, risk, and tester-owned thinking
 - `knowledge-vault/04 Interview Capital/` for interview-ready stories and explanations
 
-The Phase 0 hub is `knowledge-vault/01 Project - Payment Quality Engineering Lab/01 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`.
+The Phase 0 hub is `knowledge-vault/01 Project - Payment Quality Engineering Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`.
 
 Do not introduce `.kilocode/` as a new Phase 0 project-organization target. Historical or generated files may exist, but current Phase 0 documentation and implementation should use `.kilo/` for Kilo project configuration references.
 

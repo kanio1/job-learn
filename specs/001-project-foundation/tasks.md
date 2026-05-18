@@ -128,7 +128,7 @@
 
 **Purpose**: Capture Phase 0 as the first learning milestone and connect architecture/testing lessons to the knowledge vault. Covers FR-012, AC-010, SC-007.
 
-- [ ] T065 [AGENT-IMPLEMENT] Create `knowledge-vault/01 Project - Payment Quality Engineering Lab/01 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md` as the Phase 0 hub with links to root README, backend README, frontend README, local infrastructure docs, modular-monolith docs, quality baseline docs, moved technical learning notes, infrastructure note, and interview story.
+- [ ] T065 [AGENT-IMPLEMENT] Create `knowledge-vault/01 Project - Payment Quality Engineering Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md` as the Phase 0 hub with links to root README, backend README, frontend README, local infrastructure docs, modular-monolith docs, quality baseline docs, moved technical learning notes, infrastructure note, and interview story.
 - [ ] T066 [AGENT-EXPLAIN] Create `knowledge-vault/02 Technical Learning/Spring Modulith/Architecture - Modular Monolith with Spring Modulith.md` summarizing current module stance, future module candidates, dependency/event rules, and why fake business modules are avoided.
 - [ ] T067 [AGENT-EXPLAIN] Create `knowledge-vault/02 Technical Learning/Spring Modulith/Architecture Test - ApplicationModules.verify.md` explaining what the architecture test verifies now, what it does not verify yet, and how future `@ApplicationModuleTest` work will fit.
 - [ ] T068 [AGENT-EXPLAIN] Create `knowledge-vault/02 Technical Learning/Testing Architecture/Testing - Phase 0 Quality Baseline.md` summarizing backend, frontend, infrastructure, REST, Testcontainers, WireMock, and Playwright testing foundations.

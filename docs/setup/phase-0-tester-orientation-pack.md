@@ -74,12 +74,12 @@ Tester questions for later phases:
 
 The vault remains a single Obsidian vault under `knowledge-vault/`, but Phase 0 notes are categorized by learning purpose rather than stored in one flat milestone folder.
 
-- Project and feature knowledge: `knowledge-vault/01 Project - Payment Quality Engineering Lab/01 Phase 0 - Foundation/`
+- Project and feature knowledge: `knowledge-vault/01 Project - Payment Quality Engineering Lab/00 Phase 0 - Foundation/`
 - Technical learning: `knowledge-vault/02 Technical Learning/`
 - Business, product, risk, and tester thinking: `knowledge-vault/03 Business Product and Testing Thinking/`
 - Interview-ready explanations: `knowledge-vault/04 Interview Capital/`
 
-Start with the Phase 0 hub: `knowledge-vault/01 Project - Payment Quality Engineering Lab/01 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`.
+Start with the Phase 0 hub: `knowledge-vault/01 Project - Payment Quality Engineering Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`.
 
 ## Exploratory Testing Charters
 

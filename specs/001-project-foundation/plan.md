@@ -87,7 +87,7 @@ Planned source layout:
 │   └── architecture/
 ├── knowledge-vault/
 │   ├── 01 Project - Payment Quality Engineering Lab/
-│   │   └── 01 Phase 0 - Foundation/
+│   │   └── 00 Phase 0 - Foundation/
 │   ├── 02 Technical Learning/
 │   │   ├── Spring Modulith/
 │   │   ├── Testing Architecture/
@@ -334,7 +334,7 @@ After implementation, create a Phase 0 Tester Orientation Pack covering:
 
 Create or reserve notes under the categorized single-vault learning structure:
 
-- `knowledge-vault/01 Project - Payment Quality Engineering Lab/01 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`
+- `knowledge-vault/01 Project - Payment Quality Engineering Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`
 - `knowledge-vault/02 Technical Learning/Spring Modulith/Architecture - Modular Monolith with Spring Modulith.md`
 - `knowledge-vault/02 Technical Learning/Spring Modulith/Architecture Test - ApplicationModules.verify.md`
 - `knowledge-vault/02 Technical Learning/Testing Architecture/Testing - Phase 0 Quality Baseline.md`
