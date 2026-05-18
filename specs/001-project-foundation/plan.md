@@ -86,7 +86,14 @@ Planned source layout:
 │   ├── testing/
 │   └── architecture/
 ├── knowledge-vault/
-│   └── milestones/
+│   ├── 01 Project - Payment Quality Engineering Lab/
+│   │   └── 01 Phase 0 - Foundation/
+│   ├── 02 Technical Learning/
+│   │   ├── Spring Modulith/
+│   │   ├── Testing Architecture/
+│   │   └── Infrastructure/
+│   ├── 03 Business Product and Testing Thinking/
+│   └── 04 Interview Capital/
 ├── .kilo/
 ├── .specify/
 ├── README.md
@@ -241,7 +248,7 @@ Document and make runnable:
 - Frontend install: `pnpm install` from `apps/frontend`.
 - Frontend dev: `pnpm dev`.
 - Frontend checks: `pnpm typecheck` and a template-appropriate lint/test command if present.
-- Playwright foundation: `pnpm exec playwright test` once the baseline is configured.
+- Playwright foundation: `corepack pnpm exec playwright test` once the baseline is configured.
 - Infra: Docker Compose startup and shutdown commands.
 
 ## 8. Parallel-Readiness Strategy
@@ -325,17 +332,18 @@ After implementation, create a Phase 0 Tester Orientation Pack covering:
 
 ### Obsidian-Compatible Notes
 
-Create or reserve notes under `knowledge-vault/milestones` and related folders:
+Create or reserve notes under the categorized single-vault learning structure:
 
-- `Phase 0 - Project Foundation and Running Skeleton.md`
-- `Architecture - Modular Monolith with Spring Modulith.md`
-- `Architecture Test - ApplicationModules.verify.md`
-- `Testing - Phase 0 Quality Baseline.md`
-- `Testing - Parallel Readiness Principles.md`
-- `Infrastructure - Local PostgreSQL 18 and Keycloak 26.6.1.md`
-- `Interview Story - Why Foundation Before Payment Features.md`
+- `knowledge-vault/01 Project - Payment Quality Engineering Lab/01 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`
+- `knowledge-vault/02 Technical Learning/Spring Modulith/Architecture - Modular Monolith with Spring Modulith.md`
+- `knowledge-vault/02 Technical Learning/Spring Modulith/Architecture Test - ApplicationModules.verify.md`
+- `knowledge-vault/02 Technical Learning/Testing Architecture/Testing - Phase 0 Quality Baseline.md`
+- `knowledge-vault/02 Technical Learning/Testing Architecture/Testing - Parallel Readiness Principles.md`
+- `knowledge-vault/02 Technical Learning/Infrastructure/Infrastructure - Local PostgreSQL 18 and Keycloak 26.6.1.md`
+- `knowledge-vault/03 Business Product and Testing Thinking/README.md`
+- `knowledge-vault/04 Interview Capital/Interview Story - Why Foundation Before Payment Features.md`
 
-These notes should be Markdown and Obsidian-friendly, using repository-relative links where practical.
+These notes should be Markdown and Obsidian-friendly, using repository-relative links where practical. The vault remains a single vault, but it must clearly separate project/feature knowledge, technical learning, business/product/testing thinking, and interview capital.
 
 ## 11. Risks / Open Questions
 
@@ -370,7 +378,7 @@ Phase 0 is done when all of the following are true:
 - Environment variable examples exist and contain no real secrets.
 - Documentation explains setup, verification commands, infrastructure startup, architecture direction, test strategy, and Phase 0 non-goals.
 - Tester Orientation Pack content is created or clearly staged for immediate post-implementation completion.
-- Obsidian-compatible milestone notes exist or are explicitly created as part of the implementation closeout.
+- Obsidian-compatible learning notes exist in the categorized single-vault structure or are explicitly created as part of the implementation closeout.
 - No payment business endpoint, payment persistence, PSP mock flow, Kafka setup, complete OAuth/OIDC flow, or complete payment dashboard feature has slipped into Phase 0.
 
 ## 13. Implementation Readiness Assessment

@@ -9,7 +9,7 @@ In scope:
 - Runnable Nuxt dashboard foundation under `apps/frontend`
 - Local PostgreSQL 18 and Keycloak 26.6.1 infrastructure configuration under `infra`
 - Baseline test structure for backend, REST, Testcontainers, WireMock, and Playwright growth
-- Documentation and Obsidian-compatible milestone notes
+- Documentation and a structured Obsidian-compatible learning vault
 
 Out of scope:
 - Payment business use cases
@@ -31,10 +31,18 @@ specs/                 Spec Kit feature artifacts
 docs/setup/            Setup and tester orientation documentation
 docs/testing/          Test architecture and quality baseline documentation
 docs/architecture/     Modular monolith architecture notes
-knowledge-vault/       Obsidian-compatible learning milestone notes
+knowledge-vault/       Structured Obsidian learning system
 .kilo/                 Current Kilo project configuration location
 .specify/              Spec Kit memory and templates
 ```
+
+The Obsidian vault remains a single vault but is organized by learning purpose:
+- `knowledge-vault/01 Project - Payment Quality Engineering Lab/` for project and feature knowledge
+- `knowledge-vault/02 Technical Learning/` for Spring Modulith, testing architecture, infrastructure, and other technical notes
+- `knowledge-vault/03 Business Product and Testing Thinking/` for BA, product, risk, and tester-owned thinking
+- `knowledge-vault/04 Interview Capital/` for interview-ready stories and explanations
+
+The Phase 0 hub is `knowledge-vault/01 Project - Payment Quality Engineering Lab/01 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`.
 
 Do not introduce `.kilocode/` as a new Phase 0 project-organization target. Historical or generated files may exist, but current Phase 0 documentation and implementation should use `.kilo/` for Kilo project configuration references.
 

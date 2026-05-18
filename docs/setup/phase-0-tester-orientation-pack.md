@@ -2,7 +2,7 @@
 
 ## What Exists
 
-- A monorepo structure for backend, frontend, infrastructure, specs, docs, and knowledge notes
+- A monorepo structure for backend, frontend, infrastructure, specs, docs, and a structured Obsidian-compatible learning vault
 - A Spring Boot backend with `GET /api/status`
 - A Nuxt dashboard shell with Nuxt UI, Zod, Pinia, TypeScript, and Playwright foundation
 - Docker Compose configuration for PostgreSQL 18 and Keycloak 26.6.1
@@ -70,6 +70,17 @@ Tester questions for later phases:
 - Is direct invocation acceptable or should an event reduce coupling?
 - Does this behavior deserve an `@ApplicationModuleTest`?
 
+## Knowledge Vault Orientation
+
+The vault remains a single Obsidian vault under `knowledge-vault/`, but Phase 0 notes are categorized by learning purpose rather than stored in one flat milestone folder.
+
+- Project and feature knowledge: `knowledge-vault/01 Project - Payment Quality Engineering Lab/01 Phase 0 - Foundation/`
+- Technical learning: `knowledge-vault/02 Technical Learning/`
+- Business, product, risk, and tester thinking: `knowledge-vault/03 Business Product and Testing Thinking/`
+- Interview-ready explanations: `knowledge-vault/04 Interview Capital/`
+
+Start with the Phase 0 hub: `knowledge-vault/01 Project - Payment Quality Engineering Lab/01 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`.
+
 ## Exploratory Testing Charters
 
 - Setup reproducibility: follow docs from a clean checkout and note missing prerequisites.
@@ -92,5 +103,5 @@ Tester questions for later phases:
 - FR-009: Are unit, module, integration, REST, and browser test areas present or documented?
 - FR-010: Are parallel-readiness conventions visible?
 - FR-011: Does documentation explain what can be tested and what remains risky?
-- FR-012: Can Obsidian milestone notes capture Phase 0?
+- FR-012: Can the structured Obsidian vault capture Phase 0 project knowledge, technical learning, testing thinking, and interview capital?
 - FR-013: Are payment workflows, PSP, Kafka, and full OAuth/OIDC absent?
