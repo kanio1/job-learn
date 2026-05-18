@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASEDIR="$(cd "$(dirname "$0")" && pwd)"
+PROPS="$BASEDIR/.mvn/wrapper/maven-wrapper.properties"
+DIST_URL="$(grep '^distributionUrl=' "$PROPS" | cut -d= -f2-)"
+MAVEN_HOME="$BASEDIR/.mvn/wrapper/apache-maven-3.9.11"
+ARCHIVE="$BASEDIR/.mvn/wrapper/apache-maven-3.9.11-bin.zip"
+
+if [ ! -x "$MAVEN_HOME/bin/mvn" ]; then
+  mkdir -p "$BASEDIR/.mvn/wrapper"
+  if [ ! -f "$ARCHIVE" ]; then
+    if command -v curl >/dev/null 2>&1; then
+      curl -fsSL "$DIST_URL" -o "$ARCHIVE"
+    elif command -v wget >/dev/null 2>&1; then
+      wget -q "$DIST_URL" -O "$ARCHIVE"
+    else
+      printf '%s\n' "curl or wget is required to download Maven Wrapper distribution" >&2
+      exit 1
+    fi
+  fi
+  unzip -q "$ARCHIVE" -d "$BASEDIR/.mvn/wrapper"
+fi
+
+exec "$MAVEN_HOME/bin/mvn" "$@"

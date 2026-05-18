@@ -1,0 +1,9 @@
+# Task Labels
+
+- `[AGENT-IMPLEMENT]`
+- `[AGENT-EXPLAIN]`
+- `[TESTER-ANALYZE]`
+- `[TESTER-DESIGN]`
+- `[TESTER-AUTOMATE]`
+- `[AGENT-REVIEW]`
+- `[DISCUSS]`

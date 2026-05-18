@@ -1,0 +1,38 @@
+.DS_Store
+Thumbs.db
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Java / Maven
+target/
+*.class
+*.log
+.mvn/timing.properties
+**/.mvn/wrapper/apache-maven-*/
+**/.mvn/wrapper/apache-maven-*-bin.zip
+
+# Node / Nuxt / pnpm
+node_modules/
+.nuxt/
+.output/
+dist/
+coverage/
+*.tsbuildinfo
+pnpm-debug.log*
+
+# Playwright
+playwright-report/
+test-results/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Docker/runtime
+*.pid
+tmp/
+*.tmp

@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: payment-quality-lab
+
+server:
+  port: 8080
+
+payment-quality:
+  phase: foundation
