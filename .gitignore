@@ -26,6 +26,7 @@ pnpm-debug.log*
 # Playwright
 playwright-report/
 test-results/
+**/tests/.auth/
 
 # IDEs
 .idea/

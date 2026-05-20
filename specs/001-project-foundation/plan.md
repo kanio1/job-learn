@@ -86,14 +86,22 @@ Planned source layout:
 │   ├── testing/
 │   └── architecture/
 ├── knowledge-vault/
-│   ├── 01 Project - Payment Quality Engineering Lab/
-│   │   └── 00 Phase 0 - Foundation/
-│   ├── 02 Technical Learning/
-│   │   ├── Spring Modulith/
-│   │   ├── Testing Architecture/
-│   │   └── Infrastructure/
-│   ├── 03 Business Product and Testing Thinking/
-│   └── 04 Interview Capital/
+│   ├── 00 Inbox/
+│   ├── 01 Projects/
+│   │   └── Payment_Quality_Engineering_Lab/
+│   │       └── 00 Phase 0 - Foundation/
+│   ├── 02 Areas/
+│   │   ├── Technical Learning/
+│   │   │   ├── Spring Modulith/
+│   │   │   ├── Testing Architecture/
+│   │   │   └── Infrastructure/
+│   │   ├── Business Product and Testing Thinking/
+│   │   └── Interview Capital/
+│   ├── 03 Resources/
+│   ├── 04 Archives/
+│   ├── 05 Templates/
+│   ├── 06 MOCs/
+│   └── 07 Dashboards/
 ├── .kilo/
 ├── .specify/
 ├── README.md
@@ -334,16 +342,16 @@ After implementation, create a Phase 0 Tester Orientation Pack covering:
 
 Create or reserve notes under the categorized single-vault learning structure:
 
-- `knowledge-vault/01 Project - Payment Quality Engineering Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`
-- `knowledge-vault/02 Technical Learning/Spring Modulith/Architecture - Modular Monolith with Spring Modulith.md`
-- `knowledge-vault/02 Technical Learning/Spring Modulith/Architecture Test - ApplicationModules.verify.md`
-- `knowledge-vault/02 Technical Learning/Testing Architecture/Testing - Phase 0 Quality Baseline.md`
-- `knowledge-vault/02 Technical Learning/Testing Architecture/Testing - Parallel Readiness Principles.md`
-- `knowledge-vault/02 Technical Learning/Infrastructure/Infrastructure - Local PostgreSQL 18 and Keycloak 26.6.1.md`
-- `knowledge-vault/03 Business Product and Testing Thinking/README.md`
-- `knowledge-vault/04 Interview Capital/Interview Story - Why Foundation Before Payment Features.md`
+- `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`
+- `knowledge-vault/02 Areas/Technical Learning/Spring Modulith/Architecture - Modular Monolith with Spring Modulith.md`
+- `knowledge-vault/02 Areas/Technical Learning/Spring Modulith/Architecture Test - ApplicationModules.verify.md`
+- `knowledge-vault/02 Areas/Technical Learning/Testing Architecture/Testing - Phase 0 Quality Baseline.md`
+- `knowledge-vault/02 Areas/Technical Learning/Testing Architecture/Testing - Parallel Readiness Principles.md`
+- `knowledge-vault/02 Areas/Technical Learning/Infrastructure/Infrastructure - Local PostgreSQL 18 and Keycloak 26.6.1.md`
+- `knowledge-vault/02 Areas/Business Product and Testing Thinking/README.md`
+- `knowledge-vault/02 Areas/Interview Capital/Interview Story - Why Foundation Before Payment Features.md`
 
-These notes should be Markdown and Obsidian-friendly, using repository-relative links where practical. The vault remains a single vault, but it must clearly separate project/feature knowledge, technical learning, business/product/testing thinking, and interview capital.
+These notes should be Markdown and Obsidian-friendly, using repository-relative links where practical. The vault remains one existing Obsidian system: project notes live under `01 Projects`, long-lived learning areas live under `02 Areas`, reusable external materials live under `03 Resources`, and support structures remain under `04 Archives`, `05 Templates`, `06 MOCs`, and `07 Dashboards`.
 
 ## 11. Risks / Open Questions
 

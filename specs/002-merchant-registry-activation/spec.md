@@ -4,7 +4,7 @@
 
 **Created**: 2026-05-18
 
-**Status**: Draft
+**Status**: Approved for Phase 1 implementation
 
 **Input**: User description: "Define Phase 1 for the Payment Quality Engineering Lab: Merchant Registry and Activation for Platform Operators. Use the accepted BA Discovery Pack as the product-discovery basis."
 
@@ -23,6 +23,16 @@ This feature creates:
 - The first narrow, functional authentication and authorization boundary for business data.
 - Rich test-design material for validation, lifecycle, security, persistence, modularity, and parallel-safe data generation.
 
+## Clarifications
+
+### Session 2026-05-18
+
+- Q: Should merchant reference validation remain as trimmed, uppercase-normalized, 3-64 characters, letters/numbers/hyphens only, and unique on normalized form? → A: Accepted with one small refinement: the normalized reference must start and end with a letter or number, so hyphens are allowed only inside the reference.
+- Q: Is trimmed display name length 2-120 characters sufficient for Phase 1? → A: Yes; no additional uniqueness, character-set, country, currency, contact, or localization rule is added in Phase 1.
+- Q: Should merchant listing remain stable newest-first, first page up to 50, with no advanced search or filtering? → A: Yes; Phase 1 returns only the first page of up to 50 merchants, ordered newest-first with a deterministic tie-breaker, and advanced search/filtering is deferred.
+- Q: What is the minimum local platform-operator identity setup? → A: Use a deterministic local Keycloak realm/config baseline with `platform.operator` granted Keycloak realm roles `merchants:create`, `merchants:read`, and `merchants:update-status`, which the backend maps to Spring authorities `platform:merchants:create`, `platform:merchants:read`, and `platform:merchants:update-status`; also provide `merchant.denied` as an authenticated local denial-path identity without merchant roles/authorities for 403 testing.
+- Q: Should `platform:merchants:update-status` control both activate and suspend? → A: Yes; keep one unified status-update authority for both transitions in Phase 1.
+
 ## Actors *(mandatory)*
 
 - **Platform Operator**: Internal authenticated user who manages merchant records, creates merchants, reviews the merchant list, activates draft merchants, and suspends active merchants.
@@ -37,17 +47,18 @@ This feature creates:
 ### In Scope
 
 - Create a merchant record with a stable, unique merchant reference and display name.
-- Validate merchant references as trimmed, case-insensitive business identifiers using 3-64 uppercase letters, numbers, and hyphens after normalization.
+- Validate merchant references as trimmed, case-insensitive business identifiers using 3-64 uppercase letters, numbers, and hyphens after normalization; the normalized reference must start and end with a letter or number.
 - Validate display names as trimmed human-readable names from 2-120 characters.
 - Assign newly created merchants the initial status `DRAFT`.
 - Retrieve a merchant by internal ID.
-- List merchants for platform-operator review using a stable newest-first order and a first page of up to 50 merchants.
+- List merchants for platform-operator review using a stable newest-first order, a deterministic tie-breaker, and a first page of up to 50 merchants without advanced search or filtering.
 - Activate a draft merchant through the lifecycle transition `DRAFT -> ACTIVE`.
 - Suspend an active merchant through the lifecycle transition `ACTIVE -> SUSPENDED`.
 - Reject invalid lifecycle transitions with clear, testable outcomes.
 - Store merchant records using durable platform persistence.
 - Protect merchant management behavior so only authorized platform operators can use it.
 - Functionally use the configured Keycloak 26.6.1 identity service for the narrow platform-operator login and authorization boundary.
+- Provide a deterministic local identity configuration for the first platform-operator journey and authorization denial-path tests.
 - Keep the existing technical status capability public.
 - Provide a minimal dashboard journey at `/admin/merchants` for platform operators.
 - Provide an empty state, create action, merchant table, validation feedback, duplicate-conflict feedback, success feedback, loading state, and error state.
@@ -76,7 +87,7 @@ This feature creates:
 - Merchant default currency.
 - Merchant country code.
 - Merchant reference mutation after creation.
-- Separate merchant detail page unless a later clarification explicitly justifies it.
+- Separate merchant detail page.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -95,6 +106,7 @@ A platform operator logs in, opens the merchant administration area, and creates
 3. **Given** a merchant already exists with a merchant reference, **When** an authenticated platform operator tries to create another merchant with the same reference, **Then** the second merchant is not created and duplicate-conflict feedback is shown.
 4. **Given** a merchant is created, **When** the operator reviews or retrieves it, **Then** the merchant has an internal ID, creation time, and update time.
 5. **Given** two create attempts use the same normalized merchant reference at nearly the same time, **When** both attempts are processed, **Then** only one merchant is created and the other attempt receives duplicate-conflict feedback.
+6. **Given** an authenticated platform operator submits a merchant reference with a leading or trailing hyphen after trimming and normalization, **When** they attempt to create a merchant, **Then** the merchant is not created and validation feedback is shown.
 
 ---
 
@@ -141,7 +153,7 @@ A platform operator reviews known merchants in a minimal registry view and can r
 **Acceptance Scenarios**:
 
 1. **Given** no merchants exist, **When** an authenticated platform operator opens the merchant registry, **Then** an empty state explains that no merchants have been registered yet.
-2. **Given** one or more merchants exist, **When** an authenticated platform operator opens the merchant registry, **Then** the list shows merchant reference, display name, status, and creation time for each visible merchant in stable newest-first order.
+2. **Given** one or more merchants exist, **When** an authenticated platform operator opens the merchant registry, **Then** the list shows merchant reference, display name, status, and creation time for up to 50 visible merchants in stable newest-first order with deterministic ordering for ties.
 3. **Given** a merchant exists, **When** an authenticated platform operator retrieves that merchant by ID, **Then** the merchant details returned match the stored merchant identity and lifecycle status.
 4. **Given** a merchant ID does not exist, **When** an authenticated platform operator retrieves that merchant by ID, **Then** the system reports that the merchant was not found without creating or altering merchant data.
 5. **Given** a merchant ID is malformed, **When** an authenticated platform operator requests that merchant, **Then** the system rejects the request without creating or altering merchant data.
@@ -167,12 +179,13 @@ The platform protects merchant management behavior so unauthenticated users and 
 4. **Given** an authenticated platform operator has merchant create authority, **When** they submit valid merchant creation data, **Then** the merchant can be created.
 5. **Given** an authenticated platform operator has merchant status-update authority, **When** they perform a valid lifecycle transition, **Then** the merchant status is updated.
 6. **Given** any user accesses the technical status capability, **When** the platform is running, **Then** the status capability remains publicly available and does not expose merchant data.
+7. **Given** the local lab identity setup is available, **When** security tests run, **Then** they can use `platform.operator` with all merchant authorities and `merchant.denied` with no merchant authorities.
 
 ---
 
 ### Edge Cases
 
-- Merchant reference is missing, blank, whitespace-only, shorter than 3 characters, longer than 64 characters, or contains characters other than letters, numbers, and hyphens.
+- Merchant reference is missing, blank, whitespace-only, shorter than 3 characters, longer than 64 characters, contains characters other than letters, numbers, and hyphens, or has a leading or trailing hyphen after normalization.
 - Display name is missing, blank, whitespace-only, shorter than 2 characters, or longer than 120 characters.
 - Merchant reference differs only by case or surrounding whitespace from an existing reference; normalized references are treated as duplicates.
 - Two create requests attempt to use the same merchant reference at nearly the same time.
@@ -183,7 +196,7 @@ The platform protects merchant management behavior so unauthenticated users and 
 - A user has create authority but not status-update authority.
 - Authentication is missing, expired, malformed, or valid but lacks required authority.
 - Merchant list is empty.
-- Merchant list contains more than 50 records and only the first stable newest-first page is needed in Phase 1.
+- Merchant list contains more than 50 records and only the first stable newest-first page is needed in Phase 1; advanced search and filtering are deferred.
 - Network or service failure occurs while the operator creates, activates, suspends, or lists merchants.
 - Tests run in parallel and generate merchants with unique namespaced references.
 
@@ -196,7 +209,7 @@ The platform protects merchant management behavior so unauthenticated users and 
 - **FR-003**: System MUST assign newly created merchants the initial status `DRAFT`.
 - **FR-004**: System MUST require `merchantReference` and reject missing, blank, or invalid references with clear validation feedback.
 - **FR-005**: System MUST require `displayName` and reject missing, blank, or invalid display names with clear validation feedback.
-- **FR-006**: System MUST accept merchant references only after trimming and normalizing them to uppercase, with 3-64 letters, numbers, or hyphens.
+- **FR-006**: System MUST accept merchant references only after trimming and normalizing them to uppercase, with 3-64 letters, numbers, or hyphens, and with the normalized reference starting and ending with a letter or number.
 - **FR-007**: System MUST accept display names only after trimming them, with 2-120 characters.
 - **FR-008**: System MUST ensure normalized `merchantReference` is unique across merchants.
 - **FR-009**: System MUST reject duplicate merchant references with conflict feedback that allows the operator or tester to distinguish duplicates from general validation failures.
@@ -208,7 +221,7 @@ The platform protects merchant management behavior so unauthenticated users and 
 - **FR-015**: System MUST reject malformed merchant IDs without creating or altering merchant data.
 - **FR-016**: System MUST allow an authenticated platform operator with merchant read authority to list merchants.
 - **FR-017**: Merchant list results MUST show at least merchant reference, display name, status, and creation time.
-- **FR-018**: Merchant list results MUST use stable newest-first ordering and return an initial page of up to 50 merchants in Phase 1.
+- **FR-018**: Merchant list results MUST use stable newest-first ordering with a deterministic tie-breaker and return only an initial page of up to 50 merchants in Phase 1; advanced search and filtering are deferred.
 - **FR-019**: System MUST allow an authenticated platform operator with merchant status-update authority to activate a merchant only from `DRAFT` to `ACTIVE`.
 - **FR-020**: System MUST allow an authenticated platform operator with merchant status-update authority to suspend a merchant only from `ACTIVE` to `SUSPENDED`.
 - **FR-021**: System MUST reject lifecycle transitions other than `DRAFT -> ACTIVE` and `ACTIVE -> SUSPENDED` without changing merchant status.
@@ -223,10 +236,11 @@ The platform protects merchant management behavior so unauthenticated users and 
 - **FR-030**: System MUST deny unauthenticated access to merchant management behavior.
 - **FR-031**: System MUST deny authenticated users who lack the relevant authority for create, read, or status-update merchant actions.
 - **FR-032**: System MUST distinguish missing authentication from insufficient authorization in externally observable behavior so testers can verify 401-style and 403-style cases.
-- **FR-033**: System MUST support the platform-operator authority concepts `platform:merchants:create`, `platform:merchants:read`, and `platform:merchants:update-status`.
+- **FR-033**: System MUST support the platform-operator authority concepts `platform:merchants:create`, `platform:merchants:read`, and `platform:merchants:update-status`, with `platform:merchants:update-status` controlling both merchant activation and merchant suspension in Phase 1.
 - **FR-034**: The platform-operator dashboard sign-in flow MUST use an authorization-code-with-PKCE style browser login through the configured identity service.
 - **FR-035**: Merchant management requests MUST carry verifiable access-token authority information so the business boundary can distinguish unauthenticated, insufficient-authority, and authorized platform-operator requests.
-- **FR-036**: System MUST not implement payment order creation, payment status read models, PSP behavior, Kafka/events, settlement, reconciliation, Client Credentials Flow, merchant machine-to-machine credentials, complete merchant self-service, or complete admin platform behavior in Phase 1.
+- **FR-036**: The local lab identity setup MUST include `platform.operator` with Keycloak realm roles `merchants:create`, `merchants:read`, and `merchants:update-status`, which map to Spring authorities `platform:merchants:create`, `platform:merchants:read`, and `platform:merchants:update-status`; it MUST also include `merchant.denied` without merchant roles/authorities for insufficient-authorization tests.
+- **FR-037**: System MUST not implement payment order creation, payment status read models, PSP behavior, Kafka/events, settlement, reconciliation, Client Credentials Flow, merchant machine-to-machine credentials, complete merchant self-service, or complete admin platform behavior in Phase 1.
 
 ### Non-Functional Requirements
 
@@ -257,7 +271,7 @@ The platform protects merchant management behavior so unauthenticated users and 
 ### Modulith Impact *(required for backend-relevant features; otherwise state N/A)*
 
 - **Module Ownership**: Merchant is the owning business module for merchant registry, lifecycle, validation, and eligibility concepts.
-- **Module API Impact**: The merchant module should expose only the merchant behaviors needed by external callers and future payment capabilities: create, read/list, activate, suspend, and later eligibility checks. Internal persistence and lifecycle implementation details should remain private to the module.
+- **Module API Impact**: Phase 1 exposes merchant behavior through REST endpoints only and does not introduce a root-package public Modulith API. Future payment capabilities may add an explicit root-package merchant API for eligibility or ownership lookups when a concrete cross-module dependency exists. Internal persistence and lifecycle implementation details remain private to the module.
 - **Dependency Impact**: Future payment capabilities may depend on merchant eligibility through an explicit merchant boundary. The merchant module must not depend on future payment modules.
 - **Event Impact**: No external broker or asynchronous event flow is part of Phase 1. Lifecycle changes may be modeled directly for now; any event-based integration is deferred until a real downstream need exists.
 - **Module Test Impact**: Architecture verification must continue to run, and merchant module tests should verify lifecycle behavior, public boundary behavior, and absence of forbidden payment/PSP/Kafka dependencies.
@@ -270,18 +284,20 @@ The platform protects merchant management behavior so unauthenticated users and 
 - The browser login model is OAuth 2.1 Authorization Code Flow with PKCE.
 - Merchant management requests are protected by JWT access-token validation at the service boundary.
 - Merchant management access is controlled by create, read, and status-update authority concepts.
+- The local lab identity configuration includes `platform.operator` with all three merchant authorities and `merchant.denied` without merchant authorities for insufficient-authorization testing.
+- The unified status-update authority controls both activation and suspension for Phase 1.
 - Missing authentication and insufficient authorization must be externally distinguishable for testing.
 - Merchant records require durable storage with a uniqueness guarantee for merchant reference.
 - Merchant references should support parallel-safe namespacing, for example `MERCH-{testRunId}-{workerId}-{uuid}`.
 - Merchant lifecycle changes should update the merchant's updated timestamp.
 - Operator-facing failures should be visible as validation, duplicate conflict, not found, invalid transition, missing authentication, insufficient authority, or general service error.
-- Logs or audit-friendly records should allow support and testing to trace merchant creation and status transitions without exposing secrets.
+- Logs or audit-friendly records should allow support and testing to trace merchant creation and status transitions without exposing secrets. Phase 1 trace records should cover successful merchant create, activate, suspend, validation/duplicate/not-found/invalid-transition failures, and security denials. Required safe fields include action name, merchant ID when known, normalized reference when useful, outcome, status or transition when relevant, and timestamp/correlation context if available. Forbidden fields include passwords, access tokens, refresh tokens, raw authorization headers, and full raw request bodies.
 
 ### Key Entities *(include if feature involves data)*
 
 - **Merchant**: A business participant recognized by the platform before payment activity begins. Key attributes are `merchantId`, `merchantReference`, `displayName`, `status`, `createdAt`, and `updatedAt`.
 - **Merchant Status**: Lifecycle state for a merchant. Phase 1 states are `DRAFT`, `ACTIVE`, and `SUSPENDED`.
-- **Platform Operator Authority**: Permission concept controlling whether an authenticated platform operator can create merchants, read merchants, or update merchant status.
+- **Platform Operator Authority**: Permission concept controlling whether an authenticated platform operator can create merchants, read merchants, or update merchant status. In Phase 1, `platform:merchants:update-status` controls both activation and suspension.
 
 ## Success Criteria *(mandatory)*
 
@@ -301,17 +317,10 @@ The platform protects merchant management behavior so unauthenticated users and 
 
 - Platform operators are internal users, not merchant users.
 - The initial Phase 1 dashboard is intended for desktop or standard responsive dashboard use, not a specialized mobile flow.
-- Merchant reference comparison trims and normalizes references to uppercase, so references that differ only by case or surrounding whitespace are duplicates.
-- Merchant list ordering is stable newest-first for Phase 1.
+- Merchant reference comparison trims and normalizes references to uppercase, so references that differ only by case or surrounding whitespace are duplicates; leading or trailing hyphens are invalid after normalization.
+- Display names are trimmed and constrained only by the 2-120 character length rule in Phase 1.
+- Merchant list ordering is stable newest-first with a deterministic tie-breaker for Phase 1, and the list exposes only the first page of up to 50 merchants.
 - Merchant deletion is intentionally absent in Phase 1.
-- A separate merchant detail page is not required for Phase 1 unless later clarification justifies it.
+- A separate merchant detail page is not included in Phase 1.
 - Client Credentials Flow waits until merchant machine-to-machine payment API use cases exist.
 - Country, currency, settlement, KYC, pricing, routing, and merchant contact fields are deferred to later product capabilities.
-
-## Open Questions for `/speckit.clarify`
-
-- Confirm whether the default normalized merchant reference rule, 3-64 uppercase letters/numbers/hyphens, should remain unchanged.
-- Confirm whether the default display name rule, 2-120 trimmed characters, should remain unchanged.
-- Confirm whether the Phase 1 merchant list first page of 50 newest-first records is sufficient.
-- Confirm the local platform-operator identity setup for the first login journey.
-- Confirm whether `platform:merchants:update-status` should cover both activate and suspend, or whether later phases should split these authorities.

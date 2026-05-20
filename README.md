@@ -1,32 +1,33 @@
 # Payment Quality Engineering Lab
 
-Phase 0 establishes the project foundation and running skeleton for a learning-oriented payment quality engineering lab. It creates the monorepo shape, backend skeleton, frontend skeleton, local infrastructure configuration, test architecture, and tester-facing documentation without implementing payment business behavior.
+Phase 0 established the project foundation and running skeleton for a learning-oriented payment quality engineering lab. Phase 1 adds Merchant Registry and Activation for authenticated platform operators, the first real business domain capability before payment orders.
 
-## Phase 0 Scope
+## Phase 1 Scope
 
 In scope:
-- Runnable Spring Boot backend foundation under `apps/backend`
-- Runnable Nuxt dashboard foundation under `apps/frontend`
-- Local PostgreSQL 18 and Keycloak 26.6.1 infrastructure configuration under `infra`
-- Baseline test structure for backend, REST, Testcontainers, WireMock, and Playwright growth
-- Documentation and a structured Obsidian-compatible learning vault
+- Merchant module under `apps/backend` with create, list, retrieve, activate, and suspend endpoints
+- PostgreSQL 18 persistence with Flyway-owned merchant schema
+- Keycloak-backed local operator login and JWT resource-server authorization
+- Nuxt `/admin/merchants` dashboard route for merchant create/list/lifecycle actions
+- Unit, repository, REST Assured, security, Testcontainers integration, and Playwright coverage
+- Tester-facing Phase 1 setup, auth, data, and test-design documentation
 
 Out of scope:
-- Payment business use cases
+- Payment order creation
 - `POST /payments`
 - Kafka
 - PSP integration or PSP mock flows
-- Complete OAuth/OIDC application integration
-- Complete merchant, admin, risk, operations, or reconciliation dashboards
-- Payment persistence or domain entities
+- PSP integration, Kafka, refunds, settlement, reconciliation, KYC, Client Credentials Flow
+- Complete merchant self-service, admin, risk, operations, or reconciliation dashboards
+- Payment persistence or payment domain entities
 
 ## Repository Map
 
 ```text
-apps/backend/          Java 25 Spring Boot 4 backend foundation
-apps/frontend/         Nuxt 4 dashboard foundation
+apps/backend/          Java 25 Spring Boot 4 backend and merchant module
+apps/frontend/         Nuxt 4 dashboard with /admin/merchants
 infra/compose/         Local PostgreSQL and Keycloak compose setup
-infra/keycloak/        Keycloak Phase 0 notes and future realm import area
+infra/keycloak/        Keycloak local realm import for Phase 1
 specs/                 Spec Kit feature artifacts
 docs/setup/            Setup and tester orientation documentation
 docs/testing/          Test architecture and quality baseline documentation
@@ -36,13 +37,13 @@ knowledge-vault/       Structured Obsidian learning system
 .specify/              Spec Kit memory and templates
 ```
 
-The Obsidian vault remains a single vault but is organized by learning purpose:
-- `knowledge-vault/01 Project - Payment Quality Engineering Lab/` for project and feature knowledge
-- `knowledge-vault/02 Technical Learning/` for Spring Modulith, testing architecture, infrastructure, and other technical notes
-- `knowledge-vault/03 Business Product and Testing Thinking/` for BA, product, risk, and tester-owned thinking
-- `knowledge-vault/04 Interview Capital/` for interview-ready stories and explanations
+The Obsidian vault remains one existing learning system. Use the established top-level structure:
+- `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/` for project and feature knowledge
+- `knowledge-vault/02 Areas/` for long-lived learning areas, including technical learning, business/product/testing thinking, and interview capital
+- `knowledge-vault/03 Resources/` for reusable external materials such as books, official docs, papers, repositories, and attachments
+- `knowledge-vault/04 Archives/`, `05 Templates/`, `06 MOCs/`, and `07 Dashboards/` for archived material, templates, maps of content, and dashboards
 
-The Phase 0 hub is `knowledge-vault/01 Project - Payment Quality Engineering Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`.
+The Phase 0 hub is `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`. The Phase 1 hub is `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/01 Phase 1 - Merchant Registry/Phase 1 - Merchant Registry and Activation.md`.
 
 Do not introduce `.kilocode/` as a new Phase 0 project-organization target. Historical or generated files may exist, but current Phase 0 documentation and implementation should use `.kilo/` for Kilo project configuration references.
 
@@ -79,12 +80,14 @@ Validated on 2026-05-18 before dependency scaffolding:
 
 The concrete local service environment example is `infra/compose/.env.example`.
 
-Application-level non-secret variables documented for later use:
+Application-level non-secret variables:
 - `SPRING_PROFILES_ACTIVE`
 - `APP_POSTGRES_HOST`
 - `APP_POSTGRES_PORT`
 - `NUXT_PUBLIC_API_BASE_URL`
 - `NUXT_PUBLIC_KEYCLOAK_URL`
+- `NUXT_PUBLIC_KEYCLOAK_REALM`
+- `NUXT_PUBLIC_KEYCLOAK_CLIENT_ID`
 
 Do not commit real secrets. Phase 0 does not require production credentials, business realm variables, or full application auth variables.
 
@@ -97,10 +100,15 @@ From `apps/backend`:
 ./mvnw spring-boot:run
 ```
 
-The backend exposes only a technical status endpoint:
+The backend exposes the public technical status endpoint and secured merchant endpoints:
 
 ```text
 GET /api/status
+POST /api/merchants
+GET /api/merchants
+GET /api/merchants/{id}
+POST /api/merchants/{id}/activate
+POST /api/merchants/{id}/suspend
 ```
 
 Expected response shape:
@@ -123,7 +131,7 @@ corepack pnpm exec playwright test
 
 If `pnpm` is not installed as a shell command, use Corepack: `corepack pnpm <command>`.
 
-The frontend is a foundation dashboard shell only. Dashboard areas are placeholders for later phases.
+The frontend dashboard route `/admin/merchants` supports the Phase 1 merchant registry journey.
 
 ## Infrastructure Commands
 
@@ -139,11 +147,11 @@ See `docs/setup/local-infra.md` for details.
 
 ## Baseline Verification
 
-- Backend: `apps/backend ./mvnw test`
-- Frontend: `apps/frontend pnpm typecheck`, `pnpm build`, `corepack pnpm exec playwright test`
+- Backend: `apps/backend ./mvnw test`, `./mvnw verify`
+- Frontend: `apps/frontend corepack pnpm typecheck`, `corepack pnpm build`, `corepack pnpm exec playwright test`
 - Infrastructure: Docker Compose startup from `docs/setup/local-infra.md`
 - Documentation: follow the Tester Orientation Pack in `docs/setup/phase-0-tester-orientation-pack.md`
 
 ## Tester Focus
 
-Phase 0 testing focuses on setup reproducibility, skeleton observability, documentation accuracy, non-goal enforcement, module-boundary readiness, and parallel-test readiness. It does not test payment behavior because no payment behavior exists.
+Phase 1 testing focuses on merchant validation, lifecycle transitions, access control, persistence durability, module boundaries, frontend feedback states, and parallel-safe test data. It still does not test payment behavior because no payment behavior exists.

@@ -1,23 +1,6 @@
-# Frontend Foundation
+# Frontend Dashboard and Merchant Registry
 
-This frontend is the Phase 0 Nuxt dashboard foundation for the Payment Quality Engineering Lab.
-
-## Template Source
-
-The frontend uses the official Nuxt UI Dashboard Template as the baseline reference:
-
-```text
-https://github.com/nuxt-ui-templates/dashboard
-```
-
-Validated template package reference on 2026-05-18:
-- Template package name: `nuxt-ui-template-dashboard`
-- Nuxt UI: `^4.7.1`
-- Nuxt: `^4.4.5`
-- TypeScript: `^6.0.3`
-- Zod: `^4.4.3`
-
-Implementation approach: create a minimal project-specific dashboard shell using the validated template dependency baseline and Nuxt UI primitives, then remove or avoid demo content that could imply payment business behavior. Nuxt 4 executes the app from the `app/` source directory in this project.
+This frontend is the Nuxt dashboard for the Payment Quality Engineering Lab. Phase 1 adds authenticated merchant registry workflows at `/admin/merchants`.
 
 ## Baseline
 
@@ -26,39 +9,51 @@ Implementation approach: create a minimal project-specific dashboard shell using
 - TypeScript 6.0.3
 - Zod 4.4.3
 - Pinia via `@pinia/nuxt` 0.11.3
-- pnpm 10.33.4
+- `nuxt-auth-utils` for sealed-cookie sessions and generic OIDC PKCE against Keycloak
 - Playwright 1.60.0
 
 ## Commands
 
 ```bash
-pnpm install
-pnpm dev
-pnpm typecheck
-pnpm build
+corepack pnpm install
+corepack pnpm dev
+corepack pnpm typecheck
+corepack pnpm build
 corepack pnpm exec playwright test
 ```
 
-If `pnpm` is not installed as a shell command, use Corepack: `corepack pnpm <command>`.
+## Phase 1 Auth Spike Result
 
-## Phase 0 Shell
+`nuxt-auth-utils` is viable for the Phase 1 local Keycloak PKCE login path when using its generic OIDC handler. The Keycloak-specific handler expects a confidential-client secret and does not emit PKCE parameters, so `server/routes/auth/keycloak.get.ts` uses `defineOAuthOidcEventHandler` with Keycloak discovery at `http://localhost:8081/realms/payment-quality/.well-known/openid-configuration`. The route keeps the product path `/auth/keycloak`, stores only the browser-safe user shape in the session, and keeps the access token in the sealed server-side session under `secure.accessToken`. Browser state and Pinia do not store access tokens, refresh tokens, raw sessions, or authorization headers.
 
-The root route is implemented at `app/pages/index.vue` and displays a foundation page for `Payment Quality Engineering Lab`. It identifies future dashboard areas but does not implement them:
-- Merchant
-- Admin
-- Payment operations
-- Risk/review
-- Reconciliation
+## Auth Flow
 
-## Deferred Work
+- `/login` automatically starts the Keycloak redirect and keeps a fallback button.
+- `/auth/keycloak` starts Authorization Code Flow with PKCE (`S256`) for the public `payment-quality-dashboard` client.
+- `app/middleware/auth.global.ts` protects dashboard routes.
+- `app/stores/auth.ts` exposes sanitized `isAuthenticated` and `user` state only.
+- `/admin/**` is rendered client-side inside a Nuxt UI dashboard shell so the protected dashboard can use browser session state consistently.
 
-- No payment creation or payment list
-- No payment API client
-- No real login UX
-- No role-based navigation
-- No Keycloak-backed route guards
-- No complete business dashboard functionality
+## Dashboard Shell
 
-## Parallel-Ready E2E Conventions
+The authenticated app layout follows the Nuxt UI Dashboard Template direction without adding out-of-scope business widgets. It uses `UDashboardGroup`, `UDashboardSidebar`, `UDashboardPanel`, `UDashboardNavbar`, and vertical `UNavigationMenu` composition with a single user/session menu in the sidebar footer. Phase 1 exposes only the Merchants navigation item.
 
-The Playwright baseline avoids shared users, payment records, and mutable business data. Future mutating tests should use worker-aware fixtures, unique resources, and resilient locators based on roles, labels, or stable test ids.
+## Backend Proxy
+
+Browser components call Nuxt server API routes under `server/api/merchants/**`. `server/utils/backendApi.ts` reads the sealed session access token server-side and forwards it as `Authorization: Bearer ...` to the backend. Tokens are not exposed to browser JavaScript.
+
+If the backend is not running at `NUXT_PUBLIC_API_BASE_URL` (default `http://localhost:8080`), the merchant page shows a backend-unavailable message rather than an authorization denial.
+
+## Merchant UI
+
+`/admin/merchants` provides:
+
+- empty, loading, error, and insufficient-authority states
+- create merchant modal with Zod validation
+- duplicate-conflict feedback
+- merchant table with DRAFT/ACTIVE/SUSPENDED status badges
+- activate and suspend actions for valid lifecycle states
+
+## Playwright
+
+Playwright specs cover create, validation, duplicate feedback, lifecycle, unauthenticated redirect, insufficient authority, loading, and error states. The default fast UI suite mocks Nuxt session/API routes; set `PLAYWRIGHT_USE_REAL_KEYCLOAK=true` to exercise the real Keycloak setup in the auth setup project.
