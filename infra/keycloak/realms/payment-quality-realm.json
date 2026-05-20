@@ -1,0 +1,62 @@
+{
+  "id": "payment-quality",
+  "realm": "payment-quality",
+  "enabled": true,
+  "displayName": "Payment Quality Engineering Lab",
+  "roles": {
+    "realm": [
+      {"name": "merchants:create"},
+      {"name": "merchants:read"},
+      {"name": "merchants:update-status"}
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "payment-quality-dashboard",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "platform.operator",
+      "enabled": true,
+      "firstName": "Platform",
+      "lastName": "Operator",
+      "email": "platform.operator@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "platform.operator",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["merchants:create", "merchants:read", "merchants:update-status"]
+    },
+    {
+      "username": "merchant.denied",
+      "enabled": true,
+      "firstName": "Merchant",
+      "lastName": "Denied",
+      "email": "merchant.denied@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.denied",
+          "temporary": false
+        }
+      ],
+      "realmRoles": []
+    }
+  ]
+}

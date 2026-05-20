@@ -8,6 +8,7 @@ Thumbs.db
 
 # Java / Maven
 target/
+/build/
 *.class
 *.log
 .mvn/timing.properties
@@ -26,6 +27,7 @@ pnpm-debug.log*
 # Playwright
 playwright-report/
 test-results/
+**/tests/.auth/
 
 # IDEs
 .idea/

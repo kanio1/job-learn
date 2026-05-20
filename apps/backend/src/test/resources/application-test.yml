@@ -1,0 +1,16 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/merchant
+    baseline-on-migrate: false
+
+logging:
+  level:
+    lab.paymentquality: DEBUG
+    org.flywaydb: DEBUG
+    org.testcontainers: INFO
+    com.github.dockerjava: WARN
