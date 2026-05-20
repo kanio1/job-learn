@@ -14,7 +14,7 @@
 
 **Purpose**: Establish the final monorepo shape and shared project metadata required by FR-001, FR-002, AC-001, and the constitution.
 
-- [ ] T001 [AGENT-IMPLEMENT] Create the planned top-level folders `apps/backend`, `apps/frontend`, `infra/compose`, `infra/keycloak/realms`, `docs/setup`, `docs/testing`, `docs/architecture`, and `knowledge-vault/milestones`; verify no payment business folders such as `apps/backend/.../payment` are created.
+- [ ] T001 [AGENT-IMPLEMENT] Create the planned top-level folders `apps/backend`, `apps/frontend`, `infra/compose`, `infra/keycloak/realms`, `docs/setup`, `docs/testing`, `docs/architecture`, and learning outputs inside the established vault structure under `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab` and `knowledge-vault/02 Areas`; verify no payment business folders such as `apps/backend/.../payment` are created.
 - [ ] T002 [AGENT-IMPLEMENT] Create root `.gitignore` covering Java/Maven build output, Node/Nuxt output, Playwright reports, local `.env` files, IDE files, OS files, and Docker/runtime temporary files while keeping `.env.example` files trackable.
 - [ ] T003 [AGENT-IMPLEMENT] Create root `README.md` with project purpose, Phase 0 scope, top-level directory map, prerequisites, setup overview, baseline verification commands, current Kilo project configuration location `.kilo/`, instruction not to create `.kilocode/` as a new Phase 0 target, and explicit non-goals.
 - [ ] T004 [AGENT-IMPLEMENT] Create root `AGENTS.md` with project operating model: agents implement product/infrastructure, user focuses on tester learning, risk analysis, test design, automation, and quality review.
@@ -62,9 +62,10 @@
 - [ ] T025 [AGENT-IMPLEMENT] Initialize `apps/frontend` from the official Nuxt Dashboard Template using the selected documented command/source/version or reference from T007; preserve template layout primitives and Nuxt UI conventions that support a running shell, and record the source plus initialization approach in `apps/frontend/README.md`.
 - [ ] T026 [AGENT-IMPLEMENT] Configure `apps/frontend/package.json` for pnpm scripts, Nuxt 4, Nuxt UI, TypeScript 6 baseline, Zod, `@pinia/nuxt`, and Playwright 1.60.
 - [ ] T027 [AGENT-IMPLEMENT] Configure `apps/frontend/nuxt.config.ts` to enable Nuxt UI and Pinia via `@pinia/nuxt`, with no payment API client or auth route guards.
-- [ ] T028 [AGENT-IMPLEMENT] Create or customize the foundation landing/dashboard route in `apps/frontend/pages/index.vue` so it displays `Payment Quality Engineering Lab` and states that merchant, admin, payment operations, risk/review, and reconciliation dashboards are future phases.
+- [ ] T028 [AGENT-IMPLEMENT] Create or customize the foundation landing/dashboard route in `apps/frontend/app/pages/index.vue` (Nuxt 4 sources from `app/`) so it displays `Payment Quality Engineering Lab` and states that merchant, admin, payment operations, risk/review, and reconciliation dashboards are future phases.
 - [ ] T029 [P] [AGENT-IMPLEMENT] Create `apps/frontend/app/schemas/app-shell.schema.ts` (Nuxt 4 sources from `app/`) with a minimal Zod schema for shell/config validation only; do not create payment domain schemas.
 - [ ] T030 [P] [AGENT-IMPLEMENT] Create `apps/frontend/app/stores/app-shell.ts` (Nuxt 4 sources from `app/`) as a minimal Pinia shell/UI state convention only if useful; do not create payment, merchant, risk, or reconciliation state.
+- Note: root-level `apps/frontend/pages/`, `apps/frontend/schemas/`, and `apps/frontend/stores/` README marker folders may remain as convention pointers; implemented Nuxt 4 source files live under `apps/frontend/app/`.
 - [ ] T031 [P] [AGENT-IMPLEMENT] Remove or relabel Nuxt Dashboard Template demo content that could be mistaken for implemented payment, merchant, risk, reconciliation, admin, or auth behavior.
 - [ ] T032 [AGENT-IMPLEMENT] Create `apps/frontend/playwright.config.ts` with Playwright 1.60 baseline, deterministic base URL conventions, parallel-friendly defaults, and no shared mutable user/payment data.
 - [ ] T033 [AGENT-IMPLEMENT] Create `apps/frontend/tests/e2e/foundation.spec.ts` as a non-business smoke test that starts/uses the Nuxt dashboard shell, verifies Nuxt UI-backed foundation content renders, and checks visible project identity or placeholder messaging using resilient locators.
@@ -103,7 +104,7 @@
 - [ ] T052 [AGENT-IMPLEMENT] Create `docs/testing/phase-0-quality-baseline.md` with the technical baseline: current backend/frontend/infra verification commands, test layer map, future unit/module/integration/REST/E2E locations, and Testcontainers/WireMock conventions.
 - [ ] T053 [TESTER-DESIGN] Add a clearly marked tester-owned section in `docs/testing/phase-0-quality-baseline.md` defining order-independent test strategy, data-isolation readiness, no shared mutable assumptions, future worker-aware Playwright fixtures, and safe parallel REST/integration/E2E testing.
 - [ ] T054 [TESTER-AUTOMATE] Verify baseline backend checks from `apps/backend` with `./mvnw test`; record failures as implementation defects, not tester workarounds.
-- [ ] T055 [TESTER-AUTOMATE] Verify baseline frontend checks from `apps/frontend` with `pnpm install`, `pnpm typecheck`, and `pnpm exec playwright test` once dependencies are installed.
+- [ ] T055 [TESTER-AUTOMATE] Verify baseline frontend checks from `apps/frontend` with `pnpm install`, `pnpm typecheck`, and `corepack pnpm exec playwright test` once dependencies are installed.
 - [ ] T056 [AGENT-REVIEW] Confirm all baseline tests are repeatable, order-independent, and do not require payment workflows, Kafka, PSP services, complete OAuth/OIDC, or shared business data.
 
 ---
@@ -127,14 +128,14 @@
 
 **Purpose**: Capture Phase 0 as the first learning milestone and connect architecture/testing lessons to the knowledge vault. Covers FR-012, AC-010, SC-007.
 
-- [ ] T065 [AGENT-IMPLEMENT] Create `knowledge-vault/milestones/Phase 0 - Project Foundation and Running Skeleton.md` with links to root README, backend README, frontend README, local infrastructure docs, modular-monolith docs, and quality baseline docs.
-- [ ] T066 [AGENT-EXPLAIN] Create `knowledge-vault/milestones/Architecture - Modular Monolith with Spring Modulith.md` summarizing current module stance, future module candidates, dependency/event rules, and why fake business modules are avoided.
-- [ ] T067 [AGENT-EXPLAIN] Create `knowledge-vault/milestones/Architecture Test - ApplicationModules.verify.md` explaining what the architecture test verifies now, what it does not verify yet, and how future `@ApplicationModuleTest` work will fit.
-- [ ] T068 [AGENT-EXPLAIN] Create `knowledge-vault/milestones/Testing - Phase 0 Quality Baseline.md` summarizing backend, frontend, infrastructure, REST, Testcontainers, WireMock, and Playwright testing foundations.
-- [ ] T069 [TESTER-DESIGN] Create `knowledge-vault/milestones/Testing - Parallel Readiness Principles.md` with worker-safe data naming, isolated fixtures, transaction/container options, REST parallel concerns, and Playwright worker-aware strategy.
-- [ ] T070 [AGENT-EXPLAIN] Create `knowledge-vault/milestones/Infrastructure - Local PostgreSQL 18 and Keycloak 26.6.1.md` explaining local service purpose, ports, startup, deferred auth, and non-production assumptions.
-- [ ] T071 [TESTER-ANALYZE] Create `knowledge-vault/milestones/Interview Story - Why Foundation Before Payment Features.md` as a concise learning note connecting Phase 0 scope control to testability, modularity, and future quality engineering credibility.
-- [ ] T072 [AGENT-REVIEW] Verify Obsidian notes use repository-relative links where practical, avoid claiming implemented payment behavior, and align with actual commands and files.
+- [ ] T065 [AGENT-IMPLEMENT] Create `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md` as the Phase 0 hub with links to root README, backend README, frontend README, local infrastructure docs, modular-monolith docs, quality baseline docs, moved technical learning notes, infrastructure note, and interview story.
+- [ ] T066 [AGENT-EXPLAIN] Create `knowledge-vault/02 Areas/Technical Learning/Spring Modulith/Architecture - Modular Monolith with Spring Modulith.md` summarizing current module stance, future module candidates, dependency/event rules, and why fake business modules are avoided.
+- [ ] T067 [AGENT-EXPLAIN] Create `knowledge-vault/02 Areas/Technical Learning/Spring Modulith/Architecture Test - ApplicationModules.verify.md` explaining what the architecture test verifies now, what it does not verify yet, and how future `@ApplicationModuleTest` work will fit.
+- [ ] T068 [AGENT-EXPLAIN] Create `knowledge-vault/02 Areas/Technical Learning/Testing Architecture/Testing - Phase 0 Quality Baseline.md` summarizing backend, frontend, infrastructure, REST, Testcontainers, WireMock, and Playwright testing foundations.
+- [ ] T069 [TESTER-DESIGN] Create `knowledge-vault/02 Areas/Technical Learning/Testing Architecture/Testing - Parallel Readiness Principles.md` with worker-safe data naming, isolated fixtures, transaction/container options, REST parallel concerns, and Playwright worker-aware strategy.
+- [ ] T070 [AGENT-EXPLAIN] Create `knowledge-vault/02 Areas/Technical Learning/Infrastructure/Infrastructure - Local PostgreSQL 18 and Keycloak 26.6.1.md` explaining local service purpose, ports, startup, deferred auth, and non-production assumptions.
+- [ ] T071 [TESTER-ANALYZE] Create `knowledge-vault/02 Areas/Interview Capital/Interview Story - Why Foundation Before Payment Features.md` as a concise learning note connecting Phase 0 scope control to testability, modularity, and future quality engineering credibility.
+- [ ] T072 [AGENT-REVIEW] Verify Obsidian notes use repository-relative links where practical, avoid claiming implemented payment behavior, align with actual commands and files, and preserve separation between project/feature knowledge, technical learning, business/product/testing thinking, and interview capital.
 
 ---
 

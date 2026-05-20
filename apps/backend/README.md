@@ -1,27 +1,25 @@
-# Backend Foundation
+# Backend Foundation and Merchant Registry
 
-This backend is the Phase 0 Spring Boot foundation for the Payment Quality Engineering Lab.
+This backend is the Spring Boot foundation for the Payment Quality Engineering Lab. Phase 1 adds the first real business module: Merchant Registry and Activation.
 
 ## Baseline
 
 - Java JDK 25
 - Maven Wrapper using Maven 3.9.11
-- Spring Boot 4.0.6
-- Spring Framework aligned by Spring Boot
+- Spring Boot 4.0.6 / Spring Framework 7
 - Spring Modulith 2.0.6
-- JUnit 6.0.3
-- AssertJ, Mockito, REST Assured, Testcontainers core, PostgreSQL JDBC, and future WireMock test area
-
-Spring Security is intentionally not included in Phase 0 so the technical status endpoint remains simple and local verification is not confused with a complete auth flow.
+- JUnit 6.0.3, AssertJ, Mockito, REST Assured
+- Spring Security resource server, Spring Data JPA, Flyway, PostgreSQL JDBC, Testcontainers PostgreSQL
 
 ## Commands
 
 ```bash
 ./mvnw test
+./mvnw verify
 ./mvnw spring-boot:run
 ```
 
-## Status Endpoint
+## Public Status Endpoint
 
 ```text
 GET /api/status
@@ -33,34 +31,52 @@ Expected response:
 {"application":"payment-quality-lab","phase":"foundation","status":"UP"}
 ```
 
-The endpoint must not expose secrets, database details, Keycloak details, payment identifiers, or business data.
+`/api/status` remains public and must not expose secrets, database details, Keycloak details, payment identifiers, or merchant business data.
 
-## Package Conventions
+## Merchant Module
 
-- `lab.paymentquality`: application root
-- `lab.paymentquality.foundation.status`: technical foundation status behavior
-- `lab.paymentquality.shared.web`: reserved for narrow web conventions only
-- `lab.paymentquality.architecture`: Spring Modulith architecture tests
-- `lab.paymentquality.integration`: future Spring/Testcontainers integration tests
-- `lab.paymentquality.rest`: REST Assured foundation and future API tests
+Owning module: `lab.paymentquality.merchant`.
 
-Do not create empty business module shells. Future modules such as payment, merchant, PSP, refund, settlement, reconciliation, risk review, and audit are introduced only when a feature owns real behavior.
+Phase 1 endpoints:
+
+```text
+POST /api/merchants
+GET /api/merchants
+GET /api/merchants/{id}
+POST /api/merchants/{id}/activate
+POST /api/merchants/{id}/suspend
+```
+
+Merchant references are trimmed, uppercased, validated as 3-64 letters/numbers/hyphens with no leading or trailing hyphen, and stored in `normalized_reference` with a PostgreSQL unique constraint. Merchants use lifecycle `DRAFT -> ACTIVE -> SUSPENDED`.
+
+## Persistence
+
+Flyway migration location:
+
+```text
+src/main/resources/db/migration/merchant/V1__create_merchants.sql
+```
+
+JPA uses `ddl-auto: validate`; schema creation is owned by Flyway. Tests use Testcontainers PostgreSQL 18 with Flyway enabled.
+
+## Security
+
+The backend is a JWT resource server. Keycloak realm roles are mapped to Spring authorities by prefixing `platform:`.
+
+Required authorities:
+
+- `platform:merchants:create` for merchant creation
+- `platform:merchants:read` for list and retrieve
+- `platform:merchants:update-status` for activate and suspend
+
+HTTP security tests use locally generated signed JWTs and do not require live Keycloak.
 
 ## Modulith Check
 
-`ModulithArchitectureTest` runs `ApplicationModules.of(PaymentQualityApplication.class).verify()` as part of `./mvnw test`.
+`ModulithArchitectureTest` runs `ApplicationModules.of(PaymentQualityApplication.class).verify()` as part of `./mvnw test`. `MerchantModuleTest` boots the merchant module with `@ApplicationModuleTest`.
 
-## Version Decisions
+## Non-Goals
 
-The selected dependency versions are recorded in the root `README.md`. Any future substitution must be documented here and in the relevant Spec Kit artifact.
-
-Testcontainers note: Phase 0 includes `org.testcontainers:testcontainers:2.0.5` core only. Module-specific artifacts such as `junit-jupiter` and `postgresql` remain on the `1.21.4` line in Maven Central, so they are deferred until a future persistence/integration feature needs them.
-
-## Phase 0 Non-Goals
-
-- No payment business API
-- No `POST /payments`
-- No payment persistence or migrations
-- No Kafka
-- No PSP integration or mock flow
-- No complete OAuth/OIDC integration
+- No payment business API or `POST /payments`
+- No PSP, Kafka, refunds, settlement, reconciliation, KYC, or Client Credentials Flow
+- No payment persistence or payment status read model

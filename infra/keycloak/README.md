@@ -1,24 +1,29 @@
-# Keycloak Phase 0 Baseline
+# Keycloak Local Auth Baseline
 
-Phase 0 provides local Keycloak 26.6.1 infrastructure only.
+Phase 1 provides deterministic local Keycloak 26.6.1 identity configuration for the merchant registry operator journey.
 
 ## What Exists
 
 - Docker Compose service `payment-quality-keycloak`
-- Local admin credentials sourced from `infra/compose/.env`
-- Reserved realm import location: `infra/keycloak/realms`
+- Realm import `infra/keycloak/realms/payment-quality-realm.json`
+- Realm `payment-quality`
+- Public PKCE client `payment-quality-dashboard`
+- Roles `merchants:create`, `merchants:read`, `merchants:update-status`
+- Users `platform.operator` and `merchant.denied`
 
-## What Is Deferred
+## Usage
 
-- Full application OAuth/OIDC integration
-- Business realm model
-- Merchant/admin/risk roles
-- Frontend route guards
-- Backend resource-server validation
-- Token lifecycle, refresh, revocation, and logout behavior
+Start with:
 
-## Realm Imports
+```bash
+docker compose --env-file infra/compose/.env -f infra/compose/compose.yml up -d
+```
 
-No realm import is provided in Phase 0. The `realms` directory is reserved so a future security specification can add a deterministic local realm when the application actually needs auth behavior.
+Compose runs Keycloak with `start-dev --import-realm`. See `docs/setup/keycloak-local-auth.md` for the tester walkthrough.
 
-Do not add business roles or clients here without a security-focused feature specification.
+## Still Deferred
+
+- Production identity hardening
+- Token refresh/revocation policy
+- Merchant machine-to-machine credentials
+- Client Credentials Flow

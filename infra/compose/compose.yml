@@ -19,12 +19,14 @@ services:
   payment-quality-keycloak:
     image: quay.io/keycloak/keycloak:26.6.1
     container_name: payment-quality-keycloak
-    command: ["start-dev"]
+    command: ["start-dev", "--import-realm"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
     ports:
       - "${KEYCLOAK_PORT}:8080"
+    volumes:
+      - ../keycloak/realms/payment-quality-realm.json:/opt/keycloak/data/import/payment-quality-realm.json:ro,Z
     healthcheck:
       test: ["CMD-SHELL", "bash -ec ': >/dev/tcp/127.0.0.1/8080'"]
       interval: 15s

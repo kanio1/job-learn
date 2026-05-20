@@ -86,7 +86,22 @@ Planned source layout:
 │   ├── testing/
 │   └── architecture/
 ├── knowledge-vault/
-│   └── milestones/
+│   ├── 00 Inbox/
+│   ├── 01 Projects/
+│   │   └── Payment_Quality_Engineering_Lab/
+│   │       └── 00 Phase 0 - Foundation/
+│   ├── 02 Areas/
+│   │   ├── Technical Learning/
+│   │   │   ├── Spring Modulith/
+│   │   │   ├── Testing Architecture/
+│   │   │   └── Infrastructure/
+│   │   ├── Business Product and Testing Thinking/
+│   │   └── Interview Capital/
+│   ├── 03 Resources/
+│   ├── 04 Archives/
+│   ├── 05 Templates/
+│   ├── 06 MOCs/
+│   └── 07 Dashboards/
 ├── .kilo/
 ├── .specify/
 ├── README.md
@@ -241,7 +256,7 @@ Document and make runnable:
 - Frontend install: `pnpm install` from `apps/frontend`.
 - Frontend dev: `pnpm dev`.
 - Frontend checks: `pnpm typecheck` and a template-appropriate lint/test command if present.
-- Playwright foundation: `pnpm exec playwright test` once the baseline is configured.
+- Playwright foundation: `corepack pnpm exec playwright test` once the baseline is configured.
 - Infra: Docker Compose startup and shutdown commands.
 
 ## 8. Parallel-Readiness Strategy
@@ -325,17 +340,18 @@ After implementation, create a Phase 0 Tester Orientation Pack covering:
 
 ### Obsidian-Compatible Notes
 
-Create or reserve notes under `knowledge-vault/milestones` and related folders:
+Create or reserve notes under the categorized single-vault learning structure:
 
-- `Phase 0 - Project Foundation and Running Skeleton.md`
-- `Architecture - Modular Monolith with Spring Modulith.md`
-- `Architecture Test - ApplicationModules.verify.md`
-- `Testing - Phase 0 Quality Baseline.md`
-- `Testing - Parallel Readiness Principles.md`
-- `Infrastructure - Local PostgreSQL 18 and Keycloak 26.6.1.md`
-- `Interview Story - Why Foundation Before Payment Features.md`
+- `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`
+- `knowledge-vault/02 Areas/Technical Learning/Spring Modulith/Architecture - Modular Monolith with Spring Modulith.md`
+- `knowledge-vault/02 Areas/Technical Learning/Spring Modulith/Architecture Test - ApplicationModules.verify.md`
+- `knowledge-vault/02 Areas/Technical Learning/Testing Architecture/Testing - Phase 0 Quality Baseline.md`
+- `knowledge-vault/02 Areas/Technical Learning/Testing Architecture/Testing - Parallel Readiness Principles.md`
+- `knowledge-vault/02 Areas/Technical Learning/Infrastructure/Infrastructure - Local PostgreSQL 18 and Keycloak 26.6.1.md`
+- `knowledge-vault/02 Areas/Business Product and Testing Thinking/README.md`
+- `knowledge-vault/02 Areas/Interview Capital/Interview Story - Why Foundation Before Payment Features.md`
 
-These notes should be Markdown and Obsidian-friendly, using repository-relative links where practical.
+These notes should be Markdown and Obsidian-friendly, using repository-relative links where practical. The vault remains one existing Obsidian system: project notes live under `01 Projects`, long-lived learning areas live under `02 Areas`, reusable external materials live under `03 Resources`, and support structures remain under `04 Archives`, `05 Templates`, `06 MOCs`, and `07 Dashboards`.
 
 ## 11. Risks / Open Questions
 
@@ -370,7 +386,7 @@ Phase 0 is done when all of the following are true:
 - Environment variable examples exist and contain no real secrets.
 - Documentation explains setup, verification commands, infrastructure startup, architecture direction, test strategy, and Phase 0 non-goals.
 - Tester Orientation Pack content is created or clearly staged for immediate post-implementation completion.
-- Obsidian-compatible milestone notes exist or are explicitly created as part of the implementation closeout.
+- Obsidian-compatible learning notes exist in the categorized single-vault structure or are explicitly created as part of the implementation closeout.
 - No payment business endpoint, payment persistence, PSP mock flow, Kafka setup, complete OAuth/OIDC flow, or complete payment dashboard feature has slipped into Phase 0.
 
 ## 13. Implementation Readiness Assessment
