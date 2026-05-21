@@ -15,8 +15,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,37 +42,38 @@ class MerchantServiceDuplicateTest extends PostgresContainerSupport {
     @Test
     void nearSimultaneousDuplicateReferenceHasOneWinner() throws Exception {
         String reference = "MERCH-CONCURRENT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        var executor = Executors.newFixedThreadPool(2);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
         CountDownLatch ready = new CountDownLatch(2);
         CountDownLatch start = new CountDownLatch(1);
         List<Future<Object>> futures = new ArrayList<>();
 
-        for (int i = 0; i < 2; i++) {
-            futures.add(executor.submit(() -> {
-                ready.countDown();
-                start.await();
-                try {
-                    return service.create(reference, "Concurrent Merchant");
-                } catch (DuplicateMerchantReferenceException e) {
-                    return e;
-                }
-            }));
-        }
-
-        ready.await();
-        start.countDown();
-
-        List<Object> results = futures.stream().map(future -> {
-            try {
-                return future.get();
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
+        try {
+            for (int i = 0; i < 2; i++) {
+                futures.add(executor.submit(() -> {
+                    ready.countDown();
+                    if (!start.await(5, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("Timed out waiting for concurrent merchant create start signal");
+                    }
+                    try {
+                        return service.create(reference, "Concurrent Merchant");
+                    } catch (DuplicateMerchantReferenceException e) {
+                        return e;
+                    }
+                }));
             }
-        }).toList();
 
-        assertThat(results).filteredOn(DuplicateMerchantReferenceException.class::isInstance).hasSize(1);
-        assertThat(results).filteredOn(result -> !DuplicateMerchantReferenceException.class.isInstance(result)).hasSize(1);
+            assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
 
-        executor.shutdownNow();
+            List<Object> results = new ArrayList<>();
+            for (Future<Object> future : futures) {
+                results.add(future.get(5, TimeUnit.SECONDS));
+            }
+
+            assertThat(results).filteredOn(DuplicateMerchantReferenceException.class::isInstance).hasSize(1);
+            assertThat(results).filteredOn(result -> !DuplicateMerchantReferenceException.class.isInstance(result)).hasSize(1);
+        } finally {
+            executor.shutdownNow();
+        }
     }
 }

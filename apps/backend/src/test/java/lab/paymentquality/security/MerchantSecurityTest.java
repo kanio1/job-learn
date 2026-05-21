@@ -18,10 +18,12 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.List;
-import java.util.UUID;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static lab.paymentquality.testsupport.MerchantApiTestSupport.createMerchantBody;
+import static lab.paymentquality.testsupport.MerchantApiTestSupport.publicRequest;
+import static lab.paymentquality.testsupport.MerchantApiTestSupport.requestWithToken;
+import static lab.paymentquality.testsupport.MerchantApiTestSupport.uniqueMerchantReference;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -45,7 +47,7 @@ class MerchantSecurityTest extends PostgresContainerSupport {
 
     @Test
     void unauthenticatedAndInvalidTokensReturn401() {
-        var merchant = merchantService.create(uniqueReference("AUTH"), "Auth Merchant");
+        var merchant = merchantService.create(uniqueMerchantReference("AUTH"), "Auth Merchant");
         String id = merchant.getMerchantId().toString();
 
         assertMerchantEndpointsRequire401(null, id);
@@ -54,24 +56,24 @@ class MerchantSecurityTest extends PostgresContainerSupport {
         assertMerchantEndpointsRequire401(TestJwtSupport.invalidIssuerToken(), id);
         assertMerchantEndpointsRequire401(TestJwtSupport.invalidSignatureToken(), id);
 
-        given().port(port).when().get("/api/status").then().statusCode(200);
-        given().port(port).auth().oauth2(TestJwtSupport.expiredToken()).when().get("/api/status").then().statusCode(200);
+        publicRequest(port).when().get("/api/status").then().statusCode(200);
+        requestWithToken(port, TestJwtSupport.expiredToken()).when().get("/api/status").then().statusCode(200);
     }
 
     @Test
     void deniedIdentityReturns403ForMerchantEndpointsButStatusRemainsPublic() {
         String token = TestJwtSupport.deniedToken();
-        var merchant = merchantService.create(uniqueReference("DENY"), "Denied Merchant");
+        var merchant = merchantService.create(uniqueMerchantReference("DENY"), "Denied Merchant");
         String id = merchant.getMerchantId().toString();
 
-        given().port(port).when().get("/api/status").then().statusCode(200);
-        given().port(port).auth().oauth2(token).when().get("/api/merchants").then().statusCode(403);
-        given().port(port).auth().oauth2(token).when().get("/api/merchants/{id}", id).then().statusCode(403);
-        given().port(port).auth().oauth2(token).contentType(ContentType.JSON)
-                .body(createBody(uniqueReference("DENIED"), "Denied Merchant"))
+        publicRequest(port).when().get("/api/status").then().statusCode(200);
+        requestWithToken(port, token).when().get("/api/merchants").then().statusCode(403);
+        requestWithToken(port, token).when().get("/api/merchants/{id}", id).then().statusCode(403);
+        requestWithToken(port, token).contentType(ContentType.JSON)
+                .body(createMerchantBody(uniqueMerchantReference("DENIED"), "Denied Merchant"))
                 .when().post("/api/merchants").then().statusCode(403);
-        given().port(port).auth().oauth2(token).when().post("/api/merchants/{id}/activate", id).then().statusCode(403);
-        given().port(port).auth().oauth2(token).when().post("/api/merchants/{id}/suspend", id).then().statusCode(403);
+        requestWithToken(port, token).when().post("/api/merchants/{id}/activate", id).then().statusCode(403);
+        requestWithToken(port, token).when().post("/api/merchants/{id}/suspend", id).then().statusCode(403);
     }
 
     @Test
@@ -80,57 +82,58 @@ class MerchantSecurityTest extends PostgresContainerSupport {
         String createOnly = TestJwtSupport.tokenWithRoles("create.only", List.of("merchants:create"));
         String updateOnly = TestJwtSupport.tokenWithRoles("update.only", List.of("merchants:update-status"));
 
-        var merchant = merchantService.create(uniqueReference("SEC"), "Security Merchant");
+        var merchant = merchantService.create(uniqueMerchantReference("SEC"), "Security Merchant");
         String id = merchant.getMerchantId().toString();
 
-        given().port(port).auth().oauth2(readOnly).when().get("/api/merchants").then().statusCode(200);
-        given().port(port).auth().oauth2(readOnly).when().get("/api/merchants/{id}", id).then().statusCode(200);
-        given().port(port).auth().oauth2(readOnly).contentType(ContentType.JSON)
-                .body(createBody(uniqueReference("NOCREATE"), "No Create"))
+        requestWithToken(port, readOnly).when().get("/api/merchants").then().statusCode(200);
+        requestWithToken(port, readOnly).when().get("/api/merchants/{id}", id).then().statusCode(200);
+        requestWithToken(port, readOnly).contentType(ContentType.JSON)
+                .body(createMerchantBody(uniqueMerchantReference("NOCREATE"), "No Create"))
                 .when().post("/api/merchants").then().statusCode(403);
-        given().port(port).auth().oauth2(readOnly).when().post("/api/merchants/{id}/activate", id).then().statusCode(403);
-        given().port(port).auth().oauth2(readOnly).when().post("/api/merchants/{id}/suspend", id).then().statusCode(403);
+        requestWithToken(port, readOnly).when().post("/api/merchants/{id}/activate", id).then().statusCode(403);
+        requestWithToken(port, readOnly).when().post("/api/merchants/{id}/suspend", id).then().statusCode(403);
 
-        given().port(port).auth().oauth2(createOnly).contentType(ContentType.JSON)
-                .body(createBody(uniqueReference("CREATE"), "Create Only"))
+        requestWithToken(port, createOnly).contentType(ContentType.JSON)
+                .body(createMerchantBody(uniqueMerchantReference("CREATE"), "Create Only"))
                 .when().post("/api/merchants").then().statusCode(201)
                 .body("status", equalTo("DRAFT"));
-        given().port(port).auth().oauth2(createOnly).when().get("/api/merchants").then().statusCode(403);
-        given().port(port).auth().oauth2(createOnly).when().get("/api/merchants/{id}", id).then().statusCode(403);
-        given().port(port).auth().oauth2(createOnly).when().post("/api/merchants/{id}/activate", id).then().statusCode(403);
-        given().port(port).auth().oauth2(createOnly).when().post("/api/merchants/{id}/suspend", id).then().statusCode(403);
+        requestWithToken(port, createOnly).when().get("/api/merchants").then().statusCode(403);
+        requestWithToken(port, createOnly).when().get("/api/merchants/{id}", id).then().statusCode(403);
+        requestWithToken(port, createOnly).when().post("/api/merchants/{id}/activate", id).then().statusCode(403);
+        requestWithToken(port, createOnly).when().post("/api/merchants/{id}/suspend", id).then().statusCode(403);
 
-        given().port(port).auth().oauth2(updateOnly).when().post("/api/merchants/{id}/activate", id).then().statusCode(200);
-        given().port(port).auth().oauth2(updateOnly).when().post("/api/merchants/{id}/suspend", id).then().statusCode(200);
-        given().port(port).auth().oauth2(updateOnly).when().get("/api/merchants").then().statusCode(403);
-        given().port(port).auth().oauth2(updateOnly).when().get("/api/merchants/{id}", id).then().statusCode(403);
-        given().port(port).auth().oauth2(updateOnly).contentType(ContentType.JSON)
-                .body(createBody(uniqueReference("UPD"), "Update Only"))
+        requestWithToken(port, updateOnly).when().post("/api/merchants/{id}/activate", id).then().statusCode(200);
+        requestWithToken(port, updateOnly).when().post("/api/merchants/{id}/suspend", id).then().statusCode(200);
+        requestWithToken(port, updateOnly).when().get("/api/merchants").then().statusCode(403);
+        requestWithToken(port, updateOnly).when().get("/api/merchants/{id}", id).then().statusCode(403);
+        requestWithToken(port, updateOnly).contentType(ContentType.JSON)
+                .body(createMerchantBody(uniqueMerchantReference("UPD"), "Update Only"))
                 .when().post("/api/merchants").then().statusCode(403);
     }
 
     @Test
     void fullPlatformOperatorCanUseAllMerchantEndpoints() {
         String token = TestJwtSupport.platformOperatorToken();
-        String id = given().port(port).auth().oauth2(token).contentType(ContentType.JSON)
-                .body(createBody(uniqueReference("FULL"), "Full Operator"))
+        String id = requestWithToken(port, token).contentType(ContentType.JSON)
+                .body(createMerchantBody(uniqueMerchantReference("FULL"), "Full Operator"))
         .when().post("/api/merchants")
         .then()
                 .statusCode(201)
                 .extract().path("merchantId");
 
-        given().port(port).auth().oauth2(token).when().get("/api/merchants").then().statusCode(200);
-        given().port(port).auth().oauth2(token).when().get("/api/merchants/{id}", id).then().statusCode(200);
-        given().port(port).auth().oauth2(token).when().post("/api/merchants/{id}/activate", id).then().statusCode(200);
-        given().port(port).auth().oauth2(token).when().post("/api/merchants/{id}/suspend", id).then().statusCode(200);
+        requestWithToken(port, token).when().get("/api/merchants").then().statusCode(200);
+        requestWithToken(port, token).when().get("/api/merchants/{id}", id).then().statusCode(200);
+        requestWithToken(port, token).when().post("/api/merchants/{id}/activate", id).then().statusCode(200);
+        requestWithToken(port, token).when().post("/api/merchants/{id}/suspend", id).then().statusCode(200);
     }
 
     private void assertMerchantEndpointsRequire401(String token, String id) {
-        var list = given().port(port);
-        var getById = given().port(port);
-        var create = given().port(port).contentType(ContentType.JSON).body(createBody(uniqueReference("NOAUTH"), "No Auth"));
-        var activate = given().port(port);
-        var suspend = given().port(port);
+        var list = publicRequest(port);
+        var getById = publicRequest(port);
+        var create = publicRequest(port).contentType(ContentType.JSON)
+                .body(createMerchantBody(uniqueMerchantReference("NOAUTH"), "No Auth"));
+        var activate = publicRequest(port);
+        var suspend = publicRequest(port);
         if (token != null) {
             list.auth().oauth2(token);
             getById.auth().oauth2(token);
@@ -144,13 +147,5 @@ class MerchantSecurityTest extends PostgresContainerSupport {
         create.when().post("/api/merchants").then().statusCode(401);
         activate.when().post("/api/merchants/{id}/activate", id).then().statusCode(401);
         suspend.when().post("/api/merchants/{id}/suspend", id).then().statusCode(401);
-    }
-
-    private static String createBody(String reference, String displayName) {
-        return "{\"merchantReference\":\"%s\",\"displayName\":\"%s\"}".formatted(reference, displayName);
-    }
-
-    private static String uniqueReference(String label) {
-        return "MERCH-" + label + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }

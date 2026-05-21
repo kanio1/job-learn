@@ -13,15 +13,26 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "00 Inbox/Bez nazwy.md",
-                "mode": "source",
+                "file": "02 Areas/Technical Learning/JUnit REST Assured/REST Assured from Zero to Professional Backend API Testing/01-12 REST Assured Foundations.md",
+                "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Bez nazwy"
+              "title": "01-12 REST Assured Foundations"
+            }
+          },
+          {
+            "id": "3a80c74c8c739a36",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Podgląd grafu"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -182,24 +193,36 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "23b9a4a559f51b30",
+  "active": "3a80c74c8c739a36",
   "lastOpenFiles": [
+    "00 Inbox/Bez nazwy.base",
+    "Excalidraw/Drawing 2026-05-21 17.23.08.excalidraw.md",
+    "02 Areas/Technical Learning/JUnit REST Assured/REST Assured from Zero to Professional Backend API Testing/01-12 REST Assured Foundations.md",
+    "Excalidraw",
+    "01 Projects/Payment_Quality_Engineering_Lab/Payment Gateway SDET Learning Plan.md",
+    "02 Areas/Technical Learning/REST API From Zero/Merchant Request and Response Flow.md",
+    "02 Areas/Technical Learning/Backend Testing Review/README.md",
+    "02 Areas/Technical Learning/JUnit REST Assured/README.md",
+    "02 Areas/Technical Learning/Backend Testing Review/Professional Backend API Testing Reviewer Checklist.md",
+    "02 Areas/Technical Learning/JUnit REST Assured/REST Assured from Zero to Professional Backend API Testing/13-22 Professional Practice After Refactoring.md",
+    "02 Areas/Technical Learning/JUnit REST Assured/REST Assured from Zero to Professional Backend API Testing/Context7 Research Notes.md",
+    "02 Areas/Technical Learning/JUnit REST Assured/REST Assured from Zero to Professional Backend API Testing/README.md",
+    "02 Areas/Technical Learning/Backend Testing Review",
+    "02 Areas/Technical Learning/JUnit REST Assured/REST Assured from Zero to Professional Backend API Testing",
+    "02 Areas/Technical Learning/JUnit REST Assured",
+    "Bez nazwy.canvas",
+    "01 Projects/Payment_Quality_Engineering_Lab/01 Phase 1 - Merchant Registry/Phase 1 - Merchant Registry and Activation.md",
+    "02 Areas/Technical Learning/REST API From Zero",
+    "01 Projects/Payment_Quality_Engineering_Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md",
+    "05 Templates/Template - Lesson Note.md",
+    "00 Inbox/Bez nazwy.md",
     "06 MOCs/MOC - Frontend Nuxt Dashboard Pinia Zod",
     "02 Areas/Frontend - Nuxt Dashboard, Pinia & Zod",
     "05 Templates/Template - Interview Story.md",
-    "00 Inbox/Bez nazwy.md",
-    "05 Templates/Template - Lesson Note.md",
     "05 Templates/Bez nazwy.md",
     "05 Templates/Template - RST Lens.md",
     "05 Templates/Template - Risk Note.md",
     "03 Resources/Repos to Mine",
-    "03 Resources/Blogs",
-    "03 Resources/Papers",
-    "03 Resources/Official Docs",
-    "03 Resources/Books",
-    "03 Resources/Attachments",
-    "02 Areas/Interview Capital",
-    "02 Areas/BPMN UML DMN",
-    "02 Areas/Rapid Software Testing"
+    "03 Resources/Blogs"
   ]
 }

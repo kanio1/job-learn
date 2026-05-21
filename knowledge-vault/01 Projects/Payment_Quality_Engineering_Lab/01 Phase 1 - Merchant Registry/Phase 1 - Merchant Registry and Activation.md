@@ -9,6 +9,9 @@ Phase 1 introduces the first real business module before payment orders: merchan
 - Tasks: `specs/002-merchant-registry-activation/tasks.md`
 - Orientation: `docs/setup/phase-1-merchant-orientation-pack.md`
 - Test design: `docs/testing/phase-1-merchant-test-design.md`
+- Payment gateway roadmap analysis: `docs/architecture/payment-gateway-roadmap-analysis.md`
+- SDET learning plan: `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/Payment Gateway SDET Learning Plan.md`
+- REST Assured learning path: `knowledge-vault/02 Areas/Technical Learning/JUnit REST Assured/REST Assured from Zero to Professional Backend API Testing/README.md`
 
 ## Learning Themes
 
@@ -16,3 +19,5 @@ Phase 1 introduces the first real business module before payment orders: merchan
 - PostgreSQL constraints as final safety net for duplicate references.
 - OAuth/OIDC boundary without exposing tokens to browser state.
 - Parallel-safe test data from the first mutating feature.
+- REST Assured from zero to professional API testing.
+- Merchant Registry as a learning laboratory before Payment Order.
