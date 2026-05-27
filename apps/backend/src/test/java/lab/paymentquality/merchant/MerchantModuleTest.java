@@ -12,7 +12,7 @@ import org.springframework.modulith.test.ApplicationModuleTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MerchantModuleTest extends PostgresContainerSupport {
 
     @Container
-    static PostgreSQLContainer<?> postgres = newPostgresContainer("merchant_module_test");
+    static PostgreSQLContainer postgres = newPostgresContainer("merchant_module_test");
 
     static {
         postgres.start();

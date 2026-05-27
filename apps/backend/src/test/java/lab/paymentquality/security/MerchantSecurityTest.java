@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -32,7 +32,7 @@ import static lab.paymentquality.testsupport.MerchantApiTestSupport.uniqueMercha
 class MerchantSecurityTest extends PostgresContainerSupport {
 
     @Container
-    static PostgreSQLContainer<?> postgres = newPostgresContainer("merchant_security_test");
+    static PostgreSQLContainer postgres = newPostgresContainer("merchant_security_test");
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {

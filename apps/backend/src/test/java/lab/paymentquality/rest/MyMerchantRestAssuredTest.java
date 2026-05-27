@@ -4,6 +4,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import lab.paymentquality.testsupport.PostgresContainerSupport;
 import lab.paymentquality.testsupport.TestJwtConfiguration;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -11,28 +12,30 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
-import java.util.UUID;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.*;
+import static io.restassured.RestAssured.when;
 import static lab.paymentquality.testsupport.MerchantApiTestSupport.createMerchantBody;
 import static lab.paymentquality.testsupport.MerchantApiTestSupport.operatorRequest;
 import static lab.paymentquality.testsupport.MerchantApiTestSupport.uniqueMerchantReference;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.*;
 
+@Disabled("Learning sandbox for rewriting MerchantRestAssuredTest scenarios manually")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Import(TestJwtConfiguration.class)
 @Testcontainers
-class MerchantRestAssuredTest extends PostgresContainerSupport {
+class MyMerchantRestAssuredTest extends PostgresContainerSupport {
 
     @Container
-    static PostgreSQLContainer postgres = newPostgresContainer("merchant_rest_test");
+    static PostgreSQLContainer postgres = newPostgresContainer("my_merchant_rest_test");
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {
@@ -43,83 +46,85 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
     int port;
 
     @Test
-    void createReadListActivateAndSuspendMerchant() {
+    void createReadListActivateAndSuspendMecharnt() {
+
         String reference = uniqueMerchantReference("FLOW");
 
         String id = createMerchant(reference, "Flow Merchant")
                 .then()
                 .statusCode(201)
                 .body("merchantReference", equalTo(reference))
-                .body("displayName", equalTo("Flow Merchant"))
+                .body("displayNAme", equalTo("Flow Merchant"))
                 .body("status", equalTo("DRAFT"))
                 .extract().path("merchantId");
 
         operatorRequest(port)
-        .when().get("/api/merchants/{id}", id)
-        .then()
-                .statusCode(200)
+                .when().get("/api/merchants/{id}", id)
+                .then().statusCode(200)
                 .body("merchantId", equalTo(id))
                 .body("status", equalTo("DRAFT"));
 
         operatorRequest(port)
-        .when().get("/api/merchants")
-        .then()
-                .statusCode(200)
-                .body("merchants.merchantReference", hasItem(reference));
+                .when().get("/api/merchants")
+                .then()
+                        .statusCode(200)
+                        .body("merchants.merchantReference", hasItem(reference));
 
         operatorRequest(port)
-        .when().post("/api/merchants/{id}/activate", id)
-        .then()
-                .statusCode(200)
-                .body("status", equalTo("ACTIVE"));
+                .when().post("/api/merchants/{id}/activate", id)
+                .then()
+                        .statusCode(200)
+                        .body("status", equalTo("ACTIVE"));
 
         operatorRequest(port)
-        .when().post("/api/merchants/{id}/suspend", id)
-        .then()
-                .statusCode(200)
-                .body("status", equalTo("SUSPENDED"));
+                .when().post("/api/merchants/{id}/suspend", id)
+                .then()
+                        .statusCode(200)
+                        .body("status", equalTo("SUSPENDED"));
     }
+    
 
     @Test
-    void listReturnSeededMErchantNewestFirst() {
+    void listReturnsSeededMerchantsNewestFirst() {
         String prefix = uniqueMerchantReference("ORDER");
         String first = prefix + "-A";
         String second = prefix + "-B";
         String third = prefix + "-C";
 
         createMerchant(first, "First Merchant").then().statusCode(201);
-        createMerchant(first, "Second Merchant").then().statusCode(201);
-        createMerchant(first, "First Merchant").then().statusCode(201);
+        createMerchant(second, "Second Merchant").then().statusCode(201);
+        createMerchant(third, "Third Merchant").then().statusCode(201);
 
         List<Map<String, Object>> merchants = operatorRequest(port)
-                .when().get("/api/merchants")
-                .then().statusCode(200)
+        .when().get("/api/merchants")
+        .then()
+                .statusCode(200)
                 .extract().path("merchants");
 
         List<String> orderedReferences = merchants.stream()
                 .map(row -> (String) row.get("merchantReference"))
                 .filter(reference -> reference.startsWith(prefix))
                 .toList();
-        
+
         assertThat(orderedReferences).containsExactly(third, second, first);
     }
 
     @Test
     void createValidationAndDuplicateErrors() {
         String reference = uniqueMerchantReference("DUP");
-        createMerchant(reference, "Duplicate Merchant").then().statusCode(201);
+        createMerchant(reference, "Duplicate Merchant").then().statusCode(200);
 
         createMerchant(reference, "Duplicate Merchant")
                 .then()
                 .statusCode(409)
-                .body("error", equalTo("duplicate_merchant_reference"));
+                .body("error", equalTo(|"duplicate_merchant_reference"));
 
         createMerchant("AB", "Short Reference")
                 .then()
                 .statusCode(400)
                 .body("error", equalTo("validation"));
 
-        createMerchant(" ", "Blank Reference")
+        createMerchant(" ", "Blanbk Reference")
                 .then()
                 .statusCode(400)
                 .body("error", equalTo("validation"))
@@ -134,13 +139,8 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
                 .then()
                 .statusCode(400)
                 .body("error", equalTo("validation"));
-
+        
         createMerchant("ABC-", "Bad Reference")
-                .then()
-                .statusCode(400)
-                .body("error", equalTo("validation"));
-
-        createMerchant(uniqueMerchantReference("BLANKNAME"), " ")
                 .then()
                 .statusCode(400)
                 .body("error", equalTo("validation"))
@@ -154,49 +154,48 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
 
     @Test
     void notFoundMalformedAndInvalidTransitionErrors() {
+
         String id = createMerchant(uniqueMerchantReference("ERR"), "Error Merchant")
                 .then().statusCode(201).extract().path("merchantId");
 
         operatorRequest(port)
-        .when().get("/api/merchants/not-a-uuid")
-        .then()
+                .when().get("/api/merchants/not-a-uuid")
+                .then()
                 .statusCode(400)
-                .body("error", equalTo("validation"))
                 .body("message", equalTo("Malformed merchant ID"));
 
         operatorRequest(port)
-        .when().get("/api/merchants/{id}", UUID.randomUUID())
-        .then()
-                .statusCode(404)
-                .body("error", equalTo("not_found"));
+                .when().get("/api/merchants/{id}", UUID.randomUUID())
+                .then()
+                        .statusCode(404)
+                        .body("error", equalTo("not_found"));
+        
+        operatorRequest(port)
+                .when().post("/api/merchants/{id}/activate", id)
+                .then().statusCode(200);
 
         operatorRequest(port)
-        .when().post("/api/merchants/{id}/activate", id)
-        .then().statusCode(200);
-
-        operatorRequest(port)
-        .when().post("/api/merchants/{id}/activate", id)
-        .then()
+                .when().post("/api/merchants/{id}/activate", id)
+                .then()
                 .statusCode(409)
                 .body("error", equalTo("invalid_transition"));
 
         operatorRequest(port)
-        .when().post("/api/merchants/{id}/suspend", id)
-        .then()
-                .statusCode(200)
+                .when().post("/api/merchants/{id}/suspend", id)
+                .then().statusCode(200)
                 .body("status", equalTo("SUSPENDED"));
 
         operatorRequest(port)
-        .when().post("/api/merchants/{id}/activate", id)
-        .then()
+                .when().post("/api/merchants/{id}/activate", id)
+                .then()
                 .statusCode(409)
                 .body("error", equalTo("invalid_transition"));
 
         operatorRequest(port)
-        .when().post("/api/merchants/{id}/activate", UUID.randomUUID())
-        .then()
-                .statusCode(404)
+                .when().post("/api/merchants/{id}/activate", UUID.randomUUID())
+                .then().statusCode(404)
                 .body("error", equalTo("not_found"));
+
     }
 
     @Test
