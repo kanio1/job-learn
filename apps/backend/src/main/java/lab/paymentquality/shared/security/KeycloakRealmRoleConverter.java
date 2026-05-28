@@ -25,7 +25,9 @@ public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<Gra
         return roles.stream()
                 .filter(String.class::isInstance)
                 .map(String.class::cast)
-                .<GrantedAuthority>map(role -> new SimpleGrantedAuthority("platform:" + role))
+                .<GrantedAuthority>map(role -> new SimpleGrantedAuthority(
+                        (role.startsWith("merchant:") || role.startsWith("platform:"))
+                                ? role : "platform:" + role))
                 .toList();
     }
 }

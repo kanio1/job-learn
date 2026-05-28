@@ -117,7 +117,7 @@ class MyMerchantRestAssuredTest extends PostgresContainerSupport {
         createMerchant(reference, "Duplicate Merchant")
                 .then()
                 .statusCode(409)
-                .body("error", equalTo(|"duplicate_merchant_reference"));
+                .body("error", equalTo("duplicate_merchant_reference"));
 
         createMerchant("AB", "Short Reference")
                 .then()

@@ -32,18 +32,18 @@ Statusy:
 | Java 25 | records / DTOs | Practiced | `CreateMerchantRequest`, `MerchantResponse`, `ErrorResponse` | Payment DTOs + typed response extraction |
 | Java 25 | enums / state machine | Practiced | `MerchantStatus`, lifecycle tests | PaymentOrderStatus with transition table |
 | Java 25 | collections immutable / `Map.of` / `Map.copyOf` | Practiced | `createMerchantBody`, Lesson 5 | Test data builders for larger payloads |
-| Java 25 | `BigDecimal` for money | Not Started | none | Payment Order amount model |
+| Java 25 | minor-unit money value object | Practiced | `PaymentAmount`, `PaymentOrderRestAssuredTest` | Later compare with `BigDecimal` when decimal input appears |
 | Java 25 | `java.time` | Introduced | merchant timestamps | Assert timestamp contract without brittle exact times |
 | Java 25 | streams / extracting data | Introduced | list extraction in `MerchantRestAssuredTest` | Replace brittle list checks with clear AssertJ extraction |
 | Java 25 | deprecated APIs / JDK warning hygiene | Not Started | none | Add build hygiene lesson/checklist |
 | HTTP | method semantics safe/idempotent | Introduced | REST Assured lessons | Payment idempotency and retry tests |
-| HTTP | `Location` header | Not Started | none | `POST payment-orders` returns Location |
+| HTTP | `Location` header | Practiced | `PaymentOrderRestAssuredTest#createPaymentOrderReturns201WithHeaders` | Keep asserting resource creation headers |
 | HTTP | `X-Correlation-ID` | Introduced | `CorrelationIdFilter`, Lesson 4 | Add REST Assured header tests |
-| HTTP | `Idempotency-Key` | Not Started | strategy/prompt only | Payment Order create sprint |
+| HTTP | `Idempotency-Key` | Practiced | `IdempotencyKey`, `PaymentOrderService`, `PaymentOrderRestAssuredTest#idempotentReplayReturns200WithSameId` | Add more concurrency and client retry exercises |
 | HTTP | `ETag` / `If-Match` / `412` | Not Started | prompt only | Optimistic concurrency sprint |
 | HTTP | `Retry-After` / `429` | Not Started | none | Rate limit / abuse-flow sprint |
 | HTTP | `WWW-Authenticate` | Not Started | security behavior exists but not asserted | Security response header tests |
-| REST | resource modeling | Introduced | Merchant resource | PaymentOrder resource design |
+| REST | resource modeling | Practiced | Merchant resource, `PaymentOrderController`, payment order contract | Add list/report resource modeling later |
 | REST | error representation | Practiced | `ErrorResponse`, exception handler | Stable error schema + schema validation |
 | REST | OpenAPI contract analysis | Not Started | none | Add OpenAPI spec and contract review |
 | REST Assured | basic request/response DSL | Practiced | `StatusRestAssuredTest`, `MerchantRestAssuredTest` | Move to framework architecture |
@@ -66,16 +66,16 @@ Statusy:
 | Spring Testing | `@WebMvcTest` / MockMvc | Introduced/Unknown | controller tests need review | Use for focused error/controller tests if useful |
 | Testcontainers | PostgreSQL containers | Practiced | `PostgresContainerSupport` | Worker-safe data strategy |
 | Security | 401/403 auth matrix | Practiced | `MerchantSecurityTest` | Add ownership and tenant isolation |
-| Security | BOLA / object ownership | Not Started | none | Merchant user cannot access another merchant |
+| Security | BOLA / object ownership | Practiced | `PaymentOrderSecurityTest`, `PaymentOrderRestAssuredTest#crossTenantReadReturns404` | Extend with more ownership matrices in later slices |
 | Security | OWASP API Top 10 abuse cases | Introduced | roadmap only | Add security test matrix note |
-| SQL/PostgreSQL | FK / unique / check constraints | Practiced partly | merchant schema/repository tests | Payment constraints + idempotency uniqueness |
+| SQL/PostgreSQL | FK / unique / check constraints | Practiced | `V2__create_payment_orders.sql`, `JpaPaymentOrderRepositoryTest` | Add reporting/query-plan exercises later |
 | SQL/PostgreSQL | optimistic locking | Introduced | merchant version in plan | ETag/If-Match sprint |
-| SQL/PostgreSQL | audit/status history | Not Started | none | payment_order_status_history |
+| SQL/PostgreSQL | audit/status history | Practiced | `payment_order_status_history`, `PaymentOrderStatusHistory`, repository test | Expand when lifecycle transitions are introduced |
 | Test Design | BVA/EP validation | Practiced | merchant validation tests | Parameterize and map to requirements |
 | Test Design | decision tables | Introduced | Lesson prompts | Security/transition decision tables |
 | Test Design | state transitions | Practiced | merchant lifecycle | Payment lifecycle state model |
 | Test Design | test pyramid / level selection | Introduced | roadmap | Evidence per sprint in tracker |
-| Frontend | Nuxt dashboard | Introduced | existing/planned merchant UI | Payment order pages |
+| Frontend | Nuxt dashboard | Practiced | `CreatePaymentOrderForm.vue`, payment order detail page, Nuxt payment proxy | Add role-aware Playwright coverage later |
 | Playwright | authenticated user journeys | Introduced/Planned | roadmap | Role-aware merchant/payment flows |
 
 ## Review Cadence

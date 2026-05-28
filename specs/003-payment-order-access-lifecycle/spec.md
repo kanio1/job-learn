@@ -312,7 +312,7 @@ An authenticated merchant user creates a payment order and views its detail thro
 - Amount is always represented in minor units (e.g., 1000 = 10.00 PLN) to avoid floating-point precision issues.
 - Currency comparison is case-sensitive and uses uppercase 3-letter ISO-like codes.
 - `Idempotency-Key` is an opaque string provided by the client, unique per merchant and operation.
-- Request fingerprint for idempotency comparison is derived from the request body and relevant headers.
+- Request fingerprint for idempotency comparison is derived from the request body fields (amountMinor, currency, clientOrderReference) and merchant ID, excluding volatile headers, tokens, and correlation IDs (resolved in research.md Decision 3).
 - Payment order deletion is intentionally absent.
 - Payment order list/filter/search is deferred.
 - Payment order mutation after creation is intentionally absent.

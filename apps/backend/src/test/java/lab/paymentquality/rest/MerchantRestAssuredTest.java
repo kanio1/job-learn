@@ -88,8 +88,8 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
         String third = prefix + "-C";
 
         createMerchant(first, "First Merchant").then().statusCode(201);
-        createMerchant(first, "Second Merchant").then().statusCode(201);
-        createMerchant(first, "First Merchant").then().statusCode(201);
+        createMerchant(second, "Second Merchant").then().statusCode(201);
+        createMerchant(third, "Third Merchant").then().statusCode(201);
 
         List<Map<String, Object>> merchants = operatorRequest(port)
                 .when().get("/api/merchants")

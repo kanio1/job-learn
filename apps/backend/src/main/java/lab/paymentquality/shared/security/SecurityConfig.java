@@ -36,6 +36,8 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/status").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders").hasAuthority("merchant:payments:create")
+                        .requestMatchers(HttpMethod.GET, "/api/merchants/*/payment-orders/*").hasAnyAuthority("merchant:payments:read", "platform:payments:read")
                         .requestMatchers(HttpMethod.POST, "/api/merchants").hasAuthority("platform:merchants:create")
                         .requestMatchers(HttpMethod.GET, "/api/merchants").hasAuthority("platform:merchants:read")
                         .requestMatchers(HttpMethod.GET, "/api/merchants/**").hasAuthority("platform:merchants:read")

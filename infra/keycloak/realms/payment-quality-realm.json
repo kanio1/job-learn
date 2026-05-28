@@ -7,7 +7,11 @@
     "realm": [
       {"name": "merchants:create"},
       {"name": "merchants:read"},
-      {"name": "merchants:update-status"}
+      {"name": "merchants:update-status"},
+      {"name": "merchant:payments:create"},
+      {"name": "merchant:payments:read"},
+      {"name": "merchant:payments:operate"},
+      {"name": "platform:payments:read"}
     ]
   },
   "clients": [
@@ -22,7 +26,23 @@
       "webOrigins": ["http://localhost:3000"],
       "attributes": {
         "pkce.code.challenge.method": "S256"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "merchant-id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "merchant_id",
+            "claim.name": "merchant_id",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
     }
   ],
   "users": [
@@ -57,6 +77,79 @@
         }
       ],
       "realmRoles": []
+    },
+    {
+      "username": "merchant.payment.creator",
+      "enabled": false,
+      "firstName": "Merchant Payment",
+      "lastName": "Creator",
+      "email": "merchant.payment.creator@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.payment.creator",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "PLACEHOLDER_MERCHANT_ID"
+      },
+      "realmRoles": ["merchant:payments:create"]
+    },
+    {
+      "username": "merchant.payment.reader",
+      "enabled": false,
+      "firstName": "Merchant Payment",
+      "lastName": "Reader",
+      "email": "merchant.payment.reader@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.payment.reader",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "PLACEHOLDER_MERCHANT_ID"
+      },
+      "realmRoles": ["merchant:payments:read"]
+    },
+    {
+      "username": "merchant.payment.operator",
+      "enabled": false,
+      "firstName": "Merchant Payment",
+      "lastName": "Operator",
+      "email": "merchant.payment.operator@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.payment.operator",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "PLACEHOLDER_MERCHANT_ID"
+      },
+      "realmRoles": ["merchant:payments:operate"]
+    },
+    {
+      "username": "platform.payment.reader",
+      "enabled": true,
+      "firstName": "Platform Payment",
+      "lastName": "Reader",
+      "email": "platform.payment.reader@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "platform.payment.reader",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["platform:payments:read"]
     }
   ]
 }

@@ -47,67 +47,97 @@ Next lesson/sprint handoff:
 | 04 | Practiced | Lesson 4 prompt + lesson-pack expansion | Path/query/header basics, `Authorization`, `X-Correlation-ID` context |
 | 05 | Practiced | Lesson 5 prompt + lesson-pack expansion | request body, JSON, `Map.of`, DTO, serialization |
 
-## Lesson 06 - PayU-like Business Flow Expansion Sprint
+## Lesson 06 - Payment Order Create/Read Foundation
 
-Status: `Planned`
+Status: `Ready`
 
-Prompt: `../Learning Prompts/Prompt - Lesson 06 - PayU Like Business Flow Expansion Sprint.md`
+Prompt: `../Learning Prompts/Prompt - Lesson 06 - PayU Like Business Flow Expansion Sprint.md` and current interactive prompt for Payment Order create/read lesson.
 
-Business capability: to be selected by BA/Architecture Team; candidates are Merchant Team/Access Management and Payment Order Initiation/Lifecycle.
+Business capability: Payment Order create/read foundation with idempotent creation, merchant-scoped access, platform read access, PostgreSQL/Flyway persistence, Keycloak role/claim model, minimal frontend consumer and REST Assured tests.
 
 Learning delta:
 
-- no repetition of `given/when/then`, path params, basic headers, request body basics,
-- new capability discovery,
-- roles/permissions/ownership,
-- idempotency,
-- `Location`, `X-Correlation-ID`, `ETag`, `If-Match`, `412`, `409`, stable error contracts,
-- SQL constraints and status/audit history,
-- REST Assured framework architecture,
-- AssertJ stronger assertions,
-- Nuxt/Playwright role-aware journeys.
+- no repetition of `given/when/then`, path params, basic headers and request body basics,
+- first payment-specific REST resource,
+- `Idempotency-Key` and request fingerprint,
+- `Location`, `ETag`, `X-Correlation-ID`, `201`, replay `200`, `403`, masked `404`, `409`,
+- role authorization plus `merchant_id` ownership,
+- SQL constraints for amount, currency, status and idempotency uniqueness,
+- Flyway migration as executable DB contract,
+- REST Assured contract tests for headers/body/status/error code,
+- security matrix tests for create/read access,
+- frontend as API consumer preserving stable idempotency key.
 
 Skills expected:
 
-- `qa-architecture-sprint-team` once runtime picks it up,
-- `payment-quality-lab-orchestrator`,
-- `business-analysis-and-product-discovery-for-payment-lab`,
-- `spec-kit-feature-workflow`,
-- `spring-boot4-spring7-backend-architect`,
-- `spring-modulith-2-0-6-modular-monolith-testing`,
-- `postgres18-data-architecture-and-risk`,
-- `rest-api-security-oauth-testing`,
+- `qa-architecture-sprint-team`,
+- `obsidian-learning-os`,
 - `java-rest-api-testing-effective-java-mentor`,
 - `junit6-assertj-restassured-testcraft`,
-- `test-analysis-design-and-data`,
-- `rapid-software-testing-risk-thinking`,
-- `nuxt-dashboard-zod-pinia-frontend-engineering`,
-- `typescript6-playwright-engineering`,
-- `parallel-test-architecture-and-data-isolation`,
-- `bpmn-uml-dmn-for-testers`.
+- `postgres18-data-architecture-and-risk`,
+- `spring-modulith-2-0-6-modular-monolith-testing`.
 
-Skills actually used: pending.
+Skills actually used:
 
-Production code evidence: pending.
+- `qa-architecture-sprint-team`,
+- `obsidian-learning-os`,
+- `java-rest-api-testing-effective-java-mentor`,
+- `junit6-assertj-restassured-testcraft`,
+- `postgres18-data-architecture-and-risk`,
+- `spring-modulith-2-0-6-modular-monolith-testing`.
 
-Test code evidence: pending.
+Production code evidence:
 
-Vault notes: pending.
+- `apps/backend/src/main/java/lab/paymentquality/payment/`
+- `apps/backend/src/main/java/lab/paymentquality/merchant/MerchantPaymentEligibility.java`
+- `apps/backend/src/main/java/lab/paymentquality/merchant/MerchantPaymentEligibilityService.java`
+- `apps/backend/src/main/java/lab/paymentquality/merchant/internal/application/MerchantPaymentEligibilityAdapter.java`
+- `apps/backend/src/main/resources/db/migration/payment/V2__create_payment_orders.sql`
+- `apps/backend/src/main/java/lab/paymentquality/shared/security/SecurityConfig.java`
+- `apps/backend/src/main/java/lab/paymentquality/shared/security/KeycloakRealmRoleConverter.java`
+- `apps/frontend/app/components/payment/`
+- `apps/frontend/server/api/merchants/[merchantId]/payment-orders/`
+- `infra/keycloak/realms/payment-quality-realm.json`
 
-Spec Kit artifacts: pending.
+Test code evidence:
 
-Commands run: pending.
+- `apps/backend/src/test/java/lab/paymentquality/rest/PaymentOrderRestAssuredTest.java`
+- `apps/backend/src/test/java/lab/paymentquality/security/PaymentOrderSecurityTest.java`
+- `apps/backend/src/test/java/lab/paymentquality/payment/internal/application/PaymentOrderServiceTest.java`
+- `apps/backend/src/test/java/lab/paymentquality/payment/internal/application/PaymentOrderIdempotencyConcurrencyTest.java`
+- `apps/backend/src/test/java/lab/paymentquality/payment/internal/infrastructure/JpaPaymentOrderRepositoryTest.java`
+- `apps/backend/src/test/java/lab/paymentquality/payment/PaymentModuleTest.java`
+- `apps/backend/src/test/java/lab/paymentquality/testsupport/PaymentApiTestSupport.java`
 
-Competency matrix updates: pending after scope selection.
+Vault notes:
+
+- `../02 Phase 2 - Payment Orders/Phase 2 - Payment Orders.md`
+- `../02 Phase 2 - Payment Orders/Lesson 06 - Payment Order Create Read Foundation.md`
+
+Spec Kit artifacts:
+
+- `specs/003-payment-order-access-lifecycle/spec.md`
+- `specs/003-payment-order-access-lifecycle/plan.md`
+- `specs/003-payment-order-access-lifecycle/data-model.md`
+- `specs/003-payment-order-access-lifecycle/contracts/payment-order-api.md`
+- `specs/003-payment-order-access-lifecycle/quickstart.md`
+- `specs/003-payment-order-access-lifecycle/tasks.md`
+
+Commands run:
+
+- `./mvnw test -q` in `apps/backend` - passed.
+- `corepack pnpm typecheck` in `apps/frontend` - passed.
+
+Competency matrix updates: updated after Payment Order create/read scope materialized.
 
 Open risks:
 
-- active Phase 1 guardrails may block payment implementation until a new Spec Kit feature is created,
-- `qa-architecture-sprint-team` was created in `.kilo/skills` and may require session reload to appear in runtime skill list,
-- current roadmap and prompt index still need future cleanup after Lesson 6 direction is finalized.
+- current lesson note is ready, but REST Assured foundation pack can still be extended with a cross-link instead of duplicating content,
+- future lifecycle topics remain deferred: authorize/capture/cancel, `If-Match`, `412`, PSP integration, Kafka, webhooks and settlement,
+- frontend E2E is optional verification and was not run during this lesson note capture.
 
 Interview answer EN:
 
-> From Lesson 6 onward I move from syntax lessons to product-driven API testing. I use business analysis, architecture, security and QA strategy to select a realistic payment or merchant-access flow, then I design the API, database constraints, authorization matrix and automated tests around the risks introduced by that flow.
+> In Lesson 6 I moved from syntax-driven REST Assured practice to product-risk-driven API testing. I can explain and test an idempotent Payment Order create/read API, including retry behavior, tenant isolation, role and claim checks, database constraints, Flyway migrations, HTTP headers and REST Assured contract assertions.
 
-Next lesson/sprint handoff: after Lesson 6 scope decision, update this tracker and the competency matrix before implementation.
+Next lesson/sprint handoff: deepen REST Assured reusable response/error specifications or continue with payment lifecycle only after a new Spec Kit scope explicitly allows transitions and optimistic concurrency.

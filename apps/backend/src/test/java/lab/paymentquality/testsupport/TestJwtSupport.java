@@ -99,6 +99,51 @@ public final class TestJwtSupport {
         }
     }
 
+    public static String merchantPaymentCreatorToken(String merchantId) {
+        return tokenWithRolesAndMerchantId("merchant.payment.creator",
+                List.of("merchant:payments:create"), merchantId);
+    }
+
+    public static String merchantPaymentReaderToken(String merchantId) {
+        return tokenWithRolesAndMerchantId("merchant.payment.reader",
+                List.of("merchant:payments:read"), merchantId);
+    }
+
+    public static String merchantPaymentOperatorToken(String merchantId) {
+        return tokenWithRolesAndMerchantId("merchant.payment.operator",
+                List.of("merchant:payments:operate"), merchantId);
+    }
+
+    public static String platformPaymentReaderToken() {
+        return tokenWithRoles("platform.payment.reader", List.of("platform:payments:read"));
+    }
+
+    public static String merchantScopedDeniedToken(String merchantId) {
+        return tokenWithRolesAndMerchantId("merchant.denied", List.of(), merchantId);
+    }
+
+    private static String tokenWithRolesAndMerchantId(String subject, List<String> roles, String merchantId) {
+        try {
+            Instant now = Instant.now();
+            JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                    .issuer(ISSUER)
+                    .subject(subject)
+                    .issueTime(Date.from(now))
+                    .expirationTime(Date.from(now.plusSeconds(3600)))
+                    .claim("realm_access", Map.of("roles", roles))
+                    .claim("merchant_id", merchantId)
+                    .build();
+
+            SignedJWT jwt = new SignedJWT(
+                    new JWSHeader.Builder(JWSAlgorithm.RS256).keyID("test-key-1").build(),
+                    claims);
+            jwt.sign(new RSASSASigner((RSAPrivateKey) KEY_PAIR.getPrivate()));
+            return jwt.serialize();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create merchant-scoped test JWT", e);
+        }
+    }
+
     public static RSAPublicKey publicKey() {
         return (RSAPublicKey) KEY_PAIR.getPublic();
     }

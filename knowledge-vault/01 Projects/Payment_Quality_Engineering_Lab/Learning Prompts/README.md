@@ -31,7 +31,7 @@ Strategia PayU-like learning clone jest juz zapisana i ograniczona do trzech sci
 - Security, ownership and tenant isolation matrix.
 - Reliability, data integrity, audit trail, webhooks and event evolution.
 
-Najblizsze prompty REST Assured pozostaja w trybie lekcji dydaktycznych opartych na istniejacym kodzie. Nie zaczynamy jeszcze implementacji Payment Order.
+Payment Order create/read foundation jest teraz aktywnym Lesson 6/Phase 2 slice. Szczegółowa notatka lekcji znajduje się w `../02 Phase 2 - Payment Orders/Lesson 06 - Payment Order Create Read Foundation.md`.
 
 ## Zasada
 

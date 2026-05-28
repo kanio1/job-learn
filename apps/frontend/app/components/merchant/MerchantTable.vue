@@ -103,6 +103,17 @@ const columns: TableColumn<Merchant>[] = [
         buttons.push(
           h(UButton, {
             size: 'xs',
+            color: 'primary',
+            variant: 'ghost',
+            icon: 'i-lucide-credit-card',
+            label: 'New Payment',
+            'aria-label': `Create payment for ${row.original.merchantReference}`,
+            to: `/admin/merchants/${row.original.merchantId}/payments/new`
+          })
+        )
+        buttons.push(
+          h(UButton, {
+            size: 'xs',
             color: 'error',
             variant: 'ghost',
             icon: 'i-lucide-pause',
