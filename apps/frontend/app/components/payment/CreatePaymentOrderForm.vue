@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { createPaymentOrderSchema } from '~/schemas/payment-order.schema'
+import { createPaymentOrderSchema, paymentOrderResponseSchema } from '~/schemas/payment-order.schema'
 
 const props = defineProps<{
   merchantId: string
@@ -72,7 +72,7 @@ async function onSubmit() {
   store.loading = true
 
   try {
-    const result: any = await $fetch(`/api/merchants/${props.merchantId}/payment-orders`, {
+    const result = paymentOrderResponseSchema.parse(await $fetch(`/api/merchants/${props.merchantId}/payment-orders`, {
       method: 'POST',
       headers: {
         'Idempotency-Key': idempotencyKey.value,
@@ -82,8 +82,8 @@ async function onSubmit() {
         currency: formState.currency,
         clientOrderReference: formState.clientOrderReference,
       }
-    })
-    store.lastCreatedOrder = result
+    }))
+    store.setLastCreatedOrder(result)
     successMessage.value = `Payment order ${result.paymentOrderId} created successfully`
     idempotencyKey.value = generateIdempotencyKey()
     emit('created', result.paymentOrderId)

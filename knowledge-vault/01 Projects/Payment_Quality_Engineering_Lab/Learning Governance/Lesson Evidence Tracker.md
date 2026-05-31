@@ -3,7 +3,7 @@ type: tracker
 status: active
 project: Payment Quality Engineering Lab
 area: Learning Governance
-date: 2026-05-30
+date: 2026-05-31
 tags:
   - lesson-evidence
   - learning-delta
@@ -17,7 +17,7 @@ Cel: każda lekcja lub sprint ma mieć dowód, że temat został przerobiony w k
 
 > **Navigation:** [[START HERE - Learning Dashboard]] | [[Learning Progress Board]] | [[Home]]
 >
-> **Current Lesson:** Lesson 08 (IN PROGRESS - backend system slice done, verification blocked)
+> **Current Lesson:** Lesson 09 (READY - frontend consumer and contract alignment implemented)
 
 ## What NOT To Touch Yet
 
@@ -101,7 +101,7 @@ Lesson 08: Payment Aggregation (GROUP BY, COUNT per status, EXPLAIN)
 ## Lesson 08 — Payment Aggregation Summary
 
 **Data:** 2026-05-30
-**Status:** In progress — summary backend implemented; final package/modulith checks blocked by existing `testCompile` errors
+**Status:** Ready - summary backend and summary REST/security/business-flow tests pass
 
 ### Prompt
 - `../Learning Prompts/Prompt - Lesson 08 - Payment Aggregation Summary.md`
@@ -126,24 +126,21 @@ Read-only merchant-scoped payment order summary over existing `payment_orders`: 
 - `apps/backend/src/main/java/lab/paymentquality/shared/security/SecurityConfig.java`
 
 ### Test code evidence
-- Not part of this system-only slice by explicit scope decision.
-- Planned for later tester/automation slice: summary REST contract and summary security matrix tests.
+- `apps/backend/src/test/java/lab/paymentquality/rest/PaymentOrderSummaryRestAssuredTest.java` - 10 contract tests for empty summary, seeded totals, filters, validation and correlation header.
+- `apps/backend/src/test/java/lab/paymentquality/rest/PaymentOrderSummaryBusinessFlowRestAssuredTest.java` - 3 business-flow tests for deterministic aggregate oracle, cross-tenant denial and platform reader access.
+- `apps/backend/src/test/java/lab/paymentquality/security/PaymentOrderSummarySecurityTest.java` - 7 security tests for unauthenticated, denied, create-only, operate-only, own merchant, cross-tenant and platform reader access.
+- `apps/backend/src/test/java/lab/paymentquality/testsupport/PaymentOrderSummaryApiTestSupport.java` - deterministic seed data, expected aggregate calculation and reusable request support.
 
 ### Vault notes
 - `02 Phase 2 - Payment Orders/Lesson 08 - Payment Aggregation Summary.md`
 
 ### Commands run
-- `./mvnw clean compile` - passed.
-- `./mvnw -DskipTests package` - failed at `testCompile`.
-- `./mvnw -Dtest=PaymentModuleTest test` - failed at `testCompile` before tests execute.
+- `./mvnw -Dtest=PaymentOrderSummaryRestAssuredTest,PaymentOrderSummaryBusinessFlowRestAssuredTest,PaymentOrderSummarySecurityTest test` - passed, 20 tests.
+- `./mvnw -DskipTests package` - passed.
+- `./mvnw -Dtest=PaymentModuleTest test` - passed, 2 tests.
 
 ### Verification blocker
-- Existing test source compile errors in `apps/backend/src/test/java/lab/paymentquality/rest/MyPaymentOrderBusinessFlowRestAssuredTest.java`:
-  - `[154,64] ';' expected`
-  - `[241,60] ';' expected`
-  - `[285,56] ';' expected`
-  - `[341,53] ';' expected`
-  - `[416,5] illegal start of expression`
+- Resolved before Lesson 09 planning. Prior `testCompile` blocker in `MyPaymentOrderBusinessFlowRestAssuredTest.java` no longer blocks package/module verification.
 
 ### Guardrails
 - Do not add authorize/capture/cancel lifecycle actions.
@@ -172,7 +169,78 @@ Created 5 focused descriptive lessons in the Technical Learning vault, each cove
 Each lesson follows the Learning OS 11-section template (goal → code map → concepts → walkthrough → delta vs L07 → mistakes → exercises → questions → testing → next links), with direct references to real production and test files from Lesson 08.
 
 ### Next lesson/sprint handoff
-After Lesson 08, continue with DB oracle/EXPLAIN practice or an auth ownership deep dive before any payment lifecycle work.
+Lesson 09 should close the frontend consumer gap for existing payment list/summary APIs before any payment lifecycle work.
+
+## Lesson 09 - Payment Orders Frontend Consumer and Contract Alignment
+
+**Data:** 2026-05-31
+**Status:** Ready - frontend consumer slice implemented and verified
+
+### Prompt
+- `../Learning Prompts/Prompt - Lesson 09 - Payment Orders Frontend Consumer and Contract Alignment.md`
+
+### Business capability
+Typed Nuxt Dashboard consumer for existing merchant-scoped payment order list and summary endpoints: summary cards, list table, empty/loading/forbidden states, and frontend tests.
+
+### Learning delta
+- Nuxt server proxy for existing GET endpoints with query params and access token forwarding.
+- Zod response schemas for backend contract consumption.
+- Typed Pinia store instead of `any` for payment responses.
+- Playwright UI state tests for happy, empty and forbidden states.
+- Consumer-driven contract thinking without adding Pact/WireMock yet.
+- Clear split between REST Assured backend contract assertions and Playwright UI assertions.
+
+### Skills expected
+- `payment-quality-lab-orchestrator`
+- `business-analysis-and-product-discovery-for-payment-lab`
+- `qa-architecture-sprint-team`
+- `nuxt-dashboard-zod-pinia-frontend-engineering`
+- `typescript6-playwright-engineering`
+- `rest-api-security-oauth-testing`
+- `junit6-assertj-restassured-testcraft`
+- `parallel-test-architecture-and-data-isolation`
+- `test-analysis-design-and-data`
+
+### Production code evidence
+- `apps/frontend/app/schemas/payment-order.schema.ts` - Zod schemas and inferred types for create/read/list/summary/backend error responses.
+- `apps/frontend/server/api/merchants/[merchantId]/payment-orders/index.get.ts` - Nuxt server proxy for backend list endpoint with query params and access token forwarding.
+- `apps/frontend/server/api/merchants/[merchantId]/payment-orders/summary.get.ts` - Nuxt server proxy for backend summary endpoint.
+- `apps/frontend/app/stores/payment-orders.ts` - typed Pinia state/actions for list, summary, current order, last created order, loading/error/forbidden state.
+- `apps/frontend/app/components/payment/PaymentOrderSummaryCards.vue` - summary cards for existing backend totals and breakdowns.
+- `apps/frontend/app/components/payment/PaymentOrderListTable.vue` - payment order list table and empty state.
+- `apps/frontend/app/pages/admin/merchants/[merchantId]/payments/index.vue` - merchant-scoped payments panel with loading, empty, forbidden and backend-unavailable states.
+- `apps/frontend/app/pages/admin/merchants/index.vue` - merchant registry page moved to index route so nested payment panel routes resolve correctly.
+- `apps/frontend/app/components/payment/CreatePaymentOrderForm.vue` - create response now parsed with `paymentOrderResponseSchema` before updating typed store state.
+
+### Test code evidence
+- `apps/frontend/tests/e2e/payment-orders-panel.spec.ts` - 4 Playwright tests for summary/list rendering, empty merchant state, forbidden no-data state and backend-unavailable state.
+
+### Vault notes
+- `02 Phase 2 - Payment Orders/Lesson 09 - Payment Orders Frontend Consumer and Contract Alignment.md`
+
+### Spec Kit artifacts
+- `specs/006-payment-orders-frontend-consumer/spec.md` - light lesson-extension specification for frontend consumer scope.
+- `specs/006-payment-orders-frontend-consumer/plan.md` - implementation plan and guardrails.
+- `specs/006-payment-orders-frontend-consumer/tasks.md` - completed task checklist for the frontend consumer slice.
+
+### Commands run
+- `cd apps/backend && ./mvnw -Dtest=PaymentOrderSummaryRestAssuredTest,PaymentOrderSummaryBusinessFlowRestAssuredTest,PaymentOrderSummarySecurityTest test` - passed, 20 tests.
+- `cd apps/backend && ./mvnw -DskipTests package` - passed.
+- `cd apps/backend && ./mvnw -Dtest=PaymentModuleTest test` - passed, 2 tests.
+- `cd apps/backend && ./mvnw -Dtest=PaymentOrderListRestAssuredTest,PaymentOrderSummaryRestAssuredTest,PaymentOrderSummaryBusinessFlowRestAssuredTest,PaymentOrderSummarySecurityTest test` - command completed without failure report; output was truncated by tool capture.
+- `cd apps/frontend && corepack pnpm typecheck` - passed.
+- `cd apps/frontend && corepack pnpm test:e2e -- payment-orders-panel.spec.ts` - passed, 4 tests.
+
+### Open risks
+- Playwright tests route-mock Nuxt API responses; they verify UI states, not live backend integration.
+- The combined backend list/summary regression command output was truncated by tool capture, although no failure report was returned.
+- Keycloak setup docs may still be stale for payment roles/users; no new roles/users were added for Lesson 09.
+
+### Interview answer EN
+> Lesson 9 turns existing payment order list and summary REST contracts into a typed Nuxt Dashboard consumer. It deliberately avoids new lifecycle behavior and focuses on frontend contract alignment: Zod schemas, typed Pinia state, role-aware UI states, Playwright tests, and REST Assured regression as backend truth.
+
+### Next lesson/sprint handoff
+After Lesson 09, choose between BOLA/BFLA deep dive, DB oracle/EXPLAIN practice, or formal Spec Kit for payment lifecycle only if the guardrails are updated.
 
 ## Template Dla Nowej Lekcji/Sprintu
 

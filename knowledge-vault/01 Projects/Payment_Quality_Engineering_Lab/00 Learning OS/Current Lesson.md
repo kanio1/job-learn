@@ -1,7 +1,7 @@
 ---
 type: learning-os
 status: active
-date: 2026-05-30
+date: 2026-05-31
 tags:
   - learning-os
   - current-lesson
@@ -9,22 +9,19 @@ tags:
 
 # Current Lesson
 
-> **Active Lesson:** 08 — Payment Aggregation Summary
+> **Active Lesson:** 09 - Payment Orders Frontend Consumer and Contract Alignment
 >
-> **Status:** PLANNED — scope and prompt ready, implementation not started
+> **Status:** READY - frontend consumer slice implemented and verified
 >
-> **Next:** Implement read-only summary endpoint and aggregation tests
+> **Next:** Review Lesson 09 evidence, then choose a focused follow-up only after the frontend consumer gap is accepted
 
 ## NOW: What To Learn
 
 | Priority | Item | Type | Time |
 |---|---|---|---|
-| 1 | [[Lesson 08 - Payment Aggregation Summary]] — understand scope, API, SQL and test strategy | Study | 1 session |
-| 2 | [[Prompt - Lesson 08 - Payment Aggregation Summary]] — use as implementation prompt | Execution | 1 sprint |
-| 3 | SQL aggregation: `GROUP BY`, `COUNT`, `SUM`, `EXPLAIN` on `payment_orders` | Practice | 1 session |
-| 4 | Aggregation test oracle with controlled seed data | Practice | 1 session |
-| 5 | Security matrix for summary endpoint | Practice | 30 min |
-| 6 | Optional minimal Nuxt summary panel after backend is green | Extension | 1 session |
+| 1 | [[Lesson 09 - Payment Orders Frontend Consumer and Contract Alignment]] - review implementation evidence and explain the contract split | Review | 1 session |
+| 2 | Compare REST Assured backend assertions with Playwright UI assertions | Review | 30 min |
+| 3 | Decide the next follow-up: BOLA/BFLA deep dive, DB oracle practice, or contract docs | Planning | 30 min |
 
 ## COVERED: Lessons 1-5 (Foundations)
 
@@ -65,6 +62,30 @@ tags:
 | `WHERE`, `ORDER BY`, `LIMIT/OFFSET`, pagination count | `PaymentOrderSpecification`, `PaymentOrderListService` | Strong |
 | Cross-tenant list returns `403` | Lesson 07 decision, tests pending as extension | Moderate |
 
+## COVERED: From Lesson 08
+
+| Topic | Evidence | Confidence |
+|---|---|---|
+| Payment order summary endpoint | `PaymentOrderSummaryService`, `PaymentOrderController` | Strong |
+| SQL aggregation: `GROUP BY`, `COUNT`, `SUM` | `JpaPaymentOrderRepository`, summary tests | Strong |
+| Summary contract tests | `PaymentOrderSummaryRestAssuredTest` | Strong |
+| Summary business-flow oracle | `PaymentOrderSummaryBusinessFlowRestAssuredTest` | Strong |
+| Summary security matrix | `PaymentOrderSummarySecurityTest` | Strong |
+| Modulith boundary after summary | `PaymentModuleTest` | Strong |
+| Package verification after testCompile fix | `./mvnw -DskipTests package` | Strong |
+
+## COVERED: From Lesson 09
+
+| Topic | Evidence | Confidence |
+|---|---|---|
+| Nuxt server proxy for payment list/summary | `apps/frontend/server/api/merchants/[merchantId]/payment-orders/*.get.ts` | Strong |
+| Zod response schemas for backend consumer contracts | `apps/frontend/app/schemas/payment-order.schema.ts` | Strong |
+| Typed Pinia payment order state | `apps/frontend/app/stores/payment-orders.ts` | Strong |
+| Merchant-scoped payments panel | `apps/frontend/app/pages/admin/merchants/[merchantId]/payments/index.vue` | Strong |
+| Summary/list UI without fake lifecycle actions | `PaymentOrderSummaryCards.vue`, `PaymentOrderListTable.vue` | Strong |
+| Playwright happy/empty/forbidden/backend-unavailable UI states | `apps/frontend/tests/e2e/payment-orders-panel.spec.ts` | Strong |
+| Backend list/summary regression guardrails for frontend consumer | REST Assured summary/list/security/business-flow commands | Strong |
+
 ## INTRODUCED: Seen But Not Yet Mastered
 
 | Topic | Where | What You Still Need |
@@ -77,25 +98,25 @@ tags:
 | REST Assured `RequestSpecification` reuse | `MerchantApiTestSupport` | Create your own spec builders |
 | Business-readable test names (`@DisplayName`) | Concept introduced | Add `@DisplayName` to 3 tests |
 | Negative-path first methodology | Concept introduced | Write negative test before happy path |
-| Aggregation oracle design | Lesson 08 plan | Build controlled seed data and expected totals |
-| `GROUP BY` / `SUM` / `EXPLAIN` | Lesson 08 plan | Implement summary endpoint and SQL exercises |
+| Frontend consumer contract | Lesson 09 implementation | Practice explaining the backend contract vs UI consumer split without reading notes |
+| Playwright UI state coverage | `payment-orders-panel.spec.ts` | Add future tests only when new UI behavior exists |
+| Consumer-driven contract thinking | Lesson 09 evidence | Practice choosing REST Assured vs Playwright assertions for new cases |
 
 ## NEEDS PRACTICE: Exercises
 
 | # | Exercise | Time |
 |---|---|---|
-| 1 | Read Lesson 08 and explain why it is not a lifecycle sprint | 15 min |
-| 2 | Write expected totals for the controlled aggregation dataset | 20 min |
-| 3 | Draft REST Assured assertions for `byCurrency` and `byStatus` | 30 min |
-| 4 | Fill summary security matrix before coding | 20 min |
-| 5 | Run Lesson 07 list tests as baseline before summary implementation | 20 min |
-| 6 | Run one `EXPLAIN` for a merchant-scoped aggregation query | 30 min |
+| 1 | Explain why Lesson 09 did not add authorize/capture/cancel | 15 min |
+| 2 | Explain how Zod protects a Nuxt consumer from backend response drift | 20 min |
+| 3 | Walk through the forbidden UI test and identify what it does not prove | 20 min |
+| 4 | Compare summary REST Assured assertions with payment panel Playwright assertions | 30 min |
+| 5 | Review route collision fix: why `merchants/index.vue` was needed for nested routes | 20 min |
 
 ## DEFERRED: Do NOT Study Now
 
 | Topic | When |
 |---|---|
-| Payment lifecycle (authorize/capture/cancel) | Spec Kit 004+ |
+| Payment lifecycle (authorize/capture/cancel) | Future Spec Kit after frontend consumer gap is closed |
 | PSP integration | Spec Kit 005+ |
 | Kafka, webhooks, event pipeline | Sprint 10+ |
 | GraphQL, gRPC | Sprint 13+ |
@@ -109,17 +130,16 @@ tags:
 
 ## Evidence Checklist
 
-- [x] Lesson 08 note exists: [[Lesson 08 - Payment Aggregation Summary]]
-- [x] Lesson 08 prompt exists: [[Prompt - Lesson 08 - Payment Aggregation Summary]]
-- [x] Lesson 06 and Lesson 07 evidence captured
-- [x] Lesson 08 scope guardrails captured
-- [ ] Production code evidence captured for Lesson 08
-- [ ] Test code evidence captured for Lesson 08
-- [ ] Verification commands pass for Lesson 08
-- [ ] Competency matrix updated after implementation evidence exists
-- [ ] Interview answer finalized after implementation evidence exists
-- [ ] Lesson 08 implementation completed
-- [ ] Lesson 08 evidence captured
+- [x] Lesson 08 production evidence captured
+- [x] Lesson 08 REST/security/business-flow tests exist and pass
+- [x] Lesson 08 package and Modulith verification pass
+- [x] Lesson 09 note exists: [[Lesson 09 - Payment Orders Frontend Consumer and Contract Alignment]]
+- [x] Lesson 09 prompt exists: [[Prompt - Lesson 09 - Payment Orders Frontend Consumer and Contract Alignment]]
+- [x] Lesson 09 frontend implementation completed
+- [x] Lesson 09 Playwright tests completed
+- [x] Lesson 09 frontend typecheck passes
+- [x] Lesson 09 backend regression guardrails captured
+- [x] Lesson 09 evidence captured after implementation
 
 ## Navigation
 

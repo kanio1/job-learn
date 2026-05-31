@@ -1,7 +1,7 @@
 ---
 type: learning-os
 status: active
-date: 2026-05-30
+date: 2026-05-31
 tags:
   - learning-os
   - current-sprint
@@ -9,24 +9,26 @@ tags:
 
 # Current Sprint
 
-> **Active Sprint:** Sprint 8 — Payment Aggregation Summary
+> **Active Sprint:** Sprint 9 - Payment Orders Frontend Consumer and Contract Alignment
 >
 > **Phase:** 2 — Payment Orders
 >
-> **Spec:** `specs/005-payment-order-summary/`
+> **Spec:** Light lesson-extension artifact in `specs/006-payment-orders-frontend-consumer/`, consuming existing backend specs `004` and `005`
 >
-> **Status:** In progress — backend system slice complete, verification blocked by existing testCompile errors
+> **Status:** Ready - Lesson 09 frontend consumer gap implemented and verified
 
 ## Sprint Scope
 
-Read-only aggregation slice after payment order create/read and list/filter/search.
+Typed Nuxt Dashboard consumer slice for existing payment order list and summary APIs.
 
 **In scope:**
-- Read-only `GET /api/merchants/{merchantId}/payment-orders/summary`
-- `GROUP BY currency/status`, `COUNT`, `SUM(amount_minor)`
-- `X-Correlation-ID` header on summary response
-- Role + `merchant_id` ownership isolation for summary
-- Compile/package/modulith verification commands for system implementation evidence
+- Nuxt server proxy for `GET /api/merchants/{merchantId}/payment-orders`
+- Nuxt server proxy for `GET /api/merchants/{merchantId}/payment-orders/summary`
+- Zod schemas and TypeScript types for payment list and summary responses
+- Typed Pinia state/actions for list, summary, current order and errors
+- Minimal payments panel with summary cards, list table, empty/loading/forbidden states
+- Playwright tests for happy, empty, `403` and backend-unavailable UI states
+- Backend REST Assured regression commands for list/summary/security contracts
 
 **NOT in scope (deferred):**
 - Authorize, capture, cancel lifecycle actions
@@ -36,43 +38,54 @@ Read-only aggregation slice after payment order create/read and list/filter/sear
 - GraphQL, gRPC
 - Full business dashboard or fake analytics KPIs
 
-## Remaining Tasks
+## Completed Tasks
 
-Lesson 08 execution checklist:
+Lesson 09 execution checklist:
 
 | Task | Status |
 |---|---|
-| L08-001 — Implement summary response DTOs | `[AGENT-IMPLEMENT]` done |
-| L08-002 — Implement repository/service aggregation queries | `[AGENT-IMPLEMENT]` done |
-| L08-003 — Add controller endpoint and security matcher | `[AGENT-IMPLEMENT]` done |
-| L08-004 — Add REST Assured summary contract tests | `[TESTER-AUTOMATE]` deferred (out of scope for system slice) |
-| L08-005 — Add summary security matrix tests | `[TESTER-AUTOMATE]` deferred (out of scope for system slice) |
-| L08-006 — Verify Modulith boundary and payment test suite | `[AGENT-REVIEW]` blocked (`testCompile` fails before `PaymentModuleTest`) |
-| L08-007 — Optional Nuxt summary panel and typecheck | `[AGENT-IMPLEMENT]` deferred |
-| L08-008 — Update evidence tracker and backlog after tests pass | `[AGENT-EXPLAIN]` done (with blocker noted) |
-| L08-009 — Create descriptive lessons (Java/REST/SQL/HTTP/Business Logic) | `[AGENT-EXPLAIN]` done — 5 files across 4 Technical Learning areas + Phase 2 |
-| L08-010 — Update README/MOC indexes with new lesson links | `[AGENT-EXPLAIN]` done — Java25, REST Assured, PostgreSQL, REST API From Zero READMEs updated |
+| L09-001 - Add Zod response schemas/types for payment list and summary | `[AGENT-IMPLEMENT]` done |
+| L09-002 - Add Nuxt server proxy for payment list | `[AGENT-IMPLEMENT]` done |
+| L09-003 - Add Nuxt server proxy for payment summary | `[AGENT-IMPLEMENT]` done |
+| L09-004 - Replace `any` in payment order store with typed state/actions | `[AGENT-IMPLEMENT]` done |
+| L09-005 - Add summary cards and list table components | `[AGENT-IMPLEMENT]` done |
+| L09-006 - Add merchant-scoped payments panel page | `[AGENT-IMPLEMENT]` done |
+| L09-007 - Add Playwright happy/empty/forbidden/backend-unavailable UI tests | `[TESTER-AUTOMATE]` done |
+| L09-008 - Run frontend typecheck and targeted E2E tests | `[AGENT-REVIEW]` done |
+| L09-009 - Run backend REST Assured regression and Modulith commands | `[AGENT-REVIEW]` done |
+| L09-010 - Update vault evidence after implementation | `[AGENT-EXPLAIN]` done |
+
+## Evidence Snapshot
+
+| Evidence | Result |
+|---|---|
+| Frontend typecheck | `cd apps/frontend && corepack pnpm typecheck` passed. |
+| Payment panel Playwright tests | `cd apps/frontend && corepack pnpm test:e2e -- payment-orders-panel.spec.ts` passed, 4 tests. |
+| Backend package | `cd apps/backend && ./mvnw -DskipTests package` passed. |
+| Modulith architecture | `cd apps/backend && ./mvnw -Dtest=PaymentModuleTest test` passed, 2 tests. |
+| Summary REST/security/business-flow tests | `cd apps/backend && ./mvnw -Dtest=PaymentOrderSummaryRestAssuredTest,PaymentOrderSummaryBusinessFlowRestAssuredTest,PaymentOrderSummarySecurityTest test` passed, 20 tests. |
+| Combined list/summary backend guardrail | Command completed without failure report; captured output was truncated. |
 
 ## Next Sprint Options
 
 | Option | Description | Requires Spec Kit? |
 |---|---|---|
-| Sprint 8a | Backend summary endpoint + REST/security tests | No — lesson extension |
-| Sprint 8b | DB oracle and EXPLAIN deep dive | No — practice extension |
-| Sprint 8c | Minimal Nuxt summary/list panel | No — optional UI extension |
-| Sprint 9 | Auth ownership/BOLA/BFLA deep dive | Maybe — depends on scope |
+| Sprint 9a | Post-implementation review of the Lesson 09 frontend consumer and learning evidence | No |
+| Sprint 9b | Auth ownership/BOLA/BFLA deep dive across backend + UI denied states | Maybe - depends on scope |
+| Sprint 9c | DB oracle and EXPLAIN deep dive with repository/query diagnostics | No - practice extension |
+| Sprint 10 | Contract documentation/OpenAPI or service virtualization | Maybe - after UI consumer is stable |
 
 ## Verification Commands
 
 ```bash
-# System compile check
-cd apps/backend && ./mvnw clean compile
-
-# Package check without test execution
+cd apps/backend
 ./mvnw -DskipTests package
-
-# Architecture
 ./mvnw -Dtest=PaymentModuleTest test
+./mvnw -Dtest=PaymentOrderListRestAssuredTest,PaymentOrderSummaryRestAssuredTest,PaymentOrderSummaryBusinessFlowRestAssuredTest,PaymentOrderSummarySecurityTest test
+
+cd ../frontend
+corepack pnpm typecheck
+corepack pnpm test:e2e -- payment-orders-panel.spec.ts
 ```
 
 ## Navigation
