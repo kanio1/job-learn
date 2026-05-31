@@ -28,6 +28,10 @@ Zrozumiec request/response flow w realnym kodzie Payment Quality Engineering Lab
 
 - `Merchant Request and Response Flow.md`
 
+## Lesson 08
+
+- [[Lesson 08 - Summary Endpoint Contract, Status Codes, and Error Taxonomy]] — pełny kontrakt HTTP endpointu summary, status codes, security matcher ordering, error taxonomy
+
 ## Podsumowania sesji
 
 - `REST REST Assured Java - Session Summary - Merchant API Tests.md`

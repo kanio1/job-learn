@@ -1,7 +1,6 @@
 package lab.paymentquality.merchant.internal.web;
 
 import lab.paymentquality.merchant.internal.application.MerchantService;
-import lab.paymentquality.merchant.internal.domain.MerchantNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

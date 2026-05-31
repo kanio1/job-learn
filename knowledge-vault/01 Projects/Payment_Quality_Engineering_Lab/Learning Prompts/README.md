@@ -11,9 +11,27 @@ tags:
 
 # Learning Prompts - MOC
 
-Ten katalog przechowuje gotowe prompty do uruchamiania kolejnych lekcji i learning sprintów. Prompty są częścią procesu nauki, nie luźnymi notatkami.
+Ten katalog przechowuje gotowe prompty do uruchamiania kolejnych lekcji i learning sprintów.
 
-## Kolejność
+> **Navigation:** [[START HERE - Learning Dashboard]] | [[Prompt Templates - Learning OS]]
+
+## Learning OS Prompts (Lesson 6 Onward)
+
+Use these for daily learning flow:
+
+| Prompt | Use When |
+|---|---|
+| [[Prompt Templates - Learning OS]] | Template reference — understand the structure |
+| [[Prompt - Concept Lesson]] | Learning a small foundation topic (no Spec Kit) |
+| [[Prompt - Code Reading Lesson]] | Understanding existing code (no refactoring) |
+| [[Prompt - Payment Order Case Study]] | Deep-diving Payment Order behavior |
+| [[Prompt - Generate Next Lesson]] | Starting a new lesson or sprint |
+| [[Prompt - Mark Lesson Progress]] | After completing exercises or study |
+| [[Prompt - Verify My Understanding]] | Checking if you can explain concepts |
+| [[Prompt - Learning Sprint Discovery]] | Planning the next business capability |
+| [[Prompt - Post Sprint Evidence Update]] | After completing a sprint |
+
+## Legacy Lesson Prompts (Lessons 1-6)
 
 1. `Prompt - Strategy - Three Advanced Learning Paths.md` - completed strategy/discovery prompt; output is `../Strategy/Three Advanced Learning Paths for API Testing and Payment Lab.md`
 2. `Prompt - Lesson 01 - REST API Request Response Flow.md` - completed/read
@@ -21,7 +39,6 @@ Ten katalog przechowuje gotowe prompty do uruchamiania kolejnych lekcji i learni
 4. `Prompt - Lesson 04 - REST Assured Path Params Query Params and Headers.md` - request input channels prompt
 5. `Prompt - Lesson 05 - REST Assured Request Body JSON Map DTO Serialization.md` - request body and serialization prompt
 6. `Prompt - Lesson 06 - PayU Like Business Flow Expansion Sprint.md` - accelerated PayU-like sprint prompt driven by QA architecture, business flows, backend, UI, SQL, security and tests
-7. `Prompt - Lesson 06 - REST Assured Response Assertions Status Body Headers AssertJ.md` - earlier narrower response assertions prompt, kept as reference
 
 ## Aktualny kontekst strategii
 

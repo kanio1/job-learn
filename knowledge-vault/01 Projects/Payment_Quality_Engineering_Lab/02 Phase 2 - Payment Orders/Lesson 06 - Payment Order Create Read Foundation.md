@@ -25,6 +25,14 @@ tags:
 
 # Lesson 06 - Payment Order Create Read Foundation
 
+> **Status:** READY — code implemented, tests passing, lesson note complete
+>
+> **Navigation:** [[START HERE - Learning Dashboard]] | [[Current Lesson]] | [[Current Sprint]] | [[Curriculum Backbone]]
+>
+> **What to do NOW:** Study §2-§6 first, then practice REST Assured exercises in §11, answer questions in §13.
+>
+> **What NOT to touch yet:** Authorize/capture/cancel lifecycle, Kafka, GraphQL, gRPC, PSP integration. See [[Current Lesson#DEFERRED]] for full list.
+
 ## 1. Cel Lekcji
 
 Lekcja 6 przechodzi z nauki syntaktycznej REST Assured do nauki przez realny vertical slice: `Payment Order Create/Read`.
@@ -482,6 +490,8 @@ Reguły według warstwy:
 
 Ćwiczenia SQL:
 
+> Guided beginner lesson: [[Lesson 06D - SQL and Flyway Constraints for Payment Orders]] in `PostgreSQL and SQL From Zero`.
+
 ```sql
 INSERT INTO payment_orders (
   payment_order_id, merchant_id, client_order_reference, amount_minor, currency, status
@@ -686,6 +696,70 @@ Co frontend powinien pokazać:
 - Conflict idempotency.
 - Backend unavailable.
 
+## 12a. Assertion Strategy (REST Assured vs AssertJ vs DB)
+
+Kiedy użyć którego narzędzia do asercji:
+
+| Kontekst | Narzędzie | Przykład |
+|---|---|---|
+| HTTP contract (status, nagłówki, proste body) | REST Assured `.then().statusCode().body()` | `.statusCode(201).body("paymentOrderId", notNullValue())` |
+| Złożone porównania pól, listy, tuple | AssertJ `assertThat().extracting()` | `assertThat(merchants).extracting("reference").containsExactly("A", "B")` |
+| Sprawdzenie stanu DB po operacji | Direct DB query + AssertJ | `assertThat(db.findMerchantById(id)).get().extracting(Merchant::status).isEqualTo("ACTIVE")` |
+| Wielopolowe sprawdzenie obiektu | AssertJ `usingRecursiveComparison()` | `assertThat(orderResponse).usingRecursiveComparison().isEqualTo(expected)` |
+| Nietrywialne kolekcje z filtrami | AssertJ `filteredOn`, `extracting` | `assertThat(orders).filteredOn("status", "CREATED").hasSize(1)` |
+
+Zasada seniorska: **Assert what proves the behavior, not everything everywhere.**
+
+- REST Assured body assertions chronią kontrakt HTTP.
+- AssertJ extraction służy do diagnozy złożonych struktur.
+- DB assertions służą tam, gdzie stan DB jest częścią ryzyka (constraint, transakcja, audit).
+- Nie zaglądaj do DB w każdym teście — użyj API GET do weryfikacji, jeśli testujesz flow biznesowy.
+
+## 12b. Database Verification as Test Layer
+
+Decision table: kiedy weryfikować przez API, a kiedy przez DB:
+
+| Test | Weryfikuj przez |
+|---|---|
+| zwykły contract test API (status, body, headers) | API GET lub response POST |
+| test walidacji DTO | API (response body) |
+| test flow create → get | API GET |
+| test constraint enforcement (unique, FK, check) | DB query |
+| test audit/status history | DB query (`payment_order_status_history`) |
+| test migracji (czysta baza, poprzednia wersja) | DB schema validation |
+| test transakcji/rollback | DB state + API status |
+| test idempotency / race condition | DB constraints + API replay |
+| test RLS / multi-tenant data isolation | DB query z różnymi tenant contexts |
+
+Zasada seniorska:
+
+> DB probe jest narzędziem diagnostycznym, nie skrótem.
+> Nie omijaj API, żeby sprawdzić stan — użyj API GET.
+> Użyj DB query, gdy API nie może dać ci odpowiedzi (constraint, audit, transakcja).
+
+ćwiczenie: Dla każdego testu w `PaymentOrderRestAssuredTest` odpowiedz: czy ten test potrzebuje weryfikacji DB, czy wystarczy API?
+
+## 12c. Test Data Ownership
+
+Obecna strategia test data w Payment Order:
+
+| Aspekt | Strategia |
+|---|---|
+| Merchant creation | Per-test: każdy test tworzy własnego merchanta |
+| Namespacing referencji | Unikalne `MERCH-{uuid}`, `PAY-{uuid}` |
+| Idempotency keys | `PaymentApiTestSupport.uniqueIdempotencyKey(suffix)` — unikalne per test |
+| Cleanup | Immutable records (create-only) — brak potrzeby cleanup |
+| Parallel safety | Każdy Testcontainer ma własną bazę, bez współdzielonych danych |
+| Debuggability | Po teście dane zostają — można ręcznie sprawdzić stan |
+
+Co NIE jest jeszcze zrobione (deferred do Lesson 8b):
+- Strategia cleanup dla mutable data (np. lifecycle transitions).
+- Worker-namespaced data dla równoległego wykonania w CI.
+- Seed/reference data strategy.
+- Fixtures dla trudnych do osiągnięcia stanów.
+
+Pytanie seniorskie: **Jeśli test pada, czy dane zostają w bazie do debugowania, czy są automatycznie czyszczone?** Obecna strategia: zostają (lepsze do nauki i debugowania).
+
 ## 13. Pytania Do Samodzielnej Odpowiedzi
 
 HTTP/REST:
@@ -739,6 +813,8 @@ Security:
 | Negative tests | `PaymentOrderRestAssuredTest` | `./mvnw -Dtest=PaymentOrderRestAssuredTest#idempotencyConflictReturns409 test` | rozumiesz `409` | test odróżnia conflict od validation |
 | Security tests | `PaymentOrderSecurityTest` | `./mvnw -Dtest=PaymentOrderSecurityTest test` | rozumiesz role matrix | potrafisz dodać denied identity case |
 | Exploratory charter | REST + security tests | manual/API | sprawdzasz tenant isolation | create mismatch `403`, merchant cross-read `404`, platform correct path `200`, platform wrong path `404` |
+| Business-readable naming | `PaymentOrderRestAssuredTest` | IDE | dodajesz `@DisplayName` do 3 testów | nazwy testów mówią co system gwarantuje, nie jak to robi |
+| Negative-path first | `PaymentOrderRestAssuredTest` | `./mvnw -Dtest=PaymentOrderRestAssuredTest test` | piszesz test `409` PRZED testem `201` | rozumiesz, że odrzucenie nieprawidłowego requestu jest równie ważne jak sukces |
 
 ## 15. Mini Interview Prep
 
@@ -829,6 +905,9 @@ Po Lekcji 6 learner powinien umieć wyjaśnić:
 - [ ] Jak działa merchant-scoped access.
 - [ ] Jak DB constraints wspierają jakość.
 - [ ] Jak REST Assured chroni API contract.
+- [ ] Kiedy użyć REST Assured body assertions vs AssertJ vs DB query.
+- [ ] Jak zdecydować, czy test wymaga weryfikacji przez DB.
+- [ ] Jak działa strategia test data ownership.
 
 Powinien umieć zaimplementować:
 
@@ -837,6 +916,8 @@ Powinien umieć zaimplementować:
 - [ ] Security test dla role/ownership.
 - [ ] Repository test dla DB constraint.
 - [ ] Prosty SQL inspection query.
+- [ ] Business-readable test name z `@DisplayName`.
+- [ ] Negative-path test napisany przed happy-path testem.
 
 Powinien umieć przetestować:
 
@@ -855,6 +936,7 @@ Powinien umieć nazwać ryzyka:
 - [ ] BOLA/cross-tenant leak.
 - [ ] Role/claim drift.
 - [ ] Frontend retry z nowym key.
+- [ ] Merchant eligibility niezależna od scope.
 - [ ] DB schema drift.
 - [ ] Weak REST Assured assertions.
 - [ ] Race condition in idempotent create.

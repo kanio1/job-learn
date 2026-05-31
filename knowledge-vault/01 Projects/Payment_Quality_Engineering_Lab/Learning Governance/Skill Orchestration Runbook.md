@@ -14,109 +14,112 @@ tags:
 
 # Skill Orchestration Runbook
 
-Cel: upewnić się, że przy nowych business flows skills uruchamiają się w dobrej kolejności i żaden obszar nie wypada: business analysis, architektura, QA architecture, test design, Spec Kit, implementacja, UI i evidence.
+Cel: upewnić się, że przy nowych business flows skills uruchamiają się w dobrej kolejności i żaden obszar nie wypada: business analysis, architektura, QA architecture, test design, Spec Kit (tylko gdy potrzebny), implementacja, UI i evidence.
 
-## Zasada Od Lesson 6
+> **Navigation:** [[START HERE - Learning Dashboard]] | [[Current Learning Flow]] | [[Home]]
 
-Nie zaczynamy od kodowania endpointów.
+## Simplified Flow (From Lesson 6)
 
-Zaczynamy od zespołu biznesowo-architektonicznego i QA Architect:
+There are only two paths now. Pick based on scope size:
 
-1. odkrycie capability,
-2. wybór scope,
-3. model domeny i workflow,
-4. architektura i data/security boundaries,
-5. QA architecture i learning delta,
-6. Spec Kit input,
-7. implementacja,
-8. testy,
-9. evidence update.
+### Path A: Lesson Extension (NO Spec Kit)
 
-## Skill Flow
+```
+Learning objective (small)
+  → Study existing code/tests
+  → Practice (write test, run SQL, etc.)
+  → Update lesson note with new section
+  → Update [[Lesson Evidence Tracker]]
+  → Update [[Learning OS Status]] (needs practice → covered)
+```
 
-| Faza | Skill | Output |
+Use this for: adding a test, deepening a topic, SQL exercises, assertion strategy practice, interview prep.
+
+### Path B: New Business Capability (WITH Spec Kit)
+
+```
+Learning objective (new behavior)
+  → BA Discovery (actors, workflow, rules)
+  → Architecture decision (module, data, security)
+  → QA Architecture & learning delta
+  → [[Spec Kit Decision Guide]] — check if Spec Kit needed
+  → Spec Kit: spec → plan → tasks (if scope is large enough)
+  → Implementation (code + tests)
+  → Lesson note
+  → Evidence update
+  → Interview explanation
+```
+
+Use this for: new module, new REST resource, new DB schema, new security model.
+
+## Core Skills (Always Use)
+
+| Skill | When | Purpose |
 |---|---|---|
-| Orchestration start | `payment-quality-lab-orchestrator` | decyzja: BA, Spec Kit, implementacja czy analiza |
-| Sprint team gate | `qa-architecture-sprint-team` | Capability Discovery Brief, Sprint Scope Decision, Learning Delta Map |
-| Business discovery | `business-analysis-and-product-discovery-for-payment-lab` | BA Discovery Pack |
-| Risk lens | `rapid-software-testing-risk-thinking` | product risks, exploratory charters |
-| Modeling | `bpmn-uml-dmn-for-testers` | BPMN, sequence, state, decision tables |
-| Spec handoff | `spec-kit-feature-workflow` | spec/plan/tasks/DoD/tester learning flow |
-| Backend architecture | `spring-boot4-spring7-backend-architect` | modules, layers, transactions, validation, REST boundaries |
-| Modulith guardrails | `spring-modulith-2-0-6-modular-monolith-testing` | module boundaries and architecture tests |
-| Data architecture | `postgres18-data-architecture-and-risk` | tables, constraints, indexes, transactions, audit strategy |
-| Security architecture | `rest-api-security-oauth-testing` | auth matrix, ownership, 401/403/404 decisions |
-| Java/API testing | `java-rest-api-testing-effective-java-mentor` | REST Assured/Java design, DTOs, test support |
-| Testcraft | `junit6-assertj-restassured-testcraft` | test layer, oracle, AssertJ/REST Assured patterns |
-| Test design/data | `test-analysis-design-and-data` | BVA, EP, decision tables, state tests, data packs |
-| Parallel readiness | `parallel-test-architecture-and-data-isolation` | worker-safe data and isolation strategy |
-| Frontend architecture | `nuxt-dashboard-zod-pinia-frontend-engineering` | routes, forms, schemas, stores, testable UI |
-| E2E engineering | `typescript6-playwright-engineering` | Playwright fixtures, role flows, selectors |
-| Vault capture | `obsidian-learning-os` | notes, trackers, MOCs |
-| Skill governance | `project-skill-governance-and-quality-review` | skill overlap/quality check |
+| `payment-quality-lab-orchestrator` | Start of any new work | Decide: extension or new capability |
+| `java-rest-api-testing-effective-java-mentor` | Any code/test work | Java 25 + REST Assured design |
+| `junit6-assertj-restassured-testcraft` | Any test work | Test quality and assertion patterns |
+| `obsidian-learning-os` | End of any work | Update vault notes, trackers, MOCs |
 
-## Required Output Per New Sprint
+## Extended Skills (Use For New Capabilities Only)
 
-Każdy nowy sprint od Lesson 6 musi zostawić:
+| Skill | When |
+|---|---|
+| `qa-architecture-sprint-team` | New business capability (Path B) |
+| `business-analysis-and-product-discovery-for-payment-lab` | BA Discovery before Spec Kit |
+| `spec-kit-feature-workflow` | Spec Kit handoff (only if Spec Kit needed) |
+| `spring-boot4-spring7-backend-architect` | Backend design |
+| `spring-modulith-2-0-6-modular-monolith-testing` | Module boundary changes |
+| `postgres18-data-architecture-and-risk` | New DB schema |
+| `rest-api-security-oauth-testing` | New roles or ownership rules |
+| `test-analysis-design-and-data` | Formal test design |
+| `parallel-test-architecture-and-data-isolation` | Parallel test data strategy |
+| `nuxt-dashboard-zod-pinia-frontend-engineering` | Frontend changes |
+| `typescript6-playwright-engineering` | E2E test changes |
 
-- `Capability Discovery Brief`,
-- `Sprint Scope Decision`,
-- `Learning Delta Map`,
-- `Business Workflow`,
-- `Domain Vocabulary`,
-- `API Contract Sketch`,
-- `Data Model Sketch`,
-- `Security Matrix`,
-- `Test Strategy`,
-- `Spec Kit Input Pack`,
-- `Implementation/Test Task Breakdown`,
-- `Evidence Update` in `Lesson Evidence Tracker.md`,
-- `Competency Update` in `Senior SDET Competency Coverage Matrix.md`.
+## Do NOT Use For Small Extensions
 
-## Mandatory Gates
+| Skill | Skip When |
+|---|---|
+| All extended skills | Path A (lesson extension, no new capability) |
+| `bpmn-uml-dmn-for-testers` | Unless modeling a complex workflow |
+| `rapid-software-testing-risk-thinking` | Unless new product risks emerge |
+| `project-skill-governance-and-quality-review` | Unless skill overlap becomes a problem |
 
-### Gate 1 - No Repetition Gate
+## Mandatory Output Per New Capability (Path B)
 
-- [ ] Czy sprint dodaje nowy business behavior?
-- [ ] Czy nie powtarzamy Lessons 1-5 poza krótkim prerequisite?
-- [ ] Czy jest `Learning Delta Map`?
+- Learning Delta Map
+- Business Workflow
+- Security Matrix
+- Test Strategy
+- Lesson Note
+- Evidence Update
+- Interview Answer (EN)
 
-### Gate 2 - Business Analysis Gate
+## Mandatory Output Per Lesson Extension (Path A)
 
-- [ ] Czy aktorzy są jasni?
-- [ ] Czy workflow ma success, alternate i failure paths?
-- [ ] Czy reguły biznesowe są testowalne?
-- [ ] Czy są jawne open questions?
+- Updated lesson note (new section or exercise)
+- Evidence update in tracker
+- Competency update if new skill practiced
 
-### Gate 3 - Architecture Gate
+## Gates (Simplified)
 
-- [ ] Czy wiadomo, który moduł Spring Modulith jest właścicielem?
-- [ ] Czy transakcje są jawne?
-- [ ] Czy walidacja jest rozdzielona między web/domain/DB?
-- [ ] Czy DB constraints chronią krytyczne reguły?
-- [ ] Czy API ma sensowne statusy i headers?
+### Gate 1: Scope Check
+- [ ] Is this a new business capability or just deepening an existing topic?
+- [ ] Checked [[Learning OS Status]] for what's deferred?
 
-### Gate 4 - Security Gate
+### Gate 2: No Repetition
+- [ ] Not repeating Lessons 1-5 fundamentals
+- [ ] Learning Delta Map written
 
-- [ ] Czy jest ownership/tenant decision?
-- [ ] Czy są `401`, `403`, `404` decyzje?
-- [ ] Czy UI nie jest jedynym miejscem blokady?
-- [ ] Czy testy obejmują BOLA/BFLA?
+### Gate 3: Guardrail Check
+- [ ] No Phase 0 guardrail violations
+- [ ] Checked [[Learning OS Status#Do Not Touch]]
 
-### Gate 5 - QA Architecture Gate
-
-- [ ] Czy każda reguła ma właściwy poziom testu?
-- [ ] Czy REST Assured testy nie dublują niepotrzebnie Playwright?
-- [ ] Czy repository tests sprawdzają constraints?
-- [ ] Czy dane są parallel-safe?
-- [ ] Czy logs nie wyciekną tokenów?
-
-### Gate 6 - Evidence Gate
-
-- [ ] Czy tracker lekcji został uzupełniony?
-- [ ] Czy competency matrix została uzupełniona?
-- [ ] Czy prompt i Spec Kit artifacts są podlinkowane?
-- [ ] Czy istnieje interview answer EN?
+### Gate 4: Evidence
+- [ ] [[Lesson Evidence Tracker]] updated
+- [ ] [[Learning OS Status]] updated (status changes)
+- [ ] Interview answer exists (if new capability)
 
 ## Skill Runtime Note
 

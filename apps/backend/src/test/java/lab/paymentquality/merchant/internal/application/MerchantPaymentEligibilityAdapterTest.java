@@ -2,7 +2,6 @@ package lab.paymentquality.merchant.internal.application;
 
 import lab.paymentquality.merchant.MerchantPaymentEligibility;
 import lab.paymentquality.merchant.internal.domain.Merchant;
-import lab.paymentquality.merchant.internal.domain.MerchantStatus;
 import lab.paymentquality.merchant.internal.infrastructure.JpaMerchantRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

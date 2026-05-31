@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public abstract class PostgresContainerSupport {
 
+    @SuppressWarnings("resource")
     protected static PostgreSQLContainer newPostgresContainer(String prefix) {
         return new PostgreSQLContainer(
                 DockerImageName.parse("docker.io/library/postgres:18").asCompatibleSubstituteFor("postgres"))

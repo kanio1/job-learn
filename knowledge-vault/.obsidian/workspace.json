@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "90d8aa09cd5a10b8",
+        "id": "b9d69ce1eb522fac",
         "type": "tabs",
         "children": [
           {
-            "id": "e7929a27d04e201e",
+            "id": "d94adaeca169022e",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 06 - PayU Like Business Flow Expansion Sprint.md",
+                "file": "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 06 - Payment Order Create Read Foundation.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Prompt - Lesson 06 - PayU Like Business Flow Expansion Sprint"
+              "title": "Lesson 06 - Payment Order Create Read Foundation"
             }
           }
         ]
@@ -78,7 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 319.5
+    "width": 538.5
   },
   "right": {
     "id": "38868a5c53bf2027",
@@ -182,44 +182,44 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "e7929a27d04e201e",
+  "active": "d94adaeca169022e",
   "lastOpenFiles": [
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 06 - REST Assured Response Assertions Status Body Headers AssertJ.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 07 - Payment Order List Filter Search.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 07 - Payment Order List Filter SpecKit.md",
+    "Home.md",
+    "02 Areas/Technical Learning/PostgreSQL and SQL From Zero/Lesson 06D - SQL and Flyway Constraints for Payment Orders.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 08 - Business Logic, Decision Tables, and Risk Notes.md",
+    "02 Areas/Technical Learning/REST API From Zero/Lesson 08 - Summary Endpoint Contract, Status Codes, and Error Taxonomy.md",
+    "02 Areas/Technical Learning/PostgreSQL and SQL From Zero/Lesson 08 - GROUP BY COUNT SUM Null Semantics in Aggregation Queries.md",
+    "02 Areas/Technical Learning/JUnit REST Assured/Lesson 08 - Aggregation Contract, Security, and Business Flow Tests.md",
+    "02 Areas/Technical Learning/Java 25 For SDET/Lesson 08 - Java Records, Read-Only Services, and Input Validation.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 08 - Payment Aggregation Summary.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 08 - Payment Aggregation Summary.md",
     "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 06 - PayU Like Business Flow Expansion Sprint.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 05 - REST Assured Request Body JSON Map DTO Serialization.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/lesson-cheatsheet/PaymentOrderRestAssuredTest Cheatsheet.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Concept Lesson.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/00 Learning OS/Current Lesson.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/START HERE - Learning Dashboard.md",
     "02 Areas/Technical Learning/JUnit REST Assured/REST Assured from Zero to Professional Backend API Testing/01-12 REST Assured Foundations.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Governance/Skill Orchestration Runbook.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Governance/Lesson Evidence Tracker.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Governance/Senior SDET Competency Coverage Matrix.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Governance/README.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Payment Order Case Study.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Code Reading Lesson.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/01 Phase 1 - Foundations/Phase 1 - Foundations.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/01 Phase 1 - Foundations",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Post Sprint Evidence Update.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Learning Sprint Discovery.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Verify My Understanding.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Mark Lesson Progress.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Generate Next Lesson.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt Templates - Learning OS.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/00 Learning OS",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning OS Status",
     "01 Projects/Payment_Quality_Engineering_Lab/Learning Governance",
-    "02 Areas/Technical Learning/Spring Data JPA and Flyway/README.md",
-    "02 Areas/Technical Learning/JUnit REST Assured/REST Assured from Zero to Professional Backend API Testing/13-22 Professional Practice After Refactoring.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 04 - REST Assured Path Params Query Params and Headers.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 02 - REST Assured What REST Assured Is.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 01 - REST API Request Response Flow.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Strategy - Three Advanced Learning Paths.md",
-    "02 Areas/Technical Learning/PostgreSQL and SQL From Zero/README.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Payment Gateway SDET Learning Plan.md",
-    "02 Areas/Technical Learning/REST API From Zero/Merchant Request and Response Flow.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Strategy/Three Advanced Learning Paths for API Testing and Payment Lab.md",
     "01 Projects/Payment_Quality_Engineering_Lab/Strategy",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/README.md",
     "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts",
-    "02 Areas/Technical Learning/Security and Authorization Testing/README.md",
     "02 Areas/Technical Learning/Security and Authorization Testing",
     "02 Areas/Technical Learning/Spring Data JPA and Flyway",
-    "02 Areas/Technical Learning/Spring Boot Spring MVC/README.md",
     "02 Areas/Technical Learning/Spring Boot Spring MVC",
-    "02 Areas/Technical Learning/Java 25 For SDET/README.md",
     "02 Areas/Technical Learning/Java 25 For SDET",
-    "02 Areas/Technical Learning/PostgreSQL and SQL From Zero",
-    "00 Inbox/Bez nazwy.base",
-    "Excalidraw/Drawing 2026-05-21 17.23.08.excalidraw.md",
-    "Excalidraw",
-    "02 Areas/Technical Learning/Backend Testing Review/README.md",
-    "02 Areas/Technical Learning/JUnit REST Assured/README.md",
-    "02 Areas/Technical Learning/Backend Testing Review/Professional Backend API Testing Reviewer Checklist.md",
     "Bez nazwy.canvas"
   ]
 }

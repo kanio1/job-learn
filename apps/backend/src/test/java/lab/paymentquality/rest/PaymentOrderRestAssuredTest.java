@@ -15,6 +15,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -285,5 +286,48 @@ class PaymentOrderRestAssuredTest extends PostgresContainerSupport {
                 .then()
                 .statusCode(404)
                 .body("error", equalTo("not_found"));
+    }
+
+    @Test
+    void etagIsSameOnCreateReplayAndRead() {
+        String merchantId = PaymentApiTestSupport.createActiveMerchant(port,
+                MerchantApiTestSupport.operatorRequest(port));
+        String token = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+        String readerToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+        Map<String, Object> body = PaymentApiTestSupport.createPaymentOrderBody(5000, "PLN", "PAY-ETAG-001");
+        String idempotencyKey = PaymentApiTestSupport.uniqueIdempotencyKey("etag-consistency");
+
+        var createResult = MerchantApiTestSupport.requestWithToken(port, token)
+                .contentType(ContentType.JSON)
+                .header("Idempotency-Key", idempotencyKey)
+                .body(body)
+                .when()
+                .post("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(201);
+
+        String createEtag = createResult.extract().header("ETag");
+        String paymentOrderId = createResult.extract().path("paymentOrderId");
+
+        String replayEtag = MerchantApiTestSupport.requestWithToken(port, token)
+                .contentType(ContentType.JSON)
+                .header("Idempotency-Key", idempotencyKey)
+                .body(body)
+                .when()
+                .post("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(200)
+                .extract().header("ETag");
+
+        String readEtag = MerchantApiTestSupport.requestWithToken(port, readerToken)
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders/{paymentOrderId}",
+                        merchantId, paymentOrderId)
+                .then()
+                .statusCode(200)
+                .extract().header("ETag");
+
+        assertThat(replayEtag).isEqualTo(createEtag);
+        assertThat(readEtag).isEqualTo(createEtag);
     }
 }

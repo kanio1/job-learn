@@ -5,10 +5,13 @@ import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.time.format.DateTimeParseException;
 
 import java.util.List;
 import java.util.UUID;
@@ -30,6 +33,27 @@ public class PaymentExceptionHandler {
                 .toList();
         return ResponseEntity.badRequest()
                 .body(PaymentErrorResponse.withDetails("validation", "Request validation failed", details, getCorrelationId()));
+    }
+
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<PaymentErrorResponse> handleBindException(BindException ex) {
+        List<PaymentErrorResponse.FieldError> details = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> new PaymentErrorResponse.FieldError(fe.getField(), fe.getDefaultMessage()))
+                .toList();
+        return ResponseEntity.badRequest()
+                .body(PaymentErrorResponse.withDetails("validation", "Query parameter validation failed", details, getCorrelationId()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<PaymentErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest()
+                .body(PaymentErrorResponse.of("validation", ex.getMessage(), getCorrelationId()));
+    }
+
+    @ExceptionHandler(DateTimeParseException.class)
+    public ResponseEntity<PaymentErrorResponse> handleDateTimeParse(DateTimeParseException ex) {
+        return ResponseEntity.badRequest()
+                .body(PaymentErrorResponse.of("validation", "Invalid date format: " + ex.getParsedString(), getCorrelationId()));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)

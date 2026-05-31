@@ -2,6 +2,7 @@ package lab.paymentquality.testsupport;
 
 import io.restassured.specification.RequestSpecification;
 
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -30,6 +31,28 @@ public final class PaymentApiTestSupport {
                 .then()
                 .statusCode(200);
 
+        return merchantId;
+    }
+
+    public static String createMerchantActive(int port, RequestSpecification operatorRequest) {
+        String ref = uniqueMerchantReference("PAY");
+        Map<String, Object> body = MerchantApiTestSupport.createMerchantBody(ref, "Payment Test Merchant");
+
+        String merchantId = operatorRequest
+            .contentType("application/json")
+            .body(body)
+            .when()
+            .post("/api/merchants")
+            .then()
+            .statusCode(201)
+            .extract().path("merchantId");
+
+        operatorRequest
+            .when()
+            .post("/api/merchants/" + merchantId + "/activate")
+            .then()
+            .statusCode(200);
+        
         return merchantId;
     }
 

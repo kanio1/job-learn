@@ -15,11 +15,25 @@ tags:
 
 Ten folder pilnuje, żeby ścieżka nauki i rozbudowa aplikacji nie rozjechały się na luźne lekcje, przypadkowe technologie albo sprinty bez testowalnej wartości biznesowej.
 
+> **Start here:** [[START HERE - Learning Dashboard]]
+>
+> **Reference:** [[Current Learning Flow]] | [[Curriculum Backbone]] | [[Current Lesson]]
+
 ## Główne Pliki
 
-- `Senior SDET Competency Coverage Matrix.md` - lista kompetencji Java 25, HTTP, REST, REST Assured, AssertJ, JUnit, Spring, SQL, security, framework architecture i status pokrycia przez aplikację.
-- `Lesson Evidence Tracker.md` - ewidencja per lekcja/sprint: co zostało przerobione, gdzie jest kod, testy, notatki, prompt, skill output i dowód opanowania.
-- `Skill Orchestration Runbook.md` - kiedy i w jakiej kolejności uruchamiać skills dla Business Analysis, architektury, Spec Kit, implementacji i QA Architecture.
+- `Senior SDET Competency Coverage Matrix.md` - lista kompetencji i status pokrycia przez aplikację.
+- `Lesson Evidence Tracker.md` - ewidencja per lekcja: co zrobione, co deferred, what NOT to touch.
+- `Skill Orchestration Runbook.md` - uproszczony flow: Path A (extension, no Spec Kit) vs Path B (new capability, with Spec Kit).
+- `Expert Gap Analysis - Senior SDET Coverage.md` - analiza luk i rekomendacje eksperta.
+
+## Learning OS Files
+
+- [[START HERE - Learning Dashboard]] — dashboard, pierwszy plik do otwarcia
+- [[Current Learning Flow]] — proces nauki (Path A / Path B)
+- [[Current Lesson]] — co robić TERAZ
+- [[Current Sprint]] — status sprintu
+- [[Curriculum Backbone]] — mapa technologia ↔ lekcja
+- [[How To Use This Vault]] — instrukcja vaulta
 
 ## Zasada
 

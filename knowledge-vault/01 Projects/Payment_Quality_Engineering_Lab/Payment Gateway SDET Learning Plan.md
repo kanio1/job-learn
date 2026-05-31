@@ -125,6 +125,9 @@ Na obecnym etapie priorytet mają:
 8. Security/Keycloak/JWT.
 9. Test design and test data design.
 10. Layered backend testing.
+11. Database verification as test layer.
+12. Test data ownership and cleanup.
+13. Assertion strategy (REST Assured vs AssertJ vs DB).
 
 Kafka, GraphQL i gRPC są later topics. Nie dodajemy ich, dopóki REST API, Payment Order, SQL basics, security matrix oraz event/status model nie mają realnego sensu biznesowego.
 
@@ -161,6 +164,14 @@ Te ścieżki są obowiązkowymi torami nauki przed wejściem głęboko w Kafka, 
 | Spring Boot Spring MVC | `knowledge-vault/02 Areas/Technical Learning/Spring Boot Spring MVC/` | Rozumieć controller, DTO, validation, binding |
 | Spring Data JPA and Flyway | `knowledge-vault/02 Areas/Technical Learning/Spring Data JPA and Flyway/` | Mapować encje na tabele i migracje |
 | Security and Authorization Testing | `knowledge-vault/02 Areas/Technical Learning/Security and Authorization Testing/` | Testować Keycloak/JWT/401/403/ownership |
+| Database Verification & Test Data Engineering | `knowledge-vault/02 Areas/Technical Learning/Database Verification and Test Data/` | Decyzje kiedy DB vs API, test data ownership, cleanup, parallel-safe |
+| Assertion Strategy (RA vs AssertJ vs DB) | `knowledge-vault/02 Areas/Technical Learning/Backend Testing Review/` | Kiedy REST Assured body, kiedy AssertJ extraction, kiedy DB query |
+| API Failure Analysis & Debugging | `knowledge-vault/02 Areas/Technical Learning/Backend Testing Review/` | Diagnozowanie dlaczego test padł: API vs DB vs test data vs auth vs race |
+| Flaky Test & CI Diagnosis | `knowledge-vault/02 Areas/Technical Learning/Testing Architecture/` | Identyfikacja, root cause i naprawa flaky tests |
+| Observability-Driven Testing | `knowledge-vault/02 Areas/Technical Learning/Testing Architecture/` | Log assertions, correlation ID verification, metrics, traces |
+| Performance-Light API Testing | `knowledge-vault/02 Areas/Technical Learning/Backend Testing Review/` | Response time budgets, N+1 detection, payload size, rate limits |
+| JSON Schema & Contract Validation | `knowledge-vault/02 Areas/Technical Learning/REST API From Zero/` | Schema validation, OpenAPI compliance, documentation smells |
+| Content Negotiation & HTTP Robustness | `knowledge-vault/02 Areas/Technical Learning/REST API From Zero/` | 415, 406, Accept headers, unsupported media types |
 
 ## Sprint Synchronization Model
 
@@ -170,18 +181,46 @@ Te ścieżki są obowiązkowymi torami nauki przed wejściem głęboko w Kafka, 
 | 2 | Merchant activate/suspend | Status codes, auth | State machine | State transition tests |
 | 3 | REST Assured cleanup | Existing merchant API | `RequestSpecification`, logging | Refactoring tests |
 | 4 | Payment Order create | REST body, 201, 400 | Money value object, idempotency | REST contract + DB constraint |
-| 5 | Payment status lookup | GET, path param | `@PathVariable UUID`, not found | 200/400/404 |
-| 6 | Payment lifecycle | State testing | Optimistic locking | Domain + REST transitions |
-| 7 | Payment list/report | Query params | SQL `WHERE`, `ORDER BY`, `LIMIT` | API + SQL assertions |
-| 8 | Payment aggregation | Existing filters | SQL `GROUP BY`, indexes | Reporting tests |
-| 9 | Auth ownership | 401/403 repeat | Tenant isolation | Security matrix |
+| 5 | Payment status lookup | GET, path param | `@PathVariable UUID`, not found | 200/400/404 — **skonsolidowane w Sprincie 6** |
+| 6 | Payment Order create/read | Idempotency, security matrix | `Idempotency-Key`, tenant isolation, Flyway, status lookup | REST Assured contract + security + repository |
+| 6.5 | Assertion strategy deep dive | RA assertions, DB verification | When RA vs AssertJ vs DB, test data ownership | Refactoring + negative-path exercises |
+| 7 | Payment list/report | Query params | SQL `WHERE`, `ORDER BY`, `LIMIT`, CTE basics | API + SQL assertions |
+| 7b | Database verification as test layer | DB state assertions | When to verify via DB, transaction boundaries | Repository + integration tests |
+| 8 | Payment aggregation | Existing filters | SQL `GROUP BY`, indexes, EXPLAIN | Reporting tests |
+| 8b | Test data management strategy | Parallel-safe data | Data ownership, cleanup, fixtures, seed | Strategy note + parallel test exercises |
+| 9 | Auth ownership | 401/403 repeat | Tenant isolation, RLS concept | Security matrix |
+| 9b | Failure analysis & debugging | Test failure diagnosis | Systematic debugging: API vs DB vs auth vs data | Debugging exercises |
 | 10 | Webhook subscription | REST config | Outbound HTTP/WireMock | Retry tests |
+| 10b | JSON Schema validation | Contract validation | `matchesJsonSchemaInClasspath()`, OpenAPI | Schema + contract tests |
 | 11 | Webhook delivery | Previous webhook setup | Async failure states | Delivery status tests |
+| 11b | Content negotiation & HTTP robustness | HTTP semantics | 415, 406, Accept headers | Negative HTTP tests |
 | 12 | Kafka events | Event history repeat | Outbox + topic + consumer | Testcontainers Kafka |
+| 12b | Observability testing | Logs, metrics, traces | Log assertions, correlation ID verification | Observability tests |
+| 12c | Flaky test diagnosis | CI stability | Root cause analysis, parallel-safe patterns | Flaky test exercises |
 | 13 | GraphQL read model | SQL/reporting repeat | Schema/query testing | GraphQL tests |
+| 13b | Performance-light API testing | Response time budgets | `.time()`, N+1, payload size, rate limits | Performance assertions |
 | 14 | gRPC simulator | Lifecycle repeat | Proto/deadline/error mapping | gRPC contract tests |
+| 14b | API test coverage matrix | Coverage beyond code | Operations × behaviors × tests coverage | Coverage note |
+| 15b | API documentation smells | Contract quality | Swagger/OpenAPI drift detection, doc review | Reviewer checklist |
+| 16b | REST Assured GPath deep dive | Advanced JSON path | GPath traps, array indexing, type coercion | Advanced RA exercises |
+| 17b | Money values: minor units vs BigDecimal | Decimal precision | BigDecimal traps, currency handling | Precision tests |
+| 18b | Framework evolution | RA architecture | Specs → clients → flows, when to extract | Refactoring exercises |
+| 19b | LLM-assisted test design | AI + human review | Using LLMs for test generation with review gates | Process note |
+| 20b | Framework teardown (OSS) | Learning from repos | Reviewing open-source REST Assured frameworks | Review exercise |
 
-Na razie pracujemy głównie w sprintach 1-9: backend, REST, SQL, REST Assured, Spring i security. Kafka, GraphQL i gRPC są zapisane jako późniejszy etap.
+Na razie pracujemy głównie w sprintach 1-9b: backend, REST, SQL, REST Assured, Spring, security i database testing. Kafka, GraphQL, gRPC, performance i observability są zapisane jako późniejszy etap.
+
+## Expert Gap Analysis Reference
+
+Szczegółowa analiza luk między obecnym planem a rekomendacjami eksperta znajduje się w:
+`knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/Learning Governance/Expert Gap Analysis - Senior SDET Coverage.md`
+
+Kluczowe wnioski:
+- **SQL/Database & Test Data Engineering** musi być osobnym filarem, nie dodatkiem do REST Assured.
+- **Database verification** jako warstwa testów wymaga jawnego frameworku decyzyjnego: kiedy DB vs API.
+- **Test data management** wymaga strategii ownership, isolation, cleanup i parallel-safe design.
+- **Assertion strategy** (REST Assured vs AssertJ vs DB) musi być świadomą decyzją, nie przypadkiem.
+- **Failure analysis** to umiejętność seniorska: diagnozowanie dlaczego test padł, nie tylko pisanie testów.
 
 ## Warstwa 1 - Fundamenty Przed Kolejnymi Funkcjami
 

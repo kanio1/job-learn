@@ -31,6 +31,7 @@ Ta ścieżka uczy Java 25 przez realny kod backendu i testów. Celem nie jest te
 | 11 | Annotations | `@Test`, `@Entity`, `@RestController`, `@Valid` | cały backend |
 | 12 | JDK Tooling | warnings, agents, JVM args | Mockito `-javaagent` |
 | 13 | Effective Java For Testability | immutability, factories, dependency injection | domain/test design |
+| 08 | [[Lesson 08 - Java Records, Read-Only Services, and Input Validation]] | records, nested records, DTO, @Transactional(readOnly), validation mapping | PaymentOrderSummaryRequest/Response/Service |
 
 ## Java Lens Per Sprint
 

@@ -3,9 +3,12 @@ package lab.paymentquality.payment.internal.web;
 import jakarta.validation.Valid;
 import lab.paymentquality.payment.internal.application.PaymentActorContext;
 import lab.paymentquality.payment.internal.application.PaymentCreateResult;
+import lab.paymentquality.payment.internal.application.PaymentOrderListService;
+import lab.paymentquality.payment.internal.application.PaymentOrderSummaryService;
 import lab.paymentquality.payment.internal.application.PaymentOrderService;
 import lab.paymentquality.payment.internal.domain.*;
 import org.slf4j.MDC;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -21,9 +24,15 @@ import java.util.UUID;
 public class PaymentOrderController {
 
     private final PaymentOrderService paymentOrderService;
+    private final PaymentOrderListService paymentOrderListService;
+    private final PaymentOrderSummaryService paymentOrderSummaryService;
 
-    public PaymentOrderController(PaymentOrderService paymentOrderService) {
+    public PaymentOrderController(PaymentOrderService paymentOrderService,
+                                   PaymentOrderListService paymentOrderListService,
+                                   PaymentOrderSummaryService paymentOrderSummaryService) {
         this.paymentOrderService = paymentOrderService;
+        this.paymentOrderListService = paymentOrderListService;
+        this.paymentOrderSummaryService = paymentOrderSummaryService;
     }
 
     @PostMapping
@@ -90,6 +99,78 @@ public class PaymentOrderController {
 
         return ResponseEntity.ok()
                 .header("ETag", etag)
+                .header("X-Correlation-ID", getCorrelationId())
+                .body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<PaymentOrderListResponse> listPaymentOrders(
+            @PathVariable UUID merchantId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String currency,
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate,
+            @RequestParam(required = false) Long minAmount,
+            @RequestParam(required = false) Long maxAmount,
+            @RequestParam(required = false) String clientOrderReference,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt,desc") String sort,
+            Authentication authentication,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        boolean isPlatformReader = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("platform:payments:read"));
+
+        if (!isPlatformReader) {
+            String jwtMerchantId = jwt.getClaimAsString("merchant_id");
+            if (jwtMerchantId == null || !merchantId.toString().equals(jwtMerchantId)) {
+                throw new AccessDeniedException("Merchant scope mismatch");
+            }
+        }
+
+        PaymentOrderListRequest request = new PaymentOrderListRequest(
+                status, currency, fromDate, toDate, minAmount, maxAmount,
+                clientOrderReference, page, size, sort);
+
+        Page<PaymentOrder> pageResult = paymentOrderListService.findAll(merchantId, request);
+        PaymentOrderListResponse response = PaymentOrderListMapper.toListResponse(pageResult);
+
+        return ResponseEntity.ok()
+                .header("X-Correlation-ID", getCorrelationId())
+                .body(response);
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<PaymentOrderSummaryResponse> summarizePaymentOrders(
+            @PathVariable UUID merchantId,
+            @RequestParam(required = false) String currency,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate,
+            Authentication authentication,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        boolean isPlatformReader = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("platform:payments:read"));
+
+        if (!isPlatformReader) {
+            String jwtMerchantId = jwt.getClaimAsString("merchant_id");
+            if (jwtMerchantId == null || !merchantId.toString().equals(jwtMerchantId)) {
+                throw new AccessDeniedException("Merchant scope mismatch");
+            }
+        }
+
+        PaymentOrderSummaryRequest request = new PaymentOrderSummaryRequest(
+                currency,
+                status,
+                fromDate,
+                toDate
+        );
+
+        PaymentOrderSummaryResponse response = paymentOrderSummaryService.summarize(merchantId, request);
+
+        return ResponseEntity.ok()
                 .header("X-Correlation-ID", getCorrelationId())
                 .body(response);
     }

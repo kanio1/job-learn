@@ -3,7 +3,6 @@ package lab.paymentquality.merchant.internal.application;
 import lab.paymentquality.merchant.internal.domain.*;
 import lab.paymentquality.merchant.internal.infrastructure.JpaMerchantRepository;
 import lab.paymentquality.merchant.internal.web.DuplicateMerchantReferenceException;
-import lab.paymentquality.merchant.internal.web.MerchantMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

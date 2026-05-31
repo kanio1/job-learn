@@ -34,26 +34,10 @@ Statusy:
 | Java 25 | collections immutable / `Map.of` / `Map.copyOf` | Practiced | `createMerchantBody`, Lesson 5 | Test data builders for larger payloads |
 | Java 25 | minor-unit money value object | Practiced | `PaymentAmount`, `PaymentOrderRestAssuredTest` | Later compare with `BigDecimal` when decimal input appears |
 | Java 25 | `java.time` | Introduced | merchant timestamps | Assert timestamp contract without brittle exact times |
-| Java 25 | streams / extracting data | Introduced | list extraction in `MerchantRestAssuredTest` | Replace brittle list checks with clear AssertJ extraction |
-| Java 25 | deprecated APIs / JDK warning hygiene | Not Started | none | Add build hygiene lesson/checklist |
-| HTTP | method semantics safe/idempotent | Introduced | REST Assured lessons | Payment idempotency and retry tests |
-| HTTP | `Location` header | Practiced | `PaymentOrderRestAssuredTest#createPaymentOrderReturns201WithHeaders` | Keep asserting resource creation headers |
-| HTTP | `X-Correlation-ID` | Introduced | `CorrelationIdFilter`, Lesson 4 | Add REST Assured header tests |
-| HTTP | `Idempotency-Key` | Practiced | `IdempotencyKey`, `PaymentOrderService`, `PaymentOrderRestAssuredTest#idempotentReplayReturns200WithSameId` | Add more concurrency and client retry exercises |
-| HTTP | `ETag` / `If-Match` / `412` | Not Started | prompt only | Optimistic concurrency sprint |
-| HTTP | `Retry-After` / `429` | Not Started | none | Rate limit / abuse-flow sprint |
-| HTTP | `WWW-Authenticate` | Not Started | security behavior exists but not asserted | Security response header tests |
-| REST | resource modeling | Practiced | Merchant resource, `PaymentOrderController`, payment order contract | Add list/report resource modeling later |
-| REST | error representation | Practiced | `ErrorResponse`, exception handler | Stable error schema + schema validation |
-| REST | OpenAPI contract analysis | Not Started | none | Add OpenAPI spec and contract review |
-| REST Assured | basic request/response DSL | Practiced | `StatusRestAssuredTest`, `MerchantRestAssuredTest` | Move to framework architecture |
-| REST Assured | path/body/header basics | Practiced | Lessons 3-5 | Stop repeating after Lesson 6 |
-| REST Assured | `RequestSpecification` | Introduced | `MerchantApiTestSupport` returns `RequestSpecification` | `RequestSpecBuilder` with role specs |
-| REST Assured | `ResponseSpecification` | Not Started | none | Common success/error specs |
-| REST Assured | failure-only logging | Not Started | none | Add masked CI diagnostics config |
-| REST Assured | secret/header masking | Not Started | none | Blacklist `Authorization` in logs |
-| REST Assured | schema validation | Not Started | none | JSON schema or OpenAPI-backed validation |
-| REST Assured | object mapping / typed extraction | Introduced | map extraction only | typed DTO extraction with `TypeRef` |
+| Java 25 | streams / extracting data | Practiced | `PaymentOrderListRestAssuredTest` using typed extraction and AssertJ | Deepen with complex stream pipelines |
+| REST Assured | `RequestSpecification` | Evidence Strong | `PaymentOrderListApiTestSupport` using `RequestSpecBuilder` | — |
+| REST Assured | `ResponseSpecification` | Practiced | `successListSpec()` in `PaymentOrderListApiTestSupport` | Add error specs |
+| REST Assured | object mapping / typed extraction | Practiced | `extract().as(PaymentOrderListResponse.class)` | TypeRef for generic types |
 | AssertJ | basic assertions | Practiced | repository/service tests, list extraction | Custom assertions for error/payment response |
 | AssertJ | `extracting`, `filteredOn`, `tuple` | Introduced | limited usage | Payment list/report tests |
 | AssertJ | recursive comparison | Not Started | none | DTO comparison lesson |
@@ -77,6 +61,32 @@ Statusy:
 | Test Design | test pyramid / level selection | Introduced | roadmap | Evidence per sprint in tracker |
 | Frontend | Nuxt dashboard | Practiced | `CreatePaymentOrderForm.vue`, payment order detail page, Nuxt payment proxy | Add role-aware Playwright coverage later |
 | Playwright | authenticated user journeys | Introduced/Planned | roadmap | Role-aware merchant/payment flows |
+| Database Verification | DB as test oracle (when to verify via DB vs API) | Not Started | none | Decision framework lesson after Payment Order |
+| Database Verification | CTE, window functions, EXPLAIN | Not Started | none | SQL deep-dive with payment data in sprints 7-8 |
+| Database Verification | transaction isolation, deadlock, race condition | Introduced | idempotency concurrency test | Isolation level testing in lifecycle sprints |
+| Test Data Management | data ownership, isolation, cleanup strategy | Introduced | per-test merchant creation, unique keys | Document strategy; add cleanup patterns |
+| Test Data Management | parallel-safe test data design | Introduced | `Parallel Readiness Principles` note | Worker-namespaced data exercises |
+| Assertion Strategy | RA vs AssertJ vs DB assertion decision | Not Started | none | Lesson 6 extension + deep-dive lesson |
+| Failure Analysis | systematic test failure debugging | Not Started | none | Debugging exercises and checklist |
+| Framework Architecture | RA spec builders, client evolution | Introduced | `MerchantApiTestSupport` returns spec | Evolution path note |
+| API Contract | JSON Schema validation | Not Started | none | After API stabilizes |
+| API Contract | documentation smells, OpenAPI compliance | Not Started | contract markdown only | Reviewer checklist extension |
+| Observability | log assertions, metrics, traces | Not Started | correlation ID in headers only | Sprint 12+ observability lesson |
+| HTTP Robustness | content negotiation, 415/406 | Not Started | none | HTTP deep-dive lesson |
+| Performance-Light | response time, N+1, payload size | Not Started | none | After lifecycle |
+| Flaky Test | diagnosis and CI failure triage | Not Started | none | Dedicated note + exercises |
+| API Coverage | coverage beyond code coverage | Not Started | none | Quality metrics note |
+| Negative-Path First | methodology for negative-first design | Introduced | comprehensive 400/401/403/404/409 tests | Explicit methodology exercise |
+| Contract Testing | Pact, WireMock, service virtualization | Deferred | `wiremock/README.md` placeholder | Sprint 10+ webhook testing |
+| Business-Readable Naming | `@DisplayName`, naming conventions | Introduced | technical test names exist | Add `@DisplayName` exercise + naming convention note |
+| RA Advanced | GPath traps, JSON path, array indexing | Deferred | simple `.body(path, matcher)` used | When list endpoints exist |
+| Observability | log/metric/trace assertions (not just existence) | Deferred | correlation ID in headers only | Sprint 12+ observability lesson |
+| API Compat | backward compatibility, consumer-driven contracts | Deferred | no versioning strategy | Future API evolution lesson |
+| LLM-Assisted Testing | using LLMs for test generation with human review gates | Deferred | none | Process note |
+| OSS Review | framework teardown, learning from GitHub repos | Deferred | none | Future exercise |
+| Reverse Engineering | DevTools traffic capture for API discovery | Not Started | none | Future note or exercise |
+| Security | SQL injection and data security basics | Deferred | security matrix covers auth, not injection | Database security note in later sprint |
+| Data Isolation | RLS / row-level security in PostgreSQL | Deferred | tenant isolation via claim, not RLS | Sprint 9 extension with RLS concept |
 
 ## Review Cadence
 

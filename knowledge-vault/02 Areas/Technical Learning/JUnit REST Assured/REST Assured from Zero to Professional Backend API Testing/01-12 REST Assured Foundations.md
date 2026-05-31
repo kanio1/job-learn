@@ -2650,7 +2650,6 @@ merchant-scoped payment order -> protected API -> SQL integrity -> HTTP response
 Aktualny gate repo jest ważny: aktywna specyfikacja `002-merchant-registry-activation` nadal wyklucza payment order creation. Dlatego ta lekcja przygotowuje discovery/spec input i test-design target dla następnej funkcji, a nie implementuje payment endpoints w Phase 1.
 
 Spec input dla przyszłej funkcji znajduje się w:
-
 - `specs/003-payment-order-access-lifecycle/spec-input.md`
 
 ## 3. Assumed Knowledge

@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static io.restassured.RestAssured.when;
 import static lab.paymentquality.testsupport.MerchantApiTestSupport.createMerchantBody;
 import static lab.paymentquality.testsupport.MerchantApiTestSupport.operatorRequest;
 import static lab.paymentquality.testsupport.MerchantApiTestSupport.uniqueMerchantReference;

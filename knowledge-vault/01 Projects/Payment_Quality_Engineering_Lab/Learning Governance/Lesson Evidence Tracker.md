@@ -3,7 +3,7 @@ type: tracker
 status: active
 project: Payment Quality Engineering Lab
 area: Learning Governance
-date: 2026-05-27
+date: 2026-05-30
 tags:
   - lesson-evidence
   - learning-delta
@@ -14,6 +14,165 @@ tags:
 # Lesson Evidence Tracker
 
 Cel: każda lekcja lub sprint ma mieć dowód, że temat został przerobiony w kodzie, testach, analizie albo świadomie odłożony.
+
+> **Navigation:** [[START HERE - Learning Dashboard]] | [[Learning Progress Board]] | [[Home]]
+>
+> **Current Lesson:** Lesson 08 (IN PROGRESS - backend system slice done, verification blocked)
+
+## What NOT To Touch Yet
+
+These are explicitly deferred or out of scope. Do NOT study, implement, or research them now.
+
+| Topic | Status | When Allowed |
+|---|---|---|
+| Payment lifecycle (authorize/capture/cancel) | DEFERRED | Spec Kit 004+ |
+| PSP integration | DEFERRED | Spec Kit 005+ |
+| Kafka, webhooks, event pipeline | DEFERRED | Sprint 10+ |
+| GraphQL, gRPC | DEFERRED | Sprint 13+ |
+| Performance/load testing | DEFERRED | Sprint 13b |
+| Observability beyond correlation ID | DEFERRED | Sprint 12b |
+| JSON Schema / OpenAPI validation | DEFERRED | Sprint 10b |
+| Contract testing (Pact/WireMock) | DEFERRED | Sprint 10+ |
+| Complete OAuth/OIDC | GUARDRAIL | Phase 0 — never in current scope |
+| Complete business dashboards | GUARDRAIL | Phase 0 — never in current scope |
+| `If-Match` / `412` / optimistic concurrency | DEFERRED | Spec Kit 004+ (when lifecycle actions exist) |
+| RLS (Row-Level Security) | DEFERRED | Sprint 9 extension |
+
+## Lesson 07 — Payment Order List, Filter, Search + RA Framework Architecture
+
+**Data:** 2026-05-28
+**Status:** Ready — code implemented, tests passing
+
+### Production code evidence
+- `web/PaymentOrderListRequest.java` — record z walidacją query params
+- `web/PaymentOrderListResponse.java` — record: content, page, size, totalElements, totalPages
+- `web/PaymentOrderListMapper.java` — mapuje Page<PaymentOrder> → DTO
+- `infrastructure/PaymentOrderSpecification.java` — 6 static Specification builderów
+- `application/PaymentOrderListService.java` — @Transactional(readOnly), dynamic query z addIfNotNull()
+- `web/PaymentOrderController.java` — dodany @GetMapping listPaymentOrders z 10 @RequestParam
+- `infrastructure/JpaPaymentOrderRepository.java` — rozszerzony o JpaSpecificationExecutor
+- `web/PaymentExceptionHandler.java` — dodane handler dla BindException, IllegalArgumentException, DateTimeParseException
+- `shared/security/SecurityConfig.java` — dodany matcher GET /api/merchants/*/payment-orders
+- `db/migration/payment/V3__add_payment_order_list_indexes.sql` — 2 indeksy IF NOT EXISTS
+
+### Test code evidence
+- `rest/PaymentOrderListRestAssuredTest.java` — 10 contract tests (all pass)
+- `testsupport/PaymentOrderListApiTestSupport.java` — seed + RequestSpecBuilder + ResponseSpecBuilder
+- `testsupport/PaymentOrderAssertions.java` — custom AssertJ: hasOnlyStatus, allAmountsGreaterThan, hasPageMetadata
+- `testsupport/RestAssuredLoggingConfig.java` — failure-only logging
+
+### Spec Kit artifacts
+- `specs/004-payment-order-list-filter/spec.md` — 29 FR, 12 SC, 5 user stories
+- `specs/004-payment-order-list-filter/plan.md` — 14-section implementation plan
+- `specs/004-payment-order-list-filter/tasks.md` — 37 tasks across 9 phases
+
+### Vault notes
+- `02 Phase 2 - Payment Orders/Lesson 07 - Payment Order List Filter Search.md` — 18-section lesson note
+
+### Commands run
+- `./mvnw -Dtest=PaymentOrderListRestAssuredTest test` — 10/10 pass
+- `./mvnw -Dtest="PaymentOrder*" test` — 45/45 pass (35 existing + 10 new)
+- `./mvnw -Dtest=PaymentModuleTest test` — Modulith architecture pass
+
+### Competency updates
+22 topics moved from Not Started/Introduced → Practiced:
+- RA: queryParam(), accept(), extract().as(), RequestSpecBuilder, ResponseSpecBuilder, log().ifValidationFails()
+- AssertJ: extracting, filteredOn, tuple, usingRecursiveComparison, SoftAssertions
+- JUnit: @ParameterizedTest, @CsvSource, @Nested, @Tag, @DisplayName
+- SQL: WHERE, ORDER BY, LIMIT, indexes, COUNT, JpaSpecificationExecutor
+- Test Design: decision tables, negative-path first
+
+### Open risks
+- Cross-tenant list security tests not implemented (T022-T023 pending)
+- @ParameterizedTest not yet used (planned for extension)
+- Authorization masking in logs (simplified config — full masking deferred)
+
+### Interview answer EN
+Created (5 questions in Lesson 07 §15):
+1. Cross-tenant list 403 vs 404
+2. JpaSpecificationExecutor dynamic query
+3. "Other specification must not be null" fix
+4. extract().path() vs extract().as(Class)
+5. merchant:payments:create doesn't grant list access
+
+### Next sprint handoff
+Lesson 08: Payment Aggregation (GROUP BY, COUNT per status, EXPLAIN)
+
+## Lesson 08 — Payment Aggregation Summary
+
+**Data:** 2026-05-30
+**Status:** In progress — summary backend implemented; final package/modulith checks blocked by existing `testCompile` errors
+
+### Prompt
+- `../Learning Prompts/Prompt - Lesson 08 - Payment Aggregation Summary.md`
+
+### Business capability
+Read-only merchant-scoped payment order summary over existing `payment_orders`: total orders, total amount in minor units, breakdown by currency and breakdown by status.
+
+### Learning delta
+- `GROUP BY`, `COUNT`, `SUM(amount_minor)`
+- aggregation response DTOs and repository projections
+- controlled seed dataset as aggregation oracle
+- AssertJ `tuple()` / `SoftAssertions` for grouped totals
+- `EXPLAIN` as SQL diagnostics
+- summary security matrix reusing `merchant:payments:read` / `platform:payments:read`
+
+### Production code evidence
+- `apps/backend/src/main/java/lab/paymentquality/payment/internal/web/PaymentOrderSummaryRequest.java`
+- `apps/backend/src/main/java/lab/paymentquality/payment/internal/web/PaymentOrderSummaryResponse.java`
+- `apps/backend/src/main/java/lab/paymentquality/payment/internal/application/PaymentOrderSummaryService.java`
+- `apps/backend/src/main/java/lab/paymentquality/payment/internal/infrastructure/JpaPaymentOrderRepository.java`
+- `apps/backend/src/main/java/lab/paymentquality/payment/internal/web/PaymentOrderController.java`
+- `apps/backend/src/main/java/lab/paymentquality/shared/security/SecurityConfig.java`
+
+### Test code evidence
+- Not part of this system-only slice by explicit scope decision.
+- Planned for later tester/automation slice: summary REST contract and summary security matrix tests.
+
+### Vault notes
+- `02 Phase 2 - Payment Orders/Lesson 08 - Payment Aggregation Summary.md`
+
+### Commands run
+- `./mvnw clean compile` - passed.
+- `./mvnw -DskipTests package` - failed at `testCompile`.
+- `./mvnw -Dtest=PaymentModuleTest test` - failed at `testCompile` before tests execute.
+
+### Verification blocker
+- Existing test source compile errors in `apps/backend/src/test/java/lab/paymentquality/rest/MyPaymentOrderBusinessFlowRestAssuredTest.java`:
+  - `[154,64] ';' expected`
+  - `[241,60] ';' expected`
+  - `[285,56] ';' expected`
+  - `[341,53] ';' expected`
+  - `[416,5] illegal start of expression`
+
+### Guardrails
+- Do not add authorize/capture/cancel lifecycle actions.
+- Do not add PSP integration or PSP mock flows.
+- Do not add Kafka/webhooks.
+- Do not add new payment statuses only to make aggregation more interesting.
+- Do not build a complete business dashboard.
+- Do not add test implementation in this system-only slice.
+
+### Interview answer EN
+Current:
+> Lesson 8 extends payment order list/read behavior with a read-only summary endpoint. The backend system slice is implemented with DB-side aggregation, summary-specific security matcher ordering, and tenant ownership enforcement. Test automation for summary is intentionally deferred to a separate tester slice.
+
+### Descriptive lesson materials (2026-05-30)
+
+Created 5 focused descriptive lessons in the Technical Learning vault, each covering a different aspect of Lesson 08:
+
+| Area | File |
+|---|---|
+| Java | `02 Areas/Technical Learning/Java 25 For SDET/Lesson 08 - Java Records, Read-Only Services, and Input Validation.md` |
+| REST testing | `02 Areas/Technical Learning/JUnit REST Assured/Lesson 08 - Aggregation Contract, Security, and Business Flow Tests.md` |
+| SQL | `02 Areas/Technical Learning/PostgreSQL and SQL From Zero/Lesson 08 - GROUP BY COUNT SUM Null Semantics in Aggregation Queries.md` |
+| HTTP/API | `02 Areas/Technical Learning/REST API From Zero/Lesson 08 - Summary Endpoint Contract, Status Codes, and Error Taxonomy.md` |
+| Business logic | `02 Phase 2 - Payment Orders/Lesson 08 - Business Logic, Decision Tables, and Risk Notes.md` |
+
+Each lesson follows the Learning OS 11-section template (goal → code map → concepts → walkthrough → delta vs L07 → mistakes → exercises → questions → testing → next links), with direct references to real production and test files from Lesson 08.
+
+### Next lesson/sprint handoff
+After Lesson 08, continue with DB oracle/EXPLAIN practice or an auth ownership deep dive before any payment lifecycle work.
 
 ## Template Dla Nowej Lekcji/Sprintu
 
@@ -113,6 +272,7 @@ Vault notes:
 
 - `../02 Phase 2 - Payment Orders/Phase 2 - Payment Orders.md`
 - `../02 Phase 2 - Payment Orders/Lesson 06 - Payment Order Create Read Foundation.md`
+- `../Learning Governance/Expert Gap Analysis - Senior SDET Coverage.md`
 
 Spec Kit artifacts:
 
