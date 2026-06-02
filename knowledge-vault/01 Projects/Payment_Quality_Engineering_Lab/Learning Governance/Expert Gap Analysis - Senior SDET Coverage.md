@@ -33,7 +33,7 @@ Payment Quality Engineering Lab ma solidne fundamenty w REST API testing, securi
 | 3 | Test data management (ownership, isolation, cleanup) | PARTIAL | `Parallel Readiness Principles`, per-test merchant creation, `uniqueIdempotencyKey()` | No documented lifecycle strategy, no cleanup patterns | **High** | Lesson 6 extension |
 | 4 | Database migrations testing (Flyway) | COVERED | `V2__create_payment_orders.sql`, `JpaPaymentOrderRepositoryTest`, Flyway README | No gap | Low | — |
 | 5 | Transactions, isolation, concurrency | PARTIAL | `PaymentOrderIdempotencyConcurrencyTest`, `@Transactional` | No deadlock testing, no isolation level testing | Medium | Future lifecycle |
-| 6 | Contract testing & service virtualization (Pact, WireMock) | PARTIAL | `wiremock/README.md` placeholder | No Pact, no actual WireMock stubs | Low | Sprint 10+ |
+| 6 | Contract testing & service virtualization (Pact, WireMock) | PARTIAL | `wiremock/README.md` placeholder | No Pact, no actual WireMock stubs | Low | Future contract/async sprint after Lesson 10 REST hardening |
 | 7 | Observability-driven testing (logs, metrics, traces) | PARTIAL | `CorrelationIdFilter`, `X-Correlation-ID` tested | No log capture assertions, no metrics testing | Medium | Sprint 12+ |
 | 8 | Flaky test & CI failure diagnosis | NOT COVERED | No vault notes, no code patterns | Complete gap | Medium | Future note |
 | 9 | Performance-light API testing | NOT COVERED | No `.time()` assertions, no N+1 detection | Complete gap | Low | After lifecycle |
@@ -47,7 +47,7 @@ Payment Quality Engineering Lab ma solidne fundamenty w REST API testing, securi
 | 17 | API documentation smells | NOT COVERED | Contract exists in markdown but no smells analysis | Complete gap | Low | Future reviewer checklist |
 | 18 | Assertion strategy (RA vs AssertJ vs DB) | PARTIAL | RA uses Hamcrest, repo tests use AssertJ | No explicit decision framework | **High** | Lesson 6 extension |
 | 19 | Negative-path first testing | PARTIAL | Comprehensive 400/401/403/404/409 tests exist | Not explicitly "negative first" methodology | Low | Lesson 6 exercise |
-| 20 | Content negotiation (415/406) | NOT COVERED | No `415` or `406` tests | Complete gap | Low | Future HTTP deep-dive |
+| 20 | Content negotiation (415/406) | PLANNED | Lesson 10 note/prompt | No implemented tests yet | Medium | Lesson 10 HTTP contract hardening |
 | 21 | Idempotency & retry testing | COVERED | Concurrency test, replay/conflict tests, Lesson 6 deep dive | Well-covered for create | Low | — |
 | 22 | Observability assertions | NOT COVERED | No log/metric/trace assertions | Complete gap | Medium | Sprint 12+ |
 | 23 | API consumer compatibility | NOT COVERED | Frontend exists but no backward-compat testing | Complete gap | Low | Future API evolution |

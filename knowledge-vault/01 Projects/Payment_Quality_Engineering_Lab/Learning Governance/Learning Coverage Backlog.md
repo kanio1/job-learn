@@ -1,7 +1,7 @@
 ---
 type: tracker
 status: active
-date: 2026-05-30
+date: 2026-05-31
 tags:
   - learning-os
   - backlog
@@ -33,16 +33,16 @@ Evidence rule: do NOT mark `Practiced` or `Evidence Strong` without proof in les
 | `409 idempotency_conflict` | Evidence Strong | Lesson 06 | `PaymentOrderRestAssuredTest` | — |
 | `409 merchant_not_payment_eligible` | Evidence Strong | Lesson 06 | `PaymentOrderRestAssuredTest` | — |
 | Content-Type | Practiced | Lesson 02 | REST Assured docs | — |
-| Accept | Not Started | — | — | Concept Lesson |
-| content negotiation (415, 406) | Planned | Sprint 11b | — | After lifecycle |
+| Accept | Evidence Strong | Lesson 10 | `PaymentOrderSummaryHttpContractRestAssuredTest` | — |
+| content negotiation (415, 406) | Evidence Strong | Lesson 10 | `PaymentOrderSummaryHttpContractRestAssuredTest` | — |
 | ETag | Introduced | Lesson 06 | `PaymentOrderController` | Deepen in 06C |
 | If-Match / 412 | Deferred | Spec Kit 004+ | — | After lifecycle actions exist |
 | Idempotency-Key | Evidence Strong | Lesson 06 | `PaymentOrderRestAssuredTest` | — |
 | Retry-After / 429 | Deferred | Future | — | Rate limit sprint |
-| WWW-Authenticate | Not Started | — | — | Concept Lesson or deferred |
+| WWW-Authenticate | Not Started | — | — | Optional auth-header inspection after Lesson 10 |
 | X-Correlation-ID | Introduced | Lesson 06 | `CorrelationIdFilter`, header tests | Add RA header test exercise |
-| malformed JSON | Not Started | — | — | HTTP deep-dive |
-| unsupported media type | Not Started | — | — | Sprint 11b |
+| malformed JSON | Not Started | — | — | POST/create HTTP deep-dive, not summary GET |
+| unsupported media type | Planned | Lesson 10 follow-up | Lesson 10 identifies HTTP edge gap | Use POST/create only if in scope later |
 | API error contract (stable codes) | Evidence Strong | Lesson 06 | `PaymentExceptionHandler`, `PaymentErrorResponse` | — |
 
 ## 2. REST Assured Fundamentals
@@ -54,7 +54,7 @@ Evidence rule: do NOT mark `Practiced` or `Evidence Strong` without proof in les
 | `when()` | Practiced | Lesson 02 | All RA tests | — |
 | `then()` | Practiced | Lesson 02 | All RA tests | — |
 | `contentType()` | Introduced | Lesson 02 | RA docs | Deepen in 06A |
-| `accept()` | Not Started | — | — | Concept Lesson |
+| `accept()` | Evidence Strong | Lesson 10 | `PaymentOrderSummaryHttpContractRestAssuredTest` | — |
 | `body()` (request) | Practiced | Lesson 05 | All RA tests | — |
 | `pathParam()` | Practiced | Lesson 04 | `MerchantRestAssuredTest` | — |
 | `queryParam()` | Practiced | Lesson 07 | `PaymentOrderListRestAssuredTest` | — |
@@ -66,7 +66,7 @@ Evidence rule: do NOT mark `Practiced` or `Evidence Strong` without proof in les
 | `header()` (response) | Practiced | Lesson 06 | `PaymentOrderRestAssuredTest` | — |
 | `auth()` / auth methods | Introduced | Phase 1 | `MerchantSecurityTest` | Deepen in 06E |
 | JSON/GPath basics | Introduced | Lesson 05 | Request body tests | Deepen in 06A |
-| schema validation basics | Deferred | Sprint 10b | — | After API stabilizes |
+| schema validation basics | Deferred | Future contract-doc readiness | — | After Lesson 10 REST/HTTP hardening |
 
 ## 3. REST Assured Framework Architecture
 
@@ -77,17 +77,17 @@ Evidence rule: do NOT mark `Practiced` or `Evidence Strong` without proof in les
 | ResponseSpecification | Practiced | Lesson 07 | `PaymentOrderListApiTestSupport` | — |
 | RequestSpecBuilder | Practiced | Lesson 07 | `PaymentOrderListApiTestSupport` | — |
 | ResponseSpecBuilder | Practiced | Lesson 07 | `PaymentOrderListApiTestSupport` | — |
-| auth specs | Not Started | — | — | 06H |
-| JSON specs | Not Started | — | — | 06H |
-| API clients (wrapper pattern) | Not Started | — | — | 06H |
-| fixtures | Not Started | — | — | 06H |
-| test data builders | Not Started | — | — | 06H or Sprint 8b |
-| scenario flows (multi-step tests) | Introduced | Lesson 06 | Create → Get flow tests | Deepen in 06H |
+| auth specs | Evidence Strong | Lesson 10 | `PaymentOrderSummaryAuthorizationMatrixTest` | — |
+| JSON specs | Planned | Lesson 11 | Lesson 11 prompt/note | Reusable error specs |
+| API clients (wrapper pattern) | Planned | Lesson 11 | Lesson 11 prompt/note | PaymentOrderApi, MerchantApi |
+| fixtures | Planned | Lesson 11 | Lesson 11 prompt/note | Object Mother pattern |
+| test data builders | Planned | Lesson 11 | Lesson 11 prompt/note | PaymentOrderBuilder, MerchantBuilder |
+| scenario flows (multi-step tests) | Planned | Lesson 11 | Lesson 11 prompt/note | Create → List → Summary flow |
 | error assertions | Practiced | Lesson 06 | `PaymentOrderRestAssuredTest` | — |
-| AssertJ integration after extract | Introduced | Lesson 06 | Service/repo tests | Deepen in 06F |
+| AssertJ integration after extract | Practiced | Lesson 08 | Summary typed extraction and aggregate assertions | Deepen with DB oracle if needed |
 | logging only on validation failure | Practiced | Lesson 07 | `RestAssuredLoggingConfig` | — |
-| masking Authorization | Not Started | — | — | 06H |
-| parallel-safe test data | Introduced | Lesson 06 | `uniqueIdempotencyKey()` | Deepen in Sprint 8b |
+| masking Authorization | Planned | Lesson 11 | Lesson 11 prompt/note | blacklistHeader w RestAssuredLoggingConfig |
+| parallel-safe test data | Planned | Lesson 13 | Lesson 13 prompt/note | @Execution(CONCURRENT) + test data isolation |
 
 ## 4. Java 25 For SDET
 
@@ -102,16 +102,21 @@ Evidence rule: do NOT mark `Practiced` or `Evidence Strong` without proof in les
 | exceptions | Practiced | Phase 1 | Domain exceptions | — |
 | collections (List, Map) | Practiced | Lesson 05 | Request body, test data | — |
 | Map.of | Practiced | Lesson 05 | Request body construction | — |
-| Map.copyOf / immutability | Not Started | — | — | Concept Lesson |
-| Optional | Introduced | Phase 1 | Repository lookups | Deepen |
-| Streams | Introduced | Phase 1 | list extraction in RA tests | Deepen in 06F |
+| Map.copyOf / immutability | Planned | Lesson 11 | Lesson 11 Java 25 note | Defensive copies w builders |
+| Optional | Planned | Lesson 13 | Lesson 13 Java 25 note | Optional w return types i test assertions |
+| Streams | Planned | Lesson 13 | Lesson 13 Java 25 note | groupingBy, partitioningBy, downstream collectors |
 | UUID | Practiced | Lesson 06 | `@PathVariable UUID` | — |
 | java.time (Instant, LocalDateTime) | Introduced | Phase 1 | Merchant timestamps | Deepen in 06F |
 | annotations (@Test, @Entity, @Valid) | Practiced | Phase 1 | All code | — |
-| generics | Not Started | — | — | Concept Lesson |
+| generics | Planned | Lesson 12 | Lesson 12 Java 25 note | Bounded wildcards, PECS |
 | deprecated API awareness | Not Started | — | — | Build hygiene lesson |
 | JDK warnings | Not Started | — | — | Build hygiene lesson |
 | Mockito javaagent | Not Started | — | — | Concept Lesson |
+| sealed interface | Planned | Lesson 11 | Lesson 11 Java 25 note | Closed polymorphism dla test data |
+| pattern matching instanceof | Planned | Lesson 12 | Lesson 12 Java 25 note | JDK 16+ feature |
+| text blocks | Planned | Lesson 12 | Lesson 12 Java 25 note | Multi-line JSON fixtures |
+| EnumSet / EnumMap | Planned | Lesson 13 | Lesson 13 Java 25 note | Efficient enum collections |
+| Comparator.comparing / thenComparing | Planned | Lesson 11 | Lesson 11 Java 25 note | Test data ordering |
 | Effective Java principles | Introduced | Multiple | Code design patterns | Deepen across lessons |
 | KISS / DRY / SOLID for testability | Introduced | Multiple | Test architecture | Deepen |
 
@@ -124,10 +129,21 @@ Evidence rule: do NOT mark `Practiced` or `Evidence Strong` without proof in les
 | `extracting()` | Practiced | Lesson 06-07 | `PaymentOrderListRestAssuredTest` | — |
 | `filteredOn()` | Practiced | Lesson 07 | `PaymentOrderListRestAssuredTest` | — |
 | `tuple()` | Introduced | Lesson 07 | Lesson note mentions | Practice exercise |
-| recursive comparison | Introduced | Lesson 07 | Lesson note | Practice exercise |
-| soft assertions | Introduced | Lesson 07 | Lesson note | Practice exercise |
-| parameterized tests | Introduced | Lesson 07 | `PaymentOrderListRestAssuredTest` example | Practice exercise |
-| @Nested / @Tag | Introduced | Lesson 07 | Lesson note mentions | Practice exercise |
+| recursive comparison | Planned | Lesson 12 | Lesson 12 prompt/note | usingRecursiveComparison z ignoringFields |
+| soft assertions | Planned | Lesson 12 | Lesson 12 prompt/note | SoftAssertions.assertAll() |
+| parameterized tests | Practiced | Lesson 10 | `PaymentOrderSummaryAuthorizationMatrixTest`, `PaymentOrderSummaryHttpContractRestAssuredTest` | Deepen in Lesson 12 |
+| @Nested / @Tag | Planned | Lesson 11 | Lesson 11 prompt/note | Test organization w inner classes |
+| TypeRef<T> | Planned | Lesson 12 | Lesson 12 REST Assured note | Generic list extraction |
+| GPath advanced | Planned | Lesson 12 | Lesson 12 REST Assured note | Deep scan, findAll, array indexing |
+| response time assertions | Planned | Lesson 12 | Lesson 12 REST Assured note | .time(), .timeIn() |
+| JSON Schema validation | Planned | Lesson 12 | Lesson 12 REST Assured note | matchesJsonSchemaInClasspath |
+| asInstanceOf | Planned | Lesson 12 | Lesson 12 AssertJ note | Type-safe casting |
+| satisfiesExactly / allSatisfy / anySatisfy | Planned | Lesson 12 | Lesson 12 AssertJ note | Collection assertions |
+| matches(Predicate) | Planned | Lesson 12 | Lesson 12 AssertJ note | Custom conditions |
+| @RepeatedTest | Planned | Lesson 12 | Lesson 12 JUnit note | Repeated execution |
+| DynamicTest / @TestFactory | Planned | Lesson 12 | Lesson 12 JUnit note | Dynamic test generation |
+| JUnit Extensions (@ExtendWith) | Planned | Lesson 13 | Lesson 13 JUnit note | Custom test lifecycle |
+| Awaitility | Planned | Lesson 13 | Lesson 13 JUnit note | Async polling |
 | @DisplayName | Practiced | Lesson 07 | All 10 list tests use @DisplayName | — |
 
 ## 6. SQL, PostgreSQL, Flyway and Testcontainers
@@ -146,23 +162,24 @@ Evidence rule: do NOT mark `Practiced` or `Evidence Strong` without proof in les
 | ORDER BY | Practiced | Lesson 07 | `PaymentOrderListService` | — |
 | LIMIT | Practiced | Lesson 07 | `PageRequest.of(page, size)` | — |
 | indexes | Practiced | Lesson 07 | `V3__add_payment_order_list_indexes.sql` | — |
-| COUNT, SUM | Planned | Lesson 08 | Lesson 08 summary plan | Implement summary endpoint and aggregation tests |
-| GROUP BY | Planned | Lesson 08 | Lesson 08 summary plan | Implement currency/status breakdowns |
-| CTE | Not Started | — | — | Sprint 7b |
-| window functions | Not Started | — | — | Sprint 8 |
-| EXPLAIN | Planned | Lesson 08 | Lesson 08 summary plan | Run EXPLAIN exercise after query exists |
-| transactions | Introduced | Lesson 06 | `@Transactional` in `PaymentOrderService` | Deepen in Sprint 8b |
-| isolation levels | Not Started | — | — | Sprint 8b |
-| locking | Not Started | — | — | Sprint 8b |
-| optimistic locking (version) | Planned | Spec Kit 004+ | — | After lifecycle |
+| COUNT, SUM | Evidence Strong | Lesson 08 | Summary endpoint and REST/business-flow tests | Optional DB oracle/EXPLAIN in Lesson 10C |
+| GROUP BY | Evidence Strong | Lesson 08 | Summary currency/status breakdowns | Optional DB oracle/EXPLAIN in Lesson 10C |
+| CTE | Planned | Lesson 12 | Lesson 12 SQL note | Common Table Expressions |
+| window functions | Planned | Lesson 12 | Lesson 12 SQL note | ROW_NUMBER, RANK, LAG, LEAD, running totals |
+| EXPLAIN | Planned | Lesson 13 | Lesson 13 SQL note | EXPLAIN ANALYZE dla query diagnostics |
+| transactions | Planned | Lesson 13 | Lesson 13 SQL note | Transaction isolation levels |
+| isolation levels | Planned | Lesson 13 | Lesson 13 SQL note | READ_COMMITTED, REPEATABLE_READ, SERIALIZABLE |
+| locking | Planned | Lesson 13 | Lesson 13 SQL note | Pessimistic vs optimistic locking |
+| optimistic locking (version) | Planned | Lesson 13 | Lesson 13 SQL note | @Version annotation |
 | idempotency constraints | Evidence Strong | Lesson 06 | Unique constraint + service logic | — |
 | Flyway migrations | Evidence Strong | Lesson 06 | `V2__create_payment_orders.sql` | — |
 | Testcontainers PostgreSQL | Practiced | Lesson 06 | `PostgresContainerSupport` | — |
-| DB as test oracle | Planned | Lesson 08 | Lesson 08 summary plan | Use DB/repository oracle for aggregation query if needed |
-| API vs DB verification | Planned | Lesson 08 | Lesson 08 summary plan | Decide API vs DB oracle per aggregation risk |
+| DB as test oracle | Planned | Lesson 10C | Lesson 10 note | Add repository/service aggregation diagnostic if needed |
+| API vs DB verification | Introduced | Lesson 08 | Summary API controlled seed oracle | Deepen with Lesson 10C decision exercise |
 | SQL as diagnostic tool | Lesson Created | Lesson 06D | `Lesson 06D - SQL and Flyway Constraints for Payment Orders` | Practice during Lesson 6 SQL session |
-| test data isolation | Planned | Lesson 08 | Controlled aggregation seed plan | Implement per-test merchant aggregation dataset |
-| parallel execution safety | Planned | Lesson 08 | Controlled aggregation seed plan | Keep summary tests independent |
+| test data isolation | Planned | Lesson 11 | Lesson 11 SQL note | 5 strategies (per-test, truncation, schema-per-test, @Sql, Flyway) |
+| parallel execution safety | Planned | Lesson 13 | Lesson 13 SQL note | @Execution(CONCURRENT) + test data isolation |
+| deadlock detection | Planned | Lesson 13 | Lesson 13 SQL note | Wykrywanie i zapobieganie deadlockom |
 
 ## 7. Spring MVC, Spring Data and Backend Testing
 
@@ -176,7 +193,10 @@ Evidence rule: do NOT mark `Practiced` or `Evidence Strong` without proof in les
 | `@Transactional` | Practiced | Lesson 06 | `PaymentOrderService` | — |
 | `@SpringBootTest` (random port) | Practiced | Lesson 06 | All RA tests | — |
 | `@DataJpaTest` / repository tests | Practiced | Lesson 06 | `JpaPaymentOrderRepositoryTest` | — |
-| `@WebMvcTest` / MockMvc | Not Started | — | — | If useful for focused controller tests |
+| `@WebMvcTest` / MockMvc | Planned | Lesson 13 | Lesson 13 prompt/note | Focused controller tests bez full Spring context |
+| @MockBean / @SpyBean | Planned | Lesson 13 | Lesson 13 prompt/note | Mocking dependencies w Spring tests |
+| Spring profiles | Planned | Lesson 13 | Lesson 13 prompt/note | Test-specific configuration |
+| Maven surefire vs failsafe | Planned | Lesson 13 | Lesson 13 prompt/note | Unit vs integration tests lifecycle |
 | Spring Data JPA repository methods | Practiced | Lesson 06 | `JpaPaymentOrderRepository` | — |
 | `@ApplicationModuleTest` | Practiced | Lesson 06 | `PaymentModuleTest` | — |
 
@@ -211,8 +231,8 @@ Evidence rule: do NOT mark `Practiced` or `Evidence Strong` without proof in les
 | tenant isolation | Evidence Strong | Lesson 06 | Cross-tenant tests | — |
 | JWT claims | Introduced | Phase 1 | `TestJwtSupport` | Deepen in 06E |
 | merchant_id claim | Evidence Strong | Lesson 06 | `KeycloakRealmRoleConverter` | — |
-| BOLA (Broken Object Level Auth) | Introduced | Lesson 06 | Cross-tenant read test | Deepen in 06E |
-| BFLA (Broken Function Level Auth) | Introduced | Lesson 06 | Role × action matrix | Deepen in 06E |
+| BOLA (Broken Object Level Auth) | Evidence Strong | Lesson 10 | `PaymentOrderSummaryAuthorizationMatrixTest` | — |
+| BFLA (Broken Function Level Auth) | Evidence Strong | Lesson 10 | `PaymentOrderSummaryAuthorizationMatrixTest` | — |
 | mass assignment | Not Started | — | — | Security deep-dive |
 | excessive data exposure | Not Started | — | — | Security deep-dive |
 | OWASP API Top 10 | Deferred | — | — | Security review lesson |
@@ -235,32 +255,33 @@ Evidence rule: do NOT mark `Practiced` or `Evidence Strong` without proof in les
 | ETag | Introduced | Lesson 06 | Controller headers | Deepen in 06C |
 | If-Match | Deferred | Spec Kit 004+ | — | After lifecycle |
 | stale update / 412 | Deferred | Spec Kit 004+ | — | After lifecycle |
-| retry/backoff | Deferred | Sprint 10+ | — | Webhook sprint |
+| retry/backoff | Deferred | Future async sprint | — | After REST/HTTP hardening and lifecycle discovery |
 
 ## 11. Observability, CI Diagnostics and Flakiness
 
 | Topic | Status | First lesson/sprint | Evidence | Next action |
 |---|---|---|---|---|
-| failure analysis: app bug vs test bug vs data bug vs env bug | Not Started | — | — | 06G Concept Lesson |
+| failure analysis: app bug vs test bug vs data bug vs env bug | Planned | Lesson 13 | Lesson 13 prompt/note | FailureAnalysisChecklist.md |
 | correlation ID (X-Correlation-ID) | Introduced | Lesson 06 | `CorrelationIdFilter`, header tests | Add header assertion |
 | trace ID | Deferred | Sprint 12b | — | Future |
 | structured logs | Deferred | Sprint 12b | — | Future |
-| failure-only logging | Not Started | — | — | 06H Concept Lesson |
-| secret masking (Authorization, tokens) | Not Started | — | — | 06H Concept Lesson |
+| failure-only logging | Practiced | Lesson 07 | `RestAssuredLoggingConfig` | — |
+| secret masking (Authorization, tokens) | Planned | Lesson 11 | Lesson 11 prompt/note | blacklistHeader w RestAssuredLoggingConfig |
 | CI diagnostics (GitHub Actions or similar) | Deferred | Sprint 12c | — | Future |
-| flaky tests: identification and root cause | Deferred | Sprint 12c | — | Future |
-| parallel-safe data: no ordered tests | Introduced | Lesson 06 | `uniqueIdempotencyKey()` | Deepen in Sprint 8b |
-| no shared mutable fixtures | Introduced | Lesson 06 | Per-test data creation | Deepen in Sprint 8b |
-| polling / Awaitility for async | Deferred | Sprint 10+ | — | Webhook sprint |
+| flaky tests: identification and root cause | Planned | Lesson 13 | Lesson 13 prompt/note | FlakyTestDiagnosis.md |
+| parallel-safe data: no ordered tests | Planned | Lesson 13 | Lesson 13 prompt/note | @Execution(CONCURRENT) + test data isolation |
+| no shared mutable fixtures | Planned | Lesson 13 | Lesson 13 prompt/note | Thread-safe test support classes |
+| polling / Awaitility for async | Planned | Lesson 13 | Lesson 13 prompt/note | Awaitility.await().atMost().untilAsserted() |
+| log assertions | Planned | Lesson 13 | Lesson 13 prompt/note | ListAppender + log verification |
 | evidence commands | Introduced | Lesson 06 | Verification commands section | Add to each lesson |
 
 ## 12. Service Virtualization and Contract Testing
 
 | Topic | Status | First lesson/sprint | Evidence | Next action |
 |---|---|---|---|---|
-| WireMock basics | Deferred | Sprint 10 | — | Webhook sprint |
-| Pact / consumer-driven contracts | Deferred | Sprint 10+ | — | Future |
-| service virtualization concepts | Deferred | Sprint 10 | — | Webhook sprint |
+| WireMock basics | Deferred | Future async/contract sprint | — | After Lesson 10 REST/HTTP hardening |
+| Pact / consumer-driven contracts | Deferred | Future contract testing sprint | — | After API contract documentation readiness |
+| service virtualization concepts | Deferred | Future async/contract sprint | — | After Lesson 10 REST/HTTP hardening |
 
 ## 13. Frontend as API Consumer
 

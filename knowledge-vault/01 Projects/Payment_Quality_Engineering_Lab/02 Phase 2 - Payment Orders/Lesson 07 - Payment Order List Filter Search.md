@@ -77,18 +77,18 @@ Równolegle wprowadza REST Assured Framework Architecture: `RequestSpecBuilder`,
 
 ### Production code (8 new + 3 modified)
 
-| Plik | Po co istnieje |
-|---|---|
-| `web/PaymentOrderListRequest.java` | Record z walidacją query params (@Pattern, @PositiveOrZero, @Min, @Max) |
-| `web/PaymentOrderListResponse.java` | Record: `List<PaymentOrderResponse> content, page, size, totalElements, totalPages` |
-| `web/PaymentOrderListMapper.java` | Mapuje `Page<PaymentOrder>` → `PaymentOrderListResponse` |
-| `infrastructure/PaymentOrderSpecification.java` | 6 static builderów: `hasMerchantId`, `hasStatus`, `hasCurrency`, `createdBetween`, `amountBetween`, `clientOrderReferenceContains` |
-| `application/PaymentOrderListService.java` | `@Transactional(readOnly)`, dynamic query z null-safe `addIfNotNull()` chaining |
-| `web/PaymentOrderController.java` | **mod** — dodany `@GetMapping` listPaymentOrders z 10 @RequestParam |
-| `infrastructure/JpaPaymentOrderRepository.java` | **mod** — rozszerzony o `JpaSpecificationExecutor<PaymentOrder>` |
-| `web/PaymentExceptionHandler.java` | **mod** — dodane `BindException` + `IllegalArgumentException` + `DateTimeParseException` handler |
-| `shared/security/SecurityConfig.java` | **mod** — dodany matcher `GET /api/merchants/*/payment-orders` |
-| `db/migration/payment/V3__add_payment_order_list_indexes.sql` | 2 indeksy IF NOT EXISTS: `merchant_id, status` + `merchant_id, currency` |
+| Plik                                                          | Po co istnieje                                                                                                                     |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `web/PaymentOrderListRequest.java`                            | Record z walidacją query params (@Pattern, @PositiveOrZero, @Min, @Max)                                                            |
+| `web/PaymentOrderListResponse.java`                           | Record: `List<PaymentOrderResponse> content, page, size, totalElements, totalPages`                                                |
+| `web/PaymentOrderListMapper.java`                             | Mapuje `Page<PaymentOrder>` → `PaymentOrderListResponse`                                                                           |
+| `infrastructure/PaymentOrderSpecification.java`               | 6 static builderów: `hasMerchantId`, `hasStatus`, `hasCurrency`, `createdBetween`, `amountBetween`, `clientOrderReferenceContains` |
+| `application/PaymentOrderListService.java`                    | `@Transactional(readOnly)`, dynamic query z null-safe `addIfNotNull()` chaining                                                    |
+| `web/PaymentOrderController.java`                             | **mod** — dodany `@GetMapping` listPaymentOrders z 10 @RequestParam                                                                |
+| `infrastructure/JpaPaymentOrderRepository.java`               | **mod** — rozszerzony o `JpaSpecificationExecutor<PaymentOrder>`                                                                   |
+| `web/PaymentExceptionHandler.java`                            | **mod** — dodane `BindException` + `IllegalArgumentException` + `DateTimeParseException` handler                                   |
+| `shared/security/SecurityConfig.java`                         | **mod** — dodany matcher `GET /api/merchants/*/payment-orders`                                                                     |
+| `db/migration/payment/V3__add_payment_order_list_indexes.sql` | 2 indeksy IF NOT EXISTS: `merchant_id, status` + `merchant_id, currency`                                                           |
 
 ### Test code (7 new)
 
@@ -199,6 +199,167 @@ Specification.where(hasMerchantId(id)).and(hasStatus(null))  // NPE
 ```java
 spec = addIfNotNull(spec, hasStatus(request.status()));  // null-safe
 ```
+
+## 7a. Jakarta Validation And Spring MVC Lifecycle
+
+`PaymentOrderListRequest` wygląda jak prosty record, ale dla SDET jest mapą kontraktu query parametrów i potencjalnym miejscem pułapek walidacyjnych.
+
+Najpierw rozdziel odpowiedzialności:
+
+| Warstwa | Co robi | Przykład z projektu |
+|---|---|---|
+| Jakarta Bean Validation | Deklaruje reguły danych | `@Pattern`, `@PositiveOrZero`, `@Min`, `@Max` |
+| Spring MVC binding | Mapuje HTTP request na argumenty metody | `@RequestBody`, `@RequestParam`, `@PathVariable`, `@ModelAttribute` |
+| Validation trigger | Uruchamia sprawdzenie reguł | `@Valid`, `@Validated` |
+| Controller | Pilnuje granicy HTTP, security scope, deleguje | `PaymentOrderController.listPaymentOrders()` |
+| Service/domain | Pilnuje reguł biznesowych i transformacji query | `PaymentOrderListService`, `PaymentOrderSpecification` |
+| Database | Ostatnia linia integralności danych | `CHECK`, `FOREIGN KEY`, `UNIQUE`, indeksy |
+
+### Najczęstsze Jakarta Constraints Dla SDET
+
+| Adnotacja | Co oznacza | Typowe testy |
+|---|---|---|
+| `@NotNull` | wartość nie może być `null` | missing field vs present field |
+| `@NotBlank` | string nie może być `null`, pusty ani samymi spacjami | `null`, `""`, `"   "`, valid text |
+| `@NotEmpty` | string/kolekcja nie może być pusta | `null`, empty list, one element |
+| `@Size` | długość stringa/kolekcji w zakresie | min-1, min, max, max+1 |
+| `@Min` / `@Max` | granice liczb całkowitych | boundary value analysis |
+| `@Positive` | liczba musi być większa od zera | `0`, `1`, `-1` |
+| `@PositiveOrZero` | liczba musi być większa lub równa zero | `-1`, `0`, `1` |
+| `@Pattern` | string musi pasować do regexa | allowed value, disallowed value, case sensitivity |
+| `@Email` | format emaila | valid/invalid email |
+| `@Past`, `@Future` | reguły daty względem teraz | yesterday/today/tomorrow |
+| `@DecimalMin`, `@DecimalMax`, `@Digits` | reguły decimal/BigDecimal | money precision tests |
+
+W Lesson 7 najważniejsze są:
+
+```java
+@Pattern
+@PositiveOrZero
+@Min
+@Max
+```
+
+Bo `PaymentOrderListRequest` opisuje filtry, paginację i sortowanie:
+
+```java
+public record PaymentOrderListRequest(
+        @Pattern(regexp = "CREATED") String status,
+        @Pattern(regexp = "PLN|EUR|USD") String currency,
+        @PositiveOrZero Integer page,
+        @Min(1) @Max(100) Integer size,
+        @Pattern(regexp = "createdAt,(asc|desc)") String sort
+) {}
+```
+
+### Gdzie Te Adnotacje Działają W Łańcuchu Requestu
+
+Dla typowego `@Valid @RequestBody` flow:
+
+```text
+HTTP request
+-> Spring Security
+-> Spring MVC route matching
+-> JSON/query/path binding
+-> Jakarta Bean Validation via @Valid/@Validated
+-> controller method body
+-> service
+-> repository
+-> PostgreSQL constraints
+-> response
+```
+
+Najważniejsze:
+
+> Jakarta adnotacje zwykle działają na granicy web/controller, podczas przygotowywania argumentów metody controllera. Service domyślnie ich sam nie uruchamia.
+
+Przykład, gdzie walidacja działa klasycznie:
+
+```java
+public ResponseEntity<PaymentOrderResponse> createPaymentOrder(
+        @Valid @RequestBody CreatePaymentOrderRequest request) {
+    ...
+}
+```
+
+Jeżeli `amountMinor = 0`, Spring MVC zatrzymuje request przed logiką create i zwraca `400 validation` przez exception handler.
+
+### Pułapka W PaymentOrderListRequest
+
+W aktualnym `listPaymentOrders()` controller przyjmuje osobne query parametry:
+
+```java
+@RequestParam(required = false) String status,
+@RequestParam(required = false) String currency,
+@RequestParam(defaultValue = "0") int page,
+@RequestParam(defaultValue = "20") int size,
+@RequestParam(defaultValue = "createdAt,desc") String sort
+```
+
+Potem tworzy record ręcznie:
+
+```java
+PaymentOrderListRequest request = new PaymentOrderListRequest(
+        status, currency, fromDate, toDate, minAmount, maxAmount,
+        clientOrderReference, page, size, sort);
+```
+
+To oznacza ważną rzecz:
+
+> Adnotacje na `PaymentOrderListRequest` deklarują intencję walidacji, ale samo `new PaymentOrderListRequest(...)` nie uruchamia automatycznie Jakarta Bean Validation.
+
+Dlatego test może dostać `400`, ale z innego powodu niż adnotacja:
+
+| Parametr | Możliwe źródło `400` w obecnym flow |
+|---|---|
+| `page=-1` | `PageRequest.of(page, size, sort)` rzuca `IllegalArgumentException` |
+| `status=INVALID` | `PaymentStatus.valueOf(status)` rzuca `IllegalArgumentException` |
+| `fromDate=bad-date` | `parseDateSafely()` rzuca `IllegalArgumentException` |
+| `sort=bad` | zależy od tego, czy service/Spring Data odrzuci property |
+
+SDET lesson:
+
+> Nie wystarczy zobaczyć adnotację. Trzeba sprawdzić, czy framework faktycznie ją wykonuje.
+
+### Alternatywny Model Dla Query Object
+
+Bardziej spójny wzorzec dla query params może wyglądać tak:
+
+```java
+@GetMapping
+public ResponseEntity<PaymentOrderListResponse> listPaymentOrders(
+        @PathVariable UUID merchantId,
+        @Valid @ModelAttribute PaymentOrderListRequest request,
+        Authentication authentication,
+        @AuthenticationPrincipal Jwt jwt) {
+    ...
+}
+```
+
+Wtedy Spring MVC binduje query params do obiektu i może uruchomić Bean Validation. To nie jest wymaganie dla tej lekcji, ale jest ważnym punktem architektonicznym do code review.
+
+### SDET Checklist Dla Walidacji
+
+Gdy widzisz `@Pattern`, `@Min`, `@Max`, `@PositiveOrZero` albo podobną adnotację, sprawdź:
+
+1. Czy walidowany obiekt jest argumentem controllera?
+2. Czy jest użyte `@Valid` albo `@Validated`?
+3. Czy obiekt nie jest tworzony ręcznie przez `new`?
+4. Jaki exception powstaje przy błędzie?
+5. Który `@ExceptionHandler` zamienia go na `400 validation`?
+6. Czy test sprawdza tylko `400`, czy też stabilny kod `error = validation`?
+7. Czy test pokrywa wartości graniczne, np. `size=1`, `size=100`, `size=0`, `size=101`?
+8. Czy Java validation, domain validation i DB constraint mówią to samo?
+9. Czy puste stringi, missing param i `null` są traktowane świadomie?
+10. Czy lowercase/uppercase jest częścią kontraktu, np. `pln` vs `PLN`?
+
+### Co Senior QA Powinien Zapamiętać
+
+- Jakarta constraints opisują reguły danych.
+- Spring MVC musi mieć odpowiedni trigger, żeby te reguły uruchomić.
+- Service zwykle dostaje dane po web validation, ale nadal powinien chronić reguły domenowe.
+- DB constraints chronią integralność, gdy bug ominie warstwę aplikacji.
+- Test `400 validation` powinien weryfikować kontrakt klienta, nie tylko przypadkowy wyjątek implementacyjny.
 
 ## 8. SQL, PostgreSQL I Flyway
 

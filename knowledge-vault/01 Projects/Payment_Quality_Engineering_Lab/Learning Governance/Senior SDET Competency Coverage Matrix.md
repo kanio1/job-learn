@@ -3,7 +3,7 @@ type: tracker
 status: active
 project: Payment Quality Engineering Lab
 area: Learning Governance
-date: 2026-05-27
+date: 2026-05-31
 tags:
   - competency-matrix
   - senior-sdet
@@ -39,11 +39,11 @@ Statusy:
 | REST Assured | `ResponseSpecification` | Practiced | `successListSpec()` in `PaymentOrderListApiTestSupport` | Add error specs |
 | REST Assured | object mapping / typed extraction | Practiced | `extract().as(PaymentOrderListResponse.class)` | TypeRef for generic types |
 | AssertJ | basic assertions | Practiced | repository/service tests, list extraction | Custom assertions for error/payment response |
-| AssertJ | `extracting`, `filteredOn`, `tuple` | Introduced | limited usage | Payment list/report tests |
-| AssertJ | recursive comparison | Not Started | none | DTO comparison lesson |
-| AssertJ | soft assertions | Not Started | none | Response object multi-field assertion |
+| AssertJ | `extracting`, `filteredOn`, `tuple` | Practiced | Payment list and summary grouped-row assertions | Deepen with custom error assertions |
+| AssertJ | recursive comparison | Introduced | Lesson 07/08 notes and DTO comparison discussion | DTO comparison exercise later |
+| AssertJ | soft assertions | Introduced | Lesson 08 summary lesson material | Response object multi-field assertion exercise |
 | JUnit | basic `@Test` | Practiced | existing test suite | Keep as assumed knowledge |
-| JUnit | parameterized tests | Not Started | none | Validation and decision-table tests |
+| JUnit | parameterized tests | Planned | Lesson 10 prompt/note | Authorization matrix for summary |
 | JUnit | `@Nested` / `@Tag` | Not Started | none | Organize security/payment lifecycle tests |
 | Spring Testing | `@SpringBootTest` random port | Practiced | REST Assured tests | Keep for full HTTP contract |
 | Spring Testing | `@DataJpaTest` / repository tests | Practiced | JPA repository tests | Add idempotency and constraints tests |
@@ -61,23 +61,23 @@ Statusy:
 | Test Design | test pyramid / level selection | Introduced | roadmap | Evidence per sprint in tracker |
 | Frontend | Nuxt dashboard | Practiced | `CreatePaymentOrderForm.vue`, payment order detail page, Nuxt payment proxy | Add role-aware Playwright coverage later |
 | Playwright | authenticated user journeys | Introduced/Planned | roadmap | Role-aware merchant/payment flows |
-| Database Verification | DB as test oracle (when to verify via DB vs API) | Not Started | none | Decision framework lesson after Payment Order |
-| Database Verification | CTE, window functions, EXPLAIN | Not Started | none | SQL deep-dive with payment data in sprints 7-8 |
+| Database Verification | DB as test oracle (when to verify via DB vs API) | Introduced | Lesson 08 controlled seed API oracle | Lesson 10C DB oracle/EXPLAIN diagnostic |
+| Database Verification | CTE, window functions, EXPLAIN | Planned | Lesson 10C handoff | SQL diagnostic exercise after HTTP hardening |
 | Database Verification | transaction isolation, deadlock, race condition | Introduced | idempotency concurrency test | Isolation level testing in lifecycle sprints |
 | Test Data Management | data ownership, isolation, cleanup strategy | Introduced | per-test merchant creation, unique keys | Document strategy; add cleanup patterns |
 | Test Data Management | parallel-safe test data design | Introduced | `Parallel Readiness Principles` note | Worker-namespaced data exercises |
-| Assertion Strategy | RA vs AssertJ vs DB assertion decision | Not Started | none | Lesson 6 extension + deep-dive lesson |
+| Assertion Strategy | RA vs AssertJ vs DB assertion decision | Introduced | Lessons 08-10 summary/API vs UI split | Practice with HTTP matrix and optional DB oracle |
 | Failure Analysis | systematic test failure debugging | Not Started | none | Debugging exercises and checklist |
 | Framework Architecture | RA spec builders, client evolution | Introduced | `MerchantApiTestSupport` returns spec | Evolution path note |
 | API Contract | JSON Schema validation | Not Started | none | After API stabilizes |
 | API Contract | documentation smells, OpenAPI compliance | Not Started | contract markdown only | Reviewer checklist extension |
 | Observability | log assertions, metrics, traces | Not Started | correlation ID in headers only | Sprint 12+ observability lesson |
-| HTTP Robustness | content negotiation, 415/406 | Not Started | none | HTTP deep-dive lesson |
+| HTTP Robustness | content negotiation, 415/406 | Planned | Lesson 10 prompt/note | Summary HTTP edge contract tests |
 | Performance-Light | response time, N+1, payload size | Not Started | none | After lifecycle |
 | Flaky Test | diagnosis and CI failure triage | Not Started | none | Dedicated note + exercises |
 | API Coverage | coverage beyond code coverage | Not Started | none | Quality metrics note |
 | Negative-Path First | methodology for negative-first design | Introduced | comprehensive 400/401/403/404/409 tests | Explicit methodology exercise |
-| Contract Testing | Pact, WireMock, service virtualization | Deferred | `wiremock/README.md` placeholder | Sprint 10+ webhook testing |
+| Contract Testing | Pact, WireMock, service virtualization | Deferred | roadmap only | Future async/contract testing after Lesson 10 hardening |
 | Business-Readable Naming | `@DisplayName`, naming conventions | Introduced | technical test names exist | Add `@DisplayName` exercise + naming convention note |
 | RA Advanced | GPath traps, JSON path, array indexing | Deferred | simple `.body(path, matcher)` used | When list endpoints exist |
 | Observability | log/metric/trace assertions (not just existence) | Deferred | correlation ID in headers only | Sprint 12+ observability lesson |

@@ -17,7 +17,7 @@ Cel: każda lekcja lub sprint ma mieć dowód, że temat został przerobiony w k
 
 > **Navigation:** [[START HERE - Learning Dashboard]] | [[Learning Progress Board]] | [[Home]]
 >
-> **Current Lesson:** Lesson 09 (READY - frontend consumer and contract alignment implemented)
+> **Current Lesson:** Lesson 10 (PLANNED - REST/HTTP contract hardening and authorization matrix)
 
 ## What NOT To Touch Yet
 
@@ -27,16 +27,306 @@ These are explicitly deferred or out of scope. Do NOT study, implement, or resea
 |---|---|---|
 | Payment lifecycle (authorize/capture/cancel) | DEFERRED | Spec Kit 004+ |
 | PSP integration | DEFERRED | Spec Kit 005+ |
-| Kafka, webhooks, event pipeline | DEFERRED | Sprint 10+ |
+| Kafka, webhooks, event pipeline | DEFERRED | Future async sprint after REST/HTTP hardening |
 | GraphQL, gRPC | DEFERRED | Sprint 13+ |
 | Performance/load testing | DEFERRED | Sprint 13b |
 | Observability beyond correlation ID | DEFERRED | Sprint 12b |
-| JSON Schema / OpenAPI validation | DEFERRED | Sprint 10b |
-| Contract testing (Pact/WireMock) | DEFERRED | Sprint 10+ |
+| JSON Schema / OpenAPI validation | DEFERRED | Future contract-doc readiness after Lesson 10 |
+| Contract testing (Pact/WireMock) | DEFERRED | Future async/contract testing sprint |
 | Complete OAuth/OIDC | GUARDRAIL | Phase 0 — never in current scope |
 | Complete business dashboards | GUARDRAIL | Phase 0 — never in current scope |
 | `If-Match` / `412` / optimistic concurrency | DEFERRED | Spec Kit 004+ (when lifecycle actions exist) |
 | RLS (Row-Level Security) | DEFERRED | Sprint 9 extension |
+
+## Lesson 10 - REST HTTP Contract Hardening and Authorization Matrix
+
+**Data:** 2026-06-02
+**Status:** Ready - implementation complete, 41 tests pass (7 HTTP edge + 12 auth matrix + 22 regression)
+
+### Prompt
+- `../Learning Prompts/Prompt - Lesson 10 - REST HTTP Contract Hardening and Authorization Matrix.md`
+
+### Business capability
+No new payment business capability. Lesson 10 is a backend/API test-hardening slice over existing Payment Order summary/list/read contracts.
+
+### Learning delta
+- HTTP content negotiation and `Accept` behavior.
+- Unsupported method semantics for existing REST resources.
+- Malformed UUID path variable and stable `400 validation` envelope.
+- Route ambiguity guardrail for `/payment-orders/summary` vs `/payment-orders/{paymentOrderId}`.
+- Conditional header discipline: summary intentionally has no `ETag` and should not imply cache semantics.
+- Parameterized JUnit/REST Assured authorization matrix.
+- BOLA vs BFLA distinction for merchant-scoped summary/report endpoints.
+- REST Assured protocol/error assertions beyond happy-path JSON body checks.
+
+### Production code evidence
+- `apps/backend/src/test/java/lab/paymentquality/testsupport/TestJwtSupport.java` — added `merchantPaymentReaderTokenWithoutMerchantIdClaim()` for authorization matrix row 8
+
+### Test code evidence
+- `apps/backend/src/test/java/lab/paymentquality/rest/PaymentOrderSummaryHttpContractRestAssuredTest.java` — 7 tests (Batch 10A)
+- `apps/backend/src/test/java/lab/paymentquality/security/PaymentOrderSummaryAuthorizationMatrixTest.java` — 12 parameterized tests (Batch 10B)
+
+### Spec Kit artifacts
+- `specs/007-rest-http-contract-hardening-authorization-matrix/spec.md`
+- `specs/007-rest-http-contract-hardening-authorization-matrix/plan.md`
+- `specs/007-rest-http-contract-hardening-authorization-matrix/tasks.md`
+- `specs/007-rest-http-contract-hardening-authorization-matrix/research.md`
+- `specs/007-rest-http-contract-hardening-authorization-matrix/data-model.md`
+- `specs/007-rest-http-contract-hardening-authorization-matrix/contracts/summary-http-edge-api.md`
+
+### Vault notes
+- `02 Phase 2 - Payment Orders/Lesson 10 - REST HTTP Contract Hardening and Authorization Matrix.md`
+- `02 Phase 2 - Payment Orders/Lesson 10 - Business Logic, Decision Tables, and Risk Notes.md`
+
+### Descriptive lesson materials (2026-05-31)
+
+Created 5 focused descriptive lessons in the Technical Learning vault, each covering a different aspect of Lesson 10:
+
+| Area | File |
+|---|---|
+| Java 25 | `02 Areas/Technical Learning/Java 25 For SDET/Lesson 10 - Parameterized Tests, Authorization Matrix, and Test Data Builders.md` |
+| REST testing | `02 Areas/Technical Learning/JUnit REST Assured/Lesson 10 - HTTP Edge Contract, Route Guardrails, and Matrix Tests.md` |
+| HTTP/API | `02 Areas/Technical Learning/REST API From Zero/Lesson 10 - HTTP Semantics, Content Negotiation, and Error Contract Hardening.md` |
+| SQL/PostgreSQL | `02 Areas/Technical Learning/PostgreSQL and SQL From Zero/Lesson 10 - Aggregation Diagnostics, EXPLAIN, and DB Oracle Practice.md` |
+| Business logic | `02 Phase 2 - Payment Orders/Lesson 10 - Business Logic, Decision Tables, and Risk Notes.md` |
+
+Each lesson follows the 11-section template (goal → prerequisites → code map → concepts → walkthrough → delta vs L06-L09 → mistakes → exercises → questions → tests → next links), with direct references to real production and test files from Lessons 06-09 and planned Lesson 10 tests.
+
+### Commands run
+- `./mvnw -Dtest=PaymentOrderSummaryHttpContractRestAssuredTest test` — 7/7 pass
+- `./mvnw -Dtest=PaymentOrderSummaryAuthorizationMatrixTest test` — 12/12 pass
+- `./mvnw -Dtest=PaymentOrderSummaryRestAssuredTest,PaymentOrderSummaryBusinessFlowRestAssuredTest,PaymentOrderSummarySecurityTest test` — 20/20 pass
+- `./mvnw -Dtest=PaymentModuleTest test` — 2/2 pass
+- `./mvnw -DskipTests package` — BUILD SUCCESS
+
+### Guardrails
+- Do not add authorize/capture/cancel lifecycle actions.
+- Do not add PSP integration or PSP mock flows.
+- Do not add Kafka/webhooks.
+- Do not add new payment statuses only to make tests more interesting.
+- Do not add Pact/WireMock/OpenAPI automation in this slice.
+- Do not change frontend unless a backend contract fix requires consumer alignment.
+
+### Open risks
+- ~~Current Spring MVC defaults for unsupported `Accept` or unsupported methods must be characterized before locking assertions.~~ RESOLVED: `Accept: text/xml` → 406, unsupported methods → 405, `If-None-Match` → ignored.
+- Security tests should avoid becoming an unreadable matrix DSL. — RESOLVED: parameterized test with clear display names and BOLA/BFLA labels.
+- `Learning Progress Board` and `Senior SDET Competency Coverage Matrix` were stale before Lesson 10 planning and need continued cleanup after implementation evidence exists.
+
+### Interview answer EN
+> Lesson 10 hardened the existing Payment Order Summary REST API without adding new business functionality. I implemented HTTP edge contract tests covering route collision, malformed UUID validation, unsupported methods (405), content negotiation (406), and conditional header discipline (If-None-Match ignored). I also created a parameterized authorization matrix with 12 test cases explicitly labeling BOLA (cross-tenant access) and BFLA (wrong role) scenarios. This demonstrates senior-level thinking: testing protocol behavior and security policy, not just happy-path JSON assertions.
+
+### Next lesson/sprint handoff
+After Lesson 10, choose either DB oracle/EXPLAIN deep dive (Batch 10C optional) or contract documentation/OpenAPI readiness (Lesson 14). Do not start payment lifecycle until the project guardrails explicitly allow it.
+
+## Lesson 11 - REST Assured Framework Architecture and Test Organization
+
+**Data:** 2026-05-31
+**Status:** Planned - lesson note and implementation prompt ready; code/test implementation not started
+
+### Prompt
+- `../Learning Prompts/Prompt - Lesson 11 - REST Assured Framework Architecture and Test Organization.md`
+
+### Business capability
+No new payment business capability. Lesson 11 is a framework maturity slice — transforms existing test suite from "working tests" to "professional framework".
+
+### Learning delta
+- API client wrapper pattern (business-readable methods zamiast raw REST Assured chains).
+- Test data builders (fluent API zamiast `Map.of(...)`).
+- Reusable error specs (`ResponseSpecification` dla error contracts).
+- Secret masking (`blacklistHeader("Authorization")` w logach).
+- Test organization (@Nested groups, @Tag labels).
+- Scenario flows (multi-step tests: create → list → summary).
+- Java 25: sealed interface dla test data hierarchies, Map.copyOf/List.copyOf, Comparator.comparing/thenComparing.
+
+### Production code evidence expected
+- No production code expected. Pure test infrastructure refactoring.
+
+### Test code evidence expected
+- `apps/backend/src/test/java/lab/paymentquality/testsupport/PaymentOrderApi.java` — API client wrapper.
+- `apps/backend/src/test/java/lab/paymentquality/testsupport/MerchantApi.java` — API client wrapper.
+- `apps/backend/src/test/java/lab/paymentquality/testsupport/PaymentOrderBuilder.java` — test data builder.
+- `apps/backend/src/test/java/lab/paymentquality/testsupport/MerchantBuilder.java` — test data builder.
+- `apps/backend/src/test/java/lab/paymentquality/testsupport/PaymentErrorSpecs.java` — reusable error specs.
+- `apps/backend/src/test/java/lab/paymentquality/testsupport/RestAssuredLoggingConfig.java` — secret masking extension.
+- `apps/backend/src/test/java/lab/paymentquality/rest/PaymentOrderScenarioFlowTest.java` — multi-step scenario tests.
+- Refactored existing tests with @Nested, @Tag.
+
+### Vault notes
+- `02 Phase 2 - Payment Orders/Lesson 11 - REST Assured Framework Architecture and Test Organization.md`
+- `02 Phase 2 - Payment Orders/Lesson 11 - Business Logic, Decision Tables, and Risk Notes.md`
+
+### Descriptive lesson materials (2026-05-31)
+
+| Area | File |
+|---|---|
+| Java 25 | `02 Areas/Technical Learning/Java 25 For SDET/Lesson 11 - Sealed Types, Defensive Copies, and Comparators.md` |
+| REST testing | `02 Areas/Technical Learning/JUnit REST Assured/Lesson 11 - API Clients, Builders, Error Specs, and Filters.md` |
+| HTTP/API | `02 Areas/Technical Learning/REST API From Zero/Lesson 11 - CORS, Caching Headers, and API Versioning Awareness.md` |
+| SQL/PostgreSQL | `02 Areas/Technical Learning/PostgreSQL and SQL From Zero/Lesson 11 - Test Data Isolation Strategies and Flyway Test Migrations.md` |
+| Business logic | `02 Phase 2 - Payment Orders/Lesson 11 - Business Logic, Decision Tables, and Risk Notes.md` |
+
+### Commands to run after implementation
+- `cd apps/backend && ./mvnw test`
+- `cd apps/backend && ./mvnw -Dtest=PaymentOrderScenarioFlowTest test`
+- `cd apps/backend && ./mvnw -Dtest="*Test" -Dgroups="security" test`
+- `cd apps/backend && ./mvnw -Dtest=PaymentModuleTest test`
+
+### Guardrails
+- No new production code unless tests expose a real bug.
+- No new endpoints or business logic.
+- No frontend changes.
+- No Pact/WireMock/OpenAPI automation.
+
+### Interview answer EN
+Draft:
+> Lesson 11 transforms the test suite from "working tests" to "professional framework". I introduced API client wrappers that replace raw REST Assured chains with business-readable methods, test data builders using the builder pattern, reusable ResponseSpecification instances for error contracts, secret masking for Authorization headers, and organized tests with @Nested groups and @Tag labels. This is what separates a junior test writer from a senior SDET: not just writing tests, but designing a maintainable, readable, and secure test framework.
+
+### Next lesson/sprint handoff
+After Lesson 11, proceed to Lesson 12 (Advanced Assertions & Parameterized Testing).
+
+## Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing
+
+**Data:** 2026-05-31
+**Status:** Planned - lesson note and implementation prompt ready; code/test implementation not started
+
+### Prompt
+- `../Learning Prompts/Prompt - Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing.md`
+
+### Business capability
+No new payment business capability. Lesson 12 is a precision assertions slice — transforms tests from "basic assertions" to "precision assertions".
+
+### Learning delta
+- TypeRef<T> dla generic list extraction (`List<PaymentOrderResponse>`).
+- GPath advanced (deep scan `..`, `findAll`, array indexing).
+- Response time assertions (`.time()`, `.timeIn()`).
+- JSON Schema validation (`matchesJsonSchemaInClasspath()`).
+- usingRecursiveComparison z ignoringFields, comparingOnlyFields.
+- SoftAssertions z assertAll().
+- asInstanceOf dla type-safe casting.
+- @ParameterizedTest z @MethodSource, @CsvSource, @EnumSource.
+- @RepeatedTest dla repeated execution.
+- DynamicTest / @TestFactory dla dynamic test generation.
+- Java 25: Generics (bounded wildcards, PECS), pattern matching instanceof, text blocks.
+
+### Production code evidence expected
+- No production code expected. Pure test enhancement.
+
+### Test code evidence expected
+- Extended `PaymentOrderListRestAssuredTest.java` with TypeRef<T>.
+- New `PaymentOrderPerformanceTest.java` with response time assertions.
+- Extended `PaymentOrderAssertions.java` with recursive comparison, soft assertions.
+- New `PaymentOrderParameterizedTest.java` with @ParameterizedTest.
+- New `PaymentOrderJsonFixtures.java` with text blocks.
+
+### Vault notes
+- `02 Phase 2 - Payment Orders/Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing.md`
+- `02 Phase 2 - Payment Orders/Lesson 12 - Business Logic, Decision Tables, and Risk Notes.md`
+
+### Descriptive lesson materials (2026-05-31)
+
+| Area | File |
+|---|---|
+| Java 25 | `02 Areas/Technical Learning/Java 25 For SDET/Lesson 12 - Generics, Pattern Matching, and Text Blocks.md` |
+| REST testing | `02 Areas/Technical Learning/JUnit REST Assured/Lesson 12 - TypeRef, GPath Advanced, Response Time, and JSON Schema.md` |
+| HTTP/API | `02 Areas/Technical Learning/REST API From Zero/Lesson 12 - HATEOAS, Content Negotiation Deep Dive, and Rate Limiting.md` |
+| SQL/PostgreSQL | `02 Areas/Technical Learning/PostgreSQL and SQL From Zero/Lesson 12 - CTE and Window Functions.md` |
+| Business logic | `02 Phase 2 - Payment Orders/Lesson 12 - Business Logic, Decision Tables, and Risk Notes.md` |
+
+### Commands to run after implementation
+- `cd apps/backend && ./mvnw test`
+- `cd apps/backend && ./mvnw -Dtest=PaymentOrderParameterizedTest test`
+- `cd apps/backend && ./mvnw -Dtest=PaymentOrderPerformanceTest test`
+- `cd apps/backend && ./mvnw -Dtest=PaymentModuleTest test`
+
+### Guardrails
+- No new production code.
+- No new endpoints or business logic.
+- No frontend changes.
+- Performance tests marked with @Tag("performance") for optional execution.
+
+### Interview answer EN
+Draft:
+> Lesson 12 introduces precision assertions and data-driven testing. I used TypeRef<T> for type-safe generic list extraction, GPath advanced features like deep scan and findAll for complex JSON navigation, response time assertions for performance baselines, and JSON Schema validation for contract verification. I also implemented @ParameterizedTest with @MethodSource, @CsvSource, and @EnumSource for data-driven testing. This is senior-level testing: not just checking status codes, but verifying exact response structure, performance characteristics, and testing across multiple data sets efficiently.
+
+### Next lesson/sprint handoff
+After Lesson 12, proceed to Lesson 13 (Spring Testing Layers, Concurrency, Observability, and Test Reliability).
+
+## Lesson 13 - Spring Testing Layers, Concurrency, Observability, and Test Reliability
+
+**Data:** 2026-05-31
+**Status:** Planned - lesson note and implementation prompt ready; code/test implementation not started
+
+### Prompt
+- `../Learning Prompts/Prompt - Lesson 13 - Spring Testing Layers, Concurrency, Observability, and Test Reliability.md`
+
+### Business capability
+No new payment business capability. Lesson 13 is a test infrastructure architect slice — designs not just tests, but the entire test ecosystem.
+
+### Learning delta
+- @WebMvcTest / MockMvc dla focused controller tests.
+- @MockBean / @SpyBean dla mocking dependencies.
+- Spring profiles dla test-specific configuration.
+- @Execution(CONCURRENT) dla parallel test execution.
+- Transaction isolation levels (READ_COMMITTED, REPEATABLE_READ, SERIALIZABLE).
+- Pessimistic vs optimistic locking.
+- Deadlock detection i prevention.
+- Log assertions z ListAppender.
+- Flaky test diagnosis methodology.
+- Failure analysis (app bug vs test bug vs data bug vs env bug).
+- Awaitility dla async polling.
+- Maven surefire vs failsafe (unit vs integration tests).
+- Java 25: EnumSet, EnumMap, streams advanced (groupingBy, partitioningBy).
+- SQL: EXPLAIN ANALYZE, deadlock detection.
+
+### Production code evidence expected
+- No production code expected by default.
+- Potential production touchpoints if tests reveal concurrency bugs.
+
+### Test code evidence expected
+- `apps/backend/src/test/java/lab/paymentquality/web/PaymentOrderControllerTest.java` — @WebMvcTest + MockMvc.
+- `apps/backend/src/test/java/lab/paymentquality/concurrency/PaymentOrderParallelTest.java` — @Execution(CONCURRENT).
+- `apps/backend/src/test/java/lab/paymentquality/concurrency/PaymentOrderTransactionTest.java` — transaction isolation.
+- `apps/backend/src/test/java/lab/paymentquality/concurrency/PaymentOrderLockingTest.java` — locking.
+- `apps/backend/src/test/java/lab/paymentquality/observability/PaymentOrderLoggingTest.java` — log assertions.
+- `apps/backend/src/test/java/lab/paymentquality/async/PaymentOrderAsyncTest.java` — Awaitility.
+- `FlakyTestDiagnosis.md` — methodology documentation.
+- `FailureAnalysisChecklist.md` — failure analysis documentation.
+- Extended `pom.xml` z failsafe plugin.
+
+### Vault notes
+- `02 Phase 2 - Payment Orders/Lesson 13 - Spring Testing Layers, Concurrency, Observability, and Test Reliability.md`
+- `02 Phase 2 - Payment Orders/Lesson 13 - Business Logic, Decision Tables, and Risk Notes.md`
+
+### Descriptive lesson materials (2026-05-31)
+
+| Area | File |
+|---|---|
+| Java 25 | `02 Areas/Technical Learning/Java 25 For SDET/Lesson 13 - EnumSet, EnumMap, Streams Advanced, and Optional.md` |
+| REST testing | `02 Areas/Technical Learning/JUnit REST Assured/Lesson 13 - MockMvc, Parallel Execution, Extensions, and Awaitility.md` |
+| HTTP/API | `02 Areas/Technical Learning/REST API From Zero/Lesson 13 - HTTP Caching Deep Dive, CORS Configuration, and API Versioning Strategies.md` |
+| SQL/PostgreSQL | `02 Areas/Technical Learning/PostgreSQL and SQL From Zero/Lesson 13 - EXPLAIN ANALYZE, Transaction Isolation, and Locking.md` |
+| Business logic | `02 Phase 2 - Payment Orders/Lesson 13 - Business Logic, Decision Tables, and Risk Notes.md` |
+
+### Commands to run after implementation
+- `cd apps/backend && ./mvnw test` (unit tests via surefire)
+- `cd apps/backend && ./mvnw verify` (unit + integration tests via surefire + failsafe)
+- `cd apps/backend && ./mvnw -Dtest=PaymentOrderControllerTest test`
+- `cd apps/backend && ./mvnw -Dtest=PaymentOrderParallelTest test`
+- `cd apps/backend && ./mvnw -Dtest=PaymentOrderLoggingTest test`
+- `cd apps/backend && ./mvnw -Dtest=PaymentModuleTest test`
+
+### Guardrails
+- No new production code unless tests reveal concurrency bugs.
+- No new endpoints or business logic.
+- No frontend changes.
+- Parallel tests must ensure test data isolation.
+
+### Interview answer EN
+Draft:
+> Lesson 13 transforms me from a test writer to a test infrastructure architect. I designed focused controller tests with @WebMvcTest and MockMvc for fast, isolated web layer testing. I implemented parallel test execution with @Execution(CONCURRENT) and ensured test data isolation. I tested transaction isolation levels (READ_COMMITTED, REPEATABLE_READ, SERIALIZABLE) and both pessimistic and optimistic locking strategies. I added log assertions with ListAppender, documented flaky test diagnosis methodology, and configured Maven surefire vs failsafe for proper unit vs integration test lifecycle. This is production-grade test infrastructure.
+
+### Next lesson/sprint handoff
+After Lesson 13, choose between contract documentation/OpenAPI readiness (Lesson 14) or webhook subscription (Lesson 15) depending on project direction.
 
 ## Lesson 07 — Payment Order List, Filter, Search + RA Framework Architecture
 

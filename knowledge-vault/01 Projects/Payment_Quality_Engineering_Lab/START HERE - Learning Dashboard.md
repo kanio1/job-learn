@@ -1,7 +1,7 @@
 ---
 type: dashboard
 status: active
-date: 2026-05-28
+date: 2026-05-31
 tags:
   - learning-os
   - dashboard
@@ -10,9 +10,9 @@ tags:
 
 # START HERE - Learning Dashboard
 
-> **Current Status:** Lesson 06 — Payment Order Create/Read Foundation (ACTIVE)
+> **Current Status:** Lesson 10 — REST HTTP Contract Hardening and Authorization Matrix (PLANNED)
 >
-> **Current Sprint:** Sprint 8 — Payment Aggregation Summary (planned)
+> **Current Sprint:** Sprint 10 — backend/API test hardening for existing Payment Order REST contracts
 >
 > **Current Rule:** One lesson at a time. No skipping. No deferred topics.
 >
@@ -22,26 +22,26 @@ tags:
 
 1. Open [[Current Lesson]] — check what's NOW and what NEEDS PRACTICE
 2. Pick one exercise from NEEDS PRACTICE
-3. Run the commands: `cd apps/backend && ./mvnw test`
+3. Run the Lesson 10 targeted backend commands from [[Current Sprint]]
 4. Mark progress: [[Prompt - Mark Lesson Progress]]
 
 ## Current Active Lesson (Lesson 6 Onward)
 
-- **Lesson 06** — [[Lesson 06 - Payment Order Create Read Foundation]] — study code, tests, SQL, security matrix
-- **Next lesson:** [[Lesson 08 - Payment Aggregation Summary]] — read-only aggregation, `GROUP BY`, `COUNT`, `SUM`, `EXPLAIN`
+- **Lessons 06-09** — create/read, list/filter, summary and frontend consumer are covered with code/test evidence
+- **Active next:** [[Lesson 10 - REST HTTP Contract Hardening and Authorization Matrix]] — `Accept`, unsupported methods, route ambiguity, malformed UUID and BOLA/BFLA matrix
 
 ## Next 3 Learning Steps
 
 | Step | Description | Prompt |
 |---|---|---|
-| 1 | Read Lesson 08 scope and guardrails | [[Current Lesson]] |
-| 2 | Complete SQL exercises (INSERT, SELECT) | [[Lesson 06#SQL, PostgreSQL I Flyway]] |
-| 3 | Answer 25 questions from Lesson 06 §13 | [[Lesson 06#Pytania Do Samodzielnej Odpowiedzi]] |
+| 1 | Read Lesson 10 scope and guardrails | [[Lesson 10 - REST HTTP Contract Hardening and Authorization Matrix]] |
+| 2 | Use the Lesson 10 implementation prompt | [[Prompt - Lesson 10 - REST HTTP Contract Hardening and Authorization Matrix]] |
+| 3 | Design the summary authorization matrix before coding | [[Current Lesson]] |
 
 ## ⛔ Do Not Touch
 
 - Payment lifecycle actions (authorize/capture/cancel)
-- Kafka, GraphQL, gRPC
+- Kafka, webhooks, GraphQL, gRPC
 - PSP integration
 - Complete OAuth/OIDC, business dashboards
 
@@ -99,7 +99,7 @@ START HERE - Learning Dashboard.md     ← YOU ARE HERE
   How To Use This Vault.md
 
 Learning Governance/                    ← Trackers and evidence
-Learning Prompts/                       ← Reusable Kilo prompts (8 templates)
+Learning Prompts/                       ← Reusable Kilo prompts and lesson prompts
 01 Phase 1 - Foundations/              ← Lessons 1-5
 02 Phase 2 - Payment Orders/           ← Lesson 06+
 02 Areas/Technical Learning/           ← Technology reference

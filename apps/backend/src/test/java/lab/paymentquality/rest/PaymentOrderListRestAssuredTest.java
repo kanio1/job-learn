@@ -111,6 +111,25 @@ class PaymentOrderListRestAssuredTest extends PostgresContainerSupport {
     }
 
     @Test
+    @DisplayName("list filtered by status returns only CREATED orders")
+    void listFilteredByStatusReturnsOnlyCreatedV2(){
+        String merchantId = seedAndGetReader(90);
+        String readToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        PaymentOrderListResponse response = MerchantApiTestSupport.requestWithToken(port, readToken)
+                .accept(ContentType.JSON)
+                .queryParam("status", "CREATED")
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(200)
+                .extract().as(PaymentOrderListResponse.class);
+        
+        assertThat(response.content()).hasSize(5);
+        assertThat(response.content()).extracting("status").containsOnly("CREATED");
+    }
+
+    @Test
     @DisplayName("list with empty result returns 200 with empty content")
     void listEmptyResultReturns200WithEmptyContent() {
         String merchantId = PaymentApiTestSupport.createActiveMerchant(port,

@@ -2,5 +2,6 @@
   "newFileLocation": "folder",
   "newFileFolderPath": "00 Inbox",
   "attachmentFolderPath": "03 Resources/Attachments",
-  "promptDelete": false
+  "promptDelete": false,
+  "readableLineLength": false
 }

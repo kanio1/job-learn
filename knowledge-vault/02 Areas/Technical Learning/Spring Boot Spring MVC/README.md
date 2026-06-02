@@ -29,6 +29,12 @@ Ta ścieżka uczy Spring Web MVC jako granicy HTTP systemu. Tester/SDET musi roz
 | 9 | Security annotations and authorities | `@PreAuthorize` | endpoint bez ochrony |
 | 10 | HTTP test vs controller unit test | REST Assured vs controller tests | kruche testy implementacji |
 
+## Project Bridges
+
+| Lesson | Note | Why it belongs here |
+|---|---|---|
+| 07 | [[Lesson 07 - Payment Order List Filter Search#7a Jakarta Validation And Spring MVC Lifecycle]] | Shows Jakarta constraints, `@Valid`/`@Validated`, query parameter binding, and why manually constructed request records may not be automatically validated |
+
 ## Zasada SDET
 
 Pytaj:

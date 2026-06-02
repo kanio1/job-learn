@@ -1,7 +1,7 @@
 ---
 type: learning-os
 status: active
-date: 2026-05-31
+date: 2026-06-02
 tags:
   - learning-os
   - current-lesson
@@ -9,19 +9,20 @@ tags:
 
 # Current Lesson
 
-> **Active Lesson:** 09 - Payment Orders Frontend Consumer and Contract Alignment
+> **Active Lesson:** 11 - REST Assured Framework Architecture and Test Organization
 >
-> **Status:** READY - frontend consumer slice implemented and verified
+> **Status:** PLANNED - framework maturity slice after Lesson 10 completion
 >
-> **Next:** Review Lesson 09 evidence, then choose a focused follow-up only after the frontend consumer gap is accepted
+> **Next:** Implement Lesson 11 batches: API client wrappers, test data builders, reusable error specs, secret masking
 
 ## NOW: What To Learn
 
 | Priority | Item | Type | Time |
 |---|---|---|---|
-| 1 | [[Lesson 09 - Payment Orders Frontend Consumer and Contract Alignment]] - review implementation evidence and explain the contract split | Review | 1 session |
-| 2 | Compare REST Assured backend assertions with Playwright UI assertions | Review | 30 min |
-| 3 | Decide the next follow-up: BOLA/BFLA deep dive, DB oracle practice, or contract docs | Planning | 30 min |
+| 1 | [[Lesson 11 - REST Assured Framework Architecture and Test Organization]] - implement framework maturity tests | Test implementation | 1-2 sessions |
+| 2 | [[Prompt - Lesson 11 - REST Assured Framework Architecture and Test Organization]] - use as execution prompt | Prompt | 15 min |
+| 3 | Design API client wrappers: PaymentOrderApi, MerchantApi | Test architecture | 45 min |
+| 4 | Implement test data builders: PaymentOrderBuilder, MerchantBuilder | Java 25 patterns | 1 session |
 
 ## COVERED: Lessons 1-5 (Foundations)
 
@@ -86,6 +87,58 @@ tags:
 | Playwright happy/empty/forbidden/backend-unavailable UI states | `apps/frontend/tests/e2e/payment-orders-panel.spec.ts` | Strong |
 | Backend list/summary regression guardrails for frontend consumer | REST Assured summary/list/security/business-flow commands | Strong |
 
+## COVERED: From Lesson 10
+
+| Topic | Evidence | Confidence |
+|---|---|---|
+| HTTP edge contract hardening | `PaymentOrderSummaryHttpContractRestAssuredTest` — 7 tests | Strong |
+| Parameterized authorization matrix | `PaymentOrderSummaryAuthorizationMatrixTest` — 12 parameterized tests | Strong |
+| Route collision guardrail | `summaryRouteReturnsSummaryShapeNotPaymentOrderReadShape` | Strong |
+| Content negotiation (`Accept: text/xml` → 406) | `unsupportedAcceptIsRejectedOrExplicitlyCharacterized` | Strong |
+| Unsupported methods (PUT/PATCH/DELETE → 405) | `unsupportedMethodsDoNotExposeSummaryMutationSurface` | Strong |
+| Conditional header discipline (no ETag) | `ifNoneMatchDoesNotEnableSummaryCaching` | Strong |
+| Malformed UUID validation (400) | `malformedMerchantIdReturnsValidationError` — 3 variants | Strong |
+| BOLA vs BFLA labeling | Authorization matrix with explicit BOLA/BFLA labels | Strong |
+| `TestJwtSupport` extension | `merchantPaymentReaderTokenWithoutMerchantIdClaim()` | Strong |
+| Spring MVC characterization | Research documented in `specs/007/research.md` | Strong |
+
+## PLANNED: Lesson 11
+
+| Topic | Expected Evidence | Why Now |
+|---|---|---|
+| API client wrapper pattern | `PaymentOrderApi.java` | Zastępuje surowe REST Assured chains biznesowo-czytelnymi metodami |
+| Test data builders | `PaymentOrderBuilder.java` | Zastępuje `Map.of(...)` fluent builder pattern |
+| Reusable error specs | `PaymentErrorSpecs.java` | Reusable `ResponseSpecification` dla error contracts |
+| Secret masking | `RestAssuredLoggingConfig.java` rozszerzenie | `blacklistHeader("Authorization")` w logach |
+| Test organization | @Nested, @Tag w istniejących testach | Organizacja testów w inner classes z selective execution |
+| Scenario flows | `PaymentOrderScenarioFlowTest.java` | Multi-step tests (create → list → summary) |
+
+## PLANNED: Lesson 12
+
+| Topic | Expected Evidence | Why Now |
+|---|---|---|
+| TypeRef<T> dla generic list extraction | Rozszerzenie `PaymentOrderListRestAssuredTest.java` | Type-safe extraction dla `List<T>` |
+| GPath advanced (deep scan, findAll, array indexing) | Rozszerzenie istniejących testów | Zaawansowane GPath patterns |
+| Response time assertions | `PaymentOrderPerformanceTest.java` | Performance baseline establishment |
+| usingRecursiveComparison | Rozszerzenie `PaymentOrderAssertions.java` | Deep object comparison |
+| SoftAssertions | Rozszerzenie summary tests | Multiple assertions, one failure |
+| @ParameterizedTest z @MethodSource/@CsvSource/@EnumSource | `PaymentOrderParameterizedTest.java` | Data-driven testing |
+
+## PLANNED: Lesson 13
+
+| Topic | Expected Evidence | Why Now |
+|---|---|---|
+| @WebMvcTest / MockMvc | `PaymentOrderControllerTest.java` | Focused controller tests bez full Spring context |
+| @MockBean / @SpyBean | Rozszerzenie controller tests | Mocking dependencies w Spring tests |
+| @Execution(CONCURRENT) | `PaymentOrderParallelTest.java` | Parallel test execution |
+| Transaction isolation levels | `PaymentOrderTransactionTest.java` | READ_COMMITTED vs REPEATABLE_READ vs SERIALIZABLE |
+| Pessimistic vs optimistic locking | `PaymentOrderLockingTest.java` | Concurrency control |
+| Log assertions | `PaymentOrderLoggingTest.java` | Weryfikacja logów |
+| Flaky test diagnosis | `FlakyTestDiagnosis.md` | Methodology wykrywania flaky tests |
+| Failure analysis | `FailureAnalysisChecklist.md` | App bug vs test bug vs data bug vs env bug |
+| Awaitility | `PaymentOrderAsyncTest.java` | Async polling (zamiast Thread.sleep) |
+| Maven surefire vs failsafe | `pom.xml` rozszerzenie | Unit vs integration tests lifecycle |
+
 ## INTRODUCED: Seen But Not Yet Mastered
 
 | Topic | Where | What You Still Need |
@@ -101,16 +154,20 @@ tags:
 | Frontend consumer contract | Lesson 09 implementation | Practice explaining the backend contract vs UI consumer split without reading notes |
 | Playwright UI state coverage | `payment-orders-panel.spec.ts` | Add future tests only when new UI behavior exists |
 | Consumer-driven contract thinking | Lesson 09 evidence | Practice choosing REST Assured vs Playwright assertions for new cases |
+| Content negotiation and unsupported methods | Lesson 10 plan | Implement and explain `Accept`, `406`/characterized behavior and `405` |
+| Parameterized authorization matrix | Lesson 10 plan | Convert role/claim cases into readable JUnit matrix rows |
+| Error contract consistency | Lesson 10 plan | Assert status, `error`, message and content type where payment-domain handler applies |
 
 ## NEEDS PRACTICE: Exercises
 
 | # | Exercise | Time |
 |---|---|---|
-| 1 | Explain why Lesson 09 did not add authorize/capture/cancel | 15 min |
-| 2 | Explain how Zod protects a Nuxt consumer from backend response drift | 20 min |
-| 3 | Walk through the forbidden UI test and identify what it does not prove | 20 min |
-| 4 | Compare summary REST Assured assertions with payment panel Playwright assertions | 30 min |
-| 5 | Review route collision fix: why `merchants/index.vue` was needed for nested routes | 20 min |
+| 1 | Explain why Lesson 10 is test hardening, not a new payment business feature | 15 min |
+| 2 | Write the expected `401`/`403`/`200` rows for summary access before coding | 30 min |
+| 3 | Explain `Accept` vs `Content-Type` using one Payment Order example | 20 min |
+| 4 | Compare BOLA and BFLA using summary endpoint cases | 20 min |
+| 5 | Explain why `/summary` route ordering matters next to `/{paymentOrderId}` | 20 min |
+| 6 | Decide when an HTTP edge result is acceptable Spring behavior vs product bug | 30 min |
 
 ## DEFERRED: Do NOT Study Now
 
@@ -118,11 +175,11 @@ tags:
 |---|---|
 | Payment lifecycle (authorize/capture/cancel) | Future Spec Kit after frontend consumer gap is closed |
 | PSP integration | Spec Kit 005+ |
-| Kafka, webhooks, event pipeline | Sprint 10+ |
+| Kafka, webhooks, event pipeline | Future async sprint after REST/HTTP hardening |
 | GraphQL, gRPC | Sprint 13+ |
 | Performance/load testing | Sprint 13b |
-| JSON Schema / OpenAPI validation | Sprint 10b |
-| Contract testing (Pact/WireMock) | Sprint 10+ |
+| JSON Schema / OpenAPI validation | Future contract-doc readiness after Lesson 10 |
+| Contract testing (Pact/WireMock) | Future async/contract testing sprint |
 | `If-Match` / `412` / optimistic concurrency | Spec Kit 004+ |
 | RLS (Row-Level Security) | Sprint 9 extension |
 | Complete OAuth/OIDC | Phase 0 guardrail — never |
@@ -140,6 +197,19 @@ tags:
 - [x] Lesson 09 frontend typecheck passes
 - [x] Lesson 09 backend regression guardrails captured
 - [x] Lesson 09 evidence captured after implementation
+- [x] Lesson 10 note created: [[Lesson 10 - REST HTTP Contract Hardening and Authorization Matrix]]
+- [x] Lesson 10 prompt created: [[Prompt - Lesson 10 - REST HTTP Contract Hardening and Authorization Matrix]]
+- [x] Lesson 10 HTTP edge contract tests implemented — 7 tests pass
+- [x] Lesson 10 authorization matrix tests implemented — 12 parameterized tests pass
+- [x] Lesson 10 backend verification commands captured — 41 tests pass total
+- [x] Lesson 10 Spec Kit artifacts created — spec, plan, tasks, research, data-model, contracts
+- [x] Lesson 10 evidence captured in Lesson Evidence Tracker
+- [x] Lesson 11 note created: [[Lesson 11 - REST Assured Framework Architecture and Test Organization]]
+- [x] Lesson 11 prompt created: [[Prompt - Lesson 11 - REST Assured Framework Architecture and Test Organization]]
+- [x] Lesson 12 note created: [[Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing]]
+- [x] Lesson 12 prompt created: [[Prompt - Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing]]
+- [x] Lesson 13 note created: [[Lesson 13 - Spring Testing Layers, Concurrency, Observability, and Test Reliability]]
+- [x] Lesson 13 prompt created: [[Prompt - Lesson 13 - Spring Testing Layers, Concurrency, Observability, and Test Reliability]]
 
 ## Navigation
 

@@ -118,6 +118,10 @@ public final class TestJwtSupport {
         return tokenWithRoles("platform.payment.reader", List.of("platform:payments:read"));
     }
 
+    public static String merchantPaymentReaderTokenWithoutMerchantIdClaim() {
+        return tokenWithRoles("merchant.payment.reader.no-claim", List.of("merchant:payments:read"));
+    }
+
     public static String merchantScopedDeniedToken(String merchantId) {
         return tokenWithRolesAndMerchantId("merchant.denied", List.of(), merchantId);
     }

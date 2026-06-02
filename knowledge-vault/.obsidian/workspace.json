@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "b9d69ce1eb522fac",
+        "id": "76cf66618e43f666",
         "type": "tabs",
         "children": [
           {
-            "id": "d94adaeca169022e",
+            "id": "f34510c55995cc6b",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -73,12 +73,24 @@
               "icon": "lucide-bookmark",
               "title": "Ulubione"
             }
+          },
+          {
+            "id": "c58982511d19a06e",
+            "type": "leaf",
+            "state": {
+              "type": "excalidraw",
+              "state": {
+                "file": "Excalidraw/Drawing 2026-06-01 23.02.49.excalidraw.md"
+              },
+              "icon": "excalidraw-icon",
+              "title": "Drawing 2026-06-01 23.02.49.excalidraw"
+            }
           }
         ]
       }
     ],
     "direction": "horizontal",
-    "width": 538.5
+    "width": 569.5
   },
   "right": {
     "id": "38868a5c53bf2027",
@@ -94,6 +106,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 10 - REST HTTP Contract Hardening and Authorization Matrix.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -103,7 +116,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Linki zwrotne"
+              "title": "Linki zwrotne do Prompt - Lesson 10 - REST HTTP Contract Hardening and Authorization Matrix"
             }
           },
           {
@@ -161,12 +174,25 @@
               "icon": "lucide-list",
               "title": "Konspekt"
             }
+          },
+          {
+            "id": "b6912668d5155d1a",
+            "type": "leaf",
+            "state": {
+              "type": "file-properties",
+              "state": {
+                "file": "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 06 - Payment Order Create Read Foundation.md"
+              },
+              "icon": "lucide-info",
+              "title": "Atrybuty dla Lesson 06 - Payment Order Create Read Foundation"
+            }
           }
-        ]
+        ],
+        "currentTab": 5
       }
     ],
     "direction": "horizontal",
-    "width": 300,
+    "width": 200,
     "collapsed": true
   },
   "left-ribbon": {
@@ -182,44 +208,46 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "d94adaeca169022e",
+  "active": "f34510c55995cc6b",
   "lastOpenFiles": [
     "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 07 - Payment Order List Filter Search.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 07 - Payment Order List Filter SpecKit.md",
-    "Home.md",
-    "02 Areas/Technical Learning/PostgreSQL and SQL From Zero/Lesson 06D - SQL and Flyway Constraints for Payment Orders.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 10 - REST HTTP Contract Hardening and Authorization Matrix.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 09 - Payment Orders Frontend Consumer and Contract Alignment.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 06 - Payment Order Create Read Foundation.md",
     "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 08 - Business Logic, Decision Tables, and Risk Notes.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/01 Phase 1 - Merchant Registry/Phase 1 - Merchant Registry and Activation.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/01 Phase 1 - Foundations/Phase 1 - Foundations.md",
+    "02 Areas/Technical Learning/Java 25 For SDET/Lesson 08 - Java Records, Read-Only Services, and Input Validation.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md",
+    "Bez nazwy.canvas",
+    "Bez nazwy 1.canvas",
+    "Bez nazwy 2.canvas",
+    "Home.md",
+    "00 Inbox/lesson-01-assertj-allmatch-lambda-predicate-api-validation.md",
+    "00 Inbox/Bez nazwy 2.base",
+    "Excalidraw/Drawing 2026-06-01 23.02.49.excalidraw.md",
+    "00 Inbox/2026-06-01.md",
+    "00 Inbox/Bez nazwy 1.base",
+    "02 Areas/Technical Learning/JUnit REST Assured/REST API Testing Complete Mindmap and Catalog for Senior SDET.md",
+    "02 Areas/Technical Learning/Infrastructure/Infrastructure - Local PostgreSQL 18 and Keycloak 26.6.1.md",
+    "02 Areas/Technical Learning/Backend Testing Review/README.md",
+    "02 Areas/Technical Learning/Backend Testing Review/Professional Backend API Testing Reviewer Checklist.md",
+    "02 Areas/Technical Learning/JUnit REST Assured/REST Assured from Zero to Professional Backend API Testing/13-22 Professional Practice After Refactoring.md",
+    "02 Areas/Technical Learning/JUnit REST Assured/REST Assured from Zero to Professional Backend API Testing/01-12 REST Assured Foundations.md",
+    "02 Areas/Technical Learning/PostgreSQL and SQL From Zero/Lesson 06D - SQL and Flyway Constraints for Payment Orders.md",
+    "02 Areas/Technical Learning/PostgreSQL and SQL From Zero/Lesson 06E - Query Basics and JOINs for Payment Testers.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 07 - Payment Order List Filter SpecKit.md",
     "02 Areas/Technical Learning/REST API From Zero/Lesson 08 - Summary Endpoint Contract, Status Codes, and Error Taxonomy.md",
     "02 Areas/Technical Learning/PostgreSQL and SQL From Zero/Lesson 08 - GROUP BY COUNT SUM Null Semantics in Aggregation Queries.md",
     "02 Areas/Technical Learning/JUnit REST Assured/Lesson 08 - Aggregation Contract, Security, and Business Flow Tests.md",
-    "02 Areas/Technical Learning/Java 25 For SDET/Lesson 08 - Java Records, Read-Only Services, and Input Validation.md",
     "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 08 - Payment Aggregation Summary.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 08 - Payment Aggregation Summary.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 06 - PayU Like Business Flow Expansion Sprint.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/lesson-cheatsheet/PaymentOrderRestAssuredTest Cheatsheet.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Concept Lesson.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/00 Learning OS/Current Lesson.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/START HERE - Learning Dashboard.md",
-    "02 Areas/Technical Learning/JUnit REST Assured/REST Assured from Zero to Professional Backend API Testing/01-12 REST Assured Foundations.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Payment Order Case Study.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Code Reading Lesson.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/01 Phase 1 - Foundations/Phase 1 - Foundations.md",
     "01 Projects/Payment_Quality_Engineering_Lab/01 Phase 1 - Foundations",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Post Sprint Evidence Update.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Learning Sprint Discovery.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Verify My Understanding.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Mark Lesson Progress.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Generate Next Lesson.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt Templates - Learning OS.md",
     "01 Projects/Payment_Quality_Engineering_Lab/00 Learning OS",
     "01 Projects/Payment_Quality_Engineering_Lab/Learning OS Status",
     "01 Projects/Payment_Quality_Engineering_Lab/Learning Governance",
     "01 Projects/Payment_Quality_Engineering_Lab/Strategy",
     "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts",
     "02 Areas/Technical Learning/Security and Authorization Testing",
-    "02 Areas/Technical Learning/Spring Data JPA and Flyway",
-    "02 Areas/Technical Learning/Spring Boot Spring MVC",
-    "02 Areas/Technical Learning/Java 25 For SDET",
-    "Bez nazwy.canvas"
+    "02 Areas/Technical Learning/Spring Data JPA and Flyway"
   ]
 }

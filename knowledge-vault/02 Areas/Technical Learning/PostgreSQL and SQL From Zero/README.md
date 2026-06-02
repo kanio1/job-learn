@@ -50,6 +50,7 @@ Ta ścieżka uczy SQL i PostgreSQL od zera z perspektywy Senior QA Automation/SD
 | Lesson | Note | Scope |
 |---|---|---|
 | 06D | [[Lesson 06D - SQL and Flyway Constraints for Payment Orders]] | beginner SQL on real Lesson 6 tables, Flyway constraints, idempotency records, audit history |
+| 06E | [[Lesson 06E - Query Basics and JOINs for Payment Testers]] | query-building basics, JOIN types, ORDER BY, LIMIT, GROUP BY basics, reading Flyway relations as tester query hints |
 | 08 | [[Lesson 08 - GROUP BY COUNT SUM Null Semantics in Aggregation Queries]] | GROUP BY, SUM, COUNT, COALESCE, nullable param handling, EXPLAIN thinking, projection interfaces |
 
 ## SQL To Spring/JPA Mapping

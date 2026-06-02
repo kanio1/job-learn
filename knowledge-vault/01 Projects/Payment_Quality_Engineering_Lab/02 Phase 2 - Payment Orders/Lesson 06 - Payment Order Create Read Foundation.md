@@ -1,28 +1,4 @@
----
-type: lesson
-status: ready
-project: Payment Quality Engineering Lab
-phase: 2
-lesson: 6
-area: Payment Orders
-module: Payment Order Create Read Foundation
-date: 2026-05-27
-tags:
-  - lesson
-  - lesson-06
-  - payment-quality-lab
-  - payment-order
-  - rest-assured
-  - java-25
-  - spring-boot-4
-  - spring-modulith
-  - postgresql
-  - flyway
-  - security-testing
-  - idempotency
-  - senior-sdet
----
-
+ 
 # Lesson 06 - Payment Order Create Read Foundation
 
 > **Status:** READY — code implemented, tests passing, lesson note complete
