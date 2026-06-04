@@ -17,9 +17,7 @@
         <UInput v-model="formState.clientOrderReference" placeholder="PAY-001" />
       </UFormField>
 
-      <div v-if="store.error" class="text-sm text-red-600">
-        {{ store.error }}
-      </div>
+      <UAlert v-if="store.error" color="error" variant="subtle" :title="store.error" />
 
       <div v-if="successMessage" class="text-sm text-green-600">
         {{ successMessage }}
@@ -31,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { createPaymentOrderSchema, paymentOrderResponseSchema } from '~/schemas/payment-order.schema'
+import { createPaymentOrderSchema } from '~/schemas/payment-order.schema'
 
 const props = defineProps<{
   merchantId: string
@@ -67,30 +65,29 @@ function generateIdempotencyKey() {
 }
 
 async function onSubmit() {
-  store.error = null
+  store.clearError()
   successMessage.value = null
-  store.loading = true
 
   try {
-    const result = paymentOrderResponseSchema.parse(await $fetch(`/api/merchants/${props.merchantId}/payment-orders`, {
-      method: 'POST',
-      headers: {
-        'Idempotency-Key': idempotencyKey.value,
-      },
-      body: {
-        amountMinor: formState.amountMinor,
-        currency: formState.currency,
+    const result = await store.createOrder(
+      props.merchantId,
+      {
+        amountMinor: formState.amountMinor!,
+        currency: formState.currency!,
         clientOrderReference: formState.clientOrderReference,
-      }
-    }))
-    store.setLastCreatedOrder(result)
+      },
+      idempotencyKey.value
+    )
     successMessage.value = `Payment order ${result.paymentOrderId} created successfully`
+
+    formState.amountMinor = undefined
+    formState.currency = undefined
+    formState.clientOrderReference = ''
+
     idempotencyKey.value = generateIdempotencyKey()
     emit('created', result.paymentOrderId)
-  } catch (error: any) {
-    store.error = error?.data?.message || error?.statusMessage || 'Failed to create payment order'
-  } finally {
-    store.loading = false
+  } catch {
+    // Error is handled by the store
   }
 }
 </script>

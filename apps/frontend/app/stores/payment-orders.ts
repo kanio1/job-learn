@@ -2,10 +2,12 @@ import {
   paymentOrderListResponseSchema,
   paymentOrderResponseSchema,
   paymentOrderSummaryResponseSchema,
+  backendErrorSchema,
   type PaymentOrderListResponse,
   type PaymentOrderResponse,
   type PaymentOrderSummaryResponse,
 } from '~/schemas/payment-order.schema'
+import { ZodError } from 'zod'
 
 export const usePaymentOrdersStore = defineStore('payment-orders', () => {
   const loading = ref(false)
@@ -32,6 +34,43 @@ export const usePaymentOrdersStore = defineStore('payment-orders', () => {
     })
   }
 
+  async function loadDetail(merchantId: string, paymentOrderId: string) {
+    return loadResource(async () => {
+      const response = await $fetch(`/api/merchants/${merchantId}/payment-orders/${paymentOrderId}`)
+      try {
+        currentOrder.value = paymentOrderResponseSchema.parse(response)
+      } catch (e) {
+        if (e instanceof ZodError) {
+          throw new Error('Received malformed payment order data from server')
+        }
+        throw e
+      }
+      return currentOrder.value
+    })
+  }
+
+  async function createOrder(merchantId: string, payload: { amountMinor: number; currency: 'PLN' | 'EUR' | 'USD'; clientOrderReference: string }, idempotencyKey: string) {
+    return loadResource(async () => {
+      const response = await $fetch(`/api/merchants/${merchantId}/payment-orders`, {
+        method: 'POST',
+        headers: {
+          'Idempotency-Key': idempotencyKey,
+        },
+        body: payload,
+      })
+      try {
+        const parsed = paymentOrderResponseSchema.parse(response)
+        lastCreatedOrder.value = parsed
+        return parsed
+      } catch (e) {
+        if (e instanceof ZodError) {
+          throw new Error('Received malformed payment order data from server')
+        }
+        throw e
+      }
+    })
+  }
+
   function setLastCreatedOrder(order: unknown) {
     lastCreatedOrder.value = paymentOrderResponseSchema.parse(order)
   }
@@ -51,23 +90,40 @@ export const usePaymentOrdersStore = defineStore('payment-orders', () => {
   }
 
   function handleError(e: unknown) {
-    const errorLike = e as { statusCode?: number; data?: { error?: string; message?: string }; statusMessage?: string; message?: string }
+    const errorLike = e as { statusCode?: number; data?: unknown; statusMessage?: string; message?: string }
 
     if (errorLike?.statusCode === 403) {
       insufficientAuthority.value = true
       list.value = null
       summary.value = null
       currentOrder.value = null
+      lastCreatedOrder.value = null
       error.value = 'You do not have permission to view payment orders for this merchant.'
       return
     }
 
-    if (errorLike?.statusCode === 503 || errorLike?.data?.error === 'backend_unavailable') {
-      error.value = 'Backend service is unavailable. Start the backend on http://localhost:8080 and retry.'
+    if (errorLike?.statusCode === 404) {
+      currentOrder.value = null
+      error.value = 'Payment order not found.'
       return
     }
 
-    error.value = errorLike?.data?.message || errorLike?.statusMessage || errorLike?.message || 'Failed to load payment orders.'
+    if (errorLike?.statusCode === 503) {
+      const parsedError = backendErrorSchema.safeParse(errorLike?.data)
+      if (parsedError.success && parsedError.data.error === 'backend_unavailable') {
+        error.value = parsedError.data.message || 'Backend service is unavailable. Start the backend on http://localhost:8080 and retry.'
+      } else {
+        error.value = 'Backend service is unavailable. Start the backend on http://localhost:8080 and retry.'
+      }
+      return
+    }
+
+    const parsedError = backendErrorSchema.safeParse(errorLike?.data)
+    if (parsedError.success && parsedError.data.message) {
+      error.value = parsedError.data.message
+    } else {
+      error.value = errorLike?.statusMessage || errorLike?.message || 'Failed to load payment orders.'
+    }
   }
 
   function clearError() {
@@ -93,6 +149,8 @@ export const usePaymentOrdersStore = defineStore('payment-orders', () => {
     summary,
     loadList,
     loadSummary,
+    loadDetail,
+    createOrder,
     setLastCreatedOrder,
     clearError,
     reset,

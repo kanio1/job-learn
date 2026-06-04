@@ -145,6 +145,19 @@ Zrozumieć ewolucję test architecture od "raw tests" do "professional framework
 9. Kiedy używać mutation testing?
 10. Jak zdefiniować "flaky test" i jak go naprawić?
 
+### Odpowiedzi
+
+1. API client wrapper dodaj, gdy wiele testów powtarza ten sam auth, endpointy i request setup. Dla kilku prostych testów raw REST Assured jest wystarczający.
+2. Object Mother daje gotowe fixture/scenariusze, często statyczne. Builder daje fluent API do tworzenia wariantów z defaults.
+3. YAGNI chroni framework testowy przed abstrakcjami bez realnego użycia. Zbyt wczesne warstwy utrudniają naukę i debugowanie testów.
+4. API coverage mierz jako endpointy × metody × statusy × role × edge cases. Code coverage nie mówi, czy kontrakt HTTP i security matrix są pokryte.
+5. Negative-path first wymusza myślenie o odrzuceniu błędnych requestów i nadużyć. To zmniejsza ryzyko API, które działa tylko dla happy path.
+6. Test data leakage wykryjesz przez losową kolejność, równoległe uruchomienie i powtarzanie suite. Objawem są testy przechodzące pojedynczo, ale failujące razem.
+7. Secret masking chroni tokeny i klucze przed wyciekiem w CI logs. Failed tests często logują pełny request, więc maskowanie musi działać domyślnie.
+8. Typowy cel to więcej unit/service tests, mniej full integration i najmniej E2E. Dla REST API ważniejsze od sztywnego ratio jest to, aby tanie testy łapały reguły, a drogie tylko przepływy.
+9. Mutation testing używaj, gdy test suite jest stabilny i chcesz ocenić siłę oracle, nie tylko coverage. Najlepiej robić to okresowo, bo jest wolniejsze.
+10. Flaky test failuje nieregularnie bez zmiany kodu. Naprawa zaczyna się od klasyfikacji przyczyny: timing, shared data, environment albo zły oracle.
+
 ## 10. Testy (Awareness)
 
 | Test | Co sprawdza |

@@ -246,6 +246,27 @@ Frontend Playwright:
 9. Ktore header/body/status assertions pozostaja odpowiedzialnoscia REST Assured?
 10. Jak zachowac parallel safety w testach UI i REST jednoczesnie?
 
+### Odpowiedzi
+
+1. Lesson 09 jest frontend consumer slice dla istniejących kontraktów create/read/list/summary. `authorize/capture/cancel` byłyby nową logiką lifecycle, która nie jest jeszcze wyspecyfikowana.
+2. Summary liczone w przeglądarce wymagałoby pobrania pełnej listy orderów i mogłoby ominąć backendowe filtry/security. Backend powinien być źródłem prawdy dla agregacji.
+3. Zod waliduje runtime JSON na granicy frontendu, a DTO record chroni tylko backend. Dzięki temu frontend wykrywa contract drift zamiast ufać `unknown`/`any`.
+4. Backend security test dowodzi egzekwowania autoryzacji. Frontend denied-state test dowodzi, że UI nie pokazuje danych i komunikuje odmowę w czytelny sposób.
+5. Playwright mockuje API, gdy testujesz tylko stany UI i chcesz stabilności. Realny backend wybierz dla smoke/integration flow, gdzie ważne jest połączenie frontend-proxy-backend.
+6. UI powinno pokazać forbidden/insufficient authority, nie empty merchant. `403` oznacza brak prawa dostępu, a nie brak merchanta.
+7. `platform:payments:read` jest rolą cross-merchant read dla payment resources. Platform reader może wybrać merchanta, ale nadal tylko czyta istniejący summary endpoint.
+8. `any` ukrywa błędy shape response i pozwala UI odwołać się do nieistniejących pól. Ryzykiem jest cichy runtime bug zamiast błędu typecheck/schema validation.
+9. REST Assured nadal odpowiada za status codes, headers, error body i dokładny API contract. Playwright powinien sprawdzać zachowanie UI, a nie powielać pełną macierz HTTP.
+
+```java
+then()
+    .statusCode(200)
+    .header("Content-Type", containsString("application/json"))
+    .body("totalOrders", equalTo(3));
+```
+
+10. Każdy test UI i REST musi mieć własne dane lub mocki niezależne od innych testów. Unikaj shared merchantów, stałych idempotency keys i zależności od kolejności wykonania.
+
 ## 14. Zadania Praktyczne
 
 | Zadanie | Files | Command | Expected |
@@ -256,6 +277,21 @@ Frontend Playwright:
 | Dodaj payments panel | `pages/admin/merchants/[merchantId]/payments/index.vue` | `corepack pnpm typecheck` | Summary + list states render |
 | Dodaj Playwright happy/empty/403 tests | `tests/e2e/payment-orders-panel.spec.ts` | `corepack pnpm test:e2e` | UI states covered |
 | Uruchom backend regression guardrails | backend tests | `./mvnw -Dtest=PaymentOrderListRestAssuredTest,PaymentOrderSummaryRestAssuredTest,PaymentOrderSummaryBusinessFlowRestAssuredTest,PaymentOrderSummarySecurityTest test` | REST contract green |
+
+### Rozwiązania / wskazówki
+
+1. Zod schemas powinny opisywać dokładnie to, co frontend renderuje: list item, summary groups i backend error. Nie dodawaj pól przyszłego lifecycle, jeśli backend ich nie zwraca.
+2. Nuxt proxy powinien przekazać access token i query params bez logowania sekretów. Proxy nie powinien zmieniać semantyki statusów backendu.
+3. Store bez `any` powinien mieć typowane `list`, `summary`, `currentOrder`, `loading`, `error` i `forbidden`. Typecheck ma złapać błędne pola zanim trafią do UI.
+4. Payments panel powinien pokazywać loading, empty, forbidden i data state. Nie dodawaj przycisków `authorize/capture/cancel`, bo to sugeruje nieistniejące funkcje.
+5. Playwright powinien asercjonować teksty/stany widoczne dla użytkownika, np. summary cards, pustą listę i forbidden message. Nie musi sprawdzać wszystkich headerów HTTP.
+
+```ts
+await expect(page.getByText('Insufficient authority')).toBeVisible()
+await expect(page.getByRole('table')).not.toBeVisible()
+```
+
+6. Backend regression guardrails potwierdzają, że frontend nie wymusił zmiany kontraktu API. Jeśli frontend test przechodzi, ale REST Assured failuje, źródłem prawdy jest backend contract test.
 
 ## 15. Mini Interview Prep
 

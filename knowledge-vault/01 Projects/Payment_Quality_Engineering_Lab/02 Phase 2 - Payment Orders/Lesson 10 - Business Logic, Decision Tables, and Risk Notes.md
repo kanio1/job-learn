@@ -193,6 +193,19 @@ if (jwtMerchantId == null || !merchantId.toString().equals(jwtMerchantId)) {
 9. Jak odróżnić bug w konfiguracji security od bugu w kontrolerze patrząc tylko na response body?
 10. Dlaczego Lesson 10 nie dodaje nowych ról ani nowych endpointów?
 
+### Odpowiedzi
+
+1. Summary cross-tenant zwraca `403`, bo jest operacją kolekcji/raportu i jawnie odmawia zakresu. Single-read maskuje `404`, bo dotyczy konkretnego ID i ryzyka enumeracji.
+2. SecurityConfig przepuści token z rolą read, ale kontroler odrzuci brak ownership context. Wynik to `403`, zwykle z body z handlera aplikacyjnego.
+3. `403` bez body zwykle pochodzi z filtra Spring Security przed wejściem do kontrolera. `403` z body pochodzi z aplikacji, np. `AccessDeniedException` z kontrolera obsłużony przez handler.
+4. `platform:merchants:create` dotyczy domeny merchant management, nie payment resources. Dostęp do summary wymaga `platform:payments:read`.
+5. Odwrotna kolejność matcherów mogłaby sprawić, że bardziej ogólny matcher przechwyci `/summary`. Test route/security powinien wykryć zły status lub zły shape odpowiedzi.
+6. `PUT /summary` powinien zwracać `405`, bo metoda nie jest obsługiwana dla read-only agregatu. `403` sugerowałoby, że metoda istnieje, ale caller nie ma prawa jej użyć.
+7. Converter przenosi role z tokena na Spring Security authorities. Role platformowe mogą być mapowane bez prefiksu, a role merchantowe zachowują domenową nazwę authority.
+8. GET jest safe, bo nie powinien modyfikować stanu systemu. Summary jest tylko odczytem agregacji, więc GET pasuje, a POST sugerowałby mutację.
+9. Brak body przy `403` wskazuje na odrzucenie przez security filter. JSON body z error code wskazuje, że request doszedł do aplikacji i został odrzucony przez kontroler/handler.
+10. Lesson 10 hartuje istniejący kontrakt zamiast rozszerzać produkt. Nowe role lub endpointy byłyby product behavior, a nie HTTP/security hardening.
+
 ## 10. Testy (Planned)
 
 | Test | Co sprawdza |

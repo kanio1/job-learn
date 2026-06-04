@@ -74,7 +74,7 @@ Celem jest transformacja z "test writer" do "test infrastructure architect" — 
 | Log assertions | Weryfikacja logów (logback-test.xml) | `PaymentOrderLoggingTest.java` |
 | Flaky test diagnosis | Methodology wykrywania flaky tests | `FlakyTestDiagnosis.md` |
 | Failure analysis | App bug vs test bug vs data bug vs env bug | `FailureAnalysisChecklist.md` |
-| Awaitility | Async polling (np. webhook delivery) | `PaymentOrderAsyncTest.java` |
+| Awaitility | Future async polling concept | Awareness only until an async feature is specified |
 | Maven lifecycle | surefire (unit) vs failsafe (integration) | `pom.xml` |
 
 ### System batch
@@ -84,7 +84,7 @@ Celem jest transformacja z "test writer" do "test infrastructure architect" — 
 | 13A | Spring testing layers (@WebMvcTest, MockMvc) | `PaymentOrderControllerTest.java` |
 | 13B | Concurrency testing (parallel, transactions, locking) | `PaymentOrderParallelTest.java`, `PaymentOrderTransactionTest.java` |
 | 13C | Observability (log assertions, flaky test diagnosis) | `PaymentOrderLoggingTest.java`, `FlakyTestDiagnosis.md` |
-| 13D | Test reliability (Maven lifecycle, Awaitility) | `pom.xml`, `PaymentOrderAsyncTest.java` |
+| 13D | Test reliability (Maven lifecycle, Awaitility awareness) | `pom.xml`, concept note only until async scope exists |
 | 13E | Advanced Java 25 (EnumSet, EnumMap, streams) | Refaktor istniejących testów |
 | 13F | Advanced SQL (EXPLAIN, deadlock) | `PaymentOrderQueryPerformanceTest.java` |
 
@@ -334,7 +334,8 @@ PaymentOrder order = repository.findById(orderId)
     .orElseThrow();
 // Lock row (other transactions wait)
 repository.lock(order, LockModeType.PESSIMISTIC_WRITE);
-order.setStatus("AUTHORIZED");
+// Lesson 13 may characterize locking with existing CREATED orders only.
+// Do not introduce future lifecycle statuses in this phase.
 repository.save(order);
 // Lock released after transaction commits
 
@@ -346,7 +347,7 @@ class PaymentOrder {
 }
 
 PaymentOrder order = repository.findById(orderId).orElseThrow();
-order.setStatus("AUTHORIZED");
+// Example intentionally avoids status transition until lifecycle is specified.
 repository.save(order);
 // Jeśli version changed by other transaction → OptimisticLockException
 ```
@@ -392,23 +393,17 @@ class PaymentOrderLoggingTest {
 }
 ```
 
-### Awaitility dla Async Polling
+### Awaitility dla Async Polling Awareness
 
 ```java
-// Awaitility: poll until condition is met (np. webhook delivery)
+// Awaitility: poll until condition is met.
+// Use as concept only until an async feature is specified.
 @Test
-void webhookDeliveryCompletesWithin10Seconds() {
-    // Act: trigger webhook
-    webhookService.deliver(webhookId);
-    
-    // Assert: poll until webhook is delivered
+void eventuallyObservedConditionCompletesWithinTimeout() {
     Awaitility.await()
         .atMost(Duration.ofSeconds(10))
         .pollInterval(Duration.ofMillis(500))
-        .untilAsserted(() -> {
-            WebhookDelivery delivery = webhookRepository.findById(webhookId).orElseThrow();
-            assertThat(delivery.getStatus()).isEqualTo("DELIVERED");
-        });
+        .untilAsserted(() -> assertThat(observedCondition()).isTrue());
 }
 ```
 
@@ -506,8 +501,7 @@ class PaymentOrderTestcontainersTest {
 ```java
 // EnumSet: efficient set dla enums
 EnumSet<PaymentStatus> allowedStatuses = EnumSet.of(
-    PaymentStatus.CREATED, 
-    PaymentStatus.AUTHORIZED
+    PaymentStatus.CREATED
 );
 
 EnumSet<PaymentStatus> allStatuses = EnumSet.allOf(PaymentStatus.class);
@@ -517,7 +511,6 @@ EnumSet<PaymentStatus> noStatuses = EnumSet.noneOf(PaymentStatus.class);
 // EnumMap: efficient map dla enum keys
 EnumMap<PaymentStatus, Long> statusCounts = new EnumMap<>(PaymentStatus.class);
 statusCounts.put(PaymentStatus.CREATED, 10L);
-statusCounts.put(PaymentStatus.AUTHORIZED, 5L);
 
 // Dlaczego EnumSet/EnumMap?
 // - Memory efficient (bit vector dla EnumSet, array dla EnumMap)
@@ -767,6 +760,37 @@ void testThatModifiesDatabase() {
 14. Jak używać Collectors.groupingBy dla grouping elements?
 15. Jak używać EXPLAIN ANALYZE dla query diagnostics?
 
+### Odpowiedzi
+
+1. `@WebMvcTest` używaj do controller mapping, validation i exception handling bez pełnego kontekstu. `@SpringBootTest` wybierz dla full-stack integration z service, repository i DB.
+2. `@MockBean` zastępuje bean mockiem i domyślnie nic realnego nie wykonuje. `@SpyBean` owija realny bean i pozwala stubować lub weryfikować wybrane metody.
+3. MockMvc nie otwiera realnego portu i nie przechodzi przez sieć. Symuluje request w Spring MVC, więc jest szybszy i bardziej skupiony na web layer.
+4. `@Execution(CONCURRENT)` ma sens, gdy testy są izolowane i thread-safe. Bez izolacji danych może tylko ujawnić flaky behavior.
+5. Parallel tests wymagają unikalnych danych, braku mutable static state i bezpiecznych helperów. Wspólne zasoby muszą mieć `@ResourceLock` albo osobny setup.
+6. `READ_COMMITTED` widzi tylko zatwierdzone dane, ale kolejne odczyty mogą zobaczyć nowe commity. `REPEATABLE_READ` stabilizuje odczyt w ramach transakcji.
+7. Optimistic locking jest dobre przy rzadkich konfliktach i wymaga retry/obsługi wersji. Pessimistic locking blokuje wcześniej i jest lepszy przy częstych konfliktach, ale może spowolnić system.
+8. Deadlock wykryjesz przez PostgreSQL error/logi oraz analizę kolejności locków. W testach można uruchomić równoległe transakcje i sprawdzić, czy jedna kończy się deadlock exception.
+9. Logi asercjonuj przez testowy appender, np. ListAppender, i sprawdzaj tylko ważne eventy/correlation id. Nie asercjonuj całego tekstu logu, bo to kruche.
+
+```java
+assertThat(listAppender.list)
+    .extracting(ILoggingEvent::getFormattedMessage)
+    .anySatisfy(message -> assertThat(message).contains("payment order created"));
+```
+
+10. App bug to błąd produktu, test bug to zły oracle/setup, data bug to kolizja lub brak danych, env bug to problem środowiska. Klasyfikacja pomaga naprawić przyczynę, nie tylko rerunować test.
+11. Awaitility odpytuje warunek aż do timeoutu i kończy szybciej, gdy warunek jest spełniony. `Thread.sleep` zawsze czeka stały czas i nadal może być flaky.
+12. Surefire uruchamia unit tests w fazie `test`. Failsafe uruchamia integration tests w fazach `integration-test`/`verify` i lepiej obsługuje testy z zewnętrznymi zależnościami.
+13. `EnumSet` jest zoptymalizowany bitowo dla enumów, więc jest szybszy i mniejszy niż ogólny `HashSet`. Używaj go, gdy elementami są wyłącznie enum values.
+14. `Collectors.groupingBy` grupuje elementy po kluczu, np. statusie albo walucie. Wynikiem jest mapa `key -> lista elementów` albo `key -> agregat`.
+
+```java
+Map<String, Long> countByCurrency = orders.stream()
+    .collect(groupingBy(PaymentOrder::currency, counting()));
+```
+
+15. `EXPLAIN ANALYZE` uruchamia query i pokazuje realny plan, czasy oraz liczbę wierszy. Używaj go do diagnozy, czy indeksy i filtry działają zgodnie z założeniami.
+
 ## 14. Zadania Praktyczne
 
 | Zadanie | Files | Command | Expected |
@@ -782,6 +806,20 @@ void testThatModifiesDatabase() {
 | Napisz test z EnumSet | Istniejące testy | `./mvnw test` | EnumSet działa |
 | Napisz test z Collectors.groupingBy | Istniejące testy | `./mvnw test` | groupingBy działa |
 | Napisz EXPLAIN ANALYZE query | SQL exercise | Manual | Query diagnostics działają |
+
+### Rozwiązania / wskazówki
+
+1. `@WebMvcTest` dla `PaymentOrderController` powinien mockować service i sprawdzać request mapping, validation oraz error handler. Nie sprawdzaj w nim DB ani realnej transakcji.
+2. `@MockBean` użyj, gdy controller test ma izolować się od service. Stubuj tylko zachowanie potrzebne dla danego requestu.
+3. `@SpyBean` użyj ostrożnie, gdy chcesz realny bean, ale potrzebujesz zweryfikować interaction albo stubować jeden fragment. Nadużycie spy zwykle oznacza zbyt szczegółowy test.
+4. Parallel test musi tworzyć osobne merchant/order references dla każdego wątku. Jeśli test przechodzi sekwencyjnie, ale failuje równolegle, szukaj shared state.
+5. Transaction isolation test powinien jasno opisać, jaki fenomen obserwuje, np. non-repeatable read. Nie zmieniaj globalnego isolation level bez udokumentowania celu.
+6. Log assertion test powinien sprawdzać konkretny business event albo correlation id. Nie asercjonuj timestampów ani pełnego formatowania logów.
+7. Awaitility test powinien mieć warunek biznesowy i rozsądny timeout. Unikaj `Thread.sleep`, bo zwiększa czas suite i nie gwarantuje stabilności.
+8. Failsafe konfiguruj dla testów integracyjnych nazwanych np. `*IT`. `./mvnw verify` powinien uruchomić unit i integration tests w osobnych fazach.
+9. `EnumSet` test pokaż na dozwolonych statusach albo rolach. Asercja powinna sprawdzić membership, nie implementację wewnętrzną.
+10. `groupingBy` test może policzyć ordery per currency/status i porównać mapę expected vs actual. To dobry mały oracle dla agregacji po stronie Javy.
+11. `EXPLAIN ANALYZE` wykonuj na kontrolowanym query i zapisuj, gdzie jest filter, scan i index usage. Wynik traktuj jako diagnostykę, nie jako stabilną asercję tekstową.
 
 ## 15. Mini Interview Prep
 

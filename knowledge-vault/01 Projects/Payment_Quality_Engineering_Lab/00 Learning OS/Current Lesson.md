@@ -117,12 +117,11 @@ tags:
 
 | Topic | Expected Evidence | Why Now |
 |---|---|---|
-| TypeRef<T> dla generic list extraction | Rozszerzenie `PaymentOrderListRestAssuredTest.java` | Type-safe extraction dla `List<T>` |
-| GPath advanced (deep scan, findAll, array indexing) | Rozszerzenie istniejących testów | Zaawansowane GPath patterns |
-| Response time assertions | `PaymentOrderPerformanceTest.java` | Performance baseline establishment |
-| usingRecursiveComparison | Rozszerzenie `PaymentOrderAssertions.java` | Deep object comparison |
-| SoftAssertions | Rozszerzenie summary tests | Multiple assertions, one failure |
-| @ParameterizedTest z @MethodSource/@CsvSource/@EnumSource | `PaymentOrderParameterizedTest.java` | Data-driven testing |
+| Type-safe extraction choices | `PaymentOrderListRestAssuredTest.java` or dedicated Lesson 12 test | Correctly distinguish wrapper DTO, typed `content` extraction and valid `TypeRef<T>` usage |
+| GPath vs typed AssertJ | Existing list/summary tests or dedicated Lesson 12 test | Learn when to assert raw JSON and when to assert typed DTOs |
+| Advanced AssertJ | Summary/list/create tests and possibly `PaymentOrderAssertions.java` | Recursive comparison, SoftAssertions, tuple/allSatisfy/anySatisfy where they improve readability |
+| @ParameterizedTest with isolated data | `PaymentOrderParameterizedTest.java` or focused extensions | Deepen Lesson 10 matrix discipline with validation/filter cases and per-row test data ownership |
+| Test hygiene preflight | Verified suspicious/duplicate learning artifacts | Keep the suite clean before adding more advanced examples |
 
 ## PLANNED: Lesson 13
 

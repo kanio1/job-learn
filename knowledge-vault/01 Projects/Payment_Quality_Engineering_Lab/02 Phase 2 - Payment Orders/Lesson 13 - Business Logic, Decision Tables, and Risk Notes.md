@@ -80,7 +80,7 @@ Zrozumieć test infrastructure architecture:
 |---|---|---|
 | **Maven surefire** | Unit tests (fast, isolated) | Domyślny plugin, ale tylko unit tests |
 | **Maven failsafe** | Integration tests (slow, external dependencies) | Wymaga konfiguracji, ale oddziela unit od integration |
-| **Awaitility** | Async operations (webhook delivery, message queue) | Lepsze niż Thread.sleep, ale wymaga timeout |
+| **Awaitility** | Future async operations after a feature is specified | Awareness only now; do not add webhook/message-queue behavior in this phase |
 | **Testcontainers** | Real external dependencies (PostgreSQL, Redis) | Production-like, ale wolniejsze startup |
 
 ## 8. Risk Notes (QA Architecture)
@@ -153,6 +153,21 @@ Zrozumieć test infrastructure architecture:
 10. Dlaczego Awaitility jest lepsze niż Thread.sleep?
 11. Jaka jest różnica między Maven surefire a failsafe?
 12. Jak zarządzać flaky tests (quarantine, monitoring, zero tolerance)?
+
+### Odpowiedzi
+
+1. `@WebMvcTest` wybierz do szybkiego testu controller layer: mapping, validation, exception handler. `@SpringBootTest` wybierz, gdy potrzebujesz pełnego kontekstu i integracji z service/repository/DB.
+2. `@MockBean` całkowicie zastępuje bean mockiem. `@SpyBean` używa realnego beana, ale pozwala stubować lub weryfikować wybrane metody.
+3. MockMvc działa wewnątrz Spring MVC bez prawdziwego portu i sieci. Dzięki temu testuje web layer szybciej niż real HTTP request.
+4. Parallel test execution wymaga niezależnych danych, braku mutable static state i thread-safe test support. Wspólne zasoby muszą być blokowane lub izolowane.
+5. `READ_COMMITTED` pozwala zobaczyć nowe commity między odczytami. `REPEATABLE_READ` utrzymuje stabilniejszy widok danych w tej samej transakcji.
+6. Optimistic locking jest dobre przy rzadkich konfliktach i wyższej przepustowości. Pessimistic locking jest dobre przy częstych konfliktach, ale zwiększa blokowanie i ryzyko deadlocków.
+7. Deadlock wykryjesz przez PostgreSQL exception/logi i analizę kolejności locków. Prewencja to stała kolejność blokowania zasobów.
+8. Logi asercjonuj przez test appender i sprawdzaj tylko istotne business eventy lub correlation id. Nie wiąż testu z pełnym formatem log line.
+9. App bug to błąd produktu, test bug to błędny test, data bug to problem danych testowych, env bug to środowisko. Klasyfikacja skraca diagnozę failure.
+10. Awaitility czeka warunkowo do timeoutu i kończy od razu po spełnieniu warunku. `Thread.sleep` czeka zawsze i nie gwarantuje, że async praca naprawdę się zakończyła.
+11. Surefire uruchamia szybkie testy w fazie `test`. Failsafe uruchamia integration tests w fazie `verify`, dzięki czemu lepiej separuje wolniejsze testy.
+12. Flaky test najpierw oznacz i monitoruj, ale nie ignoruj stale. Zero tolerance oznacza: nowy flaky test jest naprawiany od razu albo tymczasowo izolowany z jasnym zadaniem naprawy.
 
 ## 11. Testy (Awareness)
 

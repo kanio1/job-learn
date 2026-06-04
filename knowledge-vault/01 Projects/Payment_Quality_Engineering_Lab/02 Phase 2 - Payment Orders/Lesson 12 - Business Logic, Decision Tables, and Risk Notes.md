@@ -1,10 +1,10 @@
 ---
 type: lesson
 status: planned
-area: Payment Quality Engineering Lab — Phase 2
+area: Payment Quality Engineering Lab - Phase 2
 lesson: 12
 module: Precision Assertions, Data-Driven Testing, and Contract Verification
-date: 2026-05-31
+date: 2026-06-04
 tags:
   - business-logic
   - precision-assertions
@@ -14,150 +14,168 @@ tags:
   - senior-sdet
 ---
 
-# Lesson 12 — Precision Assertions, Data-Driven Testing, and Contract Verification
+# Lesson 12 - Precision Assertions, Data-Driven Testing, and Contract Verification
 
-> **Evidence link:** `PaymentOrderParameterizedTest.java` (planned), `PaymentOrderPerformanceTest.java` (planned), `src/test/resources/schemas/payment-order-response.json` (planned)
+> **Evidence link:** revised target evidence after Lesson 11: typed extraction/list tests, advanced AssertJ assertions, parameterized validation/filter tests.
 >
 > **Navigation:** [[Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing]] | [[Lesson Evidence Tracker]] | [[Current Sprint]]
 
 ## 1. Cel Lekcji
 
-Zrozumieć zaawansowane assertion i testing patterns:
-- **Precision assertions:** TypeRef<T>, GPath advanced, recursive comparison, soft assertions
-- **Data-driven testing:** @ParameterizedTest z @MethodSource, @CsvSource, @EnumSource
-- **Contract verification:** JSON Schema validation, OpenAPI compliance
-- **Performance awareness:** Response time assertions, baseline establishment
+Zrozumieć, jak wybrać właściwy oracle i technikę asercji dla istniejącego PayU-like Payment Order API.
+
+Ta lekcja nie dodaje nowej funkcjonalności płatniczej. Jej wartość biznesowa polega na tym, że testy mają szybciej wykrywać regresje w kontrakcie, autoryzacji, danych listy i agregacji, bez produkowania fałszywych lub flaky sygnałów.
+
+Core topics:
+
+- precision assertions for existing list/summary/create responses,
+- type-safe extraction for wrapper and nested list responses,
+- GPath vs typed AssertJ decision-making,
+- parameterized tests with deterministic test data,
+- risk of over-assertion, flaky data rows and false performance gates.
+
+Deferred topics:
+
+- JSON Schema/OpenAPI automation,
+- performance/load testing,
+- complete contract testing with Pact/WireMock,
+- new payment lifecycle behavior.
 
 ## 2. Prerequisites
 
-- Lesson 06-10: REST Assured fundamentals, HTTP hardening.
-- Lesson 11: API clients, builders, error specs.
-- Basic AssertJ (Lesson 06-08).
-- Basic JUnit 5 (Lesson 06-07).
+- Lessons 06-10: create/read, list/filter, summary, frontend consumer and HTTP/security hardening.
+- Lesson 11: API clients, builders, reusable error specs and secret masking.
+- Existing API shape: list endpoint returns `PaymentOrderListResponse`, not a raw JSON array.
+- Existing status model: payment orders are currently foundation-only and use `CREATED`.
 
 ## 3. Code Reading Map
 
-| Plik | Reguła biznesowa / decyzja |
+| File | Business/test decision |
 |---|---|
-| `PaymentOrderListRestAssuredTest.java` | Obecny stan: `extract().as(PaymentOrderListResponse.class)` |
-| `PaymentOrderSummaryRestAssuredTest.java` | Obecny stan: field-by-field assertions |
-| `PaymentOrderSecurityTest.java` | Obecny stan: ręczne @Test methods dla każdego role |
-| `src/test/resources/schemas/` | Target: JSON Schema files dla contract validation |
+| `PaymentOrderListRestAssuredTest.java` | List/filter contract, wrapper extraction, query parameter behavior. |
+| `PaymentOrderSummaryRestAssuredTest.java` | Aggregate oracle for total amount, total orders, by-currency and by-status sections. |
+| `PaymentOrderRestAssuredTest.java` | Create/read/idempotency and validation error contract. |
+| `PaymentOrderSummaryAuthorizationMatrixTest.java` | Existing strong example of parameterized matrix design. |
+| `PaymentOrderAssertions.java` | Candidate for reusable domain assertions when they improve readability. |
+| `apps/frontend/app/schemas/payment-order.schema.ts` | Consumer contract reminder: backend test assertions protect what Nuxt/Zod expects. |
 
-## 4. Decision Table — Assertion Strategy
+## 4. Decision Table - Extraction Strategy
 
-| Scenario | Approach | Dlaczego |
+| Scenario | Approach | Why |
 |---|---|---|
-| **Single object response** | `extract().as(Class)` | Proste, type-safe |
-| **List response** | `extract().as(new TypeRef<List<T>>(){})` | Zachowuje generic type |
-| **Nested list** | `extract().as(WrapperDTO.class).content()` | Wrapper class ma typed list |
-| **Complex object comparison** | `usingRecursiveComparison()` | Concise, less error-prone |
-| **Multiple assertions** | `SoftAssertions.assertAll()` | All failures reported |
-| **Collection filtering** | GPath `findAll { condition }` | Powerful inline filtering |
-| **Deep field search** | GPath `..` (deep scan) | Recursive field search |
-| **Custom assertions** | Custom `AbstractAssert` | Reusable, domain-specific |
+| Single DTO response | `extract().as(PaymentOrderResponse.class)` | Direct and type-safe. |
+| Paged/list wrapper response | `extract().as(PaymentOrderListResponse.class)` | Preserves full contract: `content`, paging and totals. |
+| Content array inside wrapper | `jsonPath().getList("content", PaymentOrderResponse.class)` | Teaches typed list extraction for the real API shape. |
+| Direct raw JSON array endpoint | `extract().as(new TypeRef<List<T>>() {})` | Correct use of `TypeRef<T>` when the whole response is generic. |
+| Quick JSON structure check | REST Assured GPath | Good before/despite DTO extraction, but keep it focused. |
+| Business rule over typed objects | AssertJ over records/DTOs | Better failure messages and refactoring support. |
 
-## 5. Decision Table — Data-Driven Testing
+## 5. Decision Table - Assertion Strategy
 
-| Approach | Kiedy używać | Trade-offs |
+| Scenario | Best assertion | Risk if wrong |
 |---|---|---|
-| **@MethodSource** | Complex test data (objects, builders) | Flexible, ale więcej boilerplate |
-| **@CsvSource** | Simple test data (primitives, strings) | Concise, ale limited types |
-| **@EnumSource** | Enum-based test data | Type-safe, ale tylko enums |
-| **@RepeatedTest** | Identical test logic, multiple executions | Simple, ale no data variation |
-| **DynamicTest / @TestFactory** | Runtime-generated tests | Maximum flexibility, ale complex |
+| Many independent summary facts | `SoftAssertions` | First failure hides the rest of the aggregate diagnosis. |
+| Comparing expected DTO to actual DTO | `usingRecursiveComparison()` with ignored technical fields | Field-by-field assertions become noisy or miss new fields. |
+| List contains exact expected business rows | `extracting(...).containsExactlyInAnyOrder(tuple(...))` | Order-dependent tests become flaky. |
+| Every returned order must satisfy a rule | `allSatisfy` | Manual loops produce weaker failure messages. |
+| Some returned order must match a condition | `anySatisfy` / `filteredOn` | GPath-only checks hide type mistakes after deserialization. |
+| Error response contract | reusable error spec/custom assert | Inline assertions drift across tests. |
 
-## 6. Decision Table — Contract Verification
+## 6. Decision Table - Data-Driven Testing
 
-| Approach | Kiedy używać | Trade-offs |
+| Approach | Use now | Rule |
 |---|---|---|
-| **Field-by-field assertions** | Simple responses, few fields | Explicit, ale verbose |
-| **JSON Schema validation** | Complex responses, contract tests | Comprehensive, ale wolniejsze |
-| **OpenAPI compliance** | Public APIs, documentation | Standard, ale tooling overhead |
-| **Consumer-driven contracts (Pact)** | Multiple consumers, microservices | Rigorous, ale complex setup |
+| `@MethodSource` | Validation cases with request builders | Each case owns merchant, token and request body. |
+| `@CsvSource` | Simple list filter cases, e.g. currency/count | Seed deterministic data inside each row. |
+| `@EnumSource` | Only current, stable enum values | Do not add future statuses to production/test data. |
+| `@RepeatedTest` | Awareness for idempotency stability | Not a replacement for parameterized input coverage. |
+| Dynamic tests | Deferred | Too much framework complexity for this lesson. |
 
-## 7. Risk Notes (QA Architecture)
+## 7. Risk Notes
 
-### 7.1 Over-Assertion
+### 7.1 Wrong `TypeRef<T>` Teaching
 
-**Ryzyko:** Test sprawdza zbyt wiele szczegółów (np. exact timestamps, UUIDs).
+**Risk:** The test uses `extract().as(new TypeRef<List<PaymentOrderResponse>>() {})` against an endpoint that returns a wrapper object.
 
-**Mitigacja:**
-- Używaj `ignoringFields("createdAt", "updatedAt")` w recursive comparison
-- Używaj `matches(Predicate)` dla complex conditions
-- Asercjonuj business-relevant fields, nie technical metadata
+**Impact:** Learner gets a false mental model and the test either fails or encourages a fake endpoint shape.
 
-**Weryfikacja:** Czy test failuje gdy zmienisz non-business field (np. timestamp format)?
+**Mitigation:** Use `PaymentOrderListResponse` for the whole response, and use `jsonPath().getList("content", PaymentOrderResponse.class)` for the nested list.
 
-### 7.2 Flaky Parameterized Tests
+### 7.2 Brittle GPath Examples
 
-**Ryzyko:** @ParameterizedTest z shared state powoduje interference między iterations.
+**Risk:** Assertions like `content[0]`, `content[-1]`, `hasItems("PLN", "EUR", "USD")` depend on order/data that the test did not create.
 
-**Mitigacja:**
-- Każda iteration tworzy własne test data (per-iteration merchant)
-- Brak static fields modyfikowanych przez iterations
-- Używaj `@Execution(CONCURRENT)` aby wykryć interference
+**Mitigation:** Create explicit data per test and set explicit sorting, or move the assertion to typed AssertJ with order-insensitive checks.
 
-**Weryfikacja:** Uruchom @ParameterizedTest 10 razy — czy zawsze przechodzi?
+### 7.3 Over-Assertion
 
-### 7.3 JSON Schema Maintenance Burden
+**Risk:** A test asserts timestamps, UUID formats, order of rows or internal fields that are not relevant to the business rule.
 
-**Ryzyko:** JSON Schema files stają się outdated gdy API się zmienia.
+**Mitigation:** Assert business-relevant fields; ignore generated/technical fields in recursive comparison.
 
-**Mitigacja:**
-- Generuj JSON Schema z OpenAPI spec (jeśli masz)
-- Używaj JSON Schema validation w contract tests (nie w każdym teście)
-- Regular review: czy schema matches actual API response?
+### 7.4 Flaky Parameterized Rows
 
-**Weryfikacja:** Zmień API response shape — czy JSON Schema test failuje?
+**Risk:** Parameterized iterations share merchant/order data or static state.
 
-### 7.4 Performance Test Flakiness
+**Mitigation:** Each iteration creates its own merchant, token and order set. Do not use mutable static fixtures.
 
-**Ryzyko:** Response time assertions failują w CI przez shared resources, network latency.
+### 7.5 Performance False Gates
 
-**Mitigacja:**
-- Używaj reasonable thresholds (500ms-2s, nie 50ms)
-- Oznacz performance tests z `@Tag("performance")` — wyłączaj w CI
-- Uruchamiaj performance tests w dedicated environment (nie shared CI)
+**Risk:** Response-time assertions fail because of Testcontainers, CI CPU, IO or network jitter.
 
-**Weryfikacja:** Uruchom performance test 100 razy — jaki jest flaky rate?
+**Mitigation:** Keep performance as awareness/deferred. If used later, mark with `@Tag("performance")` and run separately from contract tests.
 
-## 8. Learning Delta — Co Nowe vs Lessons 06-11
+### 7.6 Frontend/API Contract Drift
 
-| Temat | Lesson 06-11 | Lesson 12 |
+**Risk:** Backend tests assert details that do not protect what the Nuxt/Zod consumer uses, while missing the shape the UI depends on.
+
+**Mitigation:** Cross-check payment order response schemas in frontend, but keep API assertions in backend REST tests.
+
+## 8. Learning Delta - What Is New vs Lessons 06-11
+
+| Topic | Earlier lessons | Lesson 12 |
 |---|---|---|
-| Assertions | Field-by-field, basic AssertJ | TypeRef<T>, GPath advanced, recursive comparison, soft assertions |
-| Test data | Inline w testach | @ParameterizedTest z @MethodSource, @CsvSource, @EnumSource |
-| Contract verification | Field-by-field assertions | JSON Schema validation, OpenAPI compliance |
-| Performance | Brak assertions | Response time assertions, baseline establishment |
+| Wrapper contract | Used in list tests | Explicit extraction decision and consumer alignment. |
+| GPath | Basic paths | Controlled advanced use with deterministic setup. |
+| AssertJ | Basic DTO/list assertions | Recursive comparison, soft assertions, tuple/allSatisfy/anySatisfy. |
+| Parameterized tests | Authorization matrix in Lesson 10 | Validation/filter matrix with data isolation discipline. |
+| Test oracle thinking | Introduced in Lesson 06/08 | Explicit choice between JSON path, DTO assertion, DB oracle and UI assertion. |
 
-## 9. Pytania
+## 9. Questions
 
-1. Kiedy używać TypeRef<T> vs extract().as(WrapperDTO.class)?
-2. Jaka jest różnica między GPath findAll a AssertJ filteredOn?
-3. Dlaczego usingRecursiveComparison jest lepsze niż field-by-field assertions?
-4. Kiedy używać SoftAssertions vs regular assertions?
-5. Jaka jest różnica między @MethodSource a @CsvSource?
-6. Kiedy używać JSON Schema validation vs field-by-field assertions?
-7. Dlaczego performance tests mogą być flaky w CI?
-8. Jak ustalić reasonable response time threshold?
-9. Kiedy używać @Tag("performance") aby wyłączać tests?
-10. Jak generować JSON Schema z OpenAPI spec?
+1. Why is `PaymentOrderListResponse` the right extraction target for the whole list endpoint?
+2. When is `TypeRef<List<T>>` correct, and when is it misleading?
+3. What does GPath give you before DTO extraction?
+4. Why should business assertions usually move to AssertJ after deserialization?
+5. How do you make a `@ParameterizedTest` row parallel-safe?
+6. What should be ignored in recursive comparison for created payment orders?
+7. Why are performance thresholds not part of the normal Lesson 12 contract test suite?
+8. How do backend REST tests protect the frontend Zod/Pinia consumer without becoming Playwright tests?
 
-## 10. Testy (Awareness)
+### Answers
 
-| Test | Co sprawdza |
+1. The list endpoint returns a wrapper with `content` and pagination metadata, so extracting only a raw list would ignore part of the API contract.
+2. `TypeRef<List<T>>` is correct for a direct JSON array or a generic value already isolated from the wrapper. It is misleading for a wrapper object response.
+3. GPath lets REST Assured assert raw JSON paths without creating DTOs, useful for quick shape/protocol checks.
+4. AssertJ over DTOs is type-safe, easier to refactor and usually gives clearer failure messages for business facts.
+5. Create fresh merchant/order data per row and avoid mutable static shared state.
+6. Generated IDs, timestamps and other technical metadata unless they are the subject of the test.
+7. Contract tests should be stable. Performance thresholds are environment-sensitive and belong to a separate tagged/baselined suite.
+8. Assert the backend response shape and semantics that frontend schemas consume; leave rendering, loading and route behavior to Playwright.
+
+## 10. Test Ideas
+
+| Test idea | What it teaches |
 |---|---|
-| `typeRefVsWrapperDtoComparison` | TypeRef<T> vs extract().as(WrapperDTO) |
-| `gpathFindAllVsAssertJFilteredOn` | GPath findAll vs AssertJ filteredOn |
-| `recursiveComparisonVsFieldByField` | Recursive comparison vs field-by-field |
-| `parameterizedTestWithMethodSource` | @MethodSource data-driven testing |
-| `jsonSchemaValidationExample` | JSON Schema contract verification |
-| `responseTimeBaselineEstablishment` | Response time threshold determination |
+| `listResponseExtractionPreservesWrapperContract` | Wrapper DTO is the API contract. |
+| `listContentCanBeExtractedAsTypedOrders` | Nested list extraction without `List<Map>`. |
+| `gpathAndAssertJFilterTheSameCurrencyRows` | Difference between JSON filtering and typed object filtering. |
+| `summaryResponseReportsAllAggregateFactsTogether` | SoftAssertions for aggregate diagnostics. |
+| `createPaymentOrderValidationCases` | `@MethodSource` with request builders and expected error fragments. |
+| `listPaymentOrdersByCurrencyCases` | `@CsvSource` with deterministic per-row data. |
 
-## 11. Powiązane Notatki
+## 11. Related Notes
 
-- [[Lesson 08 - Business Logic, Decision Tables, and Risk Notes]]
 - [[Lesson 10 - Business Logic, Decision Tables, and Risk Notes]]
 - [[Lesson 11 - Business Logic, Decision Tables, and Risk Notes]]
 - [[Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing]]

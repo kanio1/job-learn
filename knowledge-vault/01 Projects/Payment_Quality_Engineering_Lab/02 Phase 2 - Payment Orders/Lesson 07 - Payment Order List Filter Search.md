@@ -481,6 +481,32 @@ PaymentOrderAssertions.assertThat(response)
 14. Architecture: Dlaczego `PaymentOrderListService` jest osobną klasą, a nie metodą w `PaymentOrderService`?
 15. Debugging: Jak zdiagnozować "Other specification must not be null"? Co mówi ten błąd?
 
+### Odpowiedzi
+
+1. Lista jest operacją kolekcji, więc `403` jasno mówi, że caller nie ma prawa listować danego merchanta. `404` dla listy nie maskuje konkretnego zasobu tak jak single-resource read.
+2. `page=-1` i `size=1001` powinny zostać odrzucone jako invalid query parameters, zwykle `400`. To chroni API przed nielogiczną paginacją i zbyt dużymi zapytaniami.
+3. `extract().path("field")` wyciąga pojedynczą wartość lub surową strukturę. `extract().as(ResponseClass.class)` mapuje całe body na typowany DTO/record.
+4. `RequestSpecBuilder` centralizuje port, auth, content type i common headers. Testy są krótsze i mniej podatne na drift setupu.
+5. `Specification<PaymentOrder>` jest funkcją budującą fragment predykatu JPA Criteria. Zwraca warunek dla query albo `null`, gdy filtr nie powinien być zastosowany.
+6. `Specification.and(null)` rzuca wyjątek, bo Spring Data nie przyjmuje pustego dodatkowego warunku. Obejściem jest null-safe helper, który wywołuje `.and(...)` tylko dla nie-null spec.
+7. `LIMIT 20 OFFSET 0` pobiera pierwsze 20 rekordów. Dla `page=0` i `size=20` offset to `page * size`, czyli `0`.
+8. `COUNT(*)` liczy pełną liczbę pasujących rekordów dla metadanych paginacji. `SELECT *` pobiera tylko aktualną stronę, więc same wyniki strony nie mówią, ile stron istnieje.
+9. `CREATE INDEX IF NOT EXISTS` tworzy indeks tylko wtedy, gdy jeszcze go nie ma. `IF NOT EXISTS` pomaga utrzymać migrację idempotentną w środowiskach, gdzie indeks mógł już powstać.
+10. `extracting()` wybiera pola do asercji, a `filteredOn()` zawęża kolekcję po warunku. Typowy oracle używa obu: najpierw filtruje, potem sprawdza wartości.
+
+```java
+assertThat(response.content())
+    .filteredOn("currency", "PLN")
+    .extracting("status", "currency")
+    .contains(tuple("CREATED", "PLN"));
+```
+
+11. `@ParameterizedTest` z `@CsvSource` usuwa duplikację przy podobnych przypadkach. Raport testów nadal pokazuje każdy zestaw danych jako osobne uruchomienie.
+12. `@Transactional(readOnly = true)` sygnalizuje, że metoda nie powinna modyfikować danych i może korzystać z optymalizacji read-only. Zwykłe `@Transactional` jest właściwe dla operacji zapisujących.
+13. `merchant:payments:create` daje prawo tworzenia, nie czytania kolekcji. To utrzymuje least privilege i nie pozwala creatorowi oglądać wszystkich orderów.
+14. Osobny `PaymentOrderListService` izoluje read/query use case od create/read detail flow. Dzięki temu dynamiczne filtry i paginacja nie rozpychają serwisu odpowiedzialnego za idempotent create.
+15. Błąd mówi, że do `.and(...)` trafiła pusta specyfikacja. Diagnoza: sprawdź optional filters i miejsce, gdzie chainujesz `Specification` bez null-checka.
+
 ## 14. Zadania Praktyczne
 
 | # | Zadanie | Command | Expected |
@@ -495,6 +521,33 @@ PaymentOrderAssertions.assertThat(response)
 | 8 | Sprawdź indeksy w PostgreSQL | `\di payment_orders*` w psql (przez Testcontainers) | 3 indeksy |
 | 9 | Answer 15 pytań z §13 | Notatnik/voice | Umiejętność wyjaśnienia |
 | 10 | Practice interview answers z §15 | Voice recording | Płynna odpowiedź EN |
+
+### Rozwiązania / wskazówki
+
+1. Uruchom test i sprawdź, czy failures dotyczą kontraktu listy, a nie setupu danych. Zielony wynik oznacza, że statusy, body i paginacja są zgodne z aktualnym API.
+2. Komenda payment tests ma potwierdzić, że list/filter nie zepsuł create/read/security. Jeśli failuje tylko jeden obszar, zawęź do konkretnej klasy testowej.
+3. Dobry parameterized test trzyma jeden oracle i zmienia tylko dane wejściowe, np. status/currency/date range. Każda kombinacja powinna mieć własne dane testowe.
+4. `@Nested` grupuj po zachowaniu: happy path, validation, security/filtering. Nazwy klas nested powinny czytać się jak business scenario.
+5. Test z `filteredOn("currency", "PLN")` powinien najpierw mieć kontrolowany dataset z PLN i inną walutą. Asercja ma potwierdzić, że filtr nie przepuszcza obcych walut.
+
+```java
+assertThat(response.content())
+    .filteredOn("currency", "PLN")
+    .allSatisfy(order -> assertThat(order.currency()).isEqualTo("PLN"));
+```
+
+6. `tuple()` jest dobre, gdy ważna jest kombinacja pól, nie tylko pojedyncza wartość. Dzięki temu test chroni relację status + currency.
+
+```java
+assertThat(response.content())
+    .extracting("status", "currency")
+    .contains(tuple("CREATED", "PLN"));
+```
+
+7. W `hasStatus()` sprawdź, czy pusty status zwraca brak filtra, a poprawny status buduje predicate. To pokazuje, że `Specification<T>` jest warunkowym fragmentem query.
+8. Indeksy powinny wspierać merchant scope, sortowanie i najczęstsze filtry. Brak indeksu nie zawsze psuje correctness, ale tworzy ryzyko performance.
+9. Odpowiedź na pytania z §13 traktuj jako checklistę rozumienia HTTP, JPA, SQL i security. Każda odpowiedź powinna wskazać decyzję projektową i ryzyko, które kontroluje.
+10. Interview answers ćwicz krótko: problem, decyzja, ryzyko, test. To daje płynną odpowiedź bez przepisywania implementacji.
 
 ## 15. Mini Interview Prep
 

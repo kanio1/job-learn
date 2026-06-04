@@ -60,7 +60,7 @@ public class PaymentOrderListService {
         try {
             return LocalDate.parse(dateStr);
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Invalid date format: " + dateStr + ". Expected ISO date (YYYY-MM-DD)");
+            throw new IllegalArgumentException("Invalid date format. Expected ISO date (YYYY-MM-DD)");
         }
     }
 

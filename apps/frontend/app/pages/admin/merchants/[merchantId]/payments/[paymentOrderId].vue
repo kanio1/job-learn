@@ -2,31 +2,32 @@
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <h2 class="text-lg font-semibold">Payment Order Detail</h2>
-      <UButton variant="ghost" :to="`/admin/merchants/${merchantId}`" label="Back to Merchant" />
+      <UButton variant="ghost" :to="`/admin/merchants/${merchantId}/payments`" label="Back to payment orders" />
     </div>
 
-    <div v-if="loading" class="text-sm text-gray-500">Loading...</div>
-    <div v-else-if="error" class="text-sm text-red-600">{{ error }}</div>
-    <PaymentOrderDetail v-else :order="order" />
+    <UAlert v-if="store.insufficientAuthority" color="error" variant="subtle" title="Insufficient permissions" description="You do not have permission to view this payment order." />
+    <UAlert v-else-if="store.error && !store.loading" color="error" variant="subtle" :title="store.error" />
+    <div v-else-if="store.loading" class="text-sm text-gray-500">Loading...</div>
+    <PaymentOrderDetail v-else-if="store.currentOrder" :order="store.currentOrder" />
   </div>
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  layout: 'dashboard',
+})
+
 const route = useRoute()
 const merchantId = route.params.merchantId as string
 const paymentOrderId = route.params.paymentOrderId as string
 
-const order = ref<any>(null)
-const loading = ref(true)
-const error = ref<string | null>(null)
+const store = usePaymentOrdersStore()
 
 onMounted(async () => {
   try {
-    order.value = await $fetch(`/api/merchants/${merchantId}/payment-orders/${paymentOrderId}`)
-  } catch (e: any) {
-    error.value = e?.data?.message || e?.statusMessage || 'Failed to load payment order'
-  } finally {
-    loading.value = false
+    await store.loadDetail(merchantId, paymentOrderId)
+  } catch {
+    // Error is handled by the store
   }
 })
 </script>

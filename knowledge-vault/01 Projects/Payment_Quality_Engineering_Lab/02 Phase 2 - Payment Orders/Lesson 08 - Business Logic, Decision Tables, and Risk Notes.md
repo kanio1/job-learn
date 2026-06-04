@@ -163,6 +163,21 @@ Dodatkowo: `COALESCE(SUM(po.amountMinor), 0)` w JPQL (redundancja obronna).
 4. **Zaprojektuj w myśli** test dla scenariusza: merchant A reader próbuje summary merchanta B — jakie asercje?
 5. **Które ryzyko** jest najważniejsze z perspektywy audytu bezpieczeństwa i dlaczego?
 
+### Odpowiedzi do ćwiczeń
+
+1. Decision table powinna mieć poprawne kombinacje filtrów jako `200` i przypadki niepoprawnego zakresu dat jako `400`, np. `fromDate > toDate`. `currency` i `status` są poprawne tylko wtedy, gdy należą do dozwolonych wartości kontraktu.
+2. Platform reader powinien dostać `200` z pustym/zerowym summary. Brak orderów to poprawny wynik agregacji, nie brak zasobu.
+3. `404` mogłoby sugerować, że merchant albo summary nie istnieje, zamiast jawnie odmówić zakresu. Dla operacji raportowej `403` lepiej pokazuje problem ownership i role policy.
+4. Test powinien użyć tokena merchant A i path z merchant B. Asercje: status `403`, brak danych summary i opcjonalnie error code `forbidden`.
+
+```java
+then()
+    .statusCode(403)
+    .body("code", equalTo("forbidden"));
+```
+
+5. Najważniejsze jest BOLA/cross-tenant data leak, bo ujawnia dane płatnicze innego merchanta. Audyt bezpieczeństwa traktuje to jako bezpośrednie naruszenie tenant isolation.
+
 ## 10. Pytania Kontrolne
 
 1. Dlaczego cross-tenant summary zwraca 403, a nie 404?
@@ -170,6 +185,14 @@ Dodatkowo: `COALESCE(SUM(po.amountMinor), 0)` w JPQL (redundancja obronna).
 3. Jaka jest różnica między `merchant:payments:read` a `platform:payments:read` dla summary?
 4. Dlaczego creator nie może czytać summary?
 5. Co robi `COALESCE(SUM(...), 0)` w kontekście empty merchant?
+
+### Odpowiedzi kontrolne
+
+1. Cross-tenant summary zwraca `403`, bo jest operacją kolekcyjną i jawna odmowa nie ujawnia konkretnego order ID. Single read maskuje `404`, żeby ograniczyć enumerację zasobów.
+2. `fromDate > toDate` powinno dać `400 validation`, bo zakres czasu jest logicznie niepoprawny. Test powinien odróżnić to od pustego wyniku.
+3. `merchant:payments:read` działa tylko w granicy własnego `merchant_id`. `platform:payments:read` może czytać summary wybranego merchanta bez merchant ownership claim.
+4. Creator ma uprawnienie do tworzenia, nie do raportowania lub czytania danych. To realizuje least privilege.
+5. `COALESCE(SUM(...), 0)` zamienia `NULL` z pustego zbioru na `0`. Dzięki temu API zwraca stabilny numeric contract dla empty merchant.
 
 ## 11. Next Links
 

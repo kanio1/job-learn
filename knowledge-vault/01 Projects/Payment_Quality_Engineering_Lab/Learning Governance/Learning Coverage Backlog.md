@@ -129,19 +129,20 @@ Evidence rule: do NOT mark `Practiced` or `Evidence Strong` without proof in les
 | `extracting()` | Practiced | Lesson 06-07 | `PaymentOrderListRestAssuredTest` | — |
 | `filteredOn()` | Practiced | Lesson 07 | `PaymentOrderListRestAssuredTest` | — |
 | `tuple()` | Introduced | Lesson 07 | Lesson note mentions | Practice exercise |
-| recursive comparison | Planned | Lesson 12 | Lesson 12 prompt/note | usingRecursiveComparison z ignoringFields |
-| soft assertions | Planned | Lesson 12 | Lesson 12 prompt/note | SoftAssertions.assertAll() |
+| recursive comparison | Planned | Lesson 12 | Revised Lesson 12 prompt/note | Use only where it improves DTO/business-field comparison |
+| soft assertions | Planned | Lesson 12 | Revised Lesson 12 prompt/note | Use for multi-fact summary/list diagnostics |
 | parameterized tests | Practiced | Lesson 10 | `PaymentOrderSummaryAuthorizationMatrixTest`, `PaymentOrderSummaryHttpContractRestAssuredTest` | Deepen in Lesson 12 |
 | @Nested / @Tag | Planned | Lesson 11 | Lesson 11 prompt/note | Test organization w inner classes |
-| TypeRef<T> | Planned | Lesson 12 | Lesson 12 REST Assured note | Generic list extraction |
-| GPath advanced | Planned | Lesson 12 | Lesson 12 REST Assured note | Deep scan, findAll, array indexing |
-| response time assertions | Planned | Lesson 12 | Lesson 12 REST Assured note | .time(), .timeIn() |
-| JSON Schema validation | Planned | Lesson 12 | Lesson 12 REST Assured note | matchesJsonSchemaInClasspath |
+| TypeRef<T> | Planned | Lesson 12 | Revised Lesson 12 prompt/note | Teach correct use: not for the whole list wrapper response |
+| typed content extraction | Planned | Lesson 12 | Revised Lesson 12 prompt/note | `jsonPath().getList("content", PaymentOrderResponse.class)` for nested list content |
+| GPath advanced | Planned | Lesson 12 | Revised Lesson 12 prompt/note | Deep scan/findAll/indexing only with deterministic data |
+| response time assertions | Deferred | Future performance/reliability lesson | Lesson 12 revision | Keep as awareness; no core thresholds in contract tests |
+| JSON Schema validation | Deferred | Future contract-doc readiness | Lesson 12 revision | Do not add schema/OpenAPI automation in Lesson 12 |
 | asInstanceOf | Planned | Lesson 12 | Lesson 12 AssertJ note | Type-safe casting |
-| satisfiesExactly / allSatisfy / anySatisfy | Planned | Lesson 12 | Lesson 12 AssertJ note | Collection assertions |
+| satisfiesExactly / allSatisfy / anySatisfy | Planned | Lesson 12 | Revised Lesson 12 prompt/note | Collection assertions over typed DTOs |
 | matches(Predicate) | Planned | Lesson 12 | Lesson 12 AssertJ note | Custom conditions |
-| @RepeatedTest | Planned | Lesson 12 | Lesson 12 JUnit note | Repeated execution |
-| DynamicTest / @TestFactory | Planned | Lesson 12 | Lesson 12 JUnit note | Dynamic test generation |
+| @RepeatedTest | Deferred | Future reliability lesson | Lesson 12 revision | Awareness only; not a replacement for data-driven coverage |
+| DynamicTest / @TestFactory | Deferred | Future JUnit advanced lesson | Lesson 12 revision | Too much framework complexity for Lesson 12 |
 | JUnit Extensions (@ExtendWith) | Planned | Lesson 13 | Lesson 13 JUnit note | Custom test lifecycle |
 | Awaitility | Planned | Lesson 13 | Lesson 13 JUnit note | Async polling |
 | @DisplayName | Practiced | Lesson 07 | All 10 list tests use @DisplayName | — |

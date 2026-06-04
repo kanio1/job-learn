@@ -320,6 +320,26 @@ Rules:
 9. Które indeksy z Lesson 07 pomagają Lesson 08?
 10. Jak uniknąć flaky aggregation testów przy równoległym uruchamianiu?
 
+### Odpowiedzi
+
+1. PostgreSQL liczy agregację bliżej danych i nie wymaga pobierania wszystkich encji do JVM. To jest szybsze, mniej pamięciożerne i lepiej skaluje się dla dużych merchantów.
+2. `GROUP BY currency` grupuje rekordy według waluty, a agregaty liczy osobno dla każdej grupy. Dzięki temu dostajesz np. osobne sumy dla PLN, EUR i USD.
+3. `COUNT(*)` w paginacji liczy wszystkie rekordy pasujące do filtrów, żeby wyliczyć metadane strony. `COUNT(*)` w summary jest częścią raportu biznesowego, np. liczba orderów w agregacji.
+4. `SUM(amount_minor)` sumuje liczby całkowite, więc nie ma błędów floating-point. `double` może dać niedeterministyczne groszowe różnice.
+5. Empty summary to poprawny wynik pustego zbioru, nie brak endpointu ani zasobu. Dlatego `200` z zerami jest czytelniejsze niż `404`.
+6. Summary jest operacją kolekcji/raportu, więc `403` jasno odmawia dostępu do zakresu merchanta. Single read maskuje `404`, bo dotyczy konkretnego ID i ryzyka enumeracji zasobów.
+7. API response wystarcza, gdy testujesz kontrakt: status, body i grupy wyników. DB/repository test jest potrzebny, gdy chcesz udowodnić SQL, constraints albo edge case agregacji niezależnie od HTTP.
+
+```java
+assertThat(response.byCurrency())
+    .extracting("currency", "totalAmountMinor")
+    .contains(tuple("PLN", 3000L), tuple("EUR", 5000L));
+```
+
+8. `EXPLAIN` pokazuje plan zapytania: scan, filter, group i użyte indeksy. Tester widzi, czy endpoint ma ryzyko full table scan przy większych danych.
+9. Najbardziej pomagają indeksy po `merchant_id` oraz kombinacje wspierające filtry status/currency/date. Summary musi najpierw zawęzić dane do merchanta, a dopiero potem agregować.
+10. Każdy test powinien mieć własnego merchanta i kontrolowany seed dataset. Nie opieraj agregacji na współdzielonych danych ani kolejności wykonania testów.
+
 ## 14. Zadania Praktyczne
 
 | Zadanie | Files | Command | Expected |
@@ -329,6 +349,23 @@ Rules:
 | Napisz test byCurrency | REST test | same | AssertJ tuples dla PLN/EUR/USD |
 | Napisz security matrix | Security test | `./mvnw -Dtest=PaymentOrderSummarySecurityTest test` | 401/403/200 zgodne z tabelą |
 | Uruchom EXPLAIN lokalnie | psql/Testcontainers log/manual SQL | manual | Umiesz wskazać filter, group, index |
+
+### Rozwiązania / wskazówki
+
+1. Controlled seed dataset powinien zawierać małą liczbę orderów z przewidywalnymi walutami, statusami i kwotami. Expected totals zapisz w teście przed requestem, nie licz ich z response.
+2. Empty summary powinien zwrócić `200`, `totalOrders=0` i puste lub zerowe grupy. To potwierdza, że pusty merchant jest poprawnym stanem biznesowym.
+3. Test `byCurrency` powinien sprawdzać konkretne pary waluta + suma/liczba. Najlepszy oracle to AssertJ `tuple()`, bo weryfikuje kombinację pól.
+
+```java
+assertThat(summary.byCurrency())
+    .extracting("currency", "orderCount", "totalAmountMinor")
+    .containsExactlyInAnyOrder(
+        tuple("PLN", 2L, 3000L),
+        tuple("EUR", 1L, 5000L));
+```
+
+4. Security matrix powinna rozdzielać brak tokena (`401`), brak roli (`403`) i cross-tenant (`403`). Nie sprawdzaj tylko jednego denied case, bo BOLA i BFLA mają inne przyczyny.
+5. W `EXPLAIN` szukaj, czy query filtruje po `merchant_id` przed agregacją. Jeśli widzisz kosztowny scan całej tabeli, to jest ryzyko performance dla dużej liczby orderów.
 
 ## 15. Mini Interview Prep
 

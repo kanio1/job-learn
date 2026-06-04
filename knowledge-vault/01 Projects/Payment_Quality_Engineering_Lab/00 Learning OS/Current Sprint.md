@@ -70,7 +70,9 @@ Lesson 11 execution checklist:
 | Option | Description | Requires Spec Kit? |
 |---|---|---|
 | Sprint 11 | REST Assured Framework Architecture and Test Organization | No |
-| Sprint 12 | Advanced Assertions, Type-Safe Extraction, and Parameterized Testing | No |
+| Sprint 12 | Advanced Assertions, Type-Safe Extraction, and Parameterized Testing after Lesson 11 | No |
+| Sprint 12G | Payment Order List contract and authorization matrix follow-up | No, unless expanded into product/API contract spec |
+| Sprint 12F | Frontend consumer alignment for Nuxt dashboard create/detail and typed parsing | No for UI/test cleanup; maybe if new product behavior appears |
 | Sprint 13 | Spring Testing Layers, Concurrency, Observability, and Test Reliability | No |
 | Sprint 14 | Contract documentation/OpenAPI readiness review | Maybe later |
 | Future | Payment lifecycle discovery | Yes, only after guardrails are explicitly updated |

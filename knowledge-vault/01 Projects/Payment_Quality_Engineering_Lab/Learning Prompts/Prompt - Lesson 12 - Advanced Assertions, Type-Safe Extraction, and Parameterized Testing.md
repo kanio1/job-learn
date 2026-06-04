@@ -1,9 +1,9 @@
 ---
 type: prompt
-status: ready
+status: ready-after-lesson-11
 project: Payment Quality Engineering Lab
 lesson: 12
-date: 2026-05-31
+date: 2026-06-04
 tags:
   - prompt
   - lesson-12
@@ -16,285 +16,260 @@ tags:
 
 # Prompt - Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing
 
-Copy this prompt and give it to Kilo when starting Lesson 12 implementation.
+Copy this prompt and give it to Kilo when starting Lesson 12 implementation **after Lesson 11 is complete**.
 
 ```text
-Jesteś moim zespołem: AssertJ Expert, REST Assured Advanced User, JUnit 5 Specialist, i Agent Kodowania.
+Jesteś moim zespołem: QA Architect, REST Assured Advanced User, AssertJ Expert, JUnit Specialist, Backend Test Architect i Agent Kodowania.
 
 Pracujemy w repozytorium:
 
 /home/suso/job-learn
 
-## Kontekst
+## Mission
 
-Przeczytaj przed rozpoczęciem:
+Zaprojektuj i zaimplementuj Lesson 12: Advanced Assertions, Type-Safe Extraction, and Parameterized Testing.
+
+To nie jest nowa funkcjonalność płatnicza. To jest backend/API test quality slice dla istniejącej platformy PayU-like do nauki Java, REST, HTTP, REST Assured, Keycloak-style JWT roles, headers/body contracts i test architecture.
+
+Główne pytanie:
+
+Jak dobrać właściwy oracle i assertion technique dla istniejącego Payment Order API: wrapper DTO, typed content extraction, GPath, AssertJ, SoftAssertions i parameterized tests?
+
+## Required skills
+
+Użyj skills:
+
+- `payment-quality-lab-orchestrator`
+- `junit6-assertj-restassured-testcraft`
+- `java-rest-api-testing-effective-java-mentor`
+- `test-analysis-design-and-data`
+- `rest-api-security-oauth-testing`
+- `spring-boot4-spring7-backend-architect`
+- `obsidian-learning-os`
+
+Jeśli oceniasz frontend follow-up, użyj też:
+
+- `nuxt-dashboard-zod-pinia-frontend-engineering`
+
+## Read first
+
+Przeczytaj przed zmianami:
 
 - `AGENTS.md`
-- `specs/005-payment-order-summary/plan.md`
+- `specs/007-rest-http-contract-hardening-authorization-matrix/plan.md`
 - `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/00 Learning OS/Current Lesson.md`
 - `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/00 Learning OS/Current Sprint.md`
 - `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/Learning Governance/Learning Coverage Backlog.md`
 - `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/Learning Governance/Lesson Evidence Tracker.md`
+- `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 11 - REST Assured Framework Architecture and Test Organization.md`
 - `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing.md`
+- `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 12 - Business Logic, Decision Tables, and Risk Notes.md`
 
 Przeczytaj kod:
 
 - `apps/backend/src/test/java/lab/paymentquality/rest/PaymentOrderListRestAssuredTest.java`
 - `apps/backend/src/test/java/lab/paymentquality/rest/PaymentOrderSummaryRestAssuredTest.java`
-- `apps/backend/src/test/java/lab/paymentquality/testsupport/PaymentOrderAssertions.java`
 - `apps/backend/src/test/java/lab/paymentquality/rest/PaymentOrderRestAssuredTest.java`
+- `apps/backend/src/test/java/lab/paymentquality/security/PaymentOrderSummaryAuthorizationMatrixTest.java`
 - `apps/backend/src/test/java/lab/paymentquality/security/PaymentOrderSecurityTest.java`
+- `apps/backend/src/test/java/lab/paymentquality/testsupport/PaymentOrderAssertions.java`
+- `apps/backend/src/test/java/lab/paymentquality/testsupport/TestJwtSupport.java`
+- `apps/backend/src/main/java/lab/paymentquality/payment/internal/web/PaymentOrderListResponse.java`
+- `apps/backend/src/main/java/lab/paymentquality/payment/internal/web/PaymentOrderResponse.java`
+- `apps/frontend/app/schemas/payment-order.schema.ts`
+- `apps/frontend/app/stores/payment-orders.ts`
 
-## Skills do użycia
+## Preflight gate
 
-Użyj skills:
+Sprawdź, czy Lesson 11 jest zaimplementowana albo świadomie zastąpiona równoważnym rozwiązaniem.
 
-- `payment-quality-lab-orchestrator`
-- `java-rest-api-testing-effective-java-mentor`
-- `junit6-assertj-restassured-testcraft`
-- `test-analysis-design-and-data`
-- `obsidian-learning-os`
+Expected artifacts:
+
+- `PaymentOrderApi.java` / `MerchantApi.java` or equivalent API clients
+- `PaymentOrderBuilder.java` / `MerchantBuilder.java` or equivalent builders
+- `PaymentErrorSpecs.java` or equivalent reusable error specs
+- `RestAssuredLoggingConfig` with secret masking
+
+If these artifacts do not exist, do not force Lesson 12 implementation. Report that Lesson 11 must be completed first, or implement only a tiny documented preflight cleanup if it is clearly safe.
 
 ## Czego NIE powtarzać
 
 Nie tłumacz od nowa:
 
-- Basic AssertJ (`assertThat(...)`, `isEqualTo(...)`, `extracting(...)`)
-- Basic REST Assured (`given().when().then()`, `extract().as(Class)`)
-- Basic JUnit (`@Test`, `@DisplayName`)
-- `RequestSpecBuilder` / `ResponseSpecBuilder` (Lesson 07, 11)
+- basic REST Assured `given().when().then()`
+- basic `extract().as(Class)`
+- basic `assertThat(...).isEqualTo(...)`
+- basic JUnit `@Test`
+- Lesson 10 summary HTTP edge and auth matrix details
+- Lesson 11 API client/builder/error spec concepts except as prerequisites
 
-Użyj tych tematów jako prerequisites.
+## Scope decision
 
-## Cel Lesson 12
+Default: Lesson Extension, no Spec Kit.
 
-Zaprojektuj i zaimplementuj **Advanced Assertions, Type-Safe Extraction, and Parameterized Testing** — transformację testów z "basic assertions" do "precision assertions".
+Reason:
 
-Główne pytanie:
-
-Jak przekształcić testy z prostych field-by-field assertions w profesjonalne testy z TypeRef<T>, GPath advanced, recursive comparison, soft assertions i parameterized testing?
-
-## Scope Decision
-
-Domyślna decyzja: Lesson Extension, no Spec Kit.
-
-Uzasadnienie:
-
-- nie dodajemy nowych endpointów ani business logic,
-- rozszerzamy istniejące testy o zaawansowane assertion patterns,
-- production code pozostaje niezmieniony,
-- to jest "assertion precision" slice.
+- no new production endpoint,
+- no new payment business behavior,
+- no new roles/statuses,
+- no frontend production scope by default,
+- we improve the precision and maintainability of existing tests.
 
 ## Scope IN
 
-### Batch 12A: TypeRef<T> + GPath Advanced
+### Batch 12A - Test hygiene preflight
 
-Zaimplementuj:
+Inspect and handle only if safe:
 
-- **TypeRef<T> dla list extraction:**
-  - Rozszerz `PaymentOrderListRestAssuredTest` aby używał `extract().as(new TypeRef<List<PaymentOrderResponse>>(){})`
-  - Porównaj z obecnym `extract().as(PaymentOrderListResponse.class).content()`
-  - Dodaj test: `listOrdersWithTypeRefReturnsTypedList`
+- `PaymentOrderListRestAssuredTest#listFilteredByStatusReturnsOnlyCreatedV2` looks suspicious; characterize it and fix/replace if it is wrong.
+- `MyPaymentOrderBusinessFlowRestAssuredTest` and `MyMerchantRestAssuredTest` look like personal learning copies; do not delete blindly. Remove only if clearly obsolete and unreferenced.
+- `IdempotencyKeysCopy.java` duplicates `IdempotencyKeys.java`; remove only if clearly obsolete and unreferenced.
+- Minor readability smells in `PaymentOrderSummaryAuthorizationMatrixTest` may be fixed only if touched for this lesson.
 
-- **GPath deep scan (`..`):**
-  - Dodaj test: `allPaymentOrdersHavePositiveAmount` używający `body("content..amountMinor", everyItem(greaterThan(0)))`
-  - Dodaj test: `allPaymentOrdersHaveValidCurrency` używający `body("content..currency", hasItems("PLN", "EUR", "USD"))`
+### Batch 12B - Type-safe extraction choices
 
-- **GPath findAll:**
-  - Dodaj test: `filterPaymentOrdersByCurrency` używający `body("content.findAll { it.currency == 'PLN' }.size()", greaterThan(0))`
-  - Dodaj test: `filterPaymentOrdersByAmount` używający `body("content.findAll { it.amountMinor > 5000 }.currency", hasItems(...))`
+Implement tests that teach the real API shape:
 
-- **GPath array indexing:**
-  - Dodaj test: `firstPaymentOrderHasExpectedCurrency` używający `body("content[0].currency", equalTo("PLN"))`
-  - Dodaj test: `lastPaymentOrderHasExpectedCurrency` używający `body("content[-1].currency", equalTo("USD"))`
+- The list endpoint returns `PaymentOrderListResponse`, not a raw list.
+- Keep wrapper extraction for the whole response: `extract().as(PaymentOrderListResponse.class)`.
+- Demonstrate typed content extraction with `jsonPath().getList("content", PaymentOrderResponse.class)`.
+- Use `TypeRef<List<PaymentOrderResponse>>` only if extracting an actual JSON array value, not the whole wrapper response.
 
-### Batch 12B: Response Time Assertions [OPTIONAL]
+Candidate tests:
 
-Zaimplementuj:
+- `listResponseExtractionPreservesWrapperContract`
+- `listContentCanBeExtractedAsTypedOrders`
+- `typedContentExtractionDoesNotReturnListOfMaps`
 
-- **Nowy plik:** `rest/PaymentOrderPerformanceTest.java`
-- **Testy:**
-  - `summaryEndpointRespondsWithin500ms` — `time(lessThan(500L))`
-  - `listEndpointRespondsWithin1Second` — `time(lessThan(1L), TimeUnit.SECONDS)`
-  - `createEndpointRespondsWithin500ms` — `time(lessThan(500L))`
-- **Uwaga:** Performance tests mogą być flaky w CI. Rozważ `@Tag("performance")` aby móc je wyłączać.
+### Batch 12C - GPath vs typed AssertJ
 
-### Batch 12C: AssertJ Advanced
+Implement 1-2 tests showing the boundary:
 
-Zaimplementuj:
+- GPath for raw JSON/path checks.
+- AssertJ for typed business assertions after deserialization.
+- Use deterministic seed data and explicit sort when asserting first/last/order.
 
-- **usingRecursiveComparison:**
-  - Rozszerz `PaymentOrderRestAssuredTest` aby używał `usingRecursiveComparison().ignoringFields("createdAt", "updatedAt")`
-  - Dodaj test: `createPaymentOrderMatchesExpectedStructure`
+Candidate tests:
 
-- **SoftAssertions:**
-  - Rozszerz `PaymentOrderSummaryRestAssuredTest` aby używał `SoftAssertions.assertAll()`
-  - Dodaj test: `summaryResponseHasAllExpectedFields` z 5+ assertions w SoftAssertions
+- `gpathAndAssertJFilterTheSameCurrencyRows`
+- `typedListAssertionsExplainBusinessResultBetterThanRawJsonPaths`
 
-- **asInstanceOf:**
-  - Dodaj test używający `assertThat(obj).asInstanceOf(InstanceOfAssertFactories.LIST)`
-  - Pokaż type-safe casting
+### Batch 12D - Advanced AssertJ
 
-- **Custom AbstractAssert dla error response:**
-  - Rozszerz `PaymentOrderAssertions` o `PaymentErrorResponseAssert`
-  - Dodaj metody: `hasErrorCode(String)`, `hasMessageContaining(String)`, `hasCorrelationId()`
+Implement only patterns that improve readability:
 
-### Batch 12D: @ParameterizedTest
+- `SoftAssertions` for summary response with multiple independent aggregate facts.
+- `usingRecursiveComparison()` for DTO comparison, ignoring generated/technical fields.
+- `extracting(...).containsExactlyInAnyOrder(tuple(...))` for expected rows.
+- `allSatisfy` / `anySatisfy` for list invariants.
+- Extend `PaymentOrderAssertions` only if it removes duplication and creates a reusable domain assertion.
 
-Zaimplementuj:
+Candidate tests:
 
-- **Nowy plik:** `rest/PaymentOrderParameterizedTest.java`
+- `summaryResponseReportsAllAggregateFactsTogether`
+- `listResponseContainsExpectedBusinessRowsRegardlessOfOrder`
+- `createdPaymentOrderMatchesExpectedBusinessFields`
 
-- **@MethodSource:**
-  - Dodaj test: `createPaymentOrderValidation` z `@MethodSource("validationTestCases")`
-  - Test data: negative amount, zero amount, invalid currency, blank reference
-  - Każda iteracja sprawdza `validationError()` spec i `message` contains expected error
+### Batch 12E - Parameterized tests
 
-- **@CsvSource:**
-  - Dodaj test: `listPaymentOrdersByCurrency` z `@CsvSource({"PLN, 5", "EUR, 3", "USD, 2"})`
-  - Każda iteracja filtruje po currency i sprawdza count
+Use `@ParameterizedTest` with isolated data per row.
 
-- **@EnumSource:**
-  - Dodaj test: `listPaymentOrdersByStatus` z `@EnumSource(PaymentStatus.class)`
-  - Każda iteracja filtruje po status i sprawdza wszystkie orders mają ten status
+Recommended:
 
-- **@RepeatedTest:**
-  - Dodaj test: `createPaymentOrderIdempotency` z `@RepeatedTest(3)`
-  - Pokaż że idempotent create zwraca ten sam paymentOrderId
+- `@MethodSource` for create payment order validation cases.
+- `@CsvSource` for simple list filter cases such as currency/count.
+- `@EnumSource` only for current stable enum values; do not invent `AUTHORIZED`, `CAPTURED`, `REFUNDED`.
 
-### Batch 12E: Generics + Pattern Matching + Text Blocks [OPTIONAL]
+Each row must create its own merchant and orders. No shared mutable static fixtures.
 
-Zaimplementuj:
+Candidate tests:
 
-- **Generics (bounded wildcards):**
-  - Dodaj helper method: `<T extends PaymentOrderResponse> void assertAllCreated(List<T> orders)`
-  - Użyj w teście
-
-- **Pattern matching instanceof:**
-  - Zrefaktoruj istniejący kod aby używał `if (obj instanceof PaymentOrderResponse order)` zamiast explicit casting
-
-- **Text blocks:**
-  - Dodaj `testsupport/PaymentOrderJsonFixtures.java` z text blocks dla JSON fixtures
-  - Dodaj test używający text block jako request body
+- `createPaymentOrderValidationCases`
+- `listPaymentOrdersByCurrencyCases`
+- `listPaymentOrdersByCurrentStatusCases`
 
 ## Scope OUT
 
-- Nowe endpointy production code
-- Nowe business logic
-- Zmiany w Spring Modulith structure
-- Frontend changes
-- Contract testing (Pact/WireMock)
-- OpenAPI/Swagger generation
-- Performance optimization (tylko assertions)
+- Do not add `POST /payments`.
+- Do not add payment lifecycle actions: authorize, capture, cancel, refund.
+- Do not add new payment statuses just for tests.
+- Do not add PSP integration, PSP mocks, Kafka, webhooks or async pipelines.
+- Do not add complete OAuth/OIDC integration.
+- Do not add complete business dashboard.
+- Do not add OpenAPI/Swagger/Pact/WireMock automation in this lesson.
+- Do not make `PaymentOrderPerformanceTest` a core deliverable.
+- Do not add response time thresholds to normal contract tests.
+- Do not modify frontend unless a small consumer-contract fix is directly required and verified.
 
-## Implementation Requirements
+## Acceptance criteria
 
-1. **TypeRef<T>** musi:
-   - Używać anonymous class: `new TypeRef<List<PaymentOrderResponse>>(){}`
-   - Zwracać typed list (nie `List<Map>`)
-   - Być porównywalne z obecnym `extract().as(PaymentOrderListResponse.class).content()`
+1. Lesson 11 preflight is checked and documented in final response.
+2. The implementation respects that list endpoint returns `PaymentOrderListResponse`.
+3. At least one test demonstrates typed extraction of `content` as `List<PaymentOrderResponse>` without raw `List<Map>` usage.
+4. At least one test contrasts GPath with typed AssertJ in a deterministic way.
+5. At least one summary/list test uses `SoftAssertions` or another advanced AssertJ feature for a real readability gain.
+6. At least one `@ParameterizedTest` uses per-row data ownership.
+7. No test relies on accidental row order, fake statuses or shared mutable data.
+8. No production payment behavior is added.
+9. Lesson 10 HTTP edge and authorization matrix tests still pass.
+10. `PaymentModuleTest` still passes.
+11. Vault evidence is updated after implementation.
 
-2. **GPath advanced** musi:
-   - Używać `..` dla deep scan (recursive field search)
-   - Używać `findAll { condition }` dla collection filtering
-   - Używać `[0]`, `[-1]`, `[0..2]` dla array indexing
-   - Być czytelne (nie over-complicated)
+## Verification commands
 
-3. **Response time assertions** muszą:
-   - Używać `.time(lessThan(500L))` lub `.time(lessThan(1L), TimeUnit.SECONDS)`
-   - Być oznaczone `@Tag("performance")` aby móc wyłączać w CI
-   - Mieć reasonable thresholds (500ms dla single endpoint, 1s dla list)
-
-4. **AssertJ advanced** musi:
-   - `usingRecursiveComparison` z `ignoringFields("createdAt", "updatedAt")`
-   - `SoftAssertions` z `assertAll()` dla 5+ assertions
-   - `asInstanceOf` dla type-safe casting
-   - Custom `AbstractAssert` dla `PaymentErrorResponse`
-
-5. **@ParameterizedTest** musi:
-   - `@MethodSource` z `Stream<Arguments>` dla validation test cases
-   - `@CsvSource` dla currency filtering
-   - `@EnumSource` dla status filtering
-   - `@RepeatedTest` dla idempotency verification
-   - Czytelne `name` parameter (np. `"{0}: {1} → {2}"`)
-
-6. **Generics + pattern matching + text blocks** muszą:
-   - Używać bounded wildcards zgodnie z PECS (Producer Extends, Consumer Super)
-   - Używać pattern matching instanceof (JDK 16+)
-   - Używać text blocks dla multi-line JSON fixtures
-
-## Required Tests
-
-### TypeRef<T> Tests
-
-- `listOrdersWithTypeRefReturnsTypedList`
-- `listOrdersWithTypeRefAllowsDirectIteration`
-
-### GPath Advanced Tests
-
-- `allPaymentOrdersHavePositiveAmount` (deep scan)
-- `allPaymentOrdersHaveValidCurrency` (deep scan)
-- `filterPaymentOrdersByCurrency` (findAll)
-- `filterPaymentOrdersByAmount` (findAll)
-- `firstPaymentOrderHasExpectedCurrency` (array indexing)
-- `lastPaymentOrderHasExpectedCurrency` (array indexing)
-
-### Response Time Tests [OPTIONAL]
-
-- `summaryEndpointRespondsWithin500ms`
-- `listEndpointRespondsWithin1Second`
-- `createEndpointRespondsWithin500ms`
-
-### AssertJ Advanced Tests
-
-- `createPaymentOrderMatchesExpectedStructure` (usingRecursiveComparison)
-- `summaryResponseHasAllExpectedFields` (SoftAssertions)
-- `errorResponseHasExpectedStructure` (custom AbstractAssert)
-
-### @ParameterizedTest Tests
-
-- `createPaymentOrderValidation` (@MethodSource)
-- `listPaymentOrdersByCurrency` (@CsvSource)
-- `listPaymentOrdersByStatus` (@EnumSource)
-- `createPaymentOrderIdempotency` (@RepeatedTest)
-
-## Acceptance Criteria
-
-1. TypeRef<T> użyte w co najmniej 2 testach
-2. GPath deep scan (`..`) użyte w co najmniej 2 testach
-3. GPath findAll użyte w co najmniej 2 testach
-4. GPath array indexing użyte w co najmniej 2 testach
-5. Response time assertions użyte w co najmniej 3 testach (optional)
-6. usingRecursiveComparison użyte w co najmniej 1 teście
-7. SoftAssertions użyte w co najmniej 1 teście z 5+ assertions
-8. Custom AbstractAssert dla error response zaimplementowane
-9. @ParameterizedTest z @MethodSource użyte w co najmniej 1 teście
-10. @ParameterizedTest z @CsvSource użyte w co najmniej 1 teście
-11. @ParameterizedTest z @EnumSource użyte w co najmniej 1 teście
-12. @RepeatedTest użyte w co najmniej 1 teście (optional)
-13. Wszystkie istniejące testy nadal przechodzą (no regression)
-14. `PaymentModuleTest` nadal przechodzi
-15. Vault evidence zaktualizowany
-
-## Verification Commands
+Run from `apps/backend`:
 
 ```bash
-cd apps/backend
-./mvnw test
-./mvnw -Dtest=PaymentOrderParameterizedTest test
-./mvnw -Dtest=PaymentOrderPerformanceTest test
+./mvnw -Dtest=PaymentOrderListRestAssuredTest test
+./mvnw -Dtest=PaymentOrderSummaryRestAssuredTest test
+./mvnw -Dtest=PaymentOrderRestAssuredTest test
+./mvnw -Dtest=PaymentOrderSummaryAuthorizationMatrixTest,PaymentOrderSummaryHttpContractRestAssuredTest test
 ./mvnw -Dtest=PaymentModuleTest test
-./mvnw -Dtest="*Test" -Dgroups="performance" test  # Run only performance tests
-./mvnw -Dtest="*Test" -DexcludedGroups="performance" test  # Run all except performance
+./mvnw -DskipTests package
 ```
 
-## Evidence Update Required
+If you create a dedicated class:
 
-Po implementacji:
+```bash
+./mvnw -Dtest=PaymentOrderParameterizedTest test
+```
 
-1. Zaktualizuj `Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing.md` z actual files i command results
-2. Zaktualizuj `Lesson Evidence Tracker.md` z test evidence
-3. Zaktualizuj `Current Lesson.md` i `Current Sprint.md` jeśli Lesson 12 becomes ready
-4. Zaktualizuj `Learning Coverage Backlog.md` dla AssertJ advanced, TypeRef<T>, @ParameterizedTest topics
-5. Dodaj interview answer EN
+Frontend verification only if frontend files changed:
+
+```bash
+cd apps/frontend
+corepack pnpm typecheck
+corepack pnpm test:e2e -- payment-orders-panel.spec.ts payment-order-create.spec.ts payment-order-read.spec.ts
+```
+
+## Vault evidence update
+
+After implementation, update:
+
+- `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing.md`
+- `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 12 - Business Logic, Decision Tables, and Risk Notes.md`
+- `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/Learning Governance/Lesson Evidence Tracker.md`
+- `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/Learning Governance/Learning Coverage Backlog.md`
+- `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/00 Learning OS/Current Lesson.md`
+- `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/00 Learning OS/Current Sprint.md`
+
+## Next batch recommendation after Lesson 12
+
+Return a recommendation for one of these:
+
+- `12G - Payment Order List contract and authorization matrix`: pagination boundaries, invalid filters, sort allowlist, 401/403/200 list matrix.
+- `12F - Frontend consumer alignment`: dashboard shell for create/detail, typed detail parsing, Pinia action ownership, Playwright route/back-link checks.
+- `13A - Spring testing layers and reliability`: MockMvc/WebMvcTest, parallel-safe data, concurrency awareness, surefire/failsafe.
+
+Prefer `12G` if backend list contract risks remain. Prefer `12F` if learner wants frontend/Nuxt/UI consumer depth next. Prefer `13A` after backend and frontend consumer gaps are stable.
+
+## Required final response
+
+Return:
+
+1. What Lesson 11 preflight found.
+2. What code/tests changed.
+3. Which tests were run and results.
+4. What vault evidence was updated.
+5. Which next batch is recommended and why.
 ```

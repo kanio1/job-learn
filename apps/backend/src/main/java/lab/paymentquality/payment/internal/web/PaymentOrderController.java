@@ -9,6 +9,7 @@ import lab.paymentquality.payment.internal.application.PaymentOrderService;
 import lab.paymentquality.payment.internal.domain.*;
 import org.slf4j.MDC;
 import org.springframework.data.domain.Page;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -35,7 +36,7 @@ public class PaymentOrderController {
         this.paymentOrderSummaryService = paymentOrderSummaryService;
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PaymentOrderResponse> createPaymentOrder(
             @PathVariable UUID merchantId,
             @RequestHeader("Idempotency-Key") String idempotencyKeyHeader,
@@ -113,9 +114,9 @@ public class PaymentOrderController {
             @RequestParam(required = false) Long minAmount,
             @RequestParam(required = false) Long maxAmount,
             @RequestParam(required = false) String clientOrderReference,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String sort,
             Authentication authentication,
             @AuthenticationPrincipal Jwt jwt) {
 
@@ -132,6 +133,8 @@ public class PaymentOrderController {
         PaymentOrderListRequest request = new PaymentOrderListRequest(
                 status, currency, fromDate, toDate, minAmount, maxAmount,
                 clientOrderReference, page, size, sort);
+
+        request.validate();
 
         Page<PaymentOrder> pageResult = paymentOrderListService.findAll(merchantId, request);
         PaymentOrderListResponse response = PaymentOrderListMapper.toListResponse(pageResult);

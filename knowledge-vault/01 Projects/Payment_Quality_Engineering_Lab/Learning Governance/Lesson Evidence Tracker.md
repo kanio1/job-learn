@@ -186,37 +186,33 @@ After Lesson 11, proceed to Lesson 12 (Advanced Assertions & Parameterized Testi
 
 ## Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing
 
-**Data:** 2026-05-31
-**Status:** Planned - lesson note and implementation prompt ready; code/test implementation not started
+**Data:** 2026-06-04
+**Status:** Planned - revised after Lessons 06-11/backend/frontend review; ready after Lesson 11 implementation
 
 ### Prompt
 - `../Learning Prompts/Prompt - Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing.md`
 
 ### Business capability
-No new payment business capability. Lesson 12 is a precision assertions slice â€” transforms tests from "basic assertions" to "precision assertions".
+No new payment business capability. Lesson 12 is a precision assertions and data-driven test slice over existing Payment Order create/read/list/summary behavior.
 
 ### Learning delta
-- TypeRef<T> dla generic list extraction (`List<PaymentOrderResponse>`).
-- GPath advanced (deep scan `..`, `findAll`, array indexing).
-- Response time assertions (`.time()`, `.timeIn()`).
-- JSON Schema validation (`matchesJsonSchemaInClasspath()`).
-- usingRecursiveComparison z ignoringFields, comparingOnlyFields.
-- SoftAssertions z assertAll().
-- asInstanceOf dla type-safe casting.
-- @ParameterizedTest z @MethodSource, @CsvSource, @EnumSource.
-- @RepeatedTest dla repeated execution.
-- DynamicTest / @TestFactory dla dynamic test generation.
-- Java 25: Generics (bounded wildcards, PECS), pattern matching instanceof, text blocks.
+- Correct extraction strategy for the real list endpoint: `PaymentOrderListResponse` wrapper vs typed `content` extraction.
+- Safe `TypeRef<T>` mental model: use only when the extracted value is actually generic, not for the whole wrapper response.
+- GPath vs typed AssertJ decision-making.
+- Advanced AssertJ where it improves test oracle readability: `SoftAssertions`, `usingRecursiveComparison`, `tuple`, `allSatisfy`, `anySatisfy`.
+- Parameterized validation/filter tests with per-row merchant/order data ownership.
+- Test hygiene before adding advanced examples: suspicious list test, duplicate learning copies and idempotency helper copy must be reviewed.
 
 ### Production code evidence expected
 - No production code expected. Pure test enhancement.
 
 ### Test code evidence expected
-- Extended `PaymentOrderListRestAssuredTest.java` with TypeRef<T>.
-- New `PaymentOrderPerformanceTest.java` with response time assertions.
-- Extended `PaymentOrderAssertions.java` with recursive comparison, soft assertions.
-- New `PaymentOrderParameterizedTest.java` with @ParameterizedTest.
-- New `PaymentOrderJsonFixtures.java` with text blocks.
+- Extended `PaymentOrderListRestAssuredTest.java` or dedicated Lesson 12 test with wrapper DTO extraction and typed `content` extraction.
+- Extended summary/list/create tests with advanced AssertJ where it improves readability.
+- New or extended parameterized tests for validation/filter cases.
+- Optional `PaymentOrderAssertions.java` extension only if it removes duplication.
+- No core `PaymentOrderPerformanceTest`; performance remains deferred/awareness.
+- No JSON Schema/OpenAPI deliverable in Lesson 12.
 
 ### Vault notes
 - `02 Phase 2 - Payment Orders/Lesson 12 - Advanced Assertions, Type-Safe Extraction, and Parameterized Testing.md`
@@ -227,7 +223,7 @@ No new payment business capability. Lesson 12 is a precision assertions slice â€
 | Area | File |
 |---|---|
 | Java 25 | `02 Areas/Technical Learning/Java 25 For SDET/Lesson 12 - Generics, Pattern Matching, and Text Blocks.md` |
-| REST testing | `02 Areas/Technical Learning/JUnit REST Assured/Lesson 12 - TypeRef, GPath Advanced, Response Time, and JSON Schema.md` |
+| REST testing | `02 Areas/Technical Learning/JUnit REST Assured/Lesson 12 - TypeRef, GPath Advanced, Response Time, and JSON Schema.md` (read with revised scope: response time/schema are awareness, not core) |
 | HTTP/API | `02 Areas/Technical Learning/REST API From Zero/Lesson 12 - HATEOAS, Content Negotiation Deep Dive, and Rate Limiting.md` |
 | SQL/PostgreSQL | `02 Areas/Technical Learning/PostgreSQL and SQL From Zero/Lesson 12 - CTE and Window Functions.md` |
 | Business logic | `02 Phase 2 - Payment Orders/Lesson 12 - Business Logic, Decision Tables, and Risk Notes.md` |
@@ -235,21 +231,25 @@ No new payment business capability. Lesson 12 is a precision assertions slice â€
 ### Commands to run after implementation
 - `cd apps/backend && ./mvnw test`
 - `cd apps/backend && ./mvnw -Dtest=PaymentOrderParameterizedTest test`
-- `cd apps/backend && ./mvnw -Dtest=PaymentOrderPerformanceTest test`
+- `cd apps/backend && ./mvnw -Dtest=PaymentOrderListRestAssuredTest test`
+- `cd apps/backend && ./mvnw -Dtest=PaymentOrderSummaryRestAssuredTest test`
+- `cd apps/backend && ./mvnw -Dtest=PaymentOrderSummaryAuthorizationMatrixTest,PaymentOrderSummaryHttpContractRestAssuredTest test`
 - `cd apps/backend && ./mvnw -Dtest=PaymentModuleTest test`
 
 ### Guardrails
 - No new production code.
 - No new endpoints or business logic.
 - No frontend changes.
-- Performance tests marked with @Tag("performance") for optional execution.
+- No core performance tests or response-time thresholds.
+- No JSON Schema/OpenAPI/Pact/WireMock automation.
+- Do not invent future payment statuses for `@EnumSource` examples.
 
 ### Interview answer EN
 Draft:
-> Lesson 12 introduces precision assertions and data-driven testing. I used TypeRef<T> for type-safe generic list extraction, GPath advanced features like deep scan and findAll for complex JSON navigation, response time assertions for performance baselines, and JSON Schema validation for contract verification. I also implemented @ParameterizedTest with @MethodSource, @CsvSource, and @EnumSource for data-driven testing. This is senior-level testing: not just checking status codes, but verifying exact response structure, performance characteristics, and testing across multiple data sets efficiently.
+> Lesson 12 introduces precision assertions and data-driven testing without adding product behavior. The important design choice is matching the assertion method to the real API shape: wrapper DTO extraction for paged list responses, typed `content` extraction for nested order arrays, GPath for focused raw JSON checks, and AssertJ for business-level assertions after deserialization. Parameterized tests use isolated data per row, which increases coverage without creating flaky shared-state tests.
 
 ### Next lesson/sprint handoff
-After Lesson 12, proceed to Lesson 13 (Spring Testing Layers, Concurrency, Observability, and Test Reliability).
+After Lesson 12, choose one follow-up based on risk: 12G Payment Order List contract/auth matrix, 12F Frontend consumer alignment, or Lesson 13 Spring testing layers and reliability.
 
 ## Lesson 13 - Spring Testing Layers, Concurrency, Observability, and Test Reliability
 

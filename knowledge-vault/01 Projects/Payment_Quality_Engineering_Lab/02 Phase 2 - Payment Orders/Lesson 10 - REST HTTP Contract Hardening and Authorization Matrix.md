@@ -229,6 +229,28 @@ Rules:
 9. Jak odroznic app bug od test bug przy `406`/`415`/`405`?
 10. Co powinno byc sprawdzone w REST Assured, a czego nie przenosic do Playwright?
 
+### Odpowiedzi
+
+1. `Accept` mówi, jaki format odpowiedzi klient potrafi przyjąć. `Content-Type` mówi, jaki format ma request body wysłane przez klienta.
+2. `401` oznacza brak lub niepoprawne uwierzytelnienie. `403` oznacza, że token jest rozpoznany, ale nie ma wymaganej roli albo ownership.
+3. Summary jest operacją raportową/kolekcyjną, więc `403` jawnie odmawia zakresu merchanta. Single read dotyczy konkretnego ID, więc `404` maskuje istnienie zasobu przed obcym tenantem.
+4. Test wysyła GET na `/summary` i sprawdza shape summary, np. `totalOrders`, `byCurrency`, `byStatus`. Jeśli endpoint został potraktowany jak `{paymentOrderId}`, body albo status będą inne.
+5. Detail endpoint ma `ETag`, bo reprezentuje pojedynczy zasób i może kiedyś wspierać conditional update/read. Summary jest agregatem read-only i nie musi dziedziczyć tego kontraktu.
+6. BOLA to dostęp do summary innego merchanta przy poprawnej funkcji read. BFLA to użycie funkcji summary bez odpowiedniej roli, np. create-only token.
+7. Parameterized test poprawia czytelność, gdy wszystkie wiersze mają ten sam oracle i różnią się tylko danymi. Jest zbyt magiczny, gdy ukrywa różne scenariusze biznesowe w jednej tabeli bez jasnych nazw.
+8. Te narzędzia są ważne, ale teraz większą wartość daje opanowanie bezpośrednich HTTP/security kontraktów. Dodanie Pact/OpenAPI/WireMock za wcześnie zwiększyłoby tooling zamiast zrozumienia ryzyka.
+9. Najpierw sprawdź spec HTTP i oczekiwany kontrakt endpointu, potem porównaj test setup: headers, method, body. Jeśli test wysyła zły header, to test bug; jeśli poprawny request daje zły status, to app bug.
+10. REST Assured powinien sprawdzać status, headers, error body, route ambiguity i authorization matrix. Playwright powinien sprawdzać, czy UI dobrze reaguje na wynik, nie pełną semantykę HTTP.
+
+```java
+given()
+    .accept("text/xml")
+.when()
+    .get("/api/merchants/{merchantId}/payment-orders/summary", merchantId)
+.then()
+    .statusCode(406);
+```
+
 ## 14. Zadania Praktyczne
 
 | Zadanie | Files | Command | Expected |
@@ -238,6 +260,14 @@ Rules:
 | Reuse safe request/error helpers | `PaymentOrderSummaryApiTestSupport.java` or small local helpers | targeted test command | Less duplication without hiding behavior |
 | Optional DB oracle test | repository/service test | targeted test command | Aggregation diagnostics improved |
 | Update evidence | vault tracker/current lesson/current sprint | n/a | Lesson 10 evidence captured |
+
+### Rozwiązania / wskazówki
+
+1. HTTP edge tests powinny pokrywać unsupported methods, unsupported `Accept`, malformed UUID i route collision. Nie dodawaj nowego product behavior, tylko charakteryzuj istniejący kontrakt.
+2. Authorization matrix powinna mieć wiersze dla `401`, BFLA `403`, BOLA `403` i sukcesów `200`. Każdy wiersz powinien mieć opis aktora, tokena, targetu i expected status.
+3. Helpery są dobre, jeśli redukują powtarzalny setup bez ukrywania scenariusza. Nazwa helpera musi mówić, jaki request albo error contract buduje.
+4. DB oracle test dodaj tylko wtedy, gdy REST response nie wystarcza do diagnozy agregacji. Repository/service test może potwierdzić SQL totals bez warstwy HTTP.
+5. Evidence powinno mówić, które testy dodano i jaki risk guardrail zapewniają. Krótki opis jest lepszy niż długa lista implementacyjnych detali.
 
 ## 15. Mini Interview Prep
 

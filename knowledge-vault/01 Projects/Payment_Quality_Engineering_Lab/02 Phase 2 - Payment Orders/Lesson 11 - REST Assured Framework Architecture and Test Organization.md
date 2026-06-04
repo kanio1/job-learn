@@ -586,6 +586,32 @@ public record CreatePaymentOrderRequest(
 9. Jak custom `AbstractAssert` poprawia czytelność error assertions?
 10. Kiedy używać `satisfiesExactly` vs `allSatisfy` vs `anySatisfy`?
 
+### Odpowiedzi
+
+1. API client wrapper ukrywa techniczny setup REST Assured i wystawia metody w języku biznesowym. Test czyta się jak scenariusz, a endpointy/auth są centralnie utrzymane.
+2. Builder jest overkill, gdy payload ma 1-2 pola i występuje w kilku testach. Warto go dodać, gdy payload ma wiele wariantów, defaults i często się powtarza.
+3. `blacklistHeader("Authorization")` maskuje tokeny w logach REST Assured. To chroni sekrety w CI artifacts i przy failed tests.
+4. `@Nested` grupuje security matrix według kontekstu, np. unauthenticated, BFLA, BOLA, success. Dzięki temu raport testów pokazuje intencję, nie tylko nazwy metod.
+5. `@Tag` pozwala uruchamiać np. tylko `security`, `contract` albo `slow` tests. CI może mieć szybki pipeline i osobny pipeline dla cięższych scenariuszy.
+6. Scenario flow test sprawdza integrację kilku endpointów w realnym użyciu: create, list i summary. Nie zastępuje małych testów kontraktowych, ale łapie błędy przepływu danych.
+7. `Map.of()` tworzy małą niemutowalną mapę z podanych par. `Map.copyOf()` robi niemutowalną kopię istniejącej mapy i chroni przed późniejszą mutacją źródła.
+8. `Comparator.comparing().thenComparing()` jest deklaratywny i trudniej w nim popełnić błąd niż w ręcznym `compare`. Jasno pokazuje primary i secondary sort key.
+9. Custom `AbstractAssert` przenosi powtarzalne sprawdzanie error contract do jednej, nazwanej asercji. Test mówi wtedy `hasErrorCode(...)`, a nie powtarza techniczne `extracting`.
+
+```java
+assertThat(error)
+    .hasStatus(403)
+    .hasCode("forbidden")
+    .hasCorrelationId();
+```
+
+10. `satisfiesExactly` sprawdza elementy w kolejności i liczbie. `allSatisfy` sprawdza warunek dla każdego elementu, a `anySatisfy` wymaga przynajmniej jednego pasującego elementu.
+
+```java
+assertThat(orders).allSatisfy(order -> assertThat(order.currency()).isEqualTo("PLN"));
+assertThat(orders).anySatisfy(order -> assertThat(order.status()).isEqualTo("CREATED"));
+```
+
 ## 14. Zadania Praktyczne
 
 | Zadanie | Files | Command | Expected |
@@ -596,6 +622,22 @@ public record CreatePaymentOrderRequest(
 | Dodaj secret masking | `RestAssuredLoggingConfig.java` | `./mvnw test` | Authorization nie w logach |
 | Zrefaktoruj 3 testy do @Nested | `PaymentOrderRestAssuredTest.java` | `./mvnw test` | Testy zorganizowane |
 | Napisz scenario flow test | `PaymentOrderScenarioFlowTest.java` | `./mvnw test` | Multi-step test działa |
+
+### Rozwiązania / wskazówki
+
+1. `PaymentOrderApi` powinien mieć metody typu `createOrder`, `readOrder`, `listOrders`, `getSummary`. Nie ukrywaj expected statusu, jeśli test ma sprawdzać różne odpowiedzi.
+2. `PaymentOrderBuilder` powinien mieć sensible defaults i fluent overrides. Każdy test zmienia tylko pola istotne dla scenariusza.
+3. `PaymentErrorSpecs` powinien centralizować powtarzalne oczekiwania błędów, np. content type, status i error code. Nie rób z niego czarnej skrzynki ukrywającej business reason.
+4. Po dodaniu secret masking wywołaj celowo failed test lokalnie i sprawdź log. `Authorization` nie powinien pokazywać tokena.
+5. `@Nested` wprowadź wokół naturalnych grup, np. `CreateOrder`, `ReadOrder`, `Idempotency`. Refaktor nie powinien zmieniać danych ani oracle testów.
+6. Scenario flow ma utworzyć order, znaleźć go na liście i zobaczyć wpływ w summary. Asercje powinny sprawdzać tylko business-relevant ciągłość danych.
+
+```java
+assertThat(list.content())
+    .extracting("paymentOrderId")
+    .contains(created.paymentOrderId());
+assertThat(summary.totalOrders()).isGreaterThanOrEqualTo(1);
+```
 
 ## 15. Mini Interview Prep
 

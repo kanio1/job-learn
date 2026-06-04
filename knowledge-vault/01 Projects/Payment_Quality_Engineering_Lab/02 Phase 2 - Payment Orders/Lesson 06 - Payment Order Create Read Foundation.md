@@ -510,14 +510,14 @@ ORDER BY created_at ASC;
 
 Security matrix:
 
-| Actor | Create Own | Create Other | Read Own | Read Other | Platform Read |
-|---|---:|---:|---:|---:|---:|
-| Unauthenticated | `401` | `401` | `401` | `401` | `401` |
-| Denied identity | `403` | `403` | `403` | `403` | `403` |
-| `merchant:payments:create` | `201/200` | `403` | `403` | `403/404` | `403` |
-| `merchant:payments:read` | `403` | `403` | `200` | `404` | `403` |
-| `merchant:payments:operate` | `403` | `403` | `403` | `403` | `403` |
-| `platform:payments:read` | `403` | `403` | `200` | `200` in correct nested context | `200` |
+| Actor                       | Create Own | Create Other | Read Own |                      Read Other | Platform Read |
+| --------------------------- | ---------: | -----------: | -------: | ------------------------------: | ------------: |
+| Unauthenticated             |      `401` |        `401` |    `401` |                           `401` |         `401` |
+| Denied identity             |      `403` |        `403` |    `403` |                           `403` |         `403` |
+| `merchant:payments:create`  |  `201/200` |        `403` |    `403` |                       `403/404` |         `403` |
+| `merchant:payments:read`    |      `403` |        `403` |    `200` |                           `404` |         `403` |
+| `merchant:payments:operate` |      `403` |        `403` |    `403` |                           `403` |         `403` |
+| `platform:payments:read`    |      `403` |        `403` |    `200` | `200` in correct nested context |         `200` |
 
 Różnica:
 
@@ -537,6 +537,194 @@ Keycloak:
 - Realm dodaje payment roles.
 - `merchant_id` mapper wystawia claim.
 - Testy używają `TestJwtSupport`, żeby deterministycznie tworzyć tokeny z rolami i merchant scope.
+
+### 9.1. Jak czytać tę tabelę od początku
+
+Ta tabela nie odpowiada tylko na pytanie, czy user istnieje. Ona pokazuje pełną decyzję bezpieczeństwa dla API:
+
+- Czy request ma poprawny token? To jest authentication.
+- Czy token ma właściwą rolę do typu operacji? To jest authorization by role.
+- Czy user działa na swoim merchantcie/tenancie? To jest tenant isolation albo ownership.
+
+Najprostsza analogia: system jest jak budynek z wieloma firmami.
+
+- Keycloak jest recepcją budynku.
+- Realm jest osobnym światem logowania, czyli np. całym budynkiem `payment-lab`.
+- User jest osobą, która przychodzi do budynku.
+- Token JWT jest badge'em wydanym przez recepcję.
+- Roles są napisami na badge'u, np. `merchant:payments:create` albo `merchant:payments:read`.
+- `merchant_id` claim mówi, dla której firmy/merchanta ta osoba pracuje.
+- Spring Security jest ochroną przy wejściu do konkretnych drzwi API.
+- Tenant isolation jest zasadą, że pracownik firmy A nie może zobaczyć dokumentów firm
+y B.
+
+Keycloak wystawia badge. Spring Security sprawdza badge. Backend sprawdza, czy osoba wchodzi do właściwego pokoju i czy dokument należy do jej firmy.
+
+### 9.2. Authentication vs Authorization
+
+Authentication odpowiada na pytanie: kim jesteś i czy masz ważny token?
+
+Przykłady problemów authentication:
+
+- Request nie ma tokena.
+- Token jest uszkodzony.
+- Token wygasł.
+- Token nie pochodzi z oczekiwanego Keycloak realm.
+
+Wtedy API zwraca `401 Unauthorized`.
+
+Proste zdanie: nie wiem, kim jesteś, więc nie wpuszczam cię.
+
+Authorization odpowiada na pytanie: wiem, kim jesteś, ale czy wolno ci wykonać tę operację?
+
+Przykłady problemów authorization:
+
+- User ma poprawny token, ale nie ma roli `merchant:payments:create`.
+- User ma rolę read, ale próbuje wykonać create.
+- User ma rolę merchantową, ale próbuje wykonać operację platformową.
+
+Wtedy API zwraca `403 Forbidden`.
+
+Proste zdanie: znam cię, ale nie masz prawa zrobić tej rzeczy.
+
+### 9.3. Realm, roles, claims i Spring Security
+
+Realm w Keycloak to osobna przestrzeń logowania. Można o nim myśleć jak o osobnym świecie z własnymi userami, rolami, konfiguracją tokenów i regułami logowania.
+
+W tej lekcji realm dodaje role paymentowe:
+
+- `merchant:payments:create`
+- `merchant:payments:read`
+- `merchant:payments:operate`
+- `platform:payments:read`
+
+Keycloak nie wykonuje logiki paymentów. Keycloak nie decyduje, czy konkretny `paymentOrderId` należy do danego merchanta. Keycloak głównie mówi backendowi: ten user jest zalogowany, ma takie role i ma taki `merchant_id`.
+
+Spring Security działa po stronie backendu. Sprawdza, czy request ma ważny token, czy token pochodzi z zaufanego realm i jakie role ma user.
+
+Sama rola często nie wystarcza. Aplikacja musi jeszcze sprawdzić ownership, czyli czy `merchant_id` z tokena pasuje do merchanta w ścieżce API albo do właściciela `paymentOrder`.
+
+Rola odpowiada na pytanie: co możesz robić?
+
+Ownership odpowiada na pytanie: czy możesz to zrobić na tym konkretnym zasobie?
+
+### 9.4. Znaczenie kolumn w tabeli
+
+`Create Own` oznacza, że user tworzy payment order dla swojego merchanta.
+
+Przykład: user z `merchant_id = merchant-A` tworzy order dla `merchant-A`.
+
+`Create Other` oznacza, że user próbuje tworzyć payment order dla innego merchanta.
+
+Przykład: user z `merchant_id = merchant-A` próbuje tworzyć order dla `merchant-B`.
+
+`Read Own` oznacza, że user czyta payment order swojego merchanta.
+
+Przykład: user z `merchant_id = merchant-A` czyta order należący do `merchant-A`.
+
+`Read Other` oznacza, że user próbuje czytać payment order innego merchanta.
+
+Przykład: user z `merchant_id = merchant-A` próbuje czytać order należący do `merchant-B`.
+
+`Platform Read` oznacza odczyt z perspektywy platformy, np. supportu, audytu albo compliance.
+
+Przykład: platform user z rolą `platform:payments:read` czyta payment order w poprawnym kontekście platformowym.
+
+### 9.5. Use cases dla wierszy tabeli
+
+`Unauthenticated` oznacza request bez poprawnego tokena.
+
+Use case: ktoś wysyła request bez `Authorization` albo z wygasłym tokenem. Backend nie wie, kim jest caller. Wszystkie operacje dają `401`.
+
+Proste zdanie: najpierw pokaż ważny badge.
+
+`Denied identity` oznacza zalogowanego usera, który nie ma wymaganych payment permissions.
+
+Use case: user istnieje w Keycloak, ale nie ma żadnej roli potrzebnej do payment order API. Authentication jest OK, ale authorization nie przechodzi. Wszystkie operacje dają `403`.
+
+Proste zdanie: znam cię, ale nie wolno ci korzystać z tej części systemu.
+
+`merchant:payments:create` pozwala tworzyć payment orders dla własnego merchanta.
+
+Use case: merchant employee z `merchant_id = merchant-A` tworzy payment order dla `merchant-A`. Backend może zwrócić `201 Created` przy pierwszym utworzeniu albo `200 OK` przy idempotentnym replayu tej samej operacji.
+
+Ta sama rola nie pozwala czytać orders, jeśli user nie ma roli read. Dlatego `Read Own` daje `403`.
+
+Create dla innego merchanta daje `403`, bo user jest authenticated i ma rolę create, ale nie ma prawa działać w cudzym tenant scope.
+
+`merchant:payments:read` pozwala czytać payment orders własnego merchanta.
+
+Use case: merchant employee z `merchant_id = merchant-A` czyta order należący do `merchant-A`. Backend zwraca `200 OK`.
+
+Ta rola nie pozwala tworzyć nowych payment orders, więc create daje `403`.
+
+Jeśli merchant reader próbuje czytać order innego merchanta, backend zwraca `404`, żeby nie ujawnić, czy cudzy `paymentOrderId` istnieje.
+
+`merchant:payments:operate` wygląda jak przyszła rola operacyjna, np. do capture, cancel, refund albo retry. W Lesson 6 takich operacji jeszcze nie ma, więc ta rola nie daje prawa do create/read i wszystkie pokazane operacje dają `403`.
+
+Proste zdanie: rola operate może być ważna później, ale w tej lekcji nie oznacza dostępu do wszystkiego.
+
+`platform:payments:read` pozwala czytać payment orders z perspektywy platformy.
+
+Use case: support platformy sprawdza payment order dla merchanta po zgłoszeniu problemu. User ma szerszy odczyt niż merchant user, ale nadal nie może tworzyć payment orders. Dlatego create daje `403`, a platform read daje `200`.
+
+Platform read nie oznacza platform write. Odczyt platformowy powinien działać tylko w poprawnym kontekście API, a nie jako przypadkowe omijanie tenant isolation.
+
+### 9.6. Dlaczego cross-tenant read daje `404`
+
+Cross-tenant read to próba odczytu danych innego merchanta.
+
+Przykład: user z `merchant_id = merchant-A` próbuje czytać order z `merchant-B`.
+
+Backend mógłby zwrócić `403`, ale wtedy zdradzałby, że taki order istnieje. `404` jest bezpieczniejsze, bo mówi: dla ciebie ten zasób nie istnieje.
+
+To chroni przed enumeracją cudzych `paymentOrderId` i przed wyciekiem informacji między tenantami.
+
+### 9.7. Dlaczego create scope mismatch daje `403`
+
+Create scope mismatch oznacza, że user próbuje tworzyć zasób dla innego merchanta niż ten z tokena.
+
+Przykład: user z `merchant_id = merchant-A` próbuje utworzyć payment order dla `merchant-B`.
+
+Tutaj backend wie, że caller jest authenticated i próbuje wykonać zabronioną akcję w cudzym scope. Dlatego `403` jest właściwe.
+
+Proste zdanie: możesz mieć rolę create, ale tylko dla swojego merchanta.
+
+### 9.8. Dlaczego UI hiding nie wystarcza
+
+Frontend może ukryć przycisk create albo read. To jest dobre dla wygody użytkownika, ale to nie jest prawdziwe security.
+
+Ktoś może wysłać request poza UI:
+
+- przez REST Assured,
+- przez Postman,
+- przez curl,
+- przez własny skrypt,
+- przez zmodyfikowany frontend.
+
+Dlatego backend musi egzekwować reguły authentication, authorization, roles i tenant isolation.
+
+Proste zdanie: frontend może ukrywać akcje, ale backend musi blokować akcje.
+
+### 9.9. Najważniejsze do zapamiętania
+
+`401` znaczy: nie jesteś poprawnie zalogowany.
+
+`403` znaczy: jesteś znany, ale nie masz prawa do tej operacji.
+
+`404` przy cross-tenant read znaczy: ten zasób nie istnieje dla ciebie.
+
+Rola znaczy: co możesz robić?
+
+`merchant_id` claim znaczy: dla którego merchanta możesz to robić?
+
+Tenant isolation znaczy: nie możesz zobaczyć ani użyć danych innego merchanta.
+
+Keycloak mówi backendowi, kim jesteś i jakie masz role.
+
+Spring Security sprawdza token i role przy wejściu do API.
+
+Backendowa logika ownership sprawdza, czy konkretny `paymentOrder` należy do twojego merchanta.
 
 Pytania kontrolne:
 
@@ -607,18 +795,18 @@ Co ćwiczymy:
 
 Ćwiczenia:
 
-| # | Test | Cel | Ryzyko | Assertions | Expected |
-|---:|---|---|---|---|---|
-| 1 | `createPaymentOrderReturns201WithHeaders` | pierwszy create | brak contract headers | `201`, `Location`, `ETag`, `X-Correlation-ID`, body fields | `201` |
-| 2 | `idempotentReplayReturns200WithSameId` | replay | duplicate order on retry | first `201`, second `200`, same ID | `200` |
-| 3 | `idempotencyConflictReturns409` | conflict | same key different intent | `409`, `error=idempotency_conflict` | `409` |
-| 4 | `crossTenantReadReturns404` | tenant masking | BOLA/data leak | `404`, `error=not_found` | `404` |
-| 5 | `platformReaderCanReadCrossMerchant` | platform read | role matrix drift | `200`, same payment ID | `200` |
-| 6 | missing `Idempotency-Key` | required header | unsafe create | `400` | `400` |
-| 7 | invalid currency | validation | invalid money data | `400`, `error=validation` | `400` |
-| 8 | inactive merchant | eligibility | orders for inactive merchant | `409`, `merchant_not_payment_eligible` | `409` |
-| 9 | merchant scope mismatch create | ownership | cross-merchant create | `403`, `forbidden` | `403` |
-| 10 | platform read wrong nested merchant path | route semantics | path/body contradiction | `404`, `not_found` | `404` |
+|   # | Test                                      | Cel             | Ryzyko                       | Assertions                                                 | Expected |
+| --: | ----------------------------------------- | --------------- | ---------------------------- | ---------------------------------------------------------- | -------- |
+|   1 | `createPaymentOrderReturns201WithHeaders` | pierwszy create | brak contract headers        | `201`, `Location`, `ETag`, `X-Correlation-ID`, body fields | `201`    |
+|   2 | `idempotentReplayReturns200WithSameId`    | replay          | duplicate order on retry     | first `201`, second `200`, same ID                         | `200`    |
+|   3 | `idempotencyConflictReturns409`           | conflict        | same key different intent    | `409`, `error=idempotency_conflict`                        | `409`    |
+|   4 | `crossTenantReadReturns404`               | tenant masking  | BOLA/data leak               | `404`, `error=not_found`                                   | `404`    |
+|   5 | `platformReaderCanReadCrossMerchant`      | platform read   | role matrix drift            | `200`, same payment ID                                     | `200`    |
+|   6 | missing `Idempotency-Key`                 | required header | unsafe create                | `400`                                                      | `400`    |
+|   7 | invalid currency                          | validation      | invalid money data           | `400`, `error=validation`                                  | `400`    |
+|   8 | inactive merchant                         | eligibility     | orders for inactive merchant | `409`, `merchant_not_payment_eligible`                     | `409`    |
+|   9 | merchant scope mismatch create            | ownership       | cross-merchant create        | `403`, `forbidden`                                         | `403`    |
+|  10 | platform read wrong nested merchant path  | route semantics | path/body contradiction      | `404`, `not_found`                                         | `404`    |
 
 Hint:
 
@@ -741,42 +929,162 @@ Pytanie seniorskie: **Jeśli test pada, czy dane zostają w bazie do debugowania
 HTTP/REST:
 
 1. Dlaczego first create zwraca `201`, a replay `200`?
+
+   PL: `201 Created` oznacza, że powstał nowy payment order. Replay z tym samym `Idempotency-Key` zwraca `200 OK`, bo zasób już istnieje i system tylko odtwarza wcześniejszy wynik.
+
+   EN: `201 Created` means a new payment order was created. A replay with the same `Idempotency-Key` returns `200 OK` because the resource already exists and the system returns the previous result.
+
 2. Co oznacza `Location` header?
+
+   PL: `Location` wskazuje URL nowo utworzonego zasobu. Klient może użyć go do późniejszego odczytu payment order.
+
+   EN: `Location` points to the URL of the newly created resource. The client can use it later to read the payment order.
+
 3. Dlaczego `ETag` jest zwracany, mimo że `If-Match` jest deferred?
+
+   PL: `ETag` już teraz buduje kontrakt pod przyszłe optimistic locking/cache validation. `If-Match` jest odłożone, ale klient może już widzieć wersję zasobu.
+
+   EN: `ETag` prepares the contract for future optimistic locking or cache validation. `If-Match` is deferred, but the client can already see the resource version.
+
 4. Kiedy `403` jest lepsze niż `404`?
+
+   PL: `403` jest lepsze, gdy użytkownik jest uwierzytelniony, ale nie ma uprawnień do operacji. To jasny sygnał problemu z autoryzacją, nie z brakiem zasobu.
+
+   EN: `403` is better when the user is authenticated but not allowed to perform the operation. It clearly signals an authorization problem, not a missing resource.
+
 5. Dlaczego cross-tenant read maskujemy przez `404`?
+
+   PL: `404` nie zdradza, czy zasób istnieje w innym tenantcie. To ogranicza ryzyko BOLA i wycieku informacji.
+
+   EN: `404` does not reveal whether the resource exists in another tenant. This reduces BOLA and information leakage risk.
 
 REST Assured:
 
 6. Dlaczego samo `.statusCode(201)` jest słabym oracle?
+
+   PL: Sam status nie potwierdza poprawności body, headers ani danych biznesowych. Test może przejść mimo błędnego kontraktu odpowiedzi.
+
+   EN: Status alone does not verify the body, headers, or business data. The test may pass even when the response contract is wrong.
+
 7. Kiedy użyć `.extract().path(...)`?
+
+   PL: Użyj tego, gdy wartość z odpowiedzi jest potrzebna w kolejnych asercjach lub requestach. Przykład: wyciągnięcie `paymentOrderId` po create.
+
+   EN: Use it when a response value is needed in later assertions or requests. Example: extracting `paymentOrderId` after create.
+
 8. Dlaczego idempotency replay test musi użyć tego samego key?
+
+   PL: Idempotency działa tylko dla tego samego `Idempotency-Key`. Nowy key oznacza dla backendu nową operację.
+
+   EN: Idempotency works only with the same `Idempotency-Key`. A new key means a new operation from the backend perspective.
+
 9. Jak testujesz headers w REST Assured?
+
+   PL: Używam `.header(...)` albo `.headers(...)` w sekcji `then()`. Sprawdzam np. `Location`, `ETag` i wymagane nagłówki błędów.
+
+   EN: I use `.header(...)` or `.headers(...)` in the `then()` section. I verify headers such as `Location`, `ETag`, and required error headers.
+
 10. Kiedy test REST Assured powinien tworzyć dane przez API zamiast SQL?
+
+    PL: Gdy test sprawdza zachowanie systemu z perspektywy klienta API. SQL warto używać tylko do setupu technicznego lub weryfikacji DB constraints.
+
+    EN: When the test verifies system behavior from the API client perspective. SQL should be used mainly for technical setup or DB constraint verification.
 
 Java/JDK 25:
 
 11. Po co są value objects zamiast `long amountMinor` wszędzie?
+
+    PL: Value object ukrywa reguły walidacji i znaczenie danych w jednym miejscu. Dzięki temu kod jest czytelniejszy i trudniej pomylić wartości.
+
+    EN: A value object keeps validation rules and meaning in one place. This makes the code clearer and reduces accidental misuse.
+
 12. Dlaczego amount jest minor units, a nie `double`?
+
+    PL: Minor units unikają błędów zaokrągleń typowych dla `double`. Pieniądze powinny być reprezentowane deterministycznie.
+
+    EN: Minor units avoid rounding errors common with `double`. Money should be represented deterministically.
+
 13. Jak `record` pomaga w DTO/result models?
+
+    PL: `record` daje niemutowalny, krótki model danych z automatycznym konstruktorem i accessorami. Jest dobry dla DTO bez logiki biznesowej.
+
+    EN: A `record` gives an immutable, concise data model with an automatic constructor and accessors. It is useful for DTOs without business logic.
+
 14. Co oznacza `@Transactional` w service layer?
+
+    PL: Oznacza, że operacja service wykonuje się w jednej transakcji DB. Jeśli wystąpi błąd, zmiany mogą zostać wycofane.
+
+    EN: It means the service operation runs within one database transaction. If an error occurs, changes can be rolled back.
+
 15. Dlaczego exceptions są mapowane w `PaymentExceptionHandler`?
+
+    PL: Handler zamienia wyjątki domenowe/aplikacyjne na spójne odpowiedzi HTTP. Dzięki temu kontrolery są prostsze, a API ma przewidywalny error contract.
+
+    EN: The handler maps domain/application exceptions to consistent HTTP responses. This keeps controllers simpler and gives the API a predictable error contract.
 
 SQL/Flyway:
 
 16. Które reguły waliduje DB?
+
+    PL: DB waliduje reguły integralności, np. `NOT NULL`, FK, unique constraints i check constraints. Chroni dane nawet wtedy, gdy aplikacja ma błąd.
+
+    EN: The DB validates integrity rules such as `NOT NULL`, foreign keys, unique constraints, and check constraints. It protects data even if the application has a bug.
+
 17. Dlaczego unique constraint jest częścią idempotency?
+
+    PL: Unique constraint blokuje zapis dwóch rekordów dla tego samego merchant i idempotency key. To zabezpiecza także przed race condition.
+
+    EN: A unique constraint prevents two records for the same merchant and idempotency key. It also protects against race conditions.
+
 18. Po co `payment_order_status_history`?
+
+    PL: Historia statusów daje audytowalność zmian payment order. Pomaga też testować i diagnozować przejścia stanu.
+
+    EN: Status history gives auditability of payment order changes. It also helps test and diagnose state transitions.
+
 19. Jak Flyway pomaga w testach?
+
+    PL: Flyway uruchamia te same migracje w testach i środowiskach aplikacji. Dzięki temu testy szybciej wykrywają schema drift.
+
+    EN: Flyway runs the same migrations in tests and application environments. This helps tests detect schema drift early.
+
 20. Dlaczego check constraints nie zastępują testów?
+
+    PL: Check constraints chronią DB, ale nie sprawdzają kontraktu HTTP, komunikatów błędów ani ścieżek biznesowych. Testy pokazują zachowanie systemu z perspektywy użytkownika.
+
+    EN: Check constraints protect the DB, but they do not verify HTTP contracts, error messages, or business paths. Tests show system behavior from the user perspective.
 
 Security:
 
 21. Jaka jest różnica między role i ownership?
+
+    PL: Role mówi, co użytkownik może robić. Ownership mówi, do których danych użytkownik ma prawo dostępu.
+
+    EN: Role defines what the user is allowed to do. Ownership defines which data the user is allowed to access.
+
 22. Co robi `merchant_id` claim?
+
+    PL: `merchant_id` wiąże token z konkretnym merchantem. Backend używa go do sprawdzania tenant ownership.
+
+    EN: The `merchant_id` claim binds the token to a specific merchant. The backend uses it to verify tenant ownership.
+
 23. Dlaczego `merchant:payments:operate` nie daje read?
+
+    PL: Operate i read to osobne uprawnienia, żeby nie rozszerzać dostępu przypadkiem. Użytkownik może mieć prawo tworzenia/operowania bez prawa odczytu.
+
+    EN: Operate and read are separate permissions to avoid accidental access expansion. A user may be allowed to operate/create without being allowed to read.
+
 24. Co testuje `PaymentOrderSecurityTest`, czego nie testuje `PaymentOrderRestAssuredTest`?
+
+    PL: `PaymentOrderSecurityTest` skupia się na rolach, claimach, ownership i odmowie dostępu. `PaymentOrderRestAssuredTest` głównie sprawdza kontrakt REST i flow API.
+
+    EN: `PaymentOrderSecurityTest` focuses on roles, claims, ownership, and access denial. `PaymentOrderRestAssuredTest` mainly verifies the REST contract and API flow.
+
 25. Jak rozpoznać BOLA risk w tym API?
+
+    PL: BOLA risk pojawia się, gdy użytkownik może odczytać lub zmienić zasób innego merchanta przez manipulację ID/path parametrem. Testuj cross-tenant access i oczekuj odmowy lub maskowanego `404`.
+
+    EN: BOLA risk appears when a user can read or modify another merchant's resource by manipulating an ID or path parameter. Test cross-tenant access and expect denial or masked `404`.
 
 ## 14. Zadania Praktyczne
 
@@ -791,6 +1099,27 @@ Security:
 | Exploratory charter | REST + security tests | manual/API | sprawdzasz tenant isolation | create mismatch `403`, merchant cross-read `404`, platform correct path `200`, platform wrong path `404` |
 | Business-readable naming | `PaymentOrderRestAssuredTest` | IDE | dodajesz `@DisplayName` do 3 testów | nazwy testów mówią co system gwarantuje, nie jak to robi |
 | Negative-path first | `PaymentOrderRestAssuredTest` | `./mvnw -Dtest=PaymentOrderRestAssuredTest test` | piszesz test `409` PRZED testem `201` | rozumiesz, że odrzucenie nieprawidłowego requestu jest równie ważne jak sukces |
+
+### Rozwiązania / wskazówki
+
+1. Code reading: create flow zaczyna się w controllerze, przechodzi przez service i kończy zapisem w DB. `201` powstaje przy pierwszym zapisie, `200` przy idempotent replay, a `409` przy tym samym key i innym fingerprint.
+2. API manual testing: utwórz order z jednym `Idempotency-Key`, zapisz `paymentOrderId`, a potem powtórz identyczny request. Oczekuj `201` za pierwszym razem i `200` przy replay.
+3. SQL inspection: wskaż FK do merchanta, unique constraint dla idempotency i check constraints dla danych typu amount/currency/status. DB constraints są ostatnią linią obrony integralności.
+4. REST Assured implementation: test powinien sprawdzać status, `Location`, `ETag` i body z business fields. Sam `statusCode(201)` nie wystarcza.
+
+```java
+then()
+    .statusCode(201)
+    .header("Location", containsString("/payment-orders/"))
+    .header("ETag", not(blankOrNullString()))
+    .body("currency", equalTo("PLN"));
+```
+
+5. Negative tests: reuse tego samego `Idempotency-Key` z innym body powinien dać `409`, nie validation error. To sprawdza conflict semantyki idempotency, a nie poprawność pól.
+6. Security tests: dodaj denied identity albo token z niepasującym `merchant_id`. Oczekuj `403` dla create mismatch i masked `404` dla cross-tenant read.
+7. Exploratory charter: sprawdź minimum cztery ścieżki: own merchant success, create mismatch, cross-tenant read i platform read. Notuj status, body i czy API ujawnia obcy zasób.
+8. Business-readable naming: `@DisplayName` powinien opisywać gwarancję systemu, np. "replay returns the original payment order". Unikaj nazw typu "testCreate1".
+9. Negative-path first: najpierw napisz test odrzucenia konfliktu lub invalid request, potem happy path. To pomaga pilnować, że API jest bezpieczne także poza sukcesem.
 
 ## 15. Mini Interview Prep
 

@@ -155,17 +155,17 @@ Zaimplementuj:
   - Konfiguracja: `*IT.java` dla integration tests
   - Verify: `./mvnw verify` uruchamia unit + integration tests
 
-- **Nowy plik:** `async/PaymentOrderAsyncTest.java`
-  - `webhookDeliveryCompletesWithin10Seconds` — Awaitility polling
-  - `asyncProcessingCompletesWithin5Seconds` — Awaitility z custom condition
-  - Demonstrate Awaitility vs Thread.sleep
+- **Awaitility awareness only:**
+  - Do not create webhook/async production behavior in Lesson 13.
+  - Document Awaitility vs Thread.sleep as a future async testing concept.
+  - Add executable Awaitility tests only after an async feature is specified.
 
 ### Batch 13E: Advanced Java 25 (EnumSet, EnumMap, Streams) [OPTIONAL]
 
 Zaimplementuj:
 
 - **EnumSet:**
-  - Rozszerz istniejące testy aby używały `EnumSet.of(PaymentStatus.CREATED, PaymentStatus.AUTHORIZED)`
+  - Rozszerz istniejące testy aby używały only current stable payment status values, e.g. `EnumSet.of(PaymentStatus.CREATED)`
   - Demonstrate memory efficiency vs HashSet
 
 - **EnumMap:**
@@ -241,9 +241,9 @@ Zaimplementuj:
    - `./mvnw verify` uruchamia unit + integration tests
 
 7. **Awaitility** musi:
-   - Używać `Awaitility.await().atMost(...).pollInterval(...).untilAsserted(...)`
-   - Nie używać `Thread.sleep()` (anti-pattern)
-   - Demonstrate async polling dla webhook delivery, async processing
+    - Używać `Awaitility.await().atMost(...).pollInterval(...).untilAsserted(...)`
+    - Nie używać `Thread.sleep()` (anti-pattern)
+    - Pozostać awareness-only until an async feature is specified; no webhook/async implementation in this lesson
 
 8. **EnumSet/EnumMap** muszą:
    - Demonstrate memory efficiency vs HashSet/HashMap
@@ -288,8 +288,7 @@ Zaimplementuj:
 
 ### Test Reliability Tests [OPTIONAL]
 
-- `webhookDeliveryCompletesWithin10Seconds` (Awaitility)
-- `asyncProcessingCompletesWithin5Seconds` (Awaitility)
+- Awaitility concept note or future-scope example only; no webhook/async executable test yet
 
 ### Advanced Java Tests [OPTIONAL]
 

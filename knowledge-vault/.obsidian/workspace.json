@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 06 - Payment Order Create Read Foundation.md",
+                "file": "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 08 - Payment Aggregation Summary.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Lesson 06 - Payment Order Create Read Foundation"
+              "title": "Lesson 08 - Payment Aggregation Summary"
             }
           }
         ]
@@ -210,12 +210,12 @@
   },
   "active": "f34510c55995cc6b",
   "lastOpenFiles": [
+    "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 08 - Business Logic, Decision Tables, and Risk Notes.md",
     "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 07 - Payment Order List Filter Search.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 06 - Payment Order Create Read Foundation.md",
+    "01 Projects/Payment_Quality_Engineering_Lab/01 Phase 1 - Merchant Registry/Phase 1 - Merchant Registry and Activation.md",
     "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 10 - REST HTTP Contract Hardening and Authorization Matrix.md",
     "01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/Prompt - Lesson 09 - Payment Orders Frontend Consumer and Contract Alignment.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 06 - Payment Order Create Read Foundation.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/02 Phase 2 - Payment Orders/Lesson 08 - Business Logic, Decision Tables, and Risk Notes.md",
-    "01 Projects/Payment_Quality_Engineering_Lab/01 Phase 1 - Merchant Registry/Phase 1 - Merchant Registry and Activation.md",
     "01 Projects/Payment_Quality_Engineering_Lab/01 Phase 1 - Foundations/Phase 1 - Foundations.md",
     "02 Areas/Technical Learning/Java 25 For SDET/Lesson 08 - Java Records, Read-Only Services, and Input Validation.md",
     "01 Projects/Payment_Quality_Engineering_Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md",
