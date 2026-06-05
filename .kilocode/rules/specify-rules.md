@@ -1,5 +1,5 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/007-rest-http-contract-hardening-authorization-matrix/plan.md
+at specs/009-payment-lifecycle-foundation/plan.md
 <!-- SPECKIT END -->

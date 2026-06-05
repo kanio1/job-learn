@@ -116,7 +116,7 @@ class Lesson06RestAssuredLearningTest extends PostgresContainerSupport {
                 .statusCode(201)
                 .contentType(ContentType.JSON)
                 .header("Location", containsString("/api/merchants/" + merchantId + "/payment-orders/"))
-                .header("ETag", startsWith("\"po-"))
+                .header("ETag", startsWith("\"v"))
                 .header("X-Correlation-ID", equalTo("lesson06-create-payment"))
                 .body("paymentOrderId", notNullValue())
                 .body("merchantId", equalTo(merchantId))

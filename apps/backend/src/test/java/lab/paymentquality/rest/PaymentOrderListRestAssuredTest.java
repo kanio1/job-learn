@@ -77,7 +77,9 @@ class PaymentOrderListRestAssuredTest extends PostgresContainerSupport {
 
         PaymentOrderListResponse response = MerchantApiTestSupport.requestWithToken(port, readToken)
                 .accept(ContentType.JSON)
+                .queryParam("status", "CREATED")
                 .queryParam("currency", "PLN")
+                .queryParam("size", 5)
                 .when()
                 .get("/api/merchants/{merchantId}/payment-orders", merchantId)
                 .then()
@@ -119,6 +121,7 @@ class PaymentOrderListRestAssuredTest extends PostgresContainerSupport {
         PaymentOrderListResponse response = MerchantApiTestSupport.requestWithToken(port, readToken)
                 .accept(ContentType.JSON)
                 .queryParam("status", "CREATED")
+                .queryParam("size", 5)
                 .when()
                 .get("/api/merchants/{merchantId}/payment-orders", merchantId)
                 .then()

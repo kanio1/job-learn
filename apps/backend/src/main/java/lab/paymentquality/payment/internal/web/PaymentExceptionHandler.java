@@ -29,6 +29,12 @@ public class PaymentExceptionHandler {
     private static final String ERROR_NOT_FOUND = "not_found";
     private static final String ERROR_MERCHANT_NOT_ELIGIBLE = "merchant_not_payment_eligible";
     private static final String ERROR_IDEMPOTENCY_CONFLICT = "idempotency_conflict";
+    private static final String ERROR_INVALID_TRANSITION = "invalid_transition";
+    private static final String ERROR_AUTHORIZATION_EXPIRED = "authorization_expired";
+    private static final String ERROR_CAPTURE_AMOUNT_EXCEEDS_AUTHORIZED = "capture_amount_exceeds_authorized";
+    private static final String ERROR_REFUND_AMOUNT_EXCEEDS_CAPTURED = "refund_amount_exceeds_captured";
+    private static final String ERROR_CONCURRENCY_CONFLICT = "concurrency_conflict";
+    private static final String ERROR_MISSING_REQUIRED_HEADER = "missing_required_header";
 
     private static final String MSG_MALFORMED_JSON = "Request body contains invalid JSON syntax";
     private static final String MSG_UNSUPPORTED_MEDIA_TYPE = "Content-Type must be application/json";
@@ -122,7 +128,37 @@ public class PaymentExceptionHandler {
                     .body(PaymentErrorResponse.of(ERROR_VALIDATION, MSG_IDEMPOTENCY_KEY_REQUIRED, getCorrelationId()));
         }
         return ResponseEntity.badRequest()
-                .body(PaymentErrorResponse.of(ERROR_VALIDATION, "Required header missing: " + ex.getHeaderName(), getCorrelationId()));
+                .body(PaymentErrorResponse.of(ERROR_MISSING_REQUIRED_HEADER, "Required header missing: " + ex.getHeaderName(), getCorrelationId()));
+    }
+
+    @ExceptionHandler(InvalidStateTransitionException.class)
+    public ResponseEntity<PaymentErrorResponse> handleInvalidStateTransition(InvalidStateTransitionException ex) {
+        return ResponseEntity.unprocessableEntity()
+                .body(PaymentErrorResponse.of(ERROR_INVALID_TRANSITION, ex.getMessage(), getCorrelationId()));
+    }
+
+    @ExceptionHandler(AuthorizationExpiredException.class)
+    public ResponseEntity<PaymentErrorResponse> handleAuthorizationExpired(AuthorizationExpiredException ex) {
+        return ResponseEntity.unprocessableEntity()
+                .body(PaymentErrorResponse.of(ERROR_AUTHORIZATION_EXPIRED, ex.getMessage(), getCorrelationId()));
+    }
+
+    @ExceptionHandler(InvalidCaptureAmountException.class)
+    public ResponseEntity<PaymentErrorResponse> handleInvalidCaptureAmount(InvalidCaptureAmountException ex) {
+        return ResponseEntity.unprocessableEntity()
+                .body(PaymentErrorResponse.of(ERROR_CAPTURE_AMOUNT_EXCEEDS_AUTHORIZED, ex.getMessage(), getCorrelationId()));
+    }
+
+    @ExceptionHandler(InvalidRefundAmountException.class)
+    public ResponseEntity<PaymentErrorResponse> handleInvalidRefundAmount(InvalidRefundAmountException ex) {
+        return ResponseEntity.unprocessableEntity()
+                .body(PaymentErrorResponse.of(ERROR_REFUND_AMOUNT_EXCEEDS_CAPTURED, ex.getMessage(), getCorrelationId()));
+    }
+
+    @ExceptionHandler(org.springframework.dao.OptimisticLockingFailureException.class)
+    public ResponseEntity<PaymentErrorResponse> handleOptimisticLock(org.springframework.dao.OptimisticLockingFailureException ex) {
+        return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED)
+                .body(PaymentErrorResponse.of(ERROR_CONCURRENCY_CONFLICT, "Payment order was modified by another request", getCorrelationId()));
     }
 
     private String getCorrelationId() {

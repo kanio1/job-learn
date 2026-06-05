@@ -17,6 +17,20 @@ public record RequestFingerprint(String canonicalJson, String fingerprintHash) {
         return new RequestFingerprint(canonical, sha256Hex(canonical));
     }
 
+    public static RequestFingerprint forLifecycle(UUID merchantId, UUID paymentOrderId,
+                                                   PaymentLifecycleAction action,
+                                                   Long amountMinor, String reason) {
+        String canonical = "{\"operation\":\"POST /api/merchants/{merchantId}/payment-orders/{paymentOrderId}/"
+                + action.name().toLowerCase() + "\","
+                + "\"merchantId\":\"" + merchantId + "\","
+                + "\"paymentOrderId\":\"" + paymentOrderId + "\","
+                + "\"action\":\"" + action.name() + "\""
+                + (amountMinor != null ? ",\"amountMinor\":" + amountMinor : "")
+                + (reason != null ? ",\"reason\":\"" + reason + "\"" : "")
+                + "}";
+        return new RequestFingerprint(canonical, sha256Hex(canonical));
+    }
+
     static String sha256Hex(String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

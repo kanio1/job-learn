@@ -30,6 +30,22 @@ public class PaymentOrderStatusHistory {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "action", length = 20)
+    private PaymentLifecycleAction action;
+
+    @Column(name = "idempotency_key_hash", length = 64)
+    private String idempotencyKeyHash;
+
+    @Column(name = "reason", length = 200)
+    private String reason;
+
+    @Column(name = "amount_minor")
+    private Long amountMinor;
+
+    @Column(name = "psp_reference", length = 200)
+    private String pspReference;
+
     protected PaymentOrderStatusHistory() {
     }
 
@@ -42,6 +58,32 @@ public class PaymentOrderStatusHistory {
         entry.toStatus = PaymentStatus.CREATED.name();
         entry.actorSubject = actorSubject;
         entry.correlationId = correlationId;
+        entry.createdAt = Instant.now();
+        return entry;
+    }
+
+    public static PaymentOrderStatusHistory lifecycleEntry(UUID paymentOrderId,
+                                                            PaymentStatus fromStatus,
+                                                            PaymentStatus toStatus,
+                                                            PaymentLifecycleAction action,
+                                                            String actorSubject,
+                                                            String correlationId,
+                                                            String idempotencyKeyHash,
+                                                            String reason,
+                                                            Long amountMinor,
+                                                            String pspReference) {
+        var entry = new PaymentOrderStatusHistory();
+        entry.statusHistoryId = UUID.randomUUID();
+        entry.paymentOrderId = paymentOrderId;
+        entry.fromStatus = fromStatus.name();
+        entry.toStatus = toStatus.name();
+        entry.action = action;
+        entry.actorSubject = actorSubject;
+        entry.correlationId = correlationId;
+        entry.idempotencyKeyHash = idempotencyKeyHash;
+        entry.reason = reason;
+        entry.amountMinor = amountMinor;
+        entry.pspReference = pspReference;
         entry.createdAt = Instant.now();
         return entry;
     }
@@ -72,5 +114,25 @@ public class PaymentOrderStatusHistory {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public PaymentLifecycleAction getAction() {
+        return action;
+    }
+
+    public String getIdempotencyKeyHash() {
+        return idempotencyKeyHash;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public Long getAmountMinor() {
+        return amountMinor;
+    }
+
+    public String getPspReference() {
+        return pspReference;
     }
 }

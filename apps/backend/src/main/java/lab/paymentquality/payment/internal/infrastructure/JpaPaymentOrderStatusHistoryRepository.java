@@ -9,4 +9,6 @@ import java.util.UUID;
 public interface JpaPaymentOrderStatusHistoryRepository extends JpaRepository<PaymentOrderStatusHistory, UUID> {
 
     List<PaymentOrderStatusHistory> findByPaymentOrderIdOrderByCreatedAtAsc(UUID paymentOrderId);
+
+    List<PaymentOrderStatusHistory> findByPaymentOrderIdAndActionIsNotNullOrderByCreatedAtAsc(UUID paymentOrderId);
 }

@@ -30,6 +30,9 @@ public class IdempotencyRecord {
     @Column(name = "completed_at")
     private Instant completedAt;
 
+    @Column(name = "action", length = 20)
+    private String action;
+
     protected IdempotencyRecord() {
     }
 
@@ -47,6 +50,10 @@ public class IdempotencyRecord {
     public void complete(UUID paymentOrderId) {
         this.paymentOrderId = paymentOrderId;
         this.completedAt = Instant.now();
+    }
+
+    public void setAction(String action) {
+        this.action = action;
     }
 
     public UUID getIdempotencyRecordId() {
@@ -75,5 +82,9 @@ public class IdempotencyRecord {
 
     public Instant getCompletedAt() {
         return completedAt;
+    }
+
+    public String getAction() {
+        return action;
     }
 }

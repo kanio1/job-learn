@@ -53,7 +53,7 @@ class PaymentOrderRestAssuredTest extends PostgresContainerSupport {
                 .then()
                 .statusCode(201)
                 .header("Location", containsString("/payment-orders/"))
-                .header("ETag", startsWith("\"po-"))
+                .header("ETag", startsWith("\"v"))
                 .header("X-Correlation-ID", equalTo("corr-create-001"))
                 .body("paymentOrderId", notNullValue())
                 .body("merchantId", equalTo(merchantId))
@@ -201,7 +201,7 @@ class PaymentOrderRestAssuredTest extends PostgresContainerSupport {
                 .get("/api/merchants/{merchantId}/payment-orders/{paymentOrderId}", merchantId, paymentOrderId)
                 .then()
                 .statusCode(200)
-                .header("ETag", startsWith("\"po-"))
+                .header("ETag", startsWith("\"v"))
                 .body("paymentOrderId", equalTo(paymentOrderId))
                 .body("status", equalTo("CREATED"));
     }

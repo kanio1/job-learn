@@ -105,14 +105,13 @@ class PaymentOrderSummaryHttpContractRestAssuredTest extends PostgresContainerSu
                 .statusCode(405)
                 .header("Allow", containsString("GET"));
 
-        // PATCH should return 405 Method Not Allowed
+        // PATCH should return 403 Forbidden (requires lifecycle role)
         MerchantApiTestSupport.requestWithToken(port, readerToken)
                 .accept(ContentType.JSON)
                 .when()
                 .patch("/api/merchants/{merchantId}/payment-orders/summary", merchantId)
                 .then()
-                .statusCode(405)
-                .header("Allow", containsString("GET"));
+                .statusCode(403);
 
         // DELETE should return 405 Method Not Allowed
         MerchantApiTestSupport.requestWithToken(port, readerToken)
