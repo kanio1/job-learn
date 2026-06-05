@@ -53,9 +53,17 @@
           <dt class="text-gray-500">Cancelled At</dt>
           <dd>{{ new Date(order.cancelledAt).toLocaleString() }}</dd>
         </div>
+        <div v-if="order.cancellationReason" class="flex justify-between">
+          <dt class="text-gray-500">Cancellation Reason</dt>
+          <dd>{{ order.cancellationReason }}</dd>
+        </div>
         <div v-if="order.refundedAt" class="flex justify-between">
           <dt class="text-gray-500">Refunded At</dt>
           <dd>{{ new Date(order.refundedAt).toLocaleString() }}</dd>
+        </div>
+        <div v-if="order.refundReason" class="flex justify-between">
+          <dt class="text-gray-500">Refund Reason</dt>
+          <dd>{{ order.refundReason }}</dd>
         </div>
         <div class="flex justify-between">
           <dt class="text-gray-500">Created At</dt>
@@ -82,12 +90,13 @@
               <PaymentStatusBadge :status="entry.toStatus" />
             </div>
             <div class="mt-1 text-xs text-gray-500">
-              {{ entry.action }} · {{ entry.actorSubject }} · {{ new Date(entry.createdAt).toLocaleString() }}
+              {{ entry.action }} · {{ entry.actorDisplay || 'system' }} · {{ new Date(entry.createdAt).toLocaleString() }}
             </div>
           </div>
         </div>
       </div>
     </UCard>
+
   </div>
 </template>
 
@@ -111,16 +120,21 @@ defineProps<{
     refundReason?: string | null
     createdAt: string
     updatedAt: string
+    versionMarker?: string | null
   } | null
   history?: Array<{
+  availableActions?: string[]
+
     statusHistoryId: string
     paymentOrderId: string
     fromStatus: string | null
     toStatus: string
     action: string | null
-    actorSubject: string
-    idempotencyKeyHash: string | null
-    correlationId: string
+    actorDisplay?: string | null
+    reason?: string | null
+    amountMinor?: number | null
+    pspReference?: string | null
+    correlationId?: string | null
     createdAt: string
   }> | null
 }>()

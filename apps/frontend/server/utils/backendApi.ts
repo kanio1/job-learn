@@ -4,12 +4,20 @@ import { createError } from 'h3'
 export async function backendApi(
   event: H3Event,
   path: string,
-  opts: { method?: string; body?: any } = {}
+  opts: {
+    method?: string
+    body?: any
+    headers?: Record<string, string>
+    forwardIfMatch?: string
+    idempotencyKey?: string
+    correlationId?: string
+  } = {}
 ) {
   const config = useRuntimeConfig()
   const backendUrl = config.public.apiBaseUrl || 'http://localhost:8080'
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    ...(opts.headers || {})
   }
 
   const session = await requireUserSession(event)
@@ -23,6 +31,16 @@ export async function backendApi(
   }
 
   headers.Authorization = `Bearer ${accessToken}`
+
+  if (opts.forwardIfMatch) {
+    headers['If-Match'] = opts.forwardIfMatch
+  }
+  if (opts.idempotencyKey) {
+    headers['Idempotency-Key'] = opts.idempotencyKey
+  }
+  if (opts.correlationId) {
+    headers['X-Correlation-ID'] = opts.correlationId
+  }
 
   try {
     return await $fetch(`${backendUrl}${path}`, {

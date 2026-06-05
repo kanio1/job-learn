@@ -16,13 +16,19 @@ export default defineEventHandler(async (event): Promise<any> => {
   }
 
   try {
-    return await $fetch(`${backendUrl}/api/merchants/${merchantId}/payment-orders/${paymentOrderId}`, {
+    const res = await $fetch.raw(`${backendUrl}/api/merchants/${merchantId}/payment-orders/${paymentOrderId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       }
     })
+    const body = res._data
+    const etag = res.headers.get('etag') || res.headers.get('ETag')
+    if (etag && body && typeof body === 'object') {
+      ;(body as any).versionMarker = etag.replace(/"/g, '')
+    }
+    return body
   } catch (error: any) {
     const statusCode = error?.statusCode || error?.response?.status
     throw createError({

@@ -8,7 +8,11 @@
     <UAlert v-if="store.insufficientAuthority" color="error" variant="subtle" title="Insufficient permissions" description="You do not have permission to view this payment order." />
     <UAlert v-else-if="store.error && !store.loading" color="error" variant="subtle" :title="store.error" />
     <div v-else-if="store.loading" class="text-sm text-gray-500">Loading...</div>
-    <PaymentOrderDetail v-else-if="store.currentOrder" :order="store.currentOrder" />
+    <PaymentOrderDetail 
+      v-else-if="store.currentOrder" 
+      :order="store.currentOrder" 
+      :history="store.history" 
+    />
   </div>
 </template>
 
@@ -25,9 +29,12 @@ const store = usePaymentOrdersStore()
 
 onMounted(async () => {
   try {
-    await store.loadDetail(merchantId, paymentOrderId)
+    await Promise.all([
+      store.loadDetail(merchantId, paymentOrderId),
+      store.loadHistory(merchantId, paymentOrderId)
+    ])
   } catch {
-    // Error is handled by the store
+    // Errors are handled by the store
   }
 })
 </script>

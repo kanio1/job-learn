@@ -35,6 +35,8 @@ export const paymentOrderResponseSchema = z.object({
   refundReason: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  // Application-held version marker (derived from ETag or response field)
+  versionMarker: z.string().nullable().optional(),
 })
 
 export const paymentOrderListResponseSchema = z.object({
@@ -66,10 +68,15 @@ export const statusHistoryEntrySchema = z.object({
   fromStatus: z.string().nullable(),
   toStatus: z.string(),
   action: z.string().nullable(),
-  actorSubject: z.string(),
-  idempotencyKeyHash: z.string().nullable(),
-  correlationId: z.string(),
+  actorDisplay: z.string().nullable().optional(), // safe display value only
+  reason: z.string().nullable().optional(),
+  amountMinor: z.number().int().nullable().optional(),
+  pspReference: z.string().nullable().optional(),
+  correlationId: z.string().nullable().optional(),
   createdAt: z.string(),
+  // Internal fields (not for UI display)
+  actorSubject: z.string().optional(),
+  idempotencyKeyHash: z.string().nullable().optional(),
 })
 
 export const paymentStatusHistoryResponseSchema = z.object({
@@ -81,9 +88,21 @@ export const backendErrorSchema = z.object({
   message: z.string().optional(),
 }).passthrough()
 
+// Lifecycle-specific error categories for UI feedback mapping
+export const lifecycleErrorCategorySchema = z.enum([
+  'validation',
+  'invalid_transition',
+  'forbidden',
+  'not_found',
+  'stale_state',
+  'idempotency_conflict',
+  'backend_unavailable',
+])
+
 export type PaymentOrderResponse = z.infer<typeof paymentOrderResponseSchema>
 export type PaymentOrderListResponse = z.infer<typeof paymentOrderListResponseSchema>
 export type PaymentOrderSummaryResponse = z.infer<typeof paymentOrderSummaryResponseSchema>
 export type StatusHistoryEntry = z.infer<typeof statusHistoryEntrySchema>
 export type PaymentStatusHistoryResponse = z.infer<typeof paymentStatusHistoryResponseSchema>
 export type BackendErrorResponse = z.infer<typeof backendErrorSchema>
+export type LifecycleErrorCategory = z.infer<typeof lifecycleErrorCategorySchema>
