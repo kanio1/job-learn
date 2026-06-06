@@ -35,12 +35,20 @@ public class PaymentLifecycleService {
     }
 
     public PaymentOrder authorize(UUID merchantId, UUID paymentOrderId, String reason,
-                                   String idempotencyKeyHash, String actorSubject, String correlationId) {
+                                   String idempotencyKeyHash, long expectedVersion,
+                                   String actorSubject, String correlationId) {
         PaymentOrder order = findOrder(merchantId, paymentOrderId);
+        if (isIdempotentLifecycleReplay(merchantId, paymentOrderId, idempotencyKeyHash,
+                PaymentLifecycleAction.AUTHORIZE, null, reason)) {
+            return order;
+        }
+        PaymentVersionPrecondition.requireCurrentVersion(order, expectedVersion);
         PaymentStatus previousStatus = order.getStatus();
 
-        handleIdempotency(merchantId, paymentOrderId, idempotencyKeyHash,
-                PaymentLifecycleAction.AUTHORIZE, null, reason, order);
+        if (!reserveIdempotency(merchantId, paymentOrderId, idempotencyKeyHash,
+                PaymentLifecycleAction.AUTHORIZE, null, reason)) {
+            return order;
+        }
 
         PspClient.PspResult pspResult = pspClient.authorize(paymentOrderId, order.getAmountMinor(), order.getCurrency());
         order.authorize();
@@ -54,12 +62,20 @@ public class PaymentLifecycleService {
     }
 
     public PaymentOrder capture(UUID merchantId, UUID paymentOrderId, Long amountMinor, String reason,
-                                 String idempotencyKeyHash, String actorSubject, String correlationId) {
+                                  String idempotencyKeyHash, long expectedVersion,
+                                  String actorSubject, String correlationId) {
         PaymentOrder order = findOrder(merchantId, paymentOrderId);
+        if (isIdempotentLifecycleReplay(merchantId, paymentOrderId, idempotencyKeyHash,
+                PaymentLifecycleAction.CAPTURE, amountMinor, reason)) {
+            return order;
+        }
+        PaymentVersionPrecondition.requireCurrentVersion(order, expectedVersion);
         PaymentStatus previousStatus = order.getStatus();
 
-        handleIdempotency(merchantId, paymentOrderId, idempotencyKeyHash,
-                PaymentLifecycleAction.CAPTURE, amountMinor, reason, order);
+        if (!reserveIdempotency(merchantId, paymentOrderId, idempotencyKeyHash,
+                PaymentLifecycleAction.CAPTURE, amountMinor, reason)) {
+            return order;
+        }
 
         PspClient.PspResult pspResult = pspClient.capture(paymentOrderId,
                 amountMinor != null ? amountMinor : order.getAmountMinor(), order.getCurrency());
@@ -74,12 +90,20 @@ public class PaymentLifecycleService {
     }
 
     public PaymentOrder cancel(UUID merchantId, UUID paymentOrderId, String reason,
-                                String idempotencyKeyHash, String actorSubject, String correlationId) {
+                                String idempotencyKeyHash, long expectedVersion,
+                                String actorSubject, String correlationId) {
         PaymentOrder order = findOrder(merchantId, paymentOrderId);
+        if (isIdempotentLifecycleReplay(merchantId, paymentOrderId, idempotencyKeyHash,
+                PaymentLifecycleAction.CANCEL, null, reason)) {
+            return order;
+        }
+        PaymentVersionPrecondition.requireCurrentVersion(order, expectedVersion);
         PaymentStatus previousStatus = order.getStatus();
 
-        handleIdempotency(merchantId, paymentOrderId, idempotencyKeyHash,
-                PaymentLifecycleAction.CANCEL, null, reason, order);
+        if (!reserveIdempotency(merchantId, paymentOrderId, idempotencyKeyHash,
+                PaymentLifecycleAction.CANCEL, null, reason)) {
+            return order;
+        }
 
         String pspReference = null;
         if (previousStatus == PaymentStatus.AUTHORIZED) {
@@ -97,12 +121,20 @@ public class PaymentLifecycleService {
     }
 
     public PaymentOrder refund(UUID merchantId, UUID paymentOrderId, Long amountMinor, String reason,
-                                String idempotencyKeyHash, String actorSubject, String correlationId) {
+                                String idempotencyKeyHash, long expectedVersion,
+                                String actorSubject, String correlationId) {
         PaymentOrder order = findOrder(merchantId, paymentOrderId);
+        if (isIdempotentLifecycleReplay(merchantId, paymentOrderId, idempotencyKeyHash,
+                PaymentLifecycleAction.REFUND, amountMinor, reason)) {
+            return order;
+        }
+        PaymentVersionPrecondition.requireCurrentVersion(order, expectedVersion);
         PaymentStatus previousStatus = order.getStatus();
 
-        handleIdempotency(merchantId, paymentOrderId, idempotencyKeyHash,
-                PaymentLifecycleAction.REFUND, amountMinor, reason, order);
+        if (!reserveIdempotency(merchantId, paymentOrderId, idempotencyKeyHash,
+                PaymentLifecycleAction.REFUND, amountMinor, reason)) {
+            return order;
+        }
 
         PspClient.PspResult pspResult = pspClient.refund(paymentOrderId,
                 amountMinor != null ? amountMinor : order.getCapturedAmountMinor(), order.getCurrency());
@@ -116,8 +148,9 @@ public class PaymentLifecycleService {
         return order;
     }
 
-    public PaymentOrder updateMetadata(UUID merchantId, UUID paymentOrderId, String metadata) {
+    public PaymentOrder updateMetadata(UUID merchantId, UUID paymentOrderId, String metadata, long expectedVersion) {
         PaymentOrder order = findOrder(merchantId, paymentOrderId);
+        PaymentVersionPrecondition.requireCurrentVersion(order, expectedVersion);
         order.updateMetadata(metadata);
         return order;
     }
@@ -133,40 +166,61 @@ public class PaymentLifecycleService {
                 .orElseThrow(() -> new PaymentOrderNotFoundException(paymentOrderId));
     }
 
-    private void handleIdempotency(UUID merchantId, UUID paymentOrderId, String idempotencyKeyHash,
-                                    PaymentLifecycleAction action, Long amountMinor, String reason,
-                                    PaymentOrder order) {
+    private boolean reserveIdempotency(UUID merchantId, UUID paymentOrderId, String idempotencyKeyHash,
+                                       PaymentLifecycleAction action, Long amountMinor, String reason) {
         RequestFingerprint fingerprint = RequestFingerprint.forLifecycle(
                 merchantId, paymentOrderId, action, amountMinor, reason);
 
         Optional<IdempotencyRecord> existing = idempotencyRecordRepository
-                .findByMerchantIdAndIdempotencyKeyHash(merchantId, idempotencyKeyHash);
+                .findByMerchantIdAndPaymentOrderIdAndActionAndIdempotencyKeyHash(
+                        merchantId, paymentOrderId, action.name(), idempotencyKeyHash);
 
         if (existing.isPresent()) {
             IdempotencyRecord record = existing.get();
             if (record.getRequestFingerprintHash().equals(fingerprint.fingerprintHash())) {
-                return;
+                return false;
             }
             throw new IdempotencyConflictException();
         }
 
         UUID idempotencyRecordId = UUID.randomUUID();
         int reserved = idempotencyRecordRepository.reserveIfAbsent(
-                idempotencyRecordId, merchantId, idempotencyKeyHash, fingerprint.fingerprintHash());
+                idempotencyRecordId, merchantId, paymentOrderId, action.name(),
+                idempotencyKeyHash, fingerprint.fingerprintHash());
         if (reserved == 0) {
             IdempotencyRecord record = idempotencyRecordRepository
-                    .findByMerchantIdAndIdempotencyKeyHash(merchantId, idempotencyKeyHash)
+                    .findByMerchantIdAndPaymentOrderIdAndActionAndIdempotencyKeyHash(
+                            merchantId, paymentOrderId, action.name(), idempotencyKeyHash)
                     .orElseThrow(() -> new IllegalStateException("Concurrent idempotency reservation was not visible"));
             if (!record.getRequestFingerprintHash().equals(fingerprint.fingerprintHash())) {
                 throw new IdempotencyConflictException();
             }
-            return;
+            return false;
         }
 
         int completed = idempotencyRecordRepository.complete(idempotencyRecordId, paymentOrderId, Instant.now());
         if (completed != 1) {
             throw new IllegalStateException("Reserved idempotency record was not completed");
         }
+        return true;
+    }
+
+    private boolean isIdempotentLifecycleReplay(UUID merchantId, UUID paymentOrderId, String idempotencyKeyHash,
+                                                PaymentLifecycleAction action, Long amountMinor, String reason) {
+        RequestFingerprint fingerprint = RequestFingerprint.forLifecycle(
+                merchantId, paymentOrderId, action, amountMinor, reason);
+
+        Optional<IdempotencyRecord> existing = idempotencyRecordRepository
+                .findByMerchantIdAndPaymentOrderIdAndActionAndIdempotencyKeyHash(
+                        merchantId, paymentOrderId, action.name(), idempotencyKeyHash);
+
+        if (existing.isEmpty()) {
+            return false;
+        }
+        if (existing.get().getRequestFingerprintHash().equals(fingerprint.fingerprintHash())) {
+            return true;
+        }
+        throw new IdempotencyConflictException();
     }
 
     private void recordHistory(PaymentOrder order, PaymentStatus previousStatus,

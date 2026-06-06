@@ -8,8 +8,8 @@ import lab.paymentquality.payment.internal.application.PaymentOrderSummaryServic
 import lab.paymentquality.payment.internal.application.PaymentOrderService;
 import lab.paymentquality.payment.internal.application.PaymentLifecycleService;
 import lab.paymentquality.payment.internal.domain.*;
-import org.slf4j.MDC;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -41,7 +41,7 @@ public class PaymentOrderController {
         this.paymentLifecycleService = paymentLifecycleService;
     }
 
-    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PaymentOrderResponse> createPaymentOrder(
             @PathVariable UUID merchantId,
             @RequestHeader("Idempotency-Key") String idempotencyKeyHeader,
@@ -60,26 +60,26 @@ public class PaymentOrderController {
         PaymentActorContext actor = new PaymentActorContext(jwt.getSubject());
 
         PaymentCreateResult result = paymentOrderService.create(
-                merchantId, amount, currency, clientRef, idempotencyKey, actor, getCorrelationId());
+                merchantId, amount, currency, clientRef, idempotencyKey, actor, PaymentHttpHeaders.correlationId());
 
         PaymentOrderResponse response = PaymentOrderMapper.toResponse(result.paymentOrder());
-        String etag = buildEtag(result.paymentOrder());
+        String etag = PaymentEtag.from(result.paymentOrder());
 
         if (result.created()) {
             URI location = URI.create("/api/merchants/" + merchantId + "/payment-orders/" + result.paymentOrder().getPaymentOrderId());
-            return ResponseEntity.created(location)
+            return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.created(location),
+                            PaymentHttpHeaders.VARY_AUTHORIZATION_IDEMPOTENCY_KEY)
                     .header("ETag", etag)
-                    .header("X-Correlation-ID", getCorrelationId())
                     .body(response);
         }
 
-        return ResponseEntity.ok()
+        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+                        PaymentHttpHeaders.VARY_AUTHORIZATION_IDEMPOTENCY_KEY)
                 .header("ETag", etag)
-                .header("X-Correlation-ID", getCorrelationId())
                 .body(response);
     }
 
-    @GetMapping("/{paymentOrderId}")
+    @GetMapping(value = "/{paymentOrderId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PaymentOrderResponse> getPaymentOrder(
             @PathVariable UUID merchantId,
             @PathVariable UUID paymentOrderId,
@@ -101,15 +101,50 @@ public class PaymentOrderController {
         }
 
         PaymentOrderResponse response = PaymentOrderMapper.toResponse(order);
-        String etag = buildEtag(order);
+        String etag = PaymentEtag.from(order);
 
-        return ResponseEntity.ok()
+        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+                        PaymentHttpHeaders.VARY_AUTHORIZATION)
                 .header("ETag", etag)
-                .header("X-Correlation-ID", getCorrelationId())
                 .body(response);
     }
 
-    @GetMapping
+    @RequestMapping(value = "/{paymentOrderId}", method = RequestMethod.HEAD)
+    public ResponseEntity<Void> headPaymentOrder(
+            @PathVariable UUID merchantId,
+            @PathVariable UUID paymentOrderId,
+            Authentication authentication,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        PaymentOrder order = findReadablePaymentOrder(merchantId, paymentOrderId, authentication, jwt);
+
+        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+                        PaymentHttpHeaders.VARY_AUTHORIZATION)
+                .header("ETag", PaymentEtag.from(order))
+                .build();
+    }
+
+    @RequestMapping(value = "/{paymentOrderId}", method = RequestMethod.OPTIONS)
+    public ResponseEntity<Void> optionsPaymentOrder(@PathVariable UUID merchantId, @PathVariable UUID paymentOrderId) {
+        return ResponseEntity.noContent()
+                .allow(HttpMethod.GET, HttpMethod.HEAD, HttpMethod.PATCH, HttpMethod.OPTIONS)
+                .header(PaymentHttpHeaders.ACCEPT_PATCH, PaymentHttpHeaders.MERGE_PATCH_JSON)
+                .header(PaymentHttpHeaders.X_CORRELATION_ID, PaymentHttpHeaders.correlationId())
+                .build();
+    }
+
+    @RequestMapping(value = "/{paymentOrderId}/{action:authorize|capture|cancel|refund}", method = RequestMethod.OPTIONS)
+    public ResponseEntity<Void> optionsLifecycleAction(
+            @PathVariable UUID merchantId,
+            @PathVariable UUID paymentOrderId,
+            @PathVariable String action) {
+        return ResponseEntity.noContent()
+                .allow(HttpMethod.POST, HttpMethod.OPTIONS)
+                .header(PaymentHttpHeaders.X_CORRELATION_ID, PaymentHttpHeaders.correlationId())
+                .build();
+    }
+
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PaymentOrderListResponse> listPaymentOrders(
             @PathVariable UUID merchantId,
             @RequestParam(required = false) String status,
@@ -144,12 +179,12 @@ public class PaymentOrderController {
         Page<PaymentOrder> pageResult = paymentOrderListService.findAll(merchantId, request);
         PaymentOrderListResponse response = PaymentOrderListMapper.toListResponse(pageResult);
 
-        return ResponseEntity.ok()
-                .header("X-Correlation-ID", getCorrelationId())
+        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+                        PaymentHttpHeaders.VARY_AUTHORIZATION)
                 .body(response);
     }
 
-    @GetMapping("/summary")
+    @GetMapping(value = "/summary", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PaymentOrderSummaryResponse> summarizePaymentOrders(
             @PathVariable UUID merchantId,
             @RequestParam(required = false) String currency,
@@ -178,18 +213,9 @@ public class PaymentOrderController {
 
         PaymentOrderSummaryResponse response = paymentOrderSummaryService.summarize(merchantId, request);
 
-        return ResponseEntity.ok()
-                .header("X-Correlation-ID", getCorrelationId())
+        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+                        PaymentHttpHeaders.VARY_AUTHORIZATION)
                 .body(response);
-    }
-
-    private String buildEtag(PaymentOrder order) {
-        return "\"v" + order.getVersion() + "\"";
-    }
-
-    private String getCorrelationId() {
-        String correlationId = MDC.get("correlationId");
-        return correlationId != null ? correlationId : UUID.randomUUID().toString();
     }
 
     private boolean isPlatformLifecycle(Authentication authentication) {
@@ -207,123 +233,141 @@ public class PaymentOrderController {
         }
     }
 
+    private PaymentOrder findReadablePaymentOrder(UUID merchantId, UUID paymentOrderId,
+                                                   Authentication authentication, Jwt jwt) {
+        boolean isPlatformReader = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("platform:payments:read"));
+
+        if (isPlatformReader) {
+            return paymentOrderService.findForPlatform(merchantId, paymentOrderId);
+        }
+        String jwtMerchantId = jwt.getClaimAsString("merchant_id");
+        if (jwtMerchantId == null || !merchantId.toString().equals(jwtMerchantId)) {
+            throw new PaymentOrderNotFoundException(paymentOrderId);
+        }
+        return paymentOrderService.findForMerchant(merchantId, paymentOrderId);
+    }
+
     private ResponseEntity<PaymentLifecycleResponse> lifecycleResponse(PaymentOrder order) {
         PaymentLifecycleResponse body = PaymentOrderMapper.toLifecycleResponse(order);
-        return ResponseEntity.ok()
-                .header("ETag", buildEtag(order))
-                .header("Cache-Control", "no-store")
-                .header("Vary", "Authorization, If-Match")
-                .header("X-Correlation-ID", getCorrelationId())
+        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+                        PaymentHttpHeaders.VARY_AUTHORIZATION_IF_MATCH)
+                .header("ETag", PaymentEtag.from(order))
                 .body(body);
     }
 
-    @PostMapping(value = "/{paymentOrderId}/authorize", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/{paymentOrderId}/authorize", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PaymentLifecycleResponse> authorize(
             @PathVariable UUID merchantId,
             @PathVariable UUID paymentOrderId,
             @RequestHeader("Idempotency-Key") String idempotencyKeyHeader,
-            @RequestHeader("If-Match") String ifMatch,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
             @RequestBody(required = false) AuthorizeRequest request,
             Authentication authentication,
             @AuthenticationPrincipal Jwt jwt) {
 
         verifyMerchantOwnership(merchantId, jwt, authentication);
+        long expectedVersion = PaymentEtag.requireVersion(ifMatch);
         IdempotencyKey idempotencyKey = IdempotencyKey.of(idempotencyKeyHeader);
-        String correlationId = getCorrelationId();
+        String correlationId = PaymentHttpHeaders.correlationId();
 
         PaymentOrder order = paymentLifecycleService.authorize(
                 merchantId, paymentOrderId,
                 request != null ? request.reason() : null,
-                idempotencyKey.keyHash(), jwt.getSubject(), correlationId);
+                idempotencyKey.keyHash(), expectedVersion, jwt.getSubject(), correlationId);
 
         return lifecycleResponse(order);
     }
 
-    @PostMapping(value = "/{paymentOrderId}/capture", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/{paymentOrderId}/capture", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PaymentLifecycleResponse> capture(
             @PathVariable UUID merchantId,
             @PathVariable UUID paymentOrderId,
             @RequestHeader("Idempotency-Key") String idempotencyKeyHeader,
-            @RequestHeader("If-Match") String ifMatch,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
             @RequestBody(required = false) CaptureRequest request,
             Authentication authentication,
             @AuthenticationPrincipal Jwt jwt) {
 
         verifyMerchantOwnership(merchantId, jwt, authentication);
+        long expectedVersion = PaymentEtag.requireVersion(ifMatch);
         IdempotencyKey idempotencyKey = IdempotencyKey.of(idempotencyKeyHeader);
-        String correlationId = getCorrelationId();
+        String correlationId = PaymentHttpHeaders.correlationId();
 
         PaymentOrder order = paymentLifecycleService.capture(
                 merchantId, paymentOrderId,
                 request != null ? request.amountMinor() : null,
                 request != null ? request.reason() : null,
-                idempotencyKey.keyHash(), jwt.getSubject(), correlationId);
+                idempotencyKey.keyHash(), expectedVersion, jwt.getSubject(), correlationId);
 
         return lifecycleResponse(order);
     }
 
-    @PostMapping(value = "/{paymentOrderId}/cancel", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/{paymentOrderId}/cancel", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PaymentLifecycleResponse> cancel(
             @PathVariable UUID merchantId,
             @PathVariable UUID paymentOrderId,
             @RequestHeader("Idempotency-Key") String idempotencyKeyHeader,
-            @RequestHeader("If-Match") String ifMatch,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
             @RequestBody(required = false) CancelRequest request,
             Authentication authentication,
             @AuthenticationPrincipal Jwt jwt) {
 
         verifyMerchantOwnership(merchantId, jwt, authentication);
+        long expectedVersion = PaymentEtag.requireVersion(ifMatch);
         IdempotencyKey idempotencyKey = IdempotencyKey.of(idempotencyKeyHeader);
-        String correlationId = getCorrelationId();
+        String correlationId = PaymentHttpHeaders.correlationId();
 
         PaymentOrder order = paymentLifecycleService.cancel(
                 merchantId, paymentOrderId,
                 request != null ? request.reason() : null,
-                idempotencyKey.keyHash(), jwt.getSubject(), correlationId);
+                idempotencyKey.keyHash(), expectedVersion, jwt.getSubject(), correlationId);
 
         return lifecycleResponse(order);
     }
 
-    @PostMapping(value = "/{paymentOrderId}/refund", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/{paymentOrderId}/refund", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PaymentLifecycleResponse> refund(
             @PathVariable UUID merchantId,
             @PathVariable UUID paymentOrderId,
             @RequestHeader("Idempotency-Key") String idempotencyKeyHeader,
-            @RequestHeader("If-Match") String ifMatch,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
             @RequestBody(required = false) RefundRequest request,
             Authentication authentication,
             @AuthenticationPrincipal Jwt jwt) {
 
         verifyMerchantOwnership(merchantId, jwt, authentication);
+        long expectedVersion = PaymentEtag.requireVersion(ifMatch);
         IdempotencyKey idempotencyKey = IdempotencyKey.of(idempotencyKeyHeader);
-        String correlationId = getCorrelationId();
+        String correlationId = PaymentHttpHeaders.correlationId();
 
         PaymentOrder order = paymentLifecycleService.refund(
                 merchantId, paymentOrderId,
                 request != null ? request.amountMinor() : null,
                 request != null ? request.reason() : null,
-                idempotencyKey.keyHash(), jwt.getSubject(), correlationId);
+                idempotencyKey.keyHash(), expectedVersion, jwt.getSubject(), correlationId);
 
         return lifecycleResponse(order);
     }
 
-    @PatchMapping(value = "/{paymentOrderId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PatchMapping(value = "/{paymentOrderId}", consumes = {PaymentHttpHeaders.MERGE_PATCH_JSON, MediaType.APPLICATION_JSON_VALUE}, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PaymentLifecycleResponse> updateMetadata(
             @PathVariable UUID merchantId,
             @PathVariable UUID paymentOrderId,
-            @RequestHeader("If-Match") String ifMatch,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
             @RequestBody MetadataPatchRequest request,
             Authentication authentication,
             @AuthenticationPrincipal Jwt jwt) {
 
         verifyMerchantOwnership(merchantId, jwt, authentication);
+        long expectedVersion = PaymentEtag.requireVersion(ifMatch);
         String metadataJson = request.metadata() != null ? request.metadata().toString() : null;
-        PaymentOrder order = paymentLifecycleService.updateMetadata(merchantId, paymentOrderId, metadataJson);
+        PaymentOrder order = paymentLifecycleService.updateMetadata(merchantId, paymentOrderId, metadataJson, expectedVersion);
 
         return lifecycleResponse(order);
     }
 
-    @GetMapping("/{paymentOrderId}/history")
+    @GetMapping(value = "/{paymentOrderId}/history", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PaymentStatusHistoryResponse> getHistory(
             @PathVariable UUID merchantId,
             @PathVariable UUID paymentOrderId,
@@ -345,10 +389,8 @@ public class PaymentOrderController {
         List<PaymentOrderStatusHistory> entries = paymentLifecycleService.findHistory(merchantId, paymentOrderId);
         PaymentStatusHistoryResponse response = PaymentOrderMapper.toHistoryResponse(entries);
 
-        return ResponseEntity.ok()
-                .header("Cache-Control", "no-store")
-                .header("Vary", "Authorization")
-                .header("X-Correlation-ID", getCorrelationId())
+        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+                        PaymentHttpHeaders.VARY_AUTHORIZATION)
                 .body(response);
     }
 

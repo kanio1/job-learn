@@ -17,6 +17,10 @@ public final class ApiPaths {
         return PAYMENT_ORDER;
     }
 
+    public static String paymentOrders() {
+        return PAYMENT_ORDER;
+    }
+
     public static String paymentOrderSummary() {
         return PAYMENT_ORDER_SUMMARY;
     }

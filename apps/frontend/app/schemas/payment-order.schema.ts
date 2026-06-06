@@ -33,6 +33,7 @@ export const paymentOrderResponseSchema = z.object({
   refundedAt: z.string().nullable().optional(),
   cancellationReason: z.string().nullable().optional(),
   refundReason: z.string().nullable().optional(),
+  metadata: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   // Application-held version marker (derived from ETag or response field)
@@ -76,7 +77,6 @@ export const statusHistoryEntrySchema = z.object({
   createdAt: z.string(),
   // Internal fields (not for UI display)
   actorSubject: z.string().optional(),
-  idempotencyKeyHash: z.string().nullable().optional(),
 })
 
 export const paymentStatusHistoryResponseSchema = z.object({

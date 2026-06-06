@@ -25,8 +25,15 @@ export default defineEventHandler(async (event): Promise<any> => {
     })
     const body = res._data
     const etag = res.headers.get('etag') || res.headers.get('ETag')
+    const cacheControl = res.headers.get('cache-control')
+    const vary = res.headers.get('vary')
+    const correlationId = res.headers.get('x-correlation-id') || res.headers.get('X-Correlation-ID')
+    if (etag) setHeader(event, 'ETag', etag)
+    if (cacheControl) setHeader(event, 'Cache-Control', cacheControl)
+    if (vary) setHeader(event, 'Vary', vary)
+    if (correlationId) setHeader(event, 'X-Correlation-ID', correlationId)
     if (etag && body && typeof body === 'object') {
-      ;(body as any).versionMarker = etag.replace(/"/g, '')
+      ;(body as any).versionMarker = etag
     }
     return body
   } catch (error: any) {

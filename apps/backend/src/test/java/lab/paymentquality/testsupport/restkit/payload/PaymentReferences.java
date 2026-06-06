@@ -8,8 +8,7 @@ public final class PaymentReferences {
     }
 
     public static String unique(String scenario) {
-        String normalized = requireScenario(scenario);
-        return "ref-" + normalized + "-" + UUID.randomUUID();
+        return "ref-" + requireScenario(scenario) + "-" + UUID.randomUUID();
     }
 
     private static String requireScenario(String scenario) {

@@ -10,6 +10,16 @@ public record PaymentOrderResponse(
         long amountMinor,
         String currency,
         String status,
+        Long capturedAmountMinor,
+        Long refundedAmountMinor,
+        Instant authorizedAt,
+        Instant expiresAt,
+        Instant capturedAt,
+        Instant cancelledAt,
+        Instant refundedAt,
+        String cancellationReason,
+        String refundReason,
+        String metadata,
         Instant createdAt,
         Instant updatedAt
 ) {

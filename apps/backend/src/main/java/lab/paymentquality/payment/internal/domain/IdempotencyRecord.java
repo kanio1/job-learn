@@ -37,12 +37,20 @@ public class IdempotencyRecord {
     }
 
     public static IdempotencyRecord reserve(UUID idempotencyRecordId, UUID merchantId,
-                                             String idempotencyKeyHash, String requestFingerprintHash) {
+                                              String idempotencyKeyHash, String requestFingerprintHash) {
+        return reserve(idempotencyRecordId, merchantId, idempotencyKeyHash, requestFingerprintHash, "CREATE", null);
+    }
+
+    public static IdempotencyRecord reserve(UUID idempotencyRecordId, UUID merchantId,
+                                             String idempotencyKeyHash, String requestFingerprintHash,
+                                             String action, UUID paymentOrderId) {
         var record = new IdempotencyRecord();
         record.idempotencyRecordId = idempotencyRecordId;
         record.merchantId = merchantId;
         record.idempotencyKeyHash = idempotencyKeyHash;
         record.requestFingerprintHash = requestFingerprintHash;
+        record.action = action;
+        record.paymentOrderId = paymentOrderId;
         record.createdAt = Instant.now();
         return record;
     }

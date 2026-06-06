@@ -13,7 +13,6 @@ public record PaymentStatusHistoryResponse(List<StatusHistoryEntry> content) {
             String toStatus,
             String action,
             String actorSubject,
-            String idempotencyKeyHash,
             String correlationId,
             Instant createdAt
     ) {

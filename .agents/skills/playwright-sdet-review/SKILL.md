@@ -1,0 +1,41 @@
+---
+name: playwright-sdet-review
+description: Use to review Playwright tests for the current Nuxt dashboard merchant and payment-order journeys; do not use when no frontend/E2E change is involved or for generic Playwright tutorials.
+---
+
+# Playwright SDET Review
+
+Use this skill for frontend/E2E review in `apps/frontend/tests`.
+
+## Review Focus
+
+- Stable locators using roles, labels, and visible user-facing names.
+- Auth/session setup through the existing `auth-setup` project and storage state.
+- Route mocks versus real Keycloak/backend use; be explicit about which is under test.
+- Test data isolation with unique merchant/payment references.
+- UI states: loading, empty, validation, duplicate/conflict, forbidden, backend unavailable, success, stale state.
+- Proxy/header behavior where payment lifecycle relies on `ETag`, `If-Match`, idempotency, or backend error preservation.
+- Flake risks: timing, ambiguous text matches, shared state, dependency on seeded external data.
+
+## Current Journeys
+
+- `/admin/merchants`
+- `/admin/merchants/{merchantId}/payments`
+- `/admin/merchants/{merchantId}/payments/new`
+- `/admin/merchants/{merchantId}/payments/{paymentOrderId}`
+
+## Output Format
+
+Return:
+
+1. Findings first.
+2. Missing coverage by risk.
+3. Suggested focused test names.
+4. Locator/data/auth improvements.
+5. Exact prompt for the main Codex session if a test change is needed.
+
+## Guardrails
+
+- Do not edit tests directly.
+- Do not add broad UI framework abstractions.
+- Do not create fake dashboard behavior to make tests pass.

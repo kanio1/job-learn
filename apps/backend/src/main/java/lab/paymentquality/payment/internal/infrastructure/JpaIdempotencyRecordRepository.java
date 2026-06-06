@@ -12,27 +12,72 @@ import java.util.UUID;
 
 public interface JpaIdempotencyRecordRepository extends JpaRepository<IdempotencyRecord, UUID> {
 
-    Optional<IdempotencyRecord> findByMerchantIdAndIdempotencyKeyHash(UUID merchantId, String keyHash);
+    @Query("""
+            SELECT record
+            FROM IdempotencyRecord record
+            WHERE record.merchantId = :merchantId
+              AND record.action = 'CREATE'
+              AND record.idempotencyKeyHash = :keyHash
+            """)
+    Optional<IdempotencyRecord> findByMerchantIdAndIdempotencyKeyHash(
+            @Param("merchantId") UUID merchantId,
+            @Param("keyHash") String keyHash);
+
+    Optional<IdempotencyRecord> findByMerchantIdAndActionAndIdempotencyKeyHash(
+            UUID merchantId, String action, String keyHash);
+
+    Optional<IdempotencyRecord> findByMerchantIdAndPaymentOrderIdAndActionAndIdempotencyKeyHash(
+            UUID merchantId, UUID paymentOrderId, String action, String keyHash);
 
     @Modifying(flushAutomatically = true)
     @Query(value = """
             INSERT INTO idempotency_records (
                 idempotency_record_id,
                 merchant_id,
+                action,
                 idempotency_key_hash,
                 request_fingerprint_hash,
                 created_at
             ) VALUES (
                 :idempotencyRecordId,
                 :merchantId,
+                'CREATE',
                 :keyHash,
                 :fingerprintHash,
                 CURRENT_TIMESTAMP
             )
-            ON CONFLICT (merchant_id, idempotency_key_hash) DO NOTHING
+            ON CONFLICT DO NOTHING
             """, nativeQuery = true)
     int reserveIfAbsent(@Param("idempotencyRecordId") UUID idempotencyRecordId,
                         @Param("merchantId") UUID merchantId,
+                        @Param("keyHash") String keyHash,
+                        @Param("fingerprintHash") String fingerprintHash);
+
+    @Modifying(flushAutomatically = true)
+    @Query(value = """
+            INSERT INTO idempotency_records (
+                idempotency_record_id,
+                merchant_id,
+                payment_order_id,
+                action,
+                idempotency_key_hash,
+                request_fingerprint_hash,
+                created_at
+            ) VALUES (
+                :idempotencyRecordId,
+                :merchantId,
+                :paymentOrderId,
+                :action,
+                :keyHash,
+                :fingerprintHash,
+                CURRENT_TIMESTAMP
+            )
+            ON CONFLICT DO NOTHING
+            """, nativeQuery = true)
+    int reserveIfAbsent(@Param("idempotencyRecordId") UUID idempotencyRecordId,
+                        @Param("merchantId") UUID merchantId,
+                        @Param("paymentOrderId") UUID paymentOrderId,
+                        @Param("action") String action,
                         @Param("keyHash") String keyHash,
                         @Param("fingerprintHash") String fingerprintHash);
 

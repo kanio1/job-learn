@@ -7,7 +7,6 @@ public record CreatePaymentOrderPayload(
         String currency,
         String clientOrderReference
 ) {
-
     public CreatePaymentOrderPayload {
         if (currency == null || currency.isBlank()) {
             throw new IllegalArgumentException("currency must not be blank");
@@ -18,14 +17,18 @@ public record CreatePaymentOrderPayload(
     }
 
     public static CreatePaymentOrderPayload pln(long amountMinor, String reference) {
-        return withCurrency(amountMinor, "PLN", reference);
+        return new CreatePaymentOrderPayload(amountMinor, "PLN", reference);
     }
 
     public static CreatePaymentOrderPayload eur(long amountMinor, String reference) {
-        return withCurrency(amountMinor, "EUR", reference);
+        return new CreatePaymentOrderPayload(amountMinor, "EUR", reference);
     }
 
-    public static CreatePaymentOrderPayload withCurrency(long amountMinor, String currency, String reference) {
+    public static CreatePaymentOrderPayload withCurrency(
+            long amountMinor,
+            String currency,
+            String reference
+    ) {
         return new CreatePaymentOrderPayload(amountMinor, currency, reference);
     }
 
@@ -36,4 +39,5 @@ public record CreatePaymentOrderPayload(
                 "clientOrderReference", clientOrderReference
         );
     }
+
 }

@@ -18,6 +18,16 @@ public final class PaymentOrderMapper {
                 order.getAmountMinor(),
                 order.getCurrency(),
                 order.getStatus().name(),
+                order.getCapturedAmountMinor(),
+                order.getRefundedAmountMinor(),
+                order.getAuthorizedAt(),
+                order.getExpiresAt(),
+                order.getCapturedAt(),
+                order.getCancelledAt(),
+                order.getRefundedAt(),
+                order.getCancellationReason(),
+                order.getRefundReason(),
+                order.getMetadata(),
                 order.getCreatedAt(),
                 order.getUpdatedAt()
         );
@@ -27,6 +37,7 @@ public final class PaymentOrderMapper {
         return new PaymentLifecycleResponse(
                 order.getPaymentOrderId(),
                 order.getMerchantId(),
+                order.getClientOrderReference(),
                 order.getStatus().name(),
                 order.getAmountMinor(),
                 order.getCurrency(),
@@ -38,7 +49,10 @@ public final class PaymentOrderMapper {
                 order.getCancelledAt(),
                 order.getRefundedAt(),
                 order.getCancellationReason(),
-                order.getRefundReason()
+                order.getRefundReason(),
+                order.getMetadata(),
+                order.getCreatedAt(),
+                order.getUpdatedAt()
         );
     }
 
@@ -51,7 +65,6 @@ public final class PaymentOrderMapper {
                         e.getToStatus(),
                         e.getAction() != null ? e.getAction().name() : null,
                         e.getActorSubject(),
-                        e.getIdempotencyKeyHash(),
                         e.getCorrelationId(),
                         e.getCreatedAt()
                 ))

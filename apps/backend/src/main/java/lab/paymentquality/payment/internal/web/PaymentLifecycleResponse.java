@@ -6,6 +6,7 @@ import java.util.UUID;
 public record PaymentLifecycleResponse(
         UUID paymentOrderId,
         UUID merchantId,
+        String clientOrderReference,
         String status,
         long amountMinor,
         String currency,
@@ -17,6 +18,9 @@ public record PaymentLifecycleResponse(
         Instant cancelledAt,
         Instant refundedAt,
         String cancellationReason,
-        String refundReason
+        String refundReason,
+        String metadata,
+        Instant createdAt,
+        Instant updatedAt
 ) {
 }

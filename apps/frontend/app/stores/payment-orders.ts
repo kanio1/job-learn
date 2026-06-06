@@ -238,6 +238,41 @@ export const usePaymentOrdersStore = defineStore('payment-orders', () => {
     lifecycleFeedback.value = null
   }
 
+  async function saveMetadata(
+    merchantId: string,
+    paymentOrderId: string,
+    metadata: Record<string, unknown>
+  ) {
+    if (!versionMarker.value) {
+      throw new Error('Missing version marker for conditional metadata update')
+    }
+
+    metadataSaving.value = true
+    lifecycleFeedback.value = null
+
+    try {
+      const endpoint = `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}`
+      await $fetch(endpoint, {
+        method: 'PATCH',
+        headers: {
+          'If-Match': versionMarker.value,
+        },
+        body: { metadata },
+      })
+      await loadDetail(merchantId, paymentOrderId)
+      return true
+    } catch (e: any) {
+      const status = e?.statusCode || e?.response?.status
+      if (status === 412) lifecycleFeedback.value = 'stale_state'
+      else if (status === 403) lifecycleFeedback.value = 'forbidden'
+      else if (status === 404) lifecycleFeedback.value = 'not_found'
+      else lifecycleFeedback.value = 'validation'
+      throw e
+    } finally {
+      metadataSaving.value = false
+    }
+  }
+
   return {
     loading,
     error,
@@ -264,5 +299,6 @@ export const usePaymentOrdersStore = defineStore('payment-orders', () => {
     getAvailableActions,
     submitLifecycleAction,
     clearLifecycleFeedback,
+    saveMetadata,
   }
 })

@@ -43,6 +43,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/status").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders").hasAuthority("merchant:payments:create")
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders/*/authorize").hasAnyAuthority("merchant:payments:lifecycle", "platform:payments:lifecycle")
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders/*/capture").hasAnyAuthority("merchant:payments:lifecycle", "platform:payments:lifecycle")
@@ -51,6 +52,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, "/api/merchants/*/payment-orders/*").hasAnyAuthority("merchant:payments:lifecycle", "platform:payments:lifecycle")
                         .requestMatchers(HttpMethod.GET, "/api/merchants/*/payment-orders/*/history").hasAnyAuthority("merchant:payments:lifecycle", "platform:payments:lifecycle", "platform:payments:audit", "merchant:payments:read", "platform:payments:read")
                         .requestMatchers(HttpMethod.GET, "/api/merchants/*/payment-orders/summary").hasAnyAuthority("merchant:payments:read", "platform:payments:read")
+                        .requestMatchers(HttpMethod.HEAD, "/api/merchants/*/payment-orders/*").hasAnyAuthority("merchant:payments:read", "platform:payments:read")
                         .requestMatchers(HttpMethod.GET, "/api/merchants/*/payment-orders/*").hasAnyAuthority("merchant:payments:read", "platform:payments:read")
                         .requestMatchers(HttpMethod.GET, "/api/merchants/*/payment-orders").hasAnyAuthority("merchant:payments:read", "platform:payments:read")
                         .requestMatchers(HttpMethod.POST, "/api/merchants").hasAuthority("platform:merchants:create")
@@ -78,7 +80,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         var config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:3000"));
-        config.setAllowedMethods(List.of("GET", "POST", "PATCH", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "HEAD", "POST", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key", "If-Match", "X-Correlation-ID"));
         config.setExposedHeaders(List.of("ETag", "Cache-Control", "Vary", "X-Correlation-ID", "Location"));
         config.setMaxAge(3600L);
