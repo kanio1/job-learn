@@ -82,7 +82,8 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of("http://localhost:3000"));
         config.setAllowedMethods(List.of("GET", "HEAD", "POST", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key", "If-Match", "X-Correlation-ID"));
-        config.setExposedHeaders(List.of("ETag", "Cache-Control", "Vary", "X-Correlation-ID", "Location"));
+        config.setExposedHeaders(List.of("ETag", "Cache-Control", "Vary", "X-Correlation-ID", "Location",
+                "Allow", "Accept-Patch"));
         config.setMaxAge(3600L);
         var source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", config);

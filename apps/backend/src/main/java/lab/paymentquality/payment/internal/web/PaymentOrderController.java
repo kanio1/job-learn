@@ -48,15 +48,17 @@ public class PaymentOrderController {
             @Valid @RequestBody CreatePaymentOrderRequest request,
             @AuthenticationPrincipal Jwt jwt) {
 
+        String merchantIdClaim = jwt.getClaimAsString("merchant_id");
+        if (merchantIdClaim == null || !merchantId.toString().equals(merchantIdClaim)) {
+            throw new AccessDeniedException("Merchant scope mismatch");
+        }
+
+        request.requireKnownTopLevelFieldsOnly();
         PaymentAmount amount = PaymentAmount.of(request.amountMinor());
         CurrencyCode currency = CurrencyCode.of(request.currency());
         ClientOrderReference clientRef = ClientOrderReference.of(request.clientOrderReference());
         IdempotencyKey idempotencyKey = IdempotencyKey.of(idempotencyKeyHeader);
 
-        String merchantIdClaim = jwt.getClaimAsString("merchant_id");
-        if (merchantIdClaim == null || !merchantId.toString().equals(merchantIdClaim)) {
-            throw new AccessDeniedException("Merchant scope mismatch");
-        }
         PaymentActorContext actor = new PaymentActorContext(jwt.getSubject());
 
         PaymentCreateResult result = paymentOrderService.create(
@@ -360,6 +362,7 @@ public class PaymentOrderController {
             @AuthenticationPrincipal Jwt jwt) {
 
         verifyMerchantOwnership(merchantId, jwt, authentication);
+        request.requireOnlyMetadataTopLevelField();
         long expectedVersion = PaymentEtag.requireVersion(ifMatch);
         String metadataJson = request.metadata() != null ? request.metadata().toString() : null;
         PaymentOrder order = paymentLifecycleService.updateMetadata(merchantId, paymentOrderId, metadataJson, expectedVersion);

@@ -1,5 +1,6 @@
 package lab.paymentquality.payment.internal.web;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lab.paymentquality.payment.internal.domain.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -42,6 +43,7 @@ public class PaymentExceptionHandler {
     private static final String ERROR_PAYMENT_ORDER_VERSION_MISMATCH = "payment_order_version_mismatch";
     private static final String ERROR_NOT_ACCEPTABLE = "not_acceptable";
     private static final String ERROR_METHOD_NOT_ALLOWED = "method_not_allowed";
+    private static final String ERROR_UNKNOWN_TOP_LEVEL_FIELD = "unknown_top_level_field";
 
     private static final String MSG_MALFORMED_JSON = "Request body contains invalid JSON syntax";
     private static final String MSG_UNSUPPORTED_MEDIA_TYPE = "Content-Type must be application/json or application/merge-patch+json where PATCH is supported";
@@ -50,16 +52,18 @@ public class PaymentExceptionHandler {
 
     @ExceptionHandler({InvalidPaymentAmountException.class, InvalidCurrencyCodeException.class,
             InvalidClientOrderReferenceException.class, InvalidIdempotencyKeyException.class})
-    public ResponseEntity<PaymentErrorResponse> handleValidation(RuntimeException ex) {
-        return problem(HttpStatus.BAD_REQUEST, ERROR_VALIDATION, ex.getMessage());
+    public ResponseEntity<PaymentErrorResponse> handleValidation(RuntimeException ex, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, ERROR_VALIDATION, ex.getMessage(), headersForRequest(request));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<PaymentErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+    public ResponseEntity<PaymentErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+                                                                             HttpServletRequest request) {
         List<PaymentErrorResponse.FieldError> details = ex.getBindingResult().getFieldErrors().stream()
                 .map(fe -> new PaymentErrorResponse.FieldError(fe.getField(), fe.getDefaultMessage()))
                 .toList();
-        return problem(HttpStatus.BAD_REQUEST, ERROR_VALIDATION, "Request validation failed", details);
+        return problem(HttpStatus.BAD_REQUEST, ERROR_VALIDATION, "Request validation failed",
+                details, headersForRequest(request));
     }
 
     @ExceptionHandler(BindException.class)
@@ -87,13 +91,15 @@ public class PaymentExceptionHandler {
     }
 
     @ExceptionHandler(MerchantNotPaymentEligibleException.class)
-    public ResponseEntity<PaymentErrorResponse> handleMerchantNotEligible(MerchantNotPaymentEligibleException ex) {
-        return problem(HttpStatus.CONFLICT, ERROR_MERCHANT_NOT_ELIGIBLE, ex.getMessage());
+    public ResponseEntity<PaymentErrorResponse> handleMerchantNotEligible(MerchantNotPaymentEligibleException ex,
+                                                                          HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, ERROR_MERCHANT_NOT_ELIGIBLE, ex.getMessage(), headersForRequest(request));
     }
 
     @ExceptionHandler(IdempotencyConflictException.class)
-    public ResponseEntity<PaymentErrorResponse> handleIdempotencyConflict(IdempotencyConflictException ex) {
-        return problem(HttpStatus.CONFLICT, ERROR_IDEMPOTENCY_CONFLICT, ex.getMessage());
+    public ResponseEntity<PaymentErrorResponse> handleIdempotencyConflict(IdempotencyConflictException ex,
+                                                                          HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, ERROR_IDEMPOTENCY_CONFLICT, ex.getMessage(), headersForRequest(request));
     }
 
     @ExceptionHandler(PaymentOrderNotFoundException.class)
@@ -118,36 +124,39 @@ public class PaymentExceptionHandler {
     }
 
     @ExceptionHandler(MissingRequestHeaderException.class)
-    public ResponseEntity<PaymentErrorResponse> handleMissingRequestHeader(MissingRequestHeaderException ex) {
+    public ResponseEntity<PaymentErrorResponse> handleMissingRequestHeader(MissingRequestHeaderException ex,
+                                                                           HttpServletRequest request) {
         if ("Idempotency-Key".equals(ex.getHeaderName())) {
-            return problem(HttpStatus.BAD_REQUEST, ERROR_VALIDATION, MSG_IDEMPOTENCY_KEY_REQUIRED);
+            return problem(HttpStatus.BAD_REQUEST, ERROR_VALIDATION, MSG_IDEMPOTENCY_KEY_REQUIRED,
+                    headersForRequest(request));
         }
         return problem(HttpStatus.BAD_REQUEST, ERROR_MISSING_REQUIRED_HEADER, "Required header missing: " + ex.getHeaderName());
     }
 
     @ExceptionHandler(InvalidStateTransitionException.class)
     public ResponseEntity<PaymentErrorResponse> handleInvalidStateTransition(InvalidStateTransitionException ex) {
-        return problem(HttpStatus.UNPROCESSABLE_ENTITY, ERROR_INVALID_TRANSITION, ex.getMessage());
+        return problem(HttpStatus.UNPROCESSABLE_ENTITY, ERROR_INVALID_TRANSITION, ex.getMessage(), preconditionHeaders());
     }
 
     @ExceptionHandler(AuthorizationExpiredException.class)
     public ResponseEntity<PaymentErrorResponse> handleAuthorizationExpired(AuthorizationExpiredException ex) {
-        return problem(HttpStatus.UNPROCESSABLE_ENTITY, ERROR_AUTHORIZATION_EXPIRED, ex.getMessage());
+        return problem(HttpStatus.UNPROCESSABLE_ENTITY, ERROR_AUTHORIZATION_EXPIRED, ex.getMessage(), preconditionHeaders());
     }
 
     @ExceptionHandler(InvalidCaptureAmountException.class)
     public ResponseEntity<PaymentErrorResponse> handleInvalidCaptureAmount(InvalidCaptureAmountException ex) {
-        return problem(HttpStatus.UNPROCESSABLE_ENTITY, ERROR_CAPTURE_AMOUNT_EXCEEDS_AUTHORIZED, ex.getMessage());
+        return problem(HttpStatus.UNPROCESSABLE_ENTITY, ERROR_CAPTURE_AMOUNT_EXCEEDS_AUTHORIZED, ex.getMessage(), preconditionHeaders());
     }
 
     @ExceptionHandler(InvalidRefundAmountException.class)
     public ResponseEntity<PaymentErrorResponse> handleInvalidRefundAmount(InvalidRefundAmountException ex) {
-        return problem(HttpStatus.UNPROCESSABLE_ENTITY, ERROR_REFUND_AMOUNT_EXCEEDS_CAPTURED, ex.getMessage());
+        return problem(HttpStatus.UNPROCESSABLE_ENTITY, ERROR_REFUND_AMOUNT_EXCEEDS_CAPTURED, ex.getMessage(), preconditionHeaders());
     }
 
     @ExceptionHandler(org.springframework.dao.OptimisticLockingFailureException.class)
     public ResponseEntity<PaymentErrorResponse> handleOptimisticLock(org.springframework.dao.OptimisticLockingFailureException ex) {
-        return problem(HttpStatus.PRECONDITION_FAILED, ERROR_CONCURRENCY_CONFLICT, "Payment order was modified by another request");
+        return problem(HttpStatus.PRECONDITION_FAILED, ERROR_CONCURRENCY_CONFLICT,
+                "Payment order was modified by another request", preconditionHeaders());
     }
 
     @ExceptionHandler(PaymentPreconditionRequiredException.class)
@@ -163,6 +172,26 @@ public class PaymentExceptionHandler {
     @ExceptionHandler(PaymentOrderVersionMismatchException.class)
     public ResponseEntity<PaymentErrorResponse> handlePaymentOrderVersionMismatch(PaymentOrderVersionMismatchException ex) {
         return problem(HttpStatus.PRECONDITION_FAILED, ERROR_PAYMENT_ORDER_VERSION_MISMATCH, ex.getMessage(), preconditionHeaders());
+    }
+
+    @ExceptionHandler(UnknownMetadataPatchFieldException.class)
+    public ResponseEntity<PaymentErrorResponse> handleUnknownMetadataPatchField(UnknownMetadataPatchFieldException ex) {
+        List<PaymentErrorResponse.FieldError> details = ex.fieldNames().stream()
+                .map(fieldName -> new PaymentErrorResponse.FieldError(fieldName,
+                        "Unknown top-level field is not allowed for metadata PATCH"))
+                .toList();
+        return problem(HttpStatus.BAD_REQUEST, ERROR_UNKNOWN_TOP_LEVEL_FIELD, ex.getMessage(),
+                details, preconditionHeaders());
+    }
+
+    @ExceptionHandler(UnknownCreatePaymentOrderFieldException.class)
+    public ResponseEntity<PaymentErrorResponse> handleUnknownCreatePaymentOrderField(UnknownCreatePaymentOrderFieldException ex) {
+        List<PaymentErrorResponse.FieldError> details = ex.fieldNames().stream()
+                .map(fieldName -> new PaymentErrorResponse.FieldError(fieldName,
+                        "Unknown top-level field is not allowed for create payment order"))
+                .toList();
+        return problem(HttpStatus.BAD_REQUEST, ERROR_UNKNOWN_TOP_LEVEL_FIELD, ex.getMessage(),
+                details, createHeaders());
     }
 
     @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
@@ -221,6 +250,32 @@ public class PaymentExceptionHandler {
 
     private HttpHeaders preconditionHeaders() {
         return PaymentHttpHeaders.sensitivePaymentHeaders(PaymentHttpHeaders.VARY_AUTHORIZATION_IF_MATCH);
+    }
+
+    private HttpHeaders createHeaders() {
+        return PaymentHttpHeaders.sensitivePaymentHeaders(PaymentHttpHeaders.VARY_AUTHORIZATION_IDEMPOTENCY_KEY);
+    }
+
+    private HttpHeaders headersForRequest(HttpServletRequest request) {
+        if (isCreatePaymentOrderRequest(request)) {
+            return createHeaders();
+        }
+        if (isConditionalPaymentMutationRequest(request)) {
+            return preconditionHeaders();
+        }
+        return paymentErrorHeaders();
+    }
+
+    private boolean isCreatePaymentOrderRequest(HttpServletRequest request) {
+        return "POST".equals(request.getMethod())
+                && request.getRequestURI().matches("/api/merchants/[^/]+/payment-orders/?");
+    }
+
+    private boolean isConditionalPaymentMutationRequest(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        return ("PATCH".equals(request.getMethod()) && uri.matches("/api/merchants/[^/]+/payment-orders/[^/]+/?"))
+                || ("POST".equals(request.getMethod())
+                && uri.matches("/api/merchants/[^/]+/payment-orders/[^/]+/(authorize|capture|cancel|refund)/?"));
     }
 
     private HttpHeaders addAcceptPatchHeader() {

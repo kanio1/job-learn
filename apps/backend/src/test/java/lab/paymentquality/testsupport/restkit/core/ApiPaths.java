@@ -5,6 +5,7 @@ public final class ApiPaths {
     private static final String PAYMENT_ORDERS_COLLECTION = "/api/merchants/{merchantId}/payment-orders";
     private static final String PAYMENT_ORDER = PAYMENT_ORDERS_COLLECTION + "/{paymentOrderId}";
     private static final String PAYMENT_ORDER_SUMMARY = PAYMENT_ORDERS_COLLECTION + "/summary";
+    private static final String MERCHANTS = "/api/merchants" ;
 
     private ApiPaths() {
     }
@@ -23,5 +24,9 @@ public final class ApiPaths {
 
     public static String paymentOrderSummary() {
         return PAYMENT_ORDER_SUMMARY;
+    }
+
+    public static String merchants() {
+        return MERCHANTS;
     }
 }
