@@ -22,7 +22,7 @@ public class PaymentOrderListApi {
             .auth().oauth2(token)
             .accept(ContentType.JSON)
         .when()
-            .get(ApiPaths.paymentOrders(), merchantId)
+            .get(ApiPaths.paymentOrdersCollection(), merchantId)
         .then();
     }
 
@@ -35,7 +35,7 @@ public class PaymentOrderListApi {
                     .accept(ContentType.JSON)
                     .queryParams(queryParams)
                 .when()
-                    .get(ApiPaths.paymentOrders(), merchantId)
+                    .get(ApiPaths.paymentOrdersCollection(), merchantId)
                 .then();
             }
 

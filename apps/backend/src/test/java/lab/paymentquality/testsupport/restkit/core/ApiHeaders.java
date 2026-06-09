@@ -13,8 +13,11 @@ public final class ApiHeaders {
     public static final String IF_NONE_MATCH = "If-None-Match";
     public static final String IF_MATCH = "If-Match";
 
+    public static final String CACHE_CONTROL = "Cache-Control";
+    public static final String VARY = "Vary";
+    public static final String ACCEPT_PATCH = "Accept-Patch";
+    public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
+
     private ApiHeaders() {
     }
 }
-
-
