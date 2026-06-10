@@ -1,6 +1,4 @@
-package lab.paymentquality.testsupport;
-
-import static org.mockito.ArgumentMatchers.contains;
+package lab.paymentquality.restkit.contract.create;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +12,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import io.restassured.http.ContentType;
+import lab.paymentquality.testsupport.PostgresContainerSupport;
+import lab.paymentquality.testsupport.TestJwtConfiguration;
+import lab.paymentquality.testsupport.TestJwtSupport;
 import lab.paymentquality.testsupport.restkit.client.MerchantApi;
 import lab.paymentquality.testsupport.restkit.client.PaymentOrderApi;
 import lab.paymentquality.testsupport.restkit.core.ApiHeaders;

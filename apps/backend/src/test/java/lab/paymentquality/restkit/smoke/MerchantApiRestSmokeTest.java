@@ -1,4 +1,4 @@
-package lab.paymentquality.testsupport.restkit;
+package lab.paymentquality.restkit.smoke;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
