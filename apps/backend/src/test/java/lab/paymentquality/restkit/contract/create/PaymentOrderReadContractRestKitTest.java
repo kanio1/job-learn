@@ -217,5 +217,73 @@ public class PaymentOrderReadContractRestKitTest  extends PostgresContainerSuppo
         ProblemDetailsAssertions.assertProblemError(response, "method_not_allowed");
     }
 
+    @Test
+    void getPaymentOrderWithAcceptXmlReturns406Problem() {
+        MerchantApi merchantApi = new MerchantApi(port);
+        PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
 
+        String merchantId = merchantApi.createActiveMerchantAndReturnId("accept-xml-not-acceptable");
+        String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+        String readerToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        String reference = PaymentReferences.unique("accept-xml-not-acceptable");
+        CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
+
+        String idempotencyKey = IdempotencyKeys.forScenario("accept-xml-not-acceptable");
+        String createCorrelationId = CorrelationIds.forScenario("accept-xml-not-acceptable-create");
+
+        String paymentOrderId = paymentOrderApi.createOrder(
+                merchantId,
+                creatorToken,
+                payload,
+                idempotencyKey,
+                createCorrelationId
+            )
+            .statusCode(201)
+            .contentType(ContentType.JSON)
+            .body("paymentOrderId", notNullValue())
+            .extract()
+            .path("paymentOrderId");
+            
+        Response response = paymentOrderApi.readOrderWithAccept(merchantId, paymentOrderId, readerToken, "application/xml")
+            .spec(PaymentErrorSpecs.notAcceptable())
+            .header(ApiHeaders.X_CORRELATION_ID, notNullValue())
+            .extract()
+            .response();
+
+        ProblemDetailsAssertions.assertSafeProblem(response);
+        ProblemDetailsAssertions.assertProblemError(response, "not_acceptable");
+        HeaderAssertions.assertNoStore(response);
+        HeaderAssertions.assertVaryContainsAuthorization(response);
+    }
+
+    @Test
+        void postPaymentOrderWithTextPlainContentTypeReturns415Problem() {
+        MerchantApi merchantApi = new MerchantApi(port);
+        PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
+
+        String merchantId = merchantApi.createActiveMerchantAndReturnId("text-plain-unsupported-media-type");
+        String token = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+
+        String idempotencyKey = IdempotencyKeys.forScenario("text-plain-unsupported-media-type");
+        String correlationId = CorrelationIds.forScenario("text-plain-unsupported-media-type");
+ 
+        Response response = paymentOrderApi.createOrderWithRawBodyAndContentType(merchantId, 
+            token,
+            "this is not json",
+            "text/plain",
+            idempotencyKey,
+            correlationId
+        )
+            .spec(PaymentErrorSpecs.unsupportedMediaType())
+            .header(ApiHeaders.X_CORRELATION_ID, notNullValue())
+            .extract()
+            .response();
+
+        ProblemDetailsAssertions.assertSafeProblem(response);
+        ProblemDetailsAssertions.assertProblemError(response, "unsupported_media_type");
+        HeaderAssertions.assertNoStore(response);
+        HeaderAssertions.assertVaryContainsAuthorization(response);
+        HeaderAssertions.assertAcceptPatchMergePatchJson(response);
+    }
 }

@@ -38,4 +38,12 @@ public final class PaymentErrorSpecs {
         return problem(405);
     }
 
+    public static ResponseSpecification notAcceptable() {
+        return problem(406);
+    }
+
+    public static ResponseSpecification unsupportedMediaType() {
+        return problem(415);
+    }
+
 }

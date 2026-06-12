@@ -95,4 +95,32 @@ public final class PaymentOrderApi {
         .then();
     }
 
+    public ValidatableResponse readOrderWithAccept(String merchantId, String paymentOrderId, String token, String accept) {
+        return given()
+            .port(port)
+            .auth().oauth2(token)
+            .accept(accept)
+        .when()
+            .get(ApiPaths.paymentOrder(), merchantId, paymentOrderId)
+        .then();
+    }
+
+    public ValidatableResponse createOrderWithRawBodyAndContentType(String merchantId, 
+        String token, 
+        String rawBody,
+        String contentType,
+        String idempotencyKey,
+        String correlationId) {
+            return given()
+                .port(port)
+                .auth().oauth2(token)
+                .contentType(contentType)
+                .header(ApiHeaders.IDEMPOTENCY_KEY, idempotencyKey)
+                .header(ApiHeaders.X_CORRELATION_ID, correlationId)
+                .body(rawBody)
+            .when()
+                .post(ApiPaths.paymentOrdersCollection(), merchantId)
+            .then();
+    }
+
 }

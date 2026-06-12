@@ -41,5 +41,11 @@ public class HeaderAssertions {
         assertVaryContainsAuthorization(response);
     }
 
+    public static void assertAcceptPatchMergePatchJson(Response response) {
+        assertThat(response.header(ApiHeaders.ACCEPT_PATCH))
+        .as("Accept-Patch should declare JSON Merge Patch media type")
+        .isEqualTo("application/merge-patch+json");
+    }
+
 
 }
