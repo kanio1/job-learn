@@ -12,9 +12,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http.entity.mime.Header;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -38,8 +40,16 @@ import lab.paymentquality.testsupport.restkit.payload.PaymentReferences;
 @Testcontainers
 public class PaymentOrderReadContractRestKitTest  extends PostgresContainerSupport {
     
+    @Container
+    static PostgreSQLContainer postgres = newPostgresContainer("payment_order_create_contract_restkit_test");
+
+    @DynamicPropertySource
+    static void postgresProperties(DynamicPropertyRegistry registry) {
+        registerPostgresProperties(registry, postgres);
+    }
+
     @LocalServerPort
-    private int port;
+    int port;
 
 
     @Test

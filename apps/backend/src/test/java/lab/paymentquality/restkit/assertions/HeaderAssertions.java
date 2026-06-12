@@ -47,5 +47,18 @@ public class HeaderAssertions {
         .isEqualTo("application/merge-patch+json");
     }
 
+    public static void assertVaryContainsIfMatch(Response response) {
+        assertThat(response.header(ApiHeaders.VARY))
+        .as("Vary should contain If-Match because lifecycle responses depend on precondition headers")
+        .contains(ApiHeaders.IF_MATCH);
+    }
+
+    public static void assertSensitivePaymentMutationHeaders(Response response) {
+        assertVersionEtag(response);
+        assertNoStore(response);
+        assertVaryContainsAuthorization(response);
+        assertVaryContainsIfMatch(response);
+    }
+
 
 }

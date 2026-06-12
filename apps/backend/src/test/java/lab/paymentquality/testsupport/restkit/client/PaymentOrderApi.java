@@ -123,4 +123,28 @@ public final class PaymentOrderApi {
             .then();
     }
 
+    public ValidatableResponse authorizeOrder(
+        String merchantId,
+        String paymentOrderId,
+        String token,
+        Object body,
+        String idempotencyKey,
+        String ifMatch,
+        String correlationId
+    ) {
+        return given()
+            .port(port)
+            .auth().oauth2(token)
+            .contentType(ContentType.JSON)
+            .accept(ContentType.JSON)
+            .header(ApiHeaders.IDEMPOTENCY_KEY, idempotencyKey)
+            .header(ApiHeaders.IF_MATCH, ifMatch)
+            .header(ApiHeaders.X_CORRELATION_ID, correlationId)
+            .body(body)
+        .when()
+            .post(ApiPaths.paymentOrderLifecycleAction("authorize"), merchantId, paymentOrderId)
+        .then();
+    }
+
+
 }
