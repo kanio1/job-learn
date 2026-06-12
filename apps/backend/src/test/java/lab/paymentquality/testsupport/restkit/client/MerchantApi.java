@@ -53,19 +53,19 @@ public class MerchantApi {
         return createMerchant(token, merchantReference, displayName)
                 .statusCode(201)
                 .extract()
-                .path("merchantId"
-            );
+                .path("merchantId");
     }
 
     public String createActiveMerchantAndReturnId(String scenario) {
         String merchantReference = uniqueMerchantReference(scenario);
         String displayName = "Merchant " + scenario;
+        String token = TestJwtSupport.platformOperatorToken();
 
-        return createMerchantAndReturnId(
-            TestJwtSupport.platformOperatorToken(),
-            merchantReference,
-            displayName
-        );
+        String merchantId = createMerchantAndReturnId(token, merchantReference, displayName);
+        
+        activateMerchant(token, merchantId).statusCode(200);
+        
+        return merchantId;
     }
 
     public static String uniqueMerchantReference(String scenario) {
@@ -85,6 +85,16 @@ public class MerchantApi {
             "merchantReference", merchantReference,
             "displayName", displayName
         );
+    }
+
+    public ValidatableResponse activateMerchant(String token, String merchantId) {
+        return given()
+            .port(port)
+            .auth().oauth2(token)
+            .accept(ContentType.JSON)
+        .when()
+            .post(ApiPaths.merchantActivation(), merchantId)
+        .then();
     }
 
 }

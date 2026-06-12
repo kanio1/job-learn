@@ -6,6 +6,7 @@ import lab.paymentquality.testsupport.restkit.core.ApiPaths;
 import lab.paymentquality.testsupport.restkit.payload.CreatePaymentOrderPayload;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.matchesRegex;
 
 import io.restassured.http.ContentType;
 
@@ -65,6 +66,32 @@ public final class PaymentOrderApi {
             .accept(ContentType.JSON)
         .when()
             .get(ApiPaths.paymentOrder(), merchantId, paymentOrderId)
+        .then();
+    }
+
+    public ValidatableResponse headOrder(String merchantId, String paymentOrderId, String token) {
+        return given()
+            .port(port)
+            .auth().oauth2(token)
+        .when()
+            .head(ApiPaths.paymentOrder(), merchantId, paymentOrderId)
+        .then();
+    }
+
+    public ValidatableResponse optionsOrder(String merchantId, String paymentOrderId) {
+        return given()
+                .port(port)
+            .when()
+                .options(ApiPaths.paymentOrder(), merchantId, paymentOrderId)
+            .then();
+    }
+
+    public ValidatableResponse deleteOrder(String merchantId, String paymentOrderId, String token) {
+        return given()
+            .port(port)
+            .auth().oauth2(token)
+        .when()
+            .delete(ApiPaths.paymentOrder(), merchantId, paymentOrderId)
         .then();
     }
 

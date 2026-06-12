@@ -4,7 +4,6 @@ import lab.paymentquality.payment.internal.domain.*;
 import lab.paymentquality.payment.internal.infrastructure.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
