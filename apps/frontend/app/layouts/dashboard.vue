@@ -45,14 +45,40 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 
 const open = ref(false)
 
-const links = [[{
-  label: 'Merchants',
-  icon: 'i-lucide-store',
-  to: '/admin/merchants',
-  onSelect: () => {
-    open.value = false
+const links = [[
+  {
+    label: 'Overview',
+    icon: 'i-lucide-layout-dashboard',
+    to: '/',
+    onSelect: () => {
+      open.value = false
+    }
+  },
+  {
+    label: 'Merchants',
+    icon: 'i-lucide-store',
+    to: '/admin/merchants',
+    onSelect: () => {
+      open.value = false
+    }
+  },
+  {
+    label: 'Payment Orders',
+    icon: 'i-lucide-receipt',
+    to: '/admin/merchants',
+    onSelect: () => {
+      open.value = false
+    }
+  },
+  {
+    label: 'Error Lab',
+    icon: 'i-lucide-flask-conical',
+    to: '/error-lab',
+    onSelect: () => {
+      open.value = false
+    }
   }
-}]] satisfies NavigationMenuItem[][]
+]] satisfies NavigationMenuItem[][]
 
 const groups = computed(() => [{
   id: 'links',
@@ -71,6 +97,16 @@ const groups = computed(() => [{
     label: 'Merchant registry',
     icon: 'i-lucide-store',
     to: '/admin/merchants'
+  }, {
+    id: 'payment-orders',
+    label: 'Payment orders',
+    icon: 'i-lucide-receipt',
+    to: '/admin/merchants'
+  }, {
+    id: 'error-lab',
+    label: 'Error Lab',
+    icon: 'i-lucide-flask-conical',
+    to: '/error-lab'
   }]
 }])
 </script>

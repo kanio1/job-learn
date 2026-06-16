@@ -146,5 +146,26 @@ public final class PaymentOrderApi {
         .then();
     }
 
+    public ValidatableResponse authorizeOrdeerWithoutIfMatch(
+        String merchantId,
+        String paymentOrderId,
+        String token,
+        Object body,
+        String idempotencyKey,
+        String correlationId
+    ) {
+        return given()
+            .port(port)
+            .auth().oauth2(token)
+            .contentType(ContentType.JSON)
+            .accept(ContentType.JSON)
+            .header(ApiHeaders.IDEMPOTENCY_KEY, idempotencyKey)
+            .header(ApiHeaders.X_CORRELATION_ID, correlationId)
+            .body(correlationId)
+        .when()
+            .post(ApiPaths.paymentOrderLifecycleAction("authorize"), merchantId, paymentOrderId)
+        .then();
+    }
+
 
 }

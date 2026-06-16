@@ -1,0 +1,53 @@
+<template>
+  <div data-testid="problem-details-card">
+  <UCard>
+    <template #header>
+      <div class="flex items-center gap-2">
+        <UIcon name="i-lucide-alert-triangle" class="text-red-500" />
+        <span class="text-sm font-semibold text-red-600 dark:text-red-400">Problem Details</span>
+      </div>
+    </template>
+
+    <dl class="space-y-2 text-sm">
+      <div class="flex gap-2">
+        <dt class="w-20 shrink-0 font-medium text-gray-500 dark:text-gray-400">Type</dt>
+        <dd class="break-all font-mono text-gray-900 dark:text-gray-100">{{ problem.type ?? '—' }}</dd>
+      </div>
+      <div class="flex gap-2">
+        <dt class="w-20 shrink-0 font-medium text-gray-500 dark:text-gray-400">Title</dt>
+        <dd class="text-gray-900 dark:text-gray-100">{{ problem.title ?? '—' }}</dd>
+      </div>
+      <div class="flex gap-2">
+        <dt class="w-20 shrink-0 font-medium text-gray-500 dark:text-gray-400">Status</dt>
+        <dd>
+          <HttpStatusBadge v-if="problem.status != null" :status="problem.status" />
+          <span v-else class="text-gray-400">—</span>
+        </dd>
+      </div>
+      <div class="flex gap-2">
+        <dt class="w-20 shrink-0 font-medium text-gray-500 dark:text-gray-400">Detail</dt>
+        <dd class="text-gray-900 dark:text-gray-100">{{ problem.detail ?? '—' }}</dd>
+      </div>
+      <div class="flex gap-2">
+        <dt class="w-20 shrink-0 font-medium text-gray-500 dark:text-gray-400">Instance</dt>
+        <dd class="break-all font-mono text-gray-900 dark:text-gray-100">{{ problem.instance ?? '—' }}</dd>
+      </div>
+    </dl>
+  </UCard>
+  </div>
+</template>
+
+<script setup lang="ts">
+/**
+ * Renders all standard RFC 7807 problem+json members.
+ * Each absent/null/undefined member shows "—" as an explicit empty indicator.
+ *
+ * Requirements: 8.5, 12.7
+ */
+
+import type { ProblemDetails } from '~/types/api'
+
+defineProps<{
+  problem: ProblemDetails
+}>()
+</script>

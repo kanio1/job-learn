@@ -1,0 +1,52 @@
+
+> payment-quality-frontend@ test:unit /home/suso/job-learn/apps/frontend
+> vitest run
+
+
+ RUN  v3.2.6 /home/suso/job-learn/apps/frontend
+
+ ✓ tests/unit/if-match-etag-round-trip.property.test.ts (9 tests) 53ms
+ ✓ tests/unit/payment-order-list-query.property.test.ts (4 tests) 42ms
+ ✓ app/composables/useApiClient.property.test.ts (6 tests) 68ms
+ ✓ app/schemas/__tests__/payment-order-list-query.property.test.ts (8 tests) 70ms
+ ✓ tests/unit/displayed-status-equals-proxied-status.property.test.ts (12 tests) 99ms
+ ✓ tests/unit/raw-json-viewer-round-trip.property.test.ts (12 tests) 239ms
+ ✓ app/stores/payment-orders-if-match.test.ts (3 tests) 178ms
+ ✓ app/components/shared/state-and-lifecycle.test.ts (26 tests) 213ms
+ ✓ app/components/shared/BusinessStatusBadge.test.ts (3 tests) 2082ms
+   ✓ BusinessStatusBadge — Property 2: Status badges are distinguishable without color > renders a non-empty label for every known status (≥100 iterations)  350ms
+   ✓ BusinessStatusBadge — Property 2: Status badges are distinguishable without color > any two distinct statuses render different labels (≥100 iterations)  1687ms
+ ✓ app/components/shared/HttpStatusBadge.test.ts (4 tests) 2198ms
+   ✓ HttpStatusBadge — Property 5: HTTP status category mapping > renders the status code in badge text for every code 100–599 (≥100 iterations)  381ms
+   ✓ HttpStatusBadge — Property 5: HTTP status category mapping > renders the correct category label for every code 100–599 (≥100 iterations)  636ms
+   ✓ HttpStatusBadge — Property 5: HTTP status category mapping > every code 100–599 maps to exactly one defined category — never "Unknown" (≥100 iterations)  1026ms
+ ✓ app/components/shared/HeaderKeyValuePanel.test.ts (8 tests) 11424ms
+   ✓ HeaderKeyValuePanel — Property 8: Header panel rendering with empty indicator > renders an explicit empty indicator when no headers are provided (object shape, ≥100 iterations)  356ms
+   ✓ HeaderKeyValuePanel — Property 8: Header panel rendering with empty indicator > renders an explicit empty indicator when no headers are provided (array shape, ≥100 iterations)  586ms
+   ✓ HeaderKeyValuePanel — Property 8: Header panel rendering with empty indicator > renders all key-value pairs when headers are present (object shape, ≥100 iterations)  980ms
+   ✓ HeaderKeyValuePanel — Property 8: Header panel rendering with empty indicator > renders all key-value pairs when headers are present (array shape, ≥100 iterations)  1258ms
+   ✓ HeaderKeyValuePanel — Property 9: Token confidentiality and Authorization masking > never renders any portion of the token value for Authorization header (object shape, ≥100 iterations)  1524ms
+   ✓ HeaderKeyValuePanel — Property 9: Token confidentiality and Authorization masking > never renders any portion of the token value for Authorization header (array shape, ≥100 iterations)  1870ms
+   ✓ HeaderKeyValuePanel — Property 9: Token confidentiality and Authorization masking > replaces the entire Authorization value with the exact fixed placeholder (≥100 iterations)  2295ms
+   ✓ HeaderKeyValuePanel — Property 9: Token confidentiality and Authorization masking > masks only Authorization — other header values are rendered verbatim (≥100 iterations)  2554ms
+ ✓ app/components/shared/ProblemDetailsCard.test.ts (14 tests) 28732ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > always renders the problem-details-card test-id element (≥100 iterations)  365ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > renders a present "type" value as visible text (≥100 iterations)  574ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > renders a present "title" value as visible text (≥100 iterations)  884ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > renders a present "detail" value as visible text (≥100 iterations)  1153ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > renders a present "instance" value as visible text (≥100 iterations)  1395ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > renders a present "status" value visibly via the status badge (≥100 iterations)  1752ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > shows empty indicator "—" when "type" is absent (≥100 iterations)  2003ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > shows empty indicator "—" when "title" is absent (≥100 iterations)  2339ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > shows empty indicator "—" when "detail" is absent (≥100 iterations)  2460ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > shows empty indicator "—" when "instance" is absent (≥100 iterations)  2620ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > shows empty indicator "—" when "status" is absent (≥100 iterations)  2838ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > shows empty indicator for every absent standard member when all are absent (≥100 iterations)  3136ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > every string field row contains either its value or the empty indicator (≥100 iterations)  3440ms
+   ✓ ProblemDetailsCard — Property 7: Problem details rendering with empty indicators > extension members (passthrough) do not break rendering (≥100 iterations)  3771ms
+
+ Test Files  12 passed (12)
+      Tests  109 passed (109)
+   Start at  20:28:34
+   Duration  32.91s (transform 2.86s, setup 32.76s, collect 4.73s, tests 45.40s, environment 2.30s, prepare 1.92s)
+

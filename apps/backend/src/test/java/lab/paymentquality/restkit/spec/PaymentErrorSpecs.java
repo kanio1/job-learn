@@ -46,4 +46,8 @@ public final class PaymentErrorSpecs {
         return problem(415);
     }
 
+    public static ResponseSpecification preconditionRequired() {
+        return problem(428);
+    }
+
 }

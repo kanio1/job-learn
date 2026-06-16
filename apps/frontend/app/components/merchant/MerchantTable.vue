@@ -17,6 +17,18 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Merchant registry table.
+ *
+ * Row actions:
+ * - PENDING merchants: Activate button (`data-testid="activate-merchant-button"`, Req 12.2)
+ * - ACTIVE merchants: New Payment + Suspend buttons
+ * - SUSPENDED merchants: Activate button (`data-testid="activate-merchant-button"`, Req 2.6)
+ *
+ * Emits `activate` and `suspend` to let the parent page call useMerchantsApi and
+ * show the resulting status (Req 2.6) or an error (Req 2.9).
+ */
+
 import { h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 
@@ -27,7 +39,7 @@ export interface Merchant {
   merchantId: string
   merchantReference: string
   displayName: string
-  status: 'DRAFT' | 'ACTIVE' | 'SUSPENDED' | string
+  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | string
   createdAt: string
   updatedAt: string
 }
@@ -46,7 +58,7 @@ const emit = defineEmits<{
 
 function statusColor(status: string) {
   switch (status) {
-    case 'DRAFT': return 'neutral' as const
+    case 'PENDING': return 'neutral' as const
     case 'ACTIVE': return 'success' as const
     case 'SUSPENDED': return 'error' as const
     default: return 'neutral' as const
@@ -84,8 +96,10 @@ const columns: TableColumn<Merchant>[] = [
     id: 'actions',
     cell: ({ row }) => {
       const buttons: any[] = []
+      const status = row.original.status
 
-      if (row.original.status === 'DRAFT') {
+      // Activate: available for PENDING and SUSPENDED merchants (Req 2.6)
+      if (status === 'PENDING' || status === 'SUSPENDED') {
         buttons.push(
           h(UButton, {
             size: 'xs',
@@ -94,12 +108,14 @@ const columns: TableColumn<Merchant>[] = [
             icon: 'i-lucide-play',
             label: 'Activate',
             'aria-label': `Activate ${row.original.merchantReference}`,
+            'data-testid': 'activate-merchant-button',
             onClick: () => emit('activate', row.original)
           })
         )
       }
 
-      if (row.original.status === 'ACTIVE') {
+      // ACTIVE merchants: navigate to payments or suspend
+      if (status === 'ACTIVE') {
         buttons.push(
           h(UButton, {
             size: 'xs',

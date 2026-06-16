@@ -1,23 +1,13 @@
 <template>
-  <UBadge :color="color" variant="subtle">
-    {{ status }}
-  </UBadge>
+  <BusinessStatusBadge :status="status" type="payment" />
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
+/**
+ * Thin wrapper — delegates to BusinessStatusBadge.
+ * Kept for backward compatibility; no breaking changes.
+ */
+defineProps<{
   status: string
 }>()
-
-const color = computed(() => {
-  switch (props.status) {
-    case 'CREATED': return 'info'
-    case 'AUTHORIZED': return 'warning'
-    case 'CAPTURED': return 'success'
-    case 'CANCELLED': return 'error'
-    case 'EXPIRED': return 'neutral'
-    case 'REFUNDED': return 'info'
-    default: return 'neutral'
-  }
-})
 </script>

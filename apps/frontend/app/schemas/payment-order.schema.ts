@@ -106,3 +106,23 @@ export type StatusHistoryEntry = z.infer<typeof statusHistoryEntrySchema>
 export type PaymentStatusHistoryResponse = z.infer<typeof paymentStatusHistoryResponseSchema>
 export type BackendErrorResponse = z.infer<typeof backendErrorSchema>
 export type LifecycleErrorCategory = z.infer<typeof lifecycleErrorCategorySchema>
+
+// ---------------------------------------------------------------------------
+// Filter/query schema for GET .../payment-orders list endpoint
+// Supports exactly the params the backend list endpoint accepts
+// ---------------------------------------------------------------------------
+
+export const paymentOrderListQuerySchema = z.object({
+  status: paymentStatusSchema.optional(),
+  currency: paymentCurrencySchema.optional(),
+  fromDate: z.string().optional(),
+  toDate: z.string().optional(),
+  minAmount: z.number().int().nonnegative().optional(),
+  maxAmount: z.number().int().nonnegative().optional(),
+  clientOrderReference: z.string().optional(),
+  page: z.number().int().nonnegative().default(0),
+  size: z.number().int().min(1).max(100).default(20),
+  sort: z.string().optional(),
+})
+
+export type PaymentOrderListQuery = z.infer<typeof paymentOrderListQuerySchema>

@@ -2,16 +2,16 @@ import {
   paymentOrderListResponseSchema,
   paymentOrderResponseSchema,
   paymentOrderSummaryResponseSchema,
-  paymentStatusHistoryResponseSchema,
   backendErrorSchema,
   type PaymentOrderListResponse,
   type PaymentOrderResponse,
   type PaymentOrderSummaryResponse,
-  type PaymentStatusHistoryResponse,
   type StatusHistoryEntry,
   type LifecycleErrorCategory,
 } from '~/schemas/payment-order.schema'
 import { ZodError } from 'zod'
+import { usePaymentOrdersApi } from '~/composables/usePaymentOrdersApi'
+import { usePaymentLifecycleApi, mapStatusToCategory } from '~/composables/usePaymentLifecycleApi'
 
 export const usePaymentOrdersStore = defineStore('payment-orders', () => {
   const loading = ref(false)
@@ -49,18 +49,24 @@ export const usePaymentOrdersStore = defineStore('payment-orders', () => {
 
   async function loadDetail(merchantId: string, paymentOrderId: string) {
     return loadResource(async () => {
-      const response = await $fetch(`/api/merchants/${merchantId}/payment-orders/${paymentOrderId}`)
-      try {
-        const parsed = paymentOrderResponseSchema.parse(response)
-        currentOrder.value = parsed
-        // Capture version marker for If-Match usage (from response field or fallback)
-        versionMarker.value = parsed.versionMarker || null
-      } catch (e) {
-        if (e instanceof ZodError) {
-          throw new Error('Received malformed payment order data from server')
-        }
-        throw e
+      const { getOrder } = usePaymentOrdersApi()
+      const response = await getOrder(merchantId, paymentOrderId)
+
+      if (response.problem && !response.data) {
+        const status = response.status
+        const errorLike = { statusCode: status, statusMessage: response.problem.title, message: response.problem.detail }
+        handleError(errorLike)
+        throw new Error(response.problem.detail ?? response.problem.title ?? 'Failed to load payment order')
       }
+
+      if (response.data) {
+        currentOrder.value = response.data
+        // Update versionMarker from ETag (preferred) or response field fallback
+        versionMarker.value = response.headers.etag || response.data.versionMarker || null
+      } else {
+        throw new Error('Received malformed payment order data from server')
+      }
+
       return currentOrder.value
     })
   }
@@ -69,10 +75,17 @@ export const usePaymentOrdersStore = defineStore('payment-orders', () => {
     historyLoading.value = true
     historyError.value = null
     try {
-      const response = await $fetch(`/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/history`)
-      const parsed = paymentStatusHistoryResponseSchema.parse(response)
-      history.value = parsed.content || []
-      return history.value
+      const { getHistory } = usePaymentLifecycleApi()
+      const response = await getHistory(merchantId, paymentOrderId)
+
+      if (response.data) {
+        history.value = response.data.content || []
+        return history.value
+      } else {
+        historyError.value = 'Failed to load lifecycle history.'
+        history.value = []
+        throw new Error(response.problem?.detail ?? 'Failed to load lifecycle history.')
+      }
     } catch (e) {
       historyError.value = 'Failed to load lifecycle history.'
       history.value = []
@@ -202,17 +215,29 @@ export const usePaymentOrdersStore = defineStore('payment-orders', () => {
     lifecycleFeedback.value = null
 
     const idempotencyKey = `feat010-${action}-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    const { authorizeOrder, captureOrder, cancelOrder, refundOrder } = usePaymentLifecycleApi()
 
     try {
-      const endpoint = `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/${action}`
-      await $fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'If-Match': versionMarker.value,
-          'Idempotency-Key': idempotencyKey,
-        },
-        body: payload,
-      })
+      let response
+      const ifMatch = versionMarker.value
+
+      if (action === 'authorize') {
+        response = await authorizeOrder(merchantId, paymentOrderId, ifMatch, idempotencyKey)
+      } else if (action === 'capture') {
+        response = await captureOrder(merchantId, paymentOrderId, ifMatch, idempotencyKey, payload)
+      } else if (action === 'cancel') {
+        response = await cancelOrder(merchantId, paymentOrderId, ifMatch, idempotencyKey, payload)
+      } else {
+        response = await refundOrder(merchantId, paymentOrderId, ifMatch, idempotencyKey, payload)
+      }
+
+      if (response.problem && !response.data) {
+        lifecycleFeedback.value = mapStatusToCategory(response.status)
+        throw new Error(response.problem.detail ?? response.problem.title ?? `Lifecycle action ${action} failed`)
+      }
+
+      // Update versionMarker from ETag on success
+      versionMarker.value = response.headers.etag || null
 
       // Refresh detail + history after success
       await Promise.all([
@@ -221,13 +246,11 @@ export const usePaymentOrdersStore = defineStore('payment-orders', () => {
       ])
       return true
     } catch (e: any) {
-      const status = e?.statusCode || e?.response?.status
-      if (status === 412) lifecycleFeedback.value = 'stale_state'
-      else if (status === 422) lifecycleFeedback.value = 'invalid_transition'
-      else if (status === 409) lifecycleFeedback.value = 'idempotency_conflict'
-      else if (status === 403) lifecycleFeedback.value = 'forbidden'
-      else if (status === 404) lifecycleFeedback.value = 'not_found'
-      else lifecycleFeedback.value = 'validation'
+      // Only set lifecycleFeedback if not already set by problem handling above
+      if (!lifecycleFeedback.value) {
+        const status = e?.statusCode || e?.response?.status || e?.status
+        lifecycleFeedback.value = mapStatusToCategory(status ?? 0)
+      }
       throw e
     } finally {
       actionSubmitting.value = false
@@ -251,22 +274,25 @@ export const usePaymentOrdersStore = defineStore('payment-orders', () => {
     lifecycleFeedback.value = null
 
     try {
-      const endpoint = `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}`
-      await $fetch(endpoint, {
-        method: 'PATCH',
-        headers: {
-          'If-Match': versionMarker.value,
-        },
-        body: { metadata },
-      })
+      const { patchMetadata } = usePaymentLifecycleApi()
+      const response = await patchMetadata(merchantId, paymentOrderId, versionMarker.value, metadata)
+
+      if (response.problem && !response.data) {
+        lifecycleFeedback.value = mapStatusToCategory(response.status)
+        throw new Error(response.problem.detail ?? response.problem.title ?? 'Metadata update failed')
+      }
+
+      // Update versionMarker from ETag on success
+      versionMarker.value = response.headers.etag || null
+
       await loadDetail(merchantId, paymentOrderId)
       return true
     } catch (e: any) {
-      const status = e?.statusCode || e?.response?.status
-      if (status === 412) lifecycleFeedback.value = 'stale_state'
-      else if (status === 403) lifecycleFeedback.value = 'forbidden'
-      else if (status === 404) lifecycleFeedback.value = 'not_found'
-      else lifecycleFeedback.value = 'validation'
+      // Only set lifecycleFeedback if not already set by problem handling above
+      if (!lifecycleFeedback.value) {
+        const status = e?.statusCode || e?.response?.status || e?.status
+        lifecycleFeedback.value = mapStatusToCategory(status ?? 0)
+      }
       throw e
     } finally {
       metadataSaving.value = false

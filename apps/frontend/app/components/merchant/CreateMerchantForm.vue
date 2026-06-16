@@ -1,29 +1,38 @@
 <template>
-  <form @submit.prevent="onSubmit">
+  <UForm
+    ref="formRef"
+    :schema="createMerchantSchema"
+    :state="formState"
+    data-testid="create-merchant-form"
+    class="space-y-4"
+    @submit="onSubmit"
+  >
     <UFormField label="Merchant Reference" name="merchantReference">
       <UInput
         v-model="formState.merchantReference"
         placeholder="e.g. MERCH-001"
         aria-label="Merchant reference"
       />
-      <p v-if="fieldErrors.merchantReference" class="mt-1 text-sm text-error" role="alert">
-        {{ fieldErrors.merchantReference }}
-      </p>
     </UFormField>
-    <UFormField label="Display Name" name="displayName" class="mt-4">
+
+    <UFormField label="Display Name" name="displayName">
       <UInput
         v-model="formState.displayName"
         placeholder="e.g. Acme Payments Inc."
         aria-label="Display name"
       />
-      <p v-if="fieldErrors.displayName" class="mt-1 text-sm text-error" role="alert">
-        {{ fieldErrors.displayName }}
-      </p>
     </UFormField>
-    <p v-if="error" class="mt-2 text-sm text-error" role="alert">
-      {{ error }}
-    </p>
-    <div class="mt-4 flex justify-end gap-2">
+
+    <UAlert
+      v-if="error"
+      color="error"
+      variant="subtle"
+      icon="i-lucide-circle-alert"
+      :description="error"
+      role="alert"
+    />
+
+    <div class="flex justify-end gap-2">
       <UButton variant="outline" type="button" @click="$emit('cancel')">
         Cancel
       </UButton>
@@ -31,12 +40,21 @@
         Create
       </UButton>
     </div>
-  </form>
+  </UForm>
 </template>
 
 <script setup lang="ts">
 import { createMerchantSchema } from '~/schemas/merchant.schema'
 import type { CreateMerchantForm } from '~/schemas/merchant.schema'
+
+/**
+ * Create merchant form with Zod field-level validation via UForm.
+ *
+ * - `data-testid="create-merchant-form"` on the form element (Req 12.1)
+ * - Field-level messages rendered by UFormField from the Zod schema (Req 2.5, 10.2)
+ * - User input is retained on server-side error (`error` prop; Req 2.9)
+ * - Does NOT send request on invalid input (Req 2.5, 10.1)
+ */
 
 defineProps<{
   error?: string | null
@@ -48,25 +66,14 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const formState = reactive<CreateMerchantForm>({
+const formState = reactive<Partial<CreateMerchantForm>>({
   merchantReference: '',
-  displayName: ''
+  displayName: '',
 })
 
-const fieldErrors = reactive<Partial<Record<keyof CreateMerchantForm, string>>>({})
-
 function onSubmit() {
-  fieldErrors.merchantReference = undefined
-  fieldErrors.displayName = undefined
-
-  const result = createMerchantSchema.safeParse(formState)
-  if (!result.success) {
-    const flattened = result.error.flatten().fieldErrors
-    fieldErrors.merchantReference = flattened.merchantReference?.[0]
-    fieldErrors.displayName = flattened.displayName?.[0]
-    return
-  }
-
-  emit('submit', result.data)
+  // UForm validates against `createMerchantSchema` before calling this handler.
+  // If validation fails, UForm shows field-level messages and does not call onSubmit.
+  emit('submit', formState as CreateMerchantForm)
 }
 </script>

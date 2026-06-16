@@ -20,6 +20,18 @@ export async function mockAuthenticatedSession(page: Page, username = 'platform.
   })
 }
 
+/**
+ * Dismiss the vite-plugin-checker overlay that appears when there are TypeScript
+ * errors in the project. The overlay intercepts pointer events and blocks clicks.
+ * Safe to call even if the overlay is not present.
+ */
+export async function dismissCheckerOverlay(page: Page) {
+  await page.evaluate(() => {
+    const overlay = document.querySelector('vite-plugin-checker-error-overlay')
+    if (overlay) overlay.remove()
+  })
+}
+
 export async function mockMerchantApi(page: Page, initial: Merchant[] = []) {
   const merchants = [...initial]
 

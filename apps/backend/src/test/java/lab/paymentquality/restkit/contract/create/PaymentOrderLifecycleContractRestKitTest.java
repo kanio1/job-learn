@@ -22,6 +22,8 @@ import io.restassured.http.ContentType;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import lab.paymentquality.restkit.assertions.HeaderAssertions;
+import lab.paymentquality.restkit.assertions.ProblemDetailsAssertions;
+import lab.paymentquality.restkit.spec.PaymentErrorSpecs;
 import lab.paymentquality.testsupport.PostgresContainerSupport;
 import lab.paymentquality.testsupport.TestJwtConfiguration;
 import lab.paymentquality.testsupport.TestJwtSupport;
@@ -110,6 +112,59 @@ public class PaymentOrderLifecycleContractRestKitTest extends PostgresContainerS
         assertThat(response.header(ApiHeaders.ETAG))
             .as("Lifecycle mutation should return a new ETag after successful authorization")
             .isNotEqualTo(currentEtag);
-    }   
+    }
+
+    @Test
+    void authorizePaymentOrderWithoutIfMatchReturns428Problem() {
+    MerchantApi merchantApi = new MerchantApi(port);
+    PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
+
+    String merchantId = merchantApi.createActiveMerchantAndReturnId("authorize-missing-if-match");
+    String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+    String operatorToken = TestJwtSupport.merchantPaymentOperatorToken(merchantId);
+
+    String reference = PaymentReferences.unique("authorize-missing-if-match");
+    CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
+
+    String createIdempotencyKey = IdempotencyKeys.forScenario("authorize-missing-if-match-create");
+    String createCorrelationId = CorrelationIds.forScenario("authorize-missing-if-match-create");
+
+    ExtractableResponse<Response> created = paymentOrderApi.createOrder(
+            merchantId,
+            creatorToken,
+            payload,
+            createIdempotencyKey,
+            createCorrelationId
+        )
+        .statusCode(201)
+        .contentType(ContentType.JSON)
+        .header(ApiHeaders.ETAG, startsWith("\"v"))
+        .body("paymentOrderId", notNullValue())
+        .body("status", equalTo("CREATED"))
+        .extract();
+
+    String paymentOrderId = created.path("paymentOrderId");
+    String authorizeIdempotencyKey = IdempotencyKeys.forScenario("authorize-missing-if-match-command");
+    String authorizeCorrelationId = CorrelationIds.forScenario("authorize-missing-if-match-command");
+
+    Response response = paymentOrderApi.authorizeOrdeerWithoutIfMatch(
+            merchantId,
+            paymentOrderId,
+            operatorToken,
+            Map.of("reason", "missing-if-match-negative-test"),
+            authorizeIdempotencyKey,
+            authorizeCorrelationId
+        )
+        .spec(PaymentErrorSpecs.preconditionRequired())
+        .header(ApiHeaders.X_CORRELATION_ID, notNullValue())
+        .extract()
+        .response();
+
+    ProblemDetailsAssertions.assertSafeProblem(response);
+    ProblemDetailsAssertions.assertProblemError(response, "precondition_required");
+    HeaderAssertions.assertNoStore(response);
+    HeaderAssertions.assertVaryContainsAuthorization(response);
+    HeaderAssertions.assertVaryContainsIfMatch(response);
+    }
 
 }
