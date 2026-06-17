@@ -43,25 +43,32 @@ class JpaMerchantRepositoryTest extends PostgresContainerSupport {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
+    private UUID placeholderTenantId() {
+        return jdbcTemplate.queryForObject(
+                "SELECT tenant_id FROM tenants WHERE tenant_reference = 'PLACEHOLDER_TENANT_ID'",
+                UUID.class);
+    }
+
     @Test
     void saveAndFindById() {
-        Merchant saved = repository.saveAndFlush(Merchant.create(UUID.randomUUID(), "MERCH-001", "Merchant One"));
+        Merchant saved = repository.saveAndFlush(Merchant.create(UUID.randomUUID(), "MERCH-001", "Merchant One", placeholderTenantId()));
 
         assertThat(repository.findById(saved.getMerchantId())).contains(saved);
     }
 
     @Test
     void findByNormalizedReference() {
-        Merchant saved = repository.saveAndFlush(Merchant.create(UUID.randomUUID(), "MERCH-002", "Merchant Two"));
+        Merchant saved = repository.saveAndFlush(Merchant.create(UUID.randomUUID(), "MERCH-002", "Merchant Two", placeholderTenantId()));
 
         assertThat(repository.findByNormalizedReference("MERCH-002")).contains(saved);
     }
 
     @Test
     void uniqueNormalizedReferenceConstraint() {
-        repository.saveAndFlush(Merchant.create(UUID.randomUUID(), "MERCH-003", "Merchant Three"));
+        UUID tid = placeholderTenantId();
+        repository.saveAndFlush(Merchant.create(UUID.randomUUID(), "MERCH-003", "Merchant Three", tid));
 
-        assertThatThrownBy(() -> repository.saveAndFlush(Merchant.create(UUID.randomUUID(), "MERCH-003", "Duplicate")))
+        assertThatThrownBy(() -> repository.saveAndFlush(Merchant.create(UUID.randomUUID(), "MERCH-003", "Duplicate", tid)))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
@@ -70,15 +77,16 @@ class JpaMerchantRepositoryTest extends PostgresContainerSupport {
         UUID firstId = UUID.fromString("00000000-0000-0000-0000-000000000001");
         UUID secondId = UUID.fromString("00000000-0000-0000-0000-000000000002");
         Instant sameCreatedAt = Instant.parse("2026-05-18T12:00:00Z");
+        UUID tid = placeholderTenantId();
 
         jdbcTemplate.update("""
-                INSERT INTO merchants (merchant_id, normalized_reference, display_name, status, created_at, updated_at, version)
-                VALUES (?, ?, ?, 'DRAFT', ?, ?, 0)
-                """, secondId, "MERCH-SECOND", "Second", Timestamp.from(sameCreatedAt), Timestamp.from(sameCreatedAt));
+                INSERT INTO merchants (merchant_id, normalized_reference, display_name, status, created_at, updated_at, version, tenant_id)
+                VALUES (?, ?, ?, 'DRAFT', ?, ?, 0, ?)
+                """, secondId, "MERCH-SECOND", "Second", Timestamp.from(sameCreatedAt), Timestamp.from(sameCreatedAt), tid);
         jdbcTemplate.update("""
-                INSERT INTO merchants (merchant_id, normalized_reference, display_name, status, created_at, updated_at, version)
-                VALUES (?, ?, ?, 'DRAFT', ?, ?, 0)
-                """, firstId, "MERCH-FIRST", "First", Timestamp.from(sameCreatedAt), Timestamp.from(sameCreatedAt));
+                INSERT INTO merchants (merchant_id, normalized_reference, display_name, status, created_at, updated_at, version, tenant_id)
+                VALUES (?, ?, ?, 'DRAFT', ?, ?, 0, ?)
+                """, firstId, "MERCH-FIRST", "First", Timestamp.from(sameCreatedAt), Timestamp.from(sameCreatedAt), tid);
 
         var results = repository.findAllByOrderByCreatedAtDescMerchantIdAsc(PageRequest.of(0, 50));
 

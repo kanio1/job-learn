@@ -7,7 +7,7 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
-    locations: classpath:db/migration/merchant,classpath:db/migration/payment
+    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment
     baseline-on-migrate: false
 
 logging:

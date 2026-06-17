@@ -11,13 +11,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,11 +29,22 @@ class MerchantServiceTest {
     @Mock
     private JpaMerchantRepository repository;
 
+    @Mock
+    private JdbcTemplate jdbcTemplate;
+
     @InjectMocks
     private MerchantService service;
 
+    private static final UUID PLACEHOLDER_TENANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000099");
+
+    private void stubPlaceholderTenant() {
+        when(jdbcTemplate.queryForObject(anyString(), eq(UUID.class)))
+                .thenReturn(PLACEHOLDER_TENANT_ID);
+    }
+
     @Test
     void createValidMerchantReturnsDraft() {
+        stubPlaceholderTenant();
         when(repository.findByNormalizedReference("MERCH-001")).thenReturn(Optional.empty());
         when(repository.saveAndFlush(any(Merchant.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -61,6 +74,7 @@ class MerchantServiceTest {
 
     @Test
     void createDataIntegrityViolationTranslated() {
+        stubPlaceholderTenant();
         when(repository.findByNormalizedReference("MERCH-001")).thenReturn(Optional.empty());
         when(repository.saveAndFlush(any(Merchant.class)))
                 .thenThrow(new DataIntegrityViolationException("unique constraint"));
@@ -138,6 +152,7 @@ class MerchantServiceTest {
 
     @Test
     void representativeLogsContainSafeContextAndNoSecrets(CapturedOutput output) {
+        stubPlaceholderTenant();
         when(repository.findByNormalizedReference("MERCH-001")).thenReturn(Optional.empty());
         when(repository.saveAndFlush(any(Merchant.class))).thenAnswer(inv -> inv.getArgument(0));
 

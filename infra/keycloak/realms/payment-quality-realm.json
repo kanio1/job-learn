@@ -151,6 +151,9 @@
           "temporary": false
         }
       ],
+      "attributes": {
+        "tenant_id": "PLACEHOLDER_TENANT_ID"
+      },
       "realmRoles": []
     },
     {
@@ -168,7 +171,8 @@
         }
       ],
       "attributes": {
-        "merchant_id": "PLACEHOLDER_MERCHANT_ID"
+        "merchant_id": "PLACEHOLDER_MERCHANT_ID",
+        "tenant_id": "PLACEHOLDER_TENANT_ID"
       },
       "realmRoles": ["merchant:payments:create"]
     },
@@ -187,7 +191,8 @@
         }
       ],
       "attributes": {
-        "merchant_id": "PLACEHOLDER_MERCHANT_ID"
+        "merchant_id": "PLACEHOLDER_MERCHANT_ID",
+        "tenant_id": "PLACEHOLDER_TENANT_ID"
       },
       "realmRoles": ["merchant:payments:read"]
     },
@@ -206,7 +211,8 @@
         }
       ],
       "attributes": {
-        "merchant_id": "PLACEHOLDER_MERCHANT_ID"
+        "merchant_id": "PLACEHOLDER_MERCHANT_ID",
+        "tenant_id": "PLACEHOLDER_TENANT_ID"
       },
       "realmRoles": ["merchant:payments:operate"]
     },
@@ -241,7 +247,8 @@
         }
       ],
       "attributes": {
-        "merchant_id": "PLACEHOLDER_MERCHANT_ID"
+        "merchant_id": "PLACEHOLDER_MERCHANT_ID",
+        "tenant_id": "PLACEHOLDER_TENANT_ID"
       },
       "realmRoles": ["merchant:payments:create", "merchant:payments:read", "merchant:payments:lifecycle"]
     },
@@ -276,6 +283,121 @@
         }
       ],
       "realmRoles": ["platform:payments:read", "platform:payments:audit"]
+    },
+    {
+      "username": "platform.admin",
+      "enabled": true,
+      "firstName": "Platform",
+      "lastName": "Admin",
+      "email": "platform.admin@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "platform.admin",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenant_id": "PLATFORM_TENANT"
+      },
+      "realmRoles": ["PLATFORM_ADMIN"]
+    },
+    {
+      "username": "tenant.admin",
+      "enabled": true,
+      "firstName": "Tenant",
+      "lastName": "Admin",
+      "email": "tenant.admin@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "tenant.admin",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenant_id": "TENANT_ALPHA"
+      },
+      "realmRoles": ["TENANT_ADMIN"]
+    },
+    {
+      "username": "merchant.manager",
+      "enabled": true,
+      "firstName": "Merchant",
+      "lastName": "Manager",
+      "email": "merchant.manager@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.manager",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "MERCHANT_ALPHA_001",
+        "tenant_id": "TENANT_ALPHA"
+      },
+      "realmRoles": ["MERCHANT_MANAGER"]
+    },
+    {
+      "username": "support.agent",
+      "enabled": true,
+      "firstName": "Support",
+      "lastName": "Agent",
+      "email": "support.agent@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "support.agent",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenant_id": "PLATFORM_TENANT"
+      },
+      "realmRoles": ["SUPPORT_AGENT"]
+    },
+    {
+      "username": "readonly.user",
+      "enabled": true,
+      "firstName": "Read Only",
+      "lastName": "User",
+      "email": "readonly.user@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "readonly.user",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenant_id": "TENANT_ALPHA"
+      },
+      "realmRoles": ["READ_ONLY_USER"]
+    },
+    {
+      "username": "platform.operator",
+      "enabled": true,
+      "firstName": "Platform",
+      "lastName": "Operator (Legacy)",
+      "email": "platform.operator.legacy@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "platform.operator",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenant_id": "PLACEHOLDER_TENANT_ID"
+      },
+      "realmRoles": ["merchants:create", "merchants:read", "merchants:update-status", "PLATFORM_ADMIN"]
     }
   ]
 }

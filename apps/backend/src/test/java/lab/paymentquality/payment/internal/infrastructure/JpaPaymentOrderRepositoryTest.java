@@ -48,6 +48,9 @@ class JpaPaymentOrderRepositoryTest extends PostgresContainerSupport {
     @Autowired
     JpaMerchantRepository merchantRepository;
 
+    @Autowired
+    org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     private UUID merchantId;
 
     @BeforeEach
@@ -57,8 +60,11 @@ class JpaPaymentOrderRepositoryTest extends PostgresContainerSupport {
         paymentOrderRepository.deleteAll();
         merchantRepository.deleteAll();
 
+        UUID placeholderTenantId = jdbcTemplate.queryForObject(
+                "SELECT tenant_id FROM tenants WHERE tenant_reference = 'PLACEHOLDER_TENANT_ID'",
+                UUID.class);
         Merchant merchant = merchantRepository.saveAndFlush(
-                Merchant.create(UUID.randomUUID(), "MERCH-" + UUID.randomUUID().toString().substring(0, 8), "Test Merchant"));
+                Merchant.create(UUID.randomUUID(), "MERCH-" + UUID.randomUUID().toString().substring(0, 8), "Test Merchant", placeholderTenantId));
         merchantId = merchant.getMerchantId();
     }
 

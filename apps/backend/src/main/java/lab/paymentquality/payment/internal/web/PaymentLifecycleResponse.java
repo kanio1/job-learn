@@ -1,5 +1,6 @@
 package lab.paymentquality.payment.internal.web;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -19,7 +20,7 @@ public record PaymentLifecycleResponse(
         Instant refundedAt,
         String cancellationReason,
         String refundReason,
-        String metadata,
+        @JsonRawValue String metadata,
         Instant createdAt,
         Instant updatedAt
 ) {

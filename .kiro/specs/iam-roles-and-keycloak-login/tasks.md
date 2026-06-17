@@ -10,15 +10,15 @@ No Playwright files of any kind are created here — Playwright coverage is conc
 
 ## Tasks
 
-- [ ] 1. Keycloak realm: composite roles, tenant mapper, test users
-  - [ ] 1.1 Add composite roles and tenant-id protocol mapper
+- [x] 1. Keycloak realm: composite roles, tenant mapper, test users
+  - [x] 1.1 Add composite roles and tenant-id protocol mapper
     - EXTEND `infra/keycloak/realms/payment-quality-realm.json`
     - Under `roles.realm`, add the 5 composite roles `PLATFORM_ADMIN`, `TENANT_ADMIN`, `MERCHANT_MANAGER`, `SUPPORT_AGENT`, `READ_ONLY_USER`, each `"composite": true` with `"composites": { "realm": [...] }` exactly per the design "Composite Role Composition" table; retain all 10 raw Realm_Authority_Roles verbatim
     - Add the `tenant-id-mapper` (`oidc-usermodel-attribute-mapper`, `user.attribute`/`claim.name` = `tenant_id`, claim in access + id + userinfo) to the `payment-quality-dashboard` client `protocolMappers`, alongside the unchanged `merchant-id-mapper`
     - _Design: Data Models → Keycloak Realm Additions; Architecture → Composite Role Composition, tenant_id Claim_
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 4.1, 4.2_
 
-  - [ ] 1.2 Add deterministic test users and legacy/operator attributes
+  - [x] 1.2 Add deterministic test users and legacy/operator attributes
     - EXTEND `infra/keycloak/realms/payment-quality-realm.json` (same file as 1.1 — sequenced in a later wave)
     - Add the 5 enabled test users from the Test User Catalog (`platform.admin`, `tenant.admin`, `merchant.manager`, `support.agent`, `readonly.user`), each with a non-temporary password equal to its username, assigned **only** its single composite role (no raw role assigned directly), with `tenant_id` per catalog and `merchant_id = MERCHANT_ALPHA_001` on `merchant.manager`
     - Set `tenant_id = PLACEHOLDER_TENANT_ID` on retained legacy users carrying `merchant_id = PLACEHOLDER_MERCHANT_ID`; leave their enabled state and roles otherwise unchanged
@@ -42,15 +42,15 @@ No Playwright files of any kind are created here — Playwright coverage is conc
     - _Design: Backward-Compatibility & Refactoring Decisions → Part 1 (A) — RESOLVED, Decision 1 — DELIVERED_
     - _Requirements: 2.1, 2.3, 2.4_
 
-- [ ] 3. Shared RBAC matrix as data
-  - [ ] 3.1 Create the single-source `rbacMatrix` constant
+- [x] 3. Shared RBAC matrix as data
+  - [x] 3.1 Create the single-source `rbacMatrix` constant
     - NEW `apps/frontend/app/utils/rbacMatrix.ts`
     - Define the `CompositeRole` union and a data-only `rbacMatrix` mapping each capability (`canCreateMerchant`, `canReadMerchants`, `canUpdateMerchantStatus`, `canCreatePaymentOrder`, `canReadMerchantPayments`, `canReadPlatformPayments`, `canRunLifecycle`, `canReadAudit`) to the set of composite roles that grant it, derived from the design composition table (Decision 2 — single source of truth consumed by `useAuthorization` and its property test)
     - _Design: Backward-Compatibility & Refactoring Decisions → Decision 2; Components → Authorization Composable_
     - _Requirements: 2.5_
 
-- [ ] 4. Session role/tenant/merchant derivation
-  - [ ] 4.1 Derive SessionUser into the auth session
+- [x] 4. Session role/tenant/merchant derivation
+  - [x] 4.1 Derive SessionUser into the auth session
     - EXTEND `apps/frontend/server/routes/auth/keycloak.get.ts`
     - In `onSuccess`, derive `SessionUser { username, email?, roles[], tenantId?, merchantId? }` and store it in the **non-secure** session partition; keep `accessToken` in `secure` (server-only); set `roles[]` to the intersection of decoded `realm_access.roles` with the five composite names; read the captured post-login redirect target and redirect there, falling back to `/`
     - _Design: Components → OIDC Login Flow, Frontend Session Derivation & Confidentiality; Data Models → Frontend Session Model_
@@ -63,8 +63,8 @@ No Playwright files of any kind are created here — Playwright coverage is conc
     - **Validates: Requirements 5.5 (P9); 5.3, 8.6, 11.2 (P6)**
     - _Design: Correctness Properties → Property 9, Property 6; Testing Strategy → session-derivation test_
 
-- [ ] 5. Authorization composable
-  - [ ] 5.1 Implement `useAuthorization`
+- [x] 5. Authorization composable
+  - [x] 5.1 Implement `useAuthorization`
     - NEW `apps/frontend/app/composables/useAuthorization.ts`
     - Read `roles` from `useUserSession().user`; derive capability booleans purely from `rbacMatrix` (a capability is true iff at least one held role grants it); expose `roles`, `can`, and `hasRole`; contain no token logic
     - _Design: Components → Authorization Composable_
@@ -76,14 +76,14 @@ No Playwright files of any kind are created here — Playwright coverage is conc
     - **Validates: Requirements 2.5, 9.3**
     - _Design: Correctness Properties → Property 3; Testing Strategy → useAuthorization.property.test.ts_
 
-- [ ] 6. 401-vs-403 reaction layer
-  - [ ] 6.1 Create the auth-error reaction composable
+- [x] 6. 401-vs-403 reaction layer
+  - [x] 6.1 Create the auth-error reaction composable
     - NEW `apps/frontend/app/composables/useAuthError.ts`
     - Inspect `ApiResponse.status` after a proxied call: `401` (or missing/expired session) → trigger Auth_Required_Redirect to `/login`; `403` → route to `/forbidden` (or set a forbidden surface flag) and never redirect to login; all other statuses → unchanged behavior. Reactions are deterministic and mutually exclusive
     - _Design: Components → 401-vs-403 Decision Flow, 403 Detection in the Proxy / API Client_
     - _Requirements: 7.3, 8.1, 8.2_
 
-  - [ ] 6.2 Capture intended route and distinguish 401 in the global guard
+  - [x] 6.2 Capture intended route and distinguish 401 in the global guard
     - EXTEND `apps/frontend/app/middleware/auth.global.ts`
     - When no session, capture `to.fullPath` (e.g. `redirectTo` query param or session-cookie value) before redirecting to `/login`; treat logout-cleared sessions as unauthenticated on next protected-route access; keep the redirect distinct from the 403 forbidden surface
     - _Design: Components → 401-vs-403 Decision Flow (auth.global.ts)_
@@ -96,22 +96,22 @@ No Playwright files of any kind are created here — Playwright coverage is conc
     - **Validates: Requirements 7.2, 7.3, 8.1, 8.2 (P5); 7.4 (P8)**
     - _Design: Correctness Properties → Property 5, Property 8_
 
-- [ ] 7. Forbidden page (403 surface)
-  - [ ] 7.1 Create the `/forbidden` page
+- [x] 7. Forbidden page (403 surface)
+  - [x] 7.1 Create the `/forbidden` page
     - NEW `apps/frontend/app/pages/forbidden.vue`
     - Single semantic `<h1>`; root container `data-testid="forbidden-page"`; text (not color) stating the user is authenticated but not authorized and that it does not redirect to login; a return-to-Overview control `data-testid="forbidden-home-link"` with a preserved focus ring; render any `Authorization` header as Masked_Authorization
     - _Design: Components → 401-vs-403 Decision Flow, data-testid Plan, Accessibility_
     - _Requirements: 8.2, 8.3, 8.4, 8.5, 8.6, 10.2, 10.3, 10.6_
 
-- [ ] 8. Login page extensions
-  - [ ] 8.1 Extend the login page surfaces
+- [x] 8. Login page extensions
+  - [x] 8.1 Extend the login page surfaces
     - EXTEND `apps/frontend/app/pages/login.vue`
     - Add `data-testid="login-control"` (primary login button), `data-testid="auth-required-surface"` (root container), and `data-testid="auth-error-message"` (auth-failed message shown on `?error=keycloak`, containing no token value); move keyboard focus to the login control on mount; single semantic `<h1>`; preserve the login control focus ring
     - _Design: Components → OIDC Login Flow, data-testid Plan, Accessibility_
     - _Requirements: 5.6, 7.5, 10.2, 10.3, 10.4, 10.6_
 
-- [ ] 9. Role-aware navigation and Overview
-  - [ ] 9.1 Make sidebar links and search role-aware
+- [x] 9. Role-aware navigation and Overview
+  - [x] 9.1 Make sidebar links and search role-aware
     - EXTEND `apps/frontend/app/layouts/dashboard.vue`
     - Convert the static `links` array to a `computed` filtered by `useAuthorization().can`; derive `UDashboardSearch` `groups` from the same filtered links; add stable `data-testid` `nav-link-overview` / `nav-link-merchants` / `nav-link-payment-orders` / `nav-link-error-lab`; omit links whose capability is not granted
     - _Design: Components → Role-Aware Navigation Rendering, data-testid Plan_
@@ -142,8 +142,8 @@ No Playwright files of any kind are created here — Playwright coverage is conc
     - _Design: Components → Role-Aware Navigation Rendering, data-testid Plan, Accessibility_
     - _Requirements: 9.3, 9.4, 9.5, 9.6, 10.5_
 
-- [ ] 11. Logout control testability
-  - [ ] 11.1 Add logout control testid and focus ring
+- [x] 11. Logout control testability
+  - [x] 11.1 Add logout control testid and focus ring
     - EXTEND `apps/frontend/app/components/AppUserMenu.vue` (and confirm `apps/frontend/app/stores/auth.ts` `logout()` already clears the session then navigates to `/login` — no new store)
     - Add `data-testid="logout-control"` to the logout button; preserve its visible focus ring
     - _Design: Components → Logout, data-testid Plan, Accessibility_

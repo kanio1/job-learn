@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,9 +25,11 @@ public class MerchantService {
     private static final int LIST_LIMIT = 50;
 
     private final JpaMerchantRepository repository;
+    private final JdbcTemplate jdbcTemplate;
 
-    public MerchantService(JpaMerchantRepository repository) {
+    public MerchantService(JpaMerchantRepository repository, JdbcTemplate jdbcTemplate) {
         this.repository = repository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public Merchant create(String ref, String displayName) {
@@ -40,10 +43,16 @@ public class MerchantService {
             throw new DuplicateMerchantReferenceException(normalized);
         }
 
+        // Wave 1 bridge: look up placeholder tenant until Wave 2 provides TenantContext.
+        // Wave 2 will replace this with the real tenant resolved from the JWT claim.
+        UUID placeholderTenantId = jdbcTemplate.queryForObject(
+                "SELECT tenant_id FROM tenants WHERE tenant_reference = 'PLACEHOLDER_TENANT_ID'",
+                UUID.class);
+
         UUID id = UUID.randomUUID();
         Merchant merchant;
         try {
-            merchant = Merchant.create(id, normalized, validatedName.value());
+            merchant = Merchant.create(id, normalized, validatedName.value(), placeholderTenantId);
             repository.saveAndFlush(merchant);
         } catch (DataIntegrityViolationException e) {
             log.warn("merchant.create.failed.duplicate normalizedReference={} correlationId={}",

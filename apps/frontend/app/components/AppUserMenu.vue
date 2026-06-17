@@ -60,6 +60,7 @@ const items = computed<DropdownMenuItem[][]>(() => [[{
         label: collapsed ? undefined : user.name,
         trailingIcon: collapsed ? undefined : 'i-lucide-chevrons-up-down'
       }"
+      data-testid="logout-control"
       color="neutral"
       variant="ghost"
       block

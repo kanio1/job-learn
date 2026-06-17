@@ -232,7 +232,6 @@ public final class PaymentOrderApi {
                 .when()
                     .patch(ApiPaths.paymentOrder(), merchantId, paymentOrderId)
                 .then();
-        }
     }
 
     public ValidatableResponse patchOrdeerMetadataWithoutIfMatch(
@@ -251,6 +250,22 @@ public final class PaymentOrderApi {
             .body(body)
         .when()
             .patch(ApiPaths.paymentOrder(), merchantId, paymentOrderId)
+        .then();
+    }
+
+    public ValidatableResponse readOrderWithIfNoneMatch(
+        String merchantId,
+        String paymentOrderId,
+        String token,
+        String ifNoneMatch
+    ) {
+        return given()
+            .port(port)
+            .auth().oauth2(token)
+            .accept(ContentType.JSON)
+            .header(ApiHeaders.IF_NONE_MATCH, ifNoneMatch)
+        .when()
+            .get(ApiPaths.paymentOrder(), merchantId, paymentOrderId)
         .then();
     }
 }

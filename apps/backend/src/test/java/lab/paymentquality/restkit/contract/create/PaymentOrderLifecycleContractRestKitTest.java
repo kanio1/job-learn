@@ -450,7 +450,7 @@ public class PaymentOrderLifecycleContractRestKitTest extends PostgresContainerS
 
         String merchantId = merchantApi.createActiveMerchantAndReturnId("patch-metadata-current-if-match");
         String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
-        String operatorToken = TestJwtSupport.merchantPaymentOperatorToken(merchantId);
+        String lifecycleToken = TestJwtSupport.merchantPaymentLifecycleToken(merchantId);
 
         String reference = PaymentReferences.unique("patch-metadata-current-if-match");
         CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
@@ -489,7 +489,7 @@ public class PaymentOrderLifecycleContractRestKitTest extends PostgresContainerS
         Response response = paymentOrderApi.patchOrderMetadata(
             merchantId,
             paymentOrderId,
-            operatorToken,
+            lifecycleToken,
             metadataPatch,
             currentEtag,
             patchCorrelationId
@@ -523,7 +523,7 @@ public class PaymentOrderLifecycleContractRestKitTest extends PostgresContainerS
 
         String merchantId = merchantApi.createActiveMerchantAndReturnId("patch-metadata-missing-if-match");
         String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
-        String operatorToken = TestJwtSupport.merchantPaymentOperatorToken(merchantId);
+        String lifecycleToken = TestJwtSupport.merchantPaymentLifecycleToken(merchantId);
 
         String reference = PaymentReferences.unique("patch-metadata-missing-if-match");
         CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
@@ -554,7 +554,7 @@ public class PaymentOrderLifecycleContractRestKitTest extends PostgresContainerS
         Response response = paymentOrderApi.patchOrdeerMetadataWithoutIfMatch(
             merchantId,
             paymentOrderId,
-            operatorToken,
+            lifecycleToken,
             metadataPatch,
             CorrelationIds.forScenario("patch-metadata-missing-if-match")
         )
@@ -578,7 +578,7 @@ public class PaymentOrderLifecycleContractRestKitTest extends PostgresContainerS
 
         String merchantId = merchantApi.createActiveMerchantAndReturnId("patch-metadata-malformed-if-match");
         String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
-        String operatorToken = TestJwtSupport.merchantPaymentOperatorToken(merchantId);
+        String lifecycleToken = TestJwtSupport.merchantPaymentLifecycleToken(merchantId);
 
         String reference = PaymentReferences.unique("patch-metadata-malformed-if-match");
         CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
@@ -610,7 +610,7 @@ public class PaymentOrderLifecycleContractRestKitTest extends PostgresContainerS
         Response response = paymentOrderApi.patchOrderMetadata(
                 merchantId,
                 paymentOrderId,
-                operatorToken,
+                lifecycleToken,
                 metadataPatch,
                 malformedIfMatch,
                 CorrelationIds.forScenario("patch-metadata-malformed-if-match")
@@ -634,7 +634,7 @@ public class PaymentOrderLifecycleContractRestKitTest extends PostgresContainerS
 
         String merchantId = merchantApi.createActiveMerchantAndReturnId("patch-metadata-stale-if-match");
         String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
-        String operatorToken = TestJwtSupport.merchantPaymentOperatorToken(merchantId);
+        String lifecycleToken = TestJwtSupport.merchantPaymentLifecycleToken(merchantId);
 
         String reference = PaymentReferences.unique("patch-metadata-stale-if-match");
         CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
@@ -666,7 +666,7 @@ public class PaymentOrderLifecycleContractRestKitTest extends PostgresContainerS
         ExtractableResponse<Response> firstPatched = paymentOrderApi.patchOrderMetadata(
                 merchantId,
                 paymentOrderId,
-                operatorToken,
+                lifecycleToken,
                 firstPatch,
                 staleEtag,
                 CorrelationIds.forScenario("patch-metadata-stale-if-match-first")
@@ -694,7 +694,7 @@ public class PaymentOrderLifecycleContractRestKitTest extends PostgresContainerS
         Response response = paymentOrderApi.patchOrderMetadata(
                 merchantId,
                 paymentOrderId,
-                operatorToken,
+                lifecycleToken,
                 secondPatch,
                 staleEtag,
                 CorrelationIds.forScenario("patch-metadata-stale-if-match-second")

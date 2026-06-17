@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class MetadataPatchRequest {
 
@@ -21,6 +22,29 @@ public final class MetadataPatchRequest {
 
     public Map<String, String> metadata() {
         return metadata;
+    }
+
+    /**
+     * Serializes the metadata map as a JSON object string.
+     * Returns null when metadata is null.
+     */
+    public String metadataAsJson() {
+        if (metadata == null) {
+            return null;
+        }
+        String entries = metadata.entrySet().stream()
+                .map(e -> "\"" + escapeJson(e.getKey()) + "\":\"" + escapeJson(e.getValue()) + "\"")
+                .collect(Collectors.joining(","));
+        return "{" + entries + "}";
+    }
+
+    private static String escapeJson(String value) {
+        return value == null ? "" : value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 
     @JsonAnySetter

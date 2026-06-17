@@ -158,6 +158,71 @@ public final class TestJwtSupport {
         }
     }
 
+    public static String tokenWithRolesAndTenantId(String subject, List<String> roles, String tenantId) {
+        try {
+            Instant now = Instant.now();
+            JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                    .issuer(ISSUER)
+                    .subject(subject)
+                    .issueTime(Date.from(now))
+                    .expirationTime(Date.from(now.plusSeconds(3600)))
+                    .claim("realm_access", Map.of("roles", roles))
+                    .claim("tenant_id", tenantId)
+                    .claim("azp", EXPECTED_AZP)
+                    .build();
+            SignedJWT jwt = new SignedJWT(
+                    new JWSHeader.Builder(JWSAlgorithm.RS256).keyID("test-key-1").build(),
+                    claims);
+            jwt.sign(new RSASSASigner((RSAPrivateKey) KEY_PAIR.getPrivate()));
+            return jwt.serialize();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create tenant-scoped test JWT", e);
+        }
+    }
+
+    public static String tokenWithRolesTenantIdAndMerchantId(String subject, List<String> roles,
+                                                              String tenantId, String merchantId) {
+        try {
+            Instant now = Instant.now();
+            JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                    .issuer(ISSUER)
+                    .subject(subject)
+                    .issueTime(Date.from(now))
+                    .expirationTime(Date.from(now.plusSeconds(3600)))
+                    .claim("realm_access", Map.of("roles", roles))
+                    .claim("tenant_id", tenantId)
+                    .claim("merchant_id", merchantId)
+                    .claim("azp", EXPECTED_AZP)
+                    .build();
+            SignedJWT jwt = new SignedJWT(
+                    new JWSHeader.Builder(JWSAlgorithm.RS256).keyID("test-key-1").build(),
+                    claims);
+            jwt.sign(new RSASSASigner((RSAPrivateKey) KEY_PAIR.getPrivate()));
+            return jwt.serialize();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create tenant+merchant scoped test JWT", e);
+        }
+    }
+
+    public static String platformAdminToken() {
+        return tokenWithRolesAndTenantId("platform.admin",
+                List.of("merchants:create", "merchants:read", "merchants:update-status",
+                        "platform:payments:read", "platform:payments:lifecycle", "platform:payments:audit"),
+                "PLATFORM_TENANT");
+    }
+
+    public static String tenantAdminToken() {
+        return tokenWithRolesAndTenantId("tenant.admin",
+                List.of("merchants:create", "merchants:read", "merchants:update-status",
+                        "merchant:payments:read"),
+                "TENANT_ALPHA");
+    }
+
+    public static String tokenWithoutTenantClaim() {
+        // For the "no tenant_id claim → 403" scenario
+        return tokenWithRoles("no.tenant.claim", List.of("merchants:read"));
+    }
+
     public static String tokenWithWrongAuthorizedParty() {
         try {
             Instant now = Instant.now();

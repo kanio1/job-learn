@@ -364,7 +364,7 @@ public class PaymentOrderController {
         verifyMerchantOwnership(merchantId, jwt, authentication);
         request.requireOnlyMetadataTopLevelField();
         long expectedVersion = PaymentEtag.requireVersion(ifMatch);
-        String metadataJson = request.metadata() != null ? request.metadata().toString() : null;
+        String metadataJson = request.metadataAsJson();
         PaymentOrder order = paymentLifecycleService.updateMetadata(merchantId, paymentOrderId, metadataJson, expectedVersion);
 
         return lifecycleResponse(order);

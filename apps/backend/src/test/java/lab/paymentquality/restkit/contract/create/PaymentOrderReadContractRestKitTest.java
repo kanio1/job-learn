@@ -19,6 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import io.restassured.http.ContentType;
+import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import lab.paymentquality.restkit.assertions.HeaderAssertions;
 import lab.paymentquality.restkit.assertions.ProblemDetailsAssertions;
@@ -296,4 +297,49 @@ public class PaymentOrderReadContractRestKitTest  extends PostgresContainerSuppo
         HeaderAssertions.assertVaryContainsAuthorization(response);
         HeaderAssertions.assertAcceptPatchMergePatchJson(response);
     }
+
+    @Test
+    void readPaymentOrderWithMatchingIfNoneMatchReturns304WithoutBody() {
+        MerchantApi merchantApi = new MerchantApi(port);
+        PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
+
+        String merchantId = merchantApi.createActiveMerchantAndReturnId("read-if-none-match-304");
+        String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+        String readerToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        String reference = PaymentReferences.unique("read-if-none-match-304");
+        CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
+
+        ExtractableResponse<Response> created = paymentOrderApi.createOrder(
+                merchantId,
+                creatorToken,
+                payload,
+                IdempotencyKeys.forScenario("read-if-none-match-304-create"),
+                CorrelationIds.forScenario("read-if-none-match-304-create")
+            )
+            .statusCode(201)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("paymentOrderId", notNullValue())
+            .body("status", equalTo("CREATED"))
+            .extract();
+
+        String paymentOrderId = created.path("paymentOrderId");
+        String currentEtag = created.header(ApiHeaders.ETAG);
+
+        Response response = paymentOrderApi.readOrderWithIfNoneMatch(
+                merchantId,
+                paymentOrderId,
+                readerToken,
+                currentEtag
+            )
+            .statusCode(304)
+            .header(ApiHeaders.ETAG, equalTo(currentEtag))
+            .extract()
+            .response();
+
+        assertThat(response.asString())
+            .as("304 Not Modified should not contain response body")
+            .isBlank();
+}
 }
