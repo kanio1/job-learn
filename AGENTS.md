@@ -117,6 +117,15 @@ Payment orders:
 - Keep REST contracts stable unless the spec requires a contract change.
 - Use Flyway for schema changes and keep JPA mappings consistent with migrations.
 - Do not add dependencies without explicit need and approval.
+
+## Frontend / UI/UX Work
+
+For frontend/UI/UX design and review, follow:
+- `.kiro/steering/frontend-nuxt-ui.md` — Nuxt UI Dashboard patterns, component map, a11y/testability baseline
+- `.kiro/steering/modern-web-guidance.md` — invoke with `#modern-web-guidance` for advisory web platform guidance
+
+Before any frontend-heavy spec (user-management, audit-log-dashboard, etc.), run the
+review gate: `docs/ai/modern-web-guidance-spec-review-gate.md`.
 - Do not modify production source or existing tests for Codex setup tasks.
 
 ## Review Rules

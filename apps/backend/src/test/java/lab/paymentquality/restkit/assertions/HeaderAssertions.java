@@ -18,7 +18,8 @@ public class HeaderAssertions {
     }
 
     public static void assertVaryContainsAuthorization(Response response) {
-        assertThat(response.header(ApiHeaders.VARY))
+        String allVaryValues = String.join(", ", response.headers().getValues("Vary"));
+        assertThat(allVaryValues)
         .as("Vary should contain Authorization because payment responses depend on caller identity")
         .contains(ApiHeaders.AUTHORIZATION);
     }
@@ -48,7 +49,8 @@ public class HeaderAssertions {
     }
 
     public static void assertVaryContainsIfMatch(Response response) {
-        assertThat(response.header(ApiHeaders.VARY))
+        String allVaryValues = String.join(", ", response.headers().getValues("Vary"));
+        assertThat(allVaryValues)
         .as("Vary should contain If-Match because lifecycle responses depend on precondition headers")
         .contains(ApiHeaders.IF_MATCH);
     }

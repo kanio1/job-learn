@@ -18,6 +18,7 @@ import java.util.Map;
 public final class TestJwtSupport {
 
     public static final String ISSUER = "http://localhost:9000/test-issuer";
+    public static final String EXPECTED_AZP = "payment-quality-dashboard";
     private static final KeyPair KEY_PAIR = generateKeyPair();
 
     private TestJwtSupport() {
@@ -43,6 +44,7 @@ public final class TestJwtSupport {
                     .issueTime(Date.from(now))
                     .expirationTime(Date.from(now.plusSeconds(3600)))
                     .claim("realm_access", Map.of("roles", roles))
+                    .claim("azp", EXPECTED_AZP)
                     .build();
 
             SignedJWT jwt = new SignedJWT(
@@ -64,6 +66,7 @@ public final class TestJwtSupport {
                     .issueTime(Date.from(now.minusSeconds(7200)))
                     .expirationTime(Date.from(now.minusSeconds(3600)))
                     .claim("realm_access", Map.of("roles", List.of("merchants:read")))
+                    .claim("azp", EXPECTED_AZP)
                     .build();
             SignedJWT jwt = new SignedJWT(new JWSHeader(JWSAlgorithm.RS256), claims);
             jwt.sign(new RSASSASigner((RSAPrivateKey) KEY_PAIR.getPrivate()));
@@ -90,6 +93,7 @@ public final class TestJwtSupport {
                     .issueTime(Date.from(now))
                     .expirationTime(Date.from(now.plusSeconds(3600)))
                     .claim("realm_access", Map.of("roles", roles))
+                    .claim("azp", EXPECTED_AZP)
                     .build();
             SignedJWT jwt = new SignedJWT(new JWSHeader(JWSAlgorithm.RS256), claims);
             jwt.sign(new RSASSASigner((RSAPrivateKey) KEY_PAIR.getPrivate()));
@@ -114,6 +118,11 @@ public final class TestJwtSupport {
                 List.of("merchant:payments:operate"), merchantId);
     }
 
+    public static String merchantPaymentLifecycleToken(String merchantId) {
+        return tokenWithRolesAndMerchantId("merchant.payment.lifecycle",
+                List.of("merchant:payments:lifecycle"), merchantId);
+    }
+
     public static String platformPaymentReaderToken() {
         return tokenWithRoles("platform.payment.reader", List.of("platform:payments:read"));
     }
@@ -136,6 +145,7 @@ public final class TestJwtSupport {
                     .expirationTime(Date.from(now.plusSeconds(3600)))
                     .claim("realm_access", Map.of("roles", roles))
                     .claim("merchant_id", merchantId)
+                    .claim("azp", EXPECTED_AZP)
                     .build();
 
             SignedJWT jwt = new SignedJWT(
@@ -145,6 +155,27 @@ public final class TestJwtSupport {
             return jwt.serialize();
         } catch (Exception e) {
             throw new IllegalStateException("Failed to create merchant-scoped test JWT", e);
+        }
+    }
+
+    public static String tokenWithWrongAuthorizedParty() {
+        try {
+            Instant now = Instant.now();
+            JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                    .issuer(ISSUER)
+                    .subject("wrong.azp.client")
+                    .issueTime(Date.from(now))
+                    .expirationTime(Date.from(now.plusSeconds(3600)))
+                    .claim("realm_access", Map.of("roles", List.of("merchants:read")))
+                    .claim("azp", "some-other-client")
+                    .build();
+            SignedJWT jwt = new SignedJWT(
+                    new JWSHeader.Builder(JWSAlgorithm.RS256).keyID("test-key-1").build(),
+                    claims);
+            jwt.sign(new RSASSASigner((RSAPrivateKey) KEY_PAIR.getPrivate()));
+            return jwt.serialize();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create wrong-azp test JWT", e);
         }
     }
 

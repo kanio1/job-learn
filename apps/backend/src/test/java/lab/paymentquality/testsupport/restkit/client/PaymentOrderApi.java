@@ -42,7 +42,7 @@ public final class PaymentOrderApi {
         Object body,
         String idempotencyKey,
         String correlationId
-) {
+    ) {
         return given()
             .port(port)
             .auth().oauth2(token)
@@ -146,7 +146,7 @@ public final class PaymentOrderApi {
         .then();
     }
 
-    public ValidatableResponse authorizeOrdeerWithoutIfMatch(
+    public ValidatableResponse authorizeOrderWithoutIfMatch(
         String merchantId,
         String paymentOrderId,
         String token,
@@ -161,11 +161,99 @@ public final class PaymentOrderApi {
             .accept(ContentType.JSON)
             .header(ApiHeaders.IDEMPOTENCY_KEY, idempotencyKey)
             .header(ApiHeaders.X_CORRELATION_ID, correlationId)
-            .body(correlationId)
+            .body(body)
         .when()
             .post(ApiPaths.paymentOrderLifecycleAction("authorize"), merchantId, paymentOrderId)
         .then();
     }
 
+    public ValidatableResponse captureOrder(
+        String merchantId,
+        String paymentOrderId,
+        String token,
+        Object body,
+        String idempotencyKey,
+        String ifMatch,
+        String correlationId
+    ) {
+        return given()
+            .port(port)
+            .auth().oauth2(token)
+            .contentType(ContentType.JSON)
+            .accept(ContentType.JSON)
+            .header(ApiHeaders.IDEMPOTENCY_KEY, idempotencyKey)
+            .header(ApiHeaders.IF_MATCH, ifMatch)
+            .header(ApiHeaders.X_CORRELATION_ID, correlationId)
+            .body(body)
+        .when()
+            .post(ApiPaths.paymentOrderLifecycleAction("capture"), merchantId, paymentOrderId)
+        .then();
+    }
 
+    public ValidatableResponse refundOrder(
+        String merchantId,
+        String paymentOrderId,
+        String token,
+        Object body,
+        String idempotencyKey,
+        String ifMatch,
+        String correlationId
+    ) {
+        return given()
+            .port(port)
+            .auth().oauth2(token)
+            .contentType(ContentType.JSON)
+            .accept(ContentType.JSON)
+            .header(ApiHeaders.IDEMPOTENCY_KEY, idempotencyKey)
+            .header(ApiHeaders.IF_MATCH, ifMatch)
+            .header(ApiHeaders.X_CORRELATION_ID, correlationId)
+            .body(body)
+        .when()
+            .post(ApiPaths.paymentOrderLifecycleAction("refund"), merchantId, paymentOrderId)
+        .then();
+    }
+
+    public ValidatableResponse patchOrderMetadata(
+        String merchantId,
+        String paymentOrderId,
+        String token,
+        Object body,
+        String ifMatch,
+        String correlationId
+        ) {
+                return given()
+                    .port(port)
+                    .auth().oauth2(token)
+                    .contentType("application/merge-patch+json")
+                    .accept(ContentType.JSON)
+                    .header(ApiHeaders.IF_MATCH, ifMatch)
+                    .header(ApiHeaders.X_CORRELATION_ID, correlationId)
+                    .body(body)
+                .when()
+                    .patch(ApiPaths.paymentOrder(), merchantId, paymentOrderId)
+                .then();
+        }
+    }
+
+    public ValidatableResponse patchOrdeerMetadataWithoutIfMatch(
+        String merchantId,
+        String paymentOrderId,
+        String token,
+        Object body,
+        String correlationId
+    ) {
+        return given()
+            .port(port)
+            .auth().oauth2(token)
+            .contentType("application/merge-patch+json")
+            .accept(ContentType.JSON)
+            .header(ApiHeaders.X_CORRELATION_ID, correlationId)
+            .body(body)
+        .when()
+            .patch(ApiPaths.paymentOrder(), merchantId, paymentOrderId)
+        .then();
+    }
 }
+
+
+

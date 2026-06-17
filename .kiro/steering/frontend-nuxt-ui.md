@@ -227,3 +227,73 @@ Supporting ids: `error-lab-trigger-{status}`, `idempotency-key-input`, `if-match
 - Use `$fetch.raw` wherever response headers matter.
 - Do not render any data that has not passed its Zod schema.
 - Keep each change small and reviewable. One concern per commit.
+
+---
+
+## Accessibility and Testability Baseline
+
+These rules apply to every new or extended component. They are the minimum
+required so that future Playwright tests can use stable, semantic locators
+without retrofitting.
+
+### Locator strategy (preferred order)
+1. `getByRole()` — semantic HTML role + accessible name (most stable)
+2. `getByLabel()` — input label association
+3. `getByText()` — visible text content
+4. `data-testid` — only when the above are insufficient or ambiguous
+
+### Labels and input association
+- Every `UInput`, `USelect`, `UTextarea` must be wrapped in `UFormField` with
+  a visible `label`. Placeholder text is not a label.
+- Error messages must use `aria-invalid="true"` on the input and the
+  `UFormField` error slot to associate the message with the control.
+
+### Focus management
+- `UModal` and `USlideover` must trap focus when open and return focus to the
+  trigger element when closed. Never suppress Nuxt UI defaults for this.
+- `UPopover` and `UDropdownMenu` must close on `Escape` and return focus.
+- On page navigation or dynamic content injection, focus must move to the
+  primary heading or first interactive element of the new content region.
+
+### Keyboard navigation
+- All primary user actions must be completable without a mouse.
+- Sortable table column headers must be `<button>` elements (not `<div>` with
+  `@click`), enabling keyboard activation.
+- `USelectMenu` (combobox) must be fully keyboard-navigable with Up/Down,
+  Enter, and Escape.
+
+### Status and states
+- Status badges (`UBadge`) must convey meaning through visible text, not color
+  alone. `aria-label` is required when the badge is icon-only.
+- Every primary screen must implement all required states:
+  `loading`, `empty`, `error`, `filtered-empty`, `forbidden (403)`, `success`.
+- Every error state for a problem+json response must use `ProblemDetailsCard`
+  with `role="alert"` or `UAlert`.
+
+### Tables
+- `UTable` must have `<th>` with `scope="col"` for column headers.
+- Sortable columns use `<button>` in the header cell with `aria-sort`.
+- Row-level actions must have accessible names (not icon-only buttons).
+
+### Focus rings
+- Never add CSS that removes `:focus-visible` outlines on interactive elements.
+  Nuxt UI's default focus rings must be preserved.
+
+### Reduced motion
+- Respect `prefers-reduced-motion`. Nuxt UI / Tailwind 4 handles this for
+  built-in transitions. For any custom CSS animation, add a `@media
+  (prefers-reduced-motion: reduce)` guard.
+
+---
+
+## Modern Web Guidance (Advisory)
+
+For frontend-heavy specs (user-management, audit-log-dashboard, file-import-export,
+bulk-actions, etc.), invoke `#modern-web-guidance` before writing requirements
+to get advisory web platform guidance on accessibility, layout, performance, and
+browser compatibility.
+
+See:
+- `.kiro/steering/modern-web-guidance.md` — when/how to call it, CLI, safety
+- `docs/ai/modern-web-guidance-spec-review-gate.md` — review gate checklist
+- `docs/ai/modern-web-guidance-kiro-workflow.md` — full workflow

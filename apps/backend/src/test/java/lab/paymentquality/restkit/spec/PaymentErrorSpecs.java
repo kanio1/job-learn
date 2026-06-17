@@ -50,4 +50,14 @@ public final class PaymentErrorSpecs {
         return problem(428);
     }
 
+    public static ResponseSpecification malformedIfMatch() {
+        return problem(400);
+    }
+
+    public static ResponseSpecification preconditionFailed() {
+        return problem(412);
+    }
+
+
+
 }

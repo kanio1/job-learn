@@ -1,6 +1,7 @@
 package lab.paymentquality.merchant.internal.web;
 
 import lab.paymentquality.merchant.internal.application.MerchantService;
+import lab.paymentquality.shared.security.Authorities;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ public class MerchantController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('platform:merchants:create')")
+    @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_CREATE + "')")
     public ResponseEntity<MerchantResponse> create(@Valid @RequestBody CreateMerchantRequest request) {
         var merchant = merchantService.create(request.merchantReference(), request.displayName());
         var response = MerchantMapper.toResponse(merchant);
@@ -28,7 +29,7 @@ public class MerchantController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('platform:merchants:read')")
+    @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_READ + "')")
     public ResponseEntity<MerchantResponse> getById(@PathVariable String id) {
         UUID uuid = parseUUID(id);
         var response = merchantService.findById(uuid);
@@ -36,14 +37,14 @@ public class MerchantController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('platform:merchants:read')")
+    @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_READ + "')")
     public ResponseEntity<MerchantListResponse> list() {
         var merchants = merchantService.listFirstPage();
         return ResponseEntity.ok(new MerchantListResponse(merchants));
     }
 
     @PostMapping("/{id}/activate")
-    @PreAuthorize("hasAuthority('platform:merchants:update-status')")
+    @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_UPDATE_STATUS + "')")
     public ResponseEntity<MerchantResponse> activate(@PathVariable String id) {
         UUID uuid = parseUUID(id);
         var response = merchantService.activate(uuid);
@@ -51,7 +52,7 @@ public class MerchantController {
     }
 
     @PostMapping("/{id}/suspend")
-    @PreAuthorize("hasAuthority('platform:merchants:update-status')")
+    @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_UPDATE_STATUS + "')")
     public ResponseEntity<MerchantResponse> suspend(@PathVariable String id) {
         UUID uuid = parseUUID(id);
         var response = merchantService.suspend(uuid);

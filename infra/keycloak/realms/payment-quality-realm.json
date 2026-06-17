@@ -14,7 +14,65 @@
       {"name": "merchant:payments:lifecycle"},
       {"name": "platform:payments:read"},
       {"name": "platform:payments:lifecycle"},
-      {"name": "platform:payments:audit"}
+      {"name": "platform:payments:audit"},
+      {
+        "name": "PLATFORM_ADMIN",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "merchants:create",
+            "merchants:read",
+            "merchants:update-status",
+            "platform:payments:read",
+            "platform:payments:lifecycle",
+            "platform:payments:audit"
+          ]
+        }
+      },
+      {
+        "name": "TENANT_ADMIN",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "merchants:create",
+            "merchants:read",
+            "merchants:update-status",
+            "merchant:payments:read"
+          ]
+        }
+      },
+      {
+        "name": "MERCHANT_MANAGER",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "merchant:payments:create",
+            "merchant:payments:read",
+            "merchant:payments:lifecycle"
+          ]
+        }
+      },
+      {
+        "name": "SUPPORT_AGENT",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "merchants:read",
+            "platform:payments:read",
+            "platform:payments:audit"
+          ]
+        }
+      },
+      {
+        "name": "READ_ONLY_USER",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "merchants:read",
+            "platform:payments:read"
+          ]
+        }
+      }
     ]
   },
   "clients": [
@@ -39,6 +97,20 @@
           "config": {
             "user.attribute": "merchant_id",
             "claim.name": "merchant_id",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "tenant-id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
             "jsonType.label": "String",
             "id.token.claim": "true",
             "access.token.claim": "true",
