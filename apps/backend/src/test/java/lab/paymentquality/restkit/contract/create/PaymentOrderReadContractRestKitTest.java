@@ -7,6 +7,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -341,5 +343,143 @@ public class PaymentOrderReadContractRestKitTest  extends PostgresContainerSuppo
         assertThat(response.asString())
             .as("304 Not Modified should not contain response body")
             .isBlank();
-}
+    }
+
+    @Test
+    void readPaymentOrderReturnsNoStoreCacheControlForSensitivePaymentData() {
+        MerchantApi merchantApi = new MerchantApi(port);
+        PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
+
+        String merchantId = merchantApi.createActiveMerchantAndReturnId("read-no-store");
+        String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+        String readerToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        String reference = PaymentReferences.unique("read-no-store");
+        CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
+
+        ExtractableResponse<Response> created = paymentOrderApi.createOrder(
+                merchantId,
+                creatorToken,
+                payload,
+                IdempotencyKeys.forScenario("read-no-store-create"),
+                CorrelationIds.forScenario("read-no-store-create")
+            )
+            .statusCode(201)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("paymentOrderId", notNullValue())
+            .extract();
+
+        String paymentOrderId = created.path("paymentOrderId");
+
+        Response response = paymentOrderApi.readOrder(
+                merchantId,
+                paymentOrderId,
+                readerToken
+            )
+            .statusCode(200)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("paymentOrderId", equalTo(paymentOrderId))
+            .body("merchantId", equalTo(merchantId))
+            .body("amountMinor", equalTo(12500))
+            .body("currency", equalTo("PLN"))
+            .extract()
+            .response();
+
+        HeaderAssertions.assertSensitiveResponseIsNotCacheable(response);
+        HeaderAssertions.assertVaryContainsAuthorization(response);
+    }
+
+    @Test
+    void notAcceptableProblemResponseReturnsNoStoreCacheControl() {
+        MerchantApi merchantApi = new MerchantApi(port);
+        PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
+
+        String merchantId = merchantApi.createActiveMerchantAndReturnId("problem-no-store");
+        String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+        String readerToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        String reference = PaymentReferences.unique("problem-no-store");
+        CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
+
+        ExtractableResponse<Response> created = paymentOrderApi.createOrder(
+                merchantId,
+                creatorToken,
+                payload,
+                IdempotencyKeys.forScenario("problem-no-store-create"),
+                CorrelationIds.forScenario("problem-no-store-create")
+            )
+            .statusCode(201)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("paymentOrderId", notNullValue())
+            .extract();
+
+        String paymentOrderId = created.path("paymentOrderId");
+
+        Response response = paymentOrderApi.readOrderWithAccept(
+                merchantId,
+                paymentOrderId,
+                readerToken,
+                "application/xml"
+            )
+            .spec(PaymentErrorSpecs.notAcceptable())
+            .header(ApiHeaders.X_CORRELATION_ID, notNullValue())
+            .extract()
+            .response();
+
+        ProblemDetailsAssertions.assertSafeProblem(response);
+        ProblemDetailsAssertions.assertProblemError(response, "not_acceptable");
+        HeaderAssertions.assertSensitiveResponseIsNotCacheable(response);
+        HeaderAssertions.assertVaryContainsAuthorization(response);
+    }
+    @Test
+    void authorizePaymentOrderReturnsNoStoreCacheControlForMutationResponse() {
+        MerchantApi merchantApi = new MerchantApi(port);
+        PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
+
+        String merchantId = merchantApi.createActiveMerchantAndReturnId("authorize-no-store");
+        String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+        String operatorToken = TestJwtSupport.merchantPaymentOperatorToken(merchantId);
+
+        String reference = PaymentReferences.unique("authorize-no-store");
+        CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
+
+        ExtractableResponse<Response> created = paymentOrderApi.createOrder(
+                merchantId,
+                creatorToken,
+                payload,
+                IdempotencyKeys.forScenario("authorize-no-store-create"),
+                CorrelationIds.forScenario("authorize-no-store-create")
+            )
+            .statusCode(201)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("paymentOrderId", notNullValue())
+            .extract();
+
+        String paymentOrderId = created.path("paymentOrderId");
+        String currentEtag = created.header(ApiHeaders.ETAG);
+
+        Response response = paymentOrderApi.authorizeOrder(
+                merchantId,
+                paymentOrderId,
+                operatorToken,
+                Map.of("reason", "cache-control-no-store"),
+                IdempotencyKeys.forScenario("authorize-no-store-command"),
+                currentEtag,
+                CorrelationIds.forScenario("authorize-no-store-command")
+            )
+            .statusCode(200)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("status", equalTo("AUTHORIZED"))
+            .extract()
+            .response();
+
+        HeaderAssertions.assertSensitiveResponseIsNotCacheable(response);
+        HeaderAssertions.assertVaryContainsAuthorization(response);
+        HeaderAssertions.assertVaryContainsIfMatch(response);
+    }
 }

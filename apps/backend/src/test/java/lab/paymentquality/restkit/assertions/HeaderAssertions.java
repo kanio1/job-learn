@@ -62,5 +62,9 @@ public class HeaderAssertions {
         assertVaryContainsIfMatch(response);
     }
 
+    public static void assertSensitiveResponseIsNotCacheable(Response response) {
+        assertNoStore(response);
+    }
+
 
 }

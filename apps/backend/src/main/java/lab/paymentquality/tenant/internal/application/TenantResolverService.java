@@ -12,6 +12,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 class TenantResolverService implements TenantResolver {
 
@@ -44,5 +46,14 @@ class TenantResolverService implements TenantResolver {
                 TenantReference.of(tenant.getTenantReference()),
                 isPlatform
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UUID resolveTenantId(TenantReference tenantReference) {
+        return repository.findByTenantReference(tenantReference.value())
+                .map(Tenant::getTenantId)
+                .orElseThrow(() ->
+                        new TenantResolutionException("Tenant reference could not be resolved"));
     }
 }

@@ -25,10 +25,11 @@ public final class TestJwtSupport {
     }
 
     public static String platformOperatorToken() {
-        return tokenWithRoles("platform.operator", List.of(
+        return tokenWithRolesAndTenantId("platform.operator", List.of(
                 "merchants:create",
                 "merchants:read",
-                "merchants:update-status"));
+                "merchants:update-status"),
+                "PLACEHOLDER_TENANT_ID");
     }
 
     public static String deniedToken() {

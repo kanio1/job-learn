@@ -3,6 +3,10 @@ package lab.paymentquality.merchant.internal.application;
 import lab.paymentquality.merchant.internal.domain.*;
 import lab.paymentquality.merchant.internal.infrastructure.JpaMerchantRepository;
 import lab.paymentquality.merchant.internal.web.DuplicateMerchantReferenceException;
+import lab.paymentquality.tenant.TenantContext;
+import lab.paymentquality.tenant.TenantReference;
+import lab.paymentquality.tenant.TenantResolutionException;
+import lab.paymentquality.tenant.TenantResolver;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -11,9 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,21 +33,28 @@ class MerchantServiceTest {
     private JpaMerchantRepository repository;
 
     @Mock
-    private JdbcTemplate jdbcTemplate;
+    private TenantResolver tenantResolver;
 
     @InjectMocks
     private MerchantService service;
 
     private static final UUID PLACEHOLDER_TENANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000099");
+    private static final UUID TENANT_ALPHA_ID = UUID.fromString("00000000-0000-0000-0000-0000000000aa");
+    private static final UUID TENANT_BETA_ID = UUID.fromString("00000000-0000-0000-0000-0000000000bb");
+    private static final UUID PLATFORM_TENANT_ID = UUID.fromString("00000000-0000-0000-0000-0000000000ff");
+    private static final TenantContext TENANT_ALPHA_CONTEXT =
+            new TenantContext(TENANT_ALPHA_ID, TenantReference.of("TENANT_ALPHA"), false);
+    private static final TenantContext PLATFORM_CONTEXT =
+            new TenantContext(PLATFORM_TENANT_ID, TenantReference.of("PLATFORM_TENANT"), true);
 
-    private void stubPlaceholderTenant() {
-        when(jdbcTemplate.queryForObject(anyString(), eq(UUID.class)))
+    private void stubDefaultTenant() {
+        when(tenantResolver.resolveTenantId(TenantReference.of("PLACEHOLDER_TENANT_ID")))
                 .thenReturn(PLACEHOLDER_TENANT_ID);
     }
 
     @Test
     void createValidMerchantReturnsDraft() {
-        stubPlaceholderTenant();
+        stubDefaultTenant();
         when(repository.findByNormalizedReference("MERCH-001")).thenReturn(Optional.empty());
         when(repository.saveAndFlush(any(Merchant.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -53,6 +63,7 @@ class MerchantServiceTest {
         assertThat(merchant.getStatus()).isEqualTo(MerchantStatus.DRAFT);
         assertThat(merchant.getNormalizedReference()).isEqualTo("MERCH-001");
         assertThat(merchant.getDisplayName()).isEqualTo("Test Merchant");
+        assertThat(merchant.getTenantId()).isEqualTo(PLACEHOLDER_TENANT_ID);
         verify(repository).saveAndFlush(any(Merchant.class));
     }
 
@@ -74,13 +85,51 @@ class MerchantServiceTest {
 
     @Test
     void createDataIntegrityViolationTranslated() {
-        stubPlaceholderTenant();
+        stubDefaultTenant();
         when(repository.findByNormalizedReference("MERCH-001")).thenReturn(Optional.empty());
         when(repository.saveAndFlush(any(Merchant.class)))
                 .thenThrow(new DataIntegrityViolationException("unique constraint"));
 
         assertThatThrownBy(() -> service.create("MERCH-001", "Test"))
                 .isInstanceOf(DuplicateMerchantReferenceException.class);
+    }
+
+    @Test
+    void tenantScopedCreateAssignsPrincipalTenantAndIgnoresRequestTenantReference() {
+        when(repository.findByNormalizedReference("MERCH-001")).thenReturn(Optional.empty());
+        when(repository.saveAndFlush(any(Merchant.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        var merchant = service.create("MERCH-001", "Test Merchant", TENANT_ALPHA_CONTEXT, "PLATFORM_TENANT");
+
+        assertThat(merchant.getTenantId()).isEqualTo(TENANT_ALPHA_ID);
+        verifyNoInteractions(tenantResolver);
+    }
+
+    @Test
+    void platformScopedCreateRequiresTenantReference() {
+        assertThatThrownBy(() -> service.create("MERCH-001", "Test Merchant", PLATFORM_CONTEXT, " "))
+                .isInstanceOf(MissingTenantReferenceException.class);
+        verifyNoInteractions(repository, tenantResolver);
+    }
+
+    @Test
+    void platformScopedCreateAssignsResolvedTenant() {
+        when(repository.findByNormalizedReference("MERCH-001")).thenReturn(Optional.empty());
+        when(tenantResolver.resolveTenantId(TenantReference.of("TENANT_ALPHA"))).thenReturn(TENANT_ALPHA_ID);
+        when(repository.saveAndFlush(any(Merchant.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        var merchant = service.create("MERCH-001", "Test Merchant", PLATFORM_CONTEXT, "TENANT_ALPHA");
+
+        assertThat(merchant.getTenantId()).isEqualTo(TENANT_ALPHA_ID);
+    }
+
+    @Test
+    void platformScopedCreateRejectsUnknownTenantReference() {
+        when(tenantResolver.resolveTenantId(TenantReference.of("UNKNOWN_TENANT")))
+                .thenThrow(new TenantResolutionException("not found"));
+
+        assertThatThrownBy(() -> service.create("MERCH-001", "Test Merchant", PLATFORM_CONTEXT, "UNKNOWN_TENANT"))
+                .isInstanceOf(UnresolvableTenantReferenceException.class);
     }
 
     @Test
@@ -102,6 +151,50 @@ class MerchantServiceTest {
 
         assertThatThrownBy(() -> service.findById(id))
                 .isInstanceOf(MerchantNotFoundException.class);
+    }
+
+    @Test
+    void tenantScopedFindByIdUsesTenantFilteredLookup() {
+        var id = UUID.randomUUID();
+        var merchant = Merchant.create(id, "MERCH-001", "Test", TENANT_ALPHA_ID);
+        when(repository.findByMerchantIdAndTenantId(id, TENANT_ALPHA_ID)).thenReturn(Optional.of(merchant));
+
+        var response = service.findById(id, TENANT_ALPHA_CONTEXT);
+
+        assertThat(response.merchantId()).isEqualTo(id);
+        verify(repository, never()).findById(id);
+    }
+
+    @Test
+    void tenantScopedFindByIdMasksForeignMerchantAsNotFound() {
+        var id = UUID.randomUUID();
+        when(repository.findByMerchantIdAndTenantId(id, TENANT_ALPHA_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.findById(id, TENANT_ALPHA_CONTEXT))
+                .isInstanceOf(MerchantNotFoundException.class);
+    }
+
+    @Test
+    void listFirstPageFiltersForTenantScopedContext() {
+        var merchant = Merchant.create(UUID.randomUUID(), "MERCH-001", "Test", TENANT_ALPHA_ID);
+        when(repository.findAllByTenantIdOrderByCreatedAtDescMerchantIdAsc(eq(TENANT_ALPHA_ID), any()))
+                .thenReturn(List.of(merchant));
+
+        var response = service.listFirstPage(TENANT_ALPHA_CONTEXT, TENANT_BETA_ID);
+
+        assertThat(response).extracting("merchantId").containsExactly(merchant.getMerchantId());
+        verify(repository, never()).findAllByOrderByCreatedAtDescMerchantIdAsc(any());
+    }
+
+    @Test
+    void listFirstPageSupportsPlatformTenantFilter() {
+        var merchant = Merchant.create(UUID.randomUUID(), "MERCH-001", "Test", TENANT_BETA_ID);
+        when(repository.findAllByTenantIdOrderByCreatedAtDescMerchantIdAsc(eq(TENANT_BETA_ID), any()))
+                .thenReturn(List.of(merchant));
+
+        var response = service.listFirstPage(PLATFORM_CONTEXT, TENANT_BETA_ID);
+
+        assertThat(response).extracting("merchantId").containsExactly(merchant.getMerchantId());
     }
 
     @Test
@@ -151,8 +244,31 @@ class MerchantServiceTest {
     }
 
     @Test
+    void tenantScopedActivateRejectsForeignMerchant() {
+        var id = UUID.randomUUID();
+        var merchant = Merchant.create(id, "MERCH-001", "Test", TENANT_BETA_ID);
+        when(repository.findById(id)).thenReturn(Optional.of(merchant));
+
+        assertThatThrownBy(() -> service.activate(id, TENANT_ALPHA_CONTEXT))
+                .isInstanceOf(TenantBoundaryViolationException.class);
+    }
+
+    @Test
+    void tenantScopedSuspendAllowsOwnTenantMerchant() {
+        var id = UUID.randomUUID();
+        var merchant = Merchant.create(id, "MERCH-001", "Test", TENANT_ALPHA_ID);
+        merchant.activate();
+        when(repository.findById(id)).thenReturn(Optional.of(merchant));
+        when(repository.saveAndFlush(any(Merchant.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        var response = service.suspend(id, TENANT_ALPHA_CONTEXT);
+
+        assertThat(response.status()).isEqualTo("SUSPENDED");
+    }
+
+    @Test
     void representativeLogsContainSafeContextAndNoSecrets(CapturedOutput output) {
-        stubPlaceholderTenant();
+        stubDefaultTenant();
         when(repository.findByNormalizedReference("MERCH-001")).thenReturn(Optional.empty());
         when(repository.saveAndFlush(any(Merchant.class))).thenAnswer(inv -> inv.getArgument(0));
 

@@ -1,31 +1,31 @@
-package lab.paymentquality.merchant;
+package lab.paymentquality.tenant;
 
+import jakarta.persistence.EntityManager;
 import lab.paymentquality.PaymentQualityApplication;
-import lab.paymentquality.merchant.internal.application.MerchantService;
-import lab.paymentquality.merchant.internal.infrastructure.JpaMerchantRepository;
-import lab.paymentquality.merchant.internal.web.MerchantController;
+import lab.paymentquality.tenant.internal.domain.Tenant;
+import lab.paymentquality.tenant.internal.infrastructure.JpaTenantRepository;
 import lab.paymentquality.testsupport.PostgresContainerSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.test.ApplicationModuleTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Merchant depends on the tenant module public API for Wave 2 tenant-aware service behavior.
-@ApplicationModuleTest(mode = ApplicationModuleTest.BootstrapMode.DIRECT_DEPENDENCIES)
+@ApplicationModuleTest(mode = ApplicationModuleTest.BootstrapMode.STANDALONE)
 @ActiveProfiles("test")
 @Testcontainers
-class MerchantModuleTest extends PostgresContainerSupport {
+class TenantModuleTest extends PostgresContainerSupport {
 
     @Container
-    static PostgreSQLContainer postgres = newPostgresContainer("merchant_module_test");
+    static PostgreSQLContainer postgres = newPostgresContainer("tenant_module_test");
 
     static {
         postgres.start();
@@ -37,19 +37,23 @@ class MerchantModuleTest extends PostgresContainerSupport {
     }
 
     @Autowired
-    MerchantService merchantService;
+    ApplicationContext applicationContext;
 
     @Autowired
-    JpaMerchantRepository repository;
+    TenantResolver tenantResolver;
 
     @Autowired
-    MerchantController controller;
+    JpaTenantRepository tenantRepository;
+
+    @Autowired
+    EntityManager entityManager;
 
     @Test
-    void merchantModuleBootsWithCoreBeans() {
-        assertThat(merchantService).isNotNull();
-        assertThat(repository).isNotNull();
-        assertThat(controller).isNotNull();
+    void tenantModuleBootsWithResolverRepositoryAndEntityMapping() {
+        assertThat(tenantResolver).isNotNull();
+        assertThat(applicationContext.getBean("tenantResolverService")).isSameAs(tenantResolver);
+        assertThat(tenantRepository.findByTenantReference("TENANT_ALPHA")).isPresent();
+        assertThat(entityManager.getMetamodel().entity(Tenant.class).getName()).isEqualTo("Tenant");
     }
 
     @Test

@@ -12,5 +12,9 @@ public interface JpaMerchantRepository extends JpaRepository<Merchant, UUID> {
 
     Optional<Merchant> findByNormalizedReference(String ref);
 
+    Optional<Merchant> findByMerchantIdAndTenantId(UUID merchantId, UUID tenantId);
+
     List<Merchant> findAllByOrderByCreatedAtDescMerchantIdAsc(Pageable pageable);
+
+    List<Merchant> findAllByTenantIdOrderByCreatedAtDescMerchantIdAsc(UUID tenantId, Pageable pageable);
 }

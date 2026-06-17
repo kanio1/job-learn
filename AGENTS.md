@@ -126,6 +126,7 @@ Payment orders:
 - DB-dependent tests extend `PostgresContainerSupport`; Flyway owns schema.
 - Repository tests use Spring/Testcontainers patterns already present in the repo.
 - REST Assured tests belong in `apps/backend/src/test/java/lab/paymentquality/rest`.
+- Do not run backend tests from `apps/backend/src/test/java/lab/paymentquality/restkit/` or `apps/backend/src/test/java/lab/paymentquality/paymentsupport/` unless the user explicitly asks for those suites.
 - Security tests belong in `security` and import `TestJwtConfiguration`.
 - Architecture/module boundaries are checked by `ModulithArchitectureTest`, `MerchantModuleTest`, and `PaymentModuleTest`.
 - Playwright tests live under `apps/frontend/tests` and use the existing auth setup/storage state pattern.
@@ -141,7 +142,7 @@ Payment orders:
 - Keep REST contracts stable unless the spec requires a contract change.
 - Use Flyway for schema changes and keep JPA mappings consistent with migrations.
 - Do not add dependencies without explicit need and approval.
-- After Wave 2, run `cd apps/backend && ./mvnw test`, update `.codex/current-state.md`, then stop before Wave 3 unless the user asks to continue.
+- After Wave 2, run backend test validation from `apps/backend` while respecting the `restkit/` and `paymentsupport/` exclusions above, update `.codex/current-state.md`, then stop before Wave 3 unless the user asks to continue.
 
 ## Frontend / UI/UX Work
 
