@@ -6,9 +6,31 @@ Payment Quality Engineering Lab is a learning-oriented payment platform used to 
 
 Implementation is done by the main Codex CLI session. Helper agents and skills are for mapping, planning, mentoring, test design, and review only.
 
+## Codex Execution Overlay
+
+`AGENTS.md` is the single primary Codex agent instruction file for this repository. Do not create or keep additional `AGENTS-overlay.md` files.
+
+`.codex/**` is the mutable Codex execution layer. Use it for continuation notes, execution status, review checklists, and prompts.
+
+`.kiro/**` files are read-only during Codex implementation unless the user explicitly asks to maintain Kiro specs. Codex may read `.kiro/specs/**` for requirements, design, and task sequencing, but must not check or uncheck tasks, rewrite plans, or adjust Kiro task files during normal implementation. Track implementation status in `.codex/current-state.md`, not in `.kiro`.
+
+Recommended read order for the current tenant-model-and-isolation continuation:
+
+1. `AGENTS.md`
+2. `.codex/README.md`
+3. `.codex/current-state.md`
+4. `.codex/tenant-model-and-isolation.md`
+5. `.codex/review-checklist.md`
+6. `.codex/prompts/continue-tenant-wave-2.md`
+7. `.kiro/specs/tenant-model-and-isolation/requirements.md`
+8. `.kiro/specs/tenant-model-and-isolation/design.md`
+9. `.kiro/specs/tenant-model-and-isolation/tasks.md`
+
 ## Current Phase
 
 The checked-out branch is in the Payment Orders / lifecycle / HTTP contract hardening phase. The codebase is beyond Phase 1 merchant-only assumptions.
+
+The active Codex continuation target on branch `018-rest-security-p1-error-auth-method-hardening` is `tenant-model-and-isolation`, starting from the Wave 2 checkpoint described in `.codex/current-state.md`.
 
 Implemented domain scope:
 
@@ -114,9 +136,12 @@ Payment orders:
 - Keep changes scoped to the current Spec Kit task or explicitly requested small step.
 - Preserve Spring Modulith boundaries: public module APIs under module root packages, implementation under `internal`.
 - Do not make the payment module depend on `merchant.internal`.
+- For tenant isolation work, `merchant` may import only public tenant API from `lab.paymentquality.tenant.*` and must never import `lab.paymentquality.tenant.internal.*`.
+- Do not modify payment module source files for tenant isolation work unless the user explicitly changes scope.
 - Keep REST contracts stable unless the spec requires a contract change.
 - Use Flyway for schema changes and keep JPA mappings consistent with migrations.
 - Do not add dependencies without explicit need and approval.
+- After Wave 2, run `cd apps/backend && ./mvnw test`, update `.codex/current-state.md`, then stop before Wave 3 unless the user asks to continue.
 
 ## Frontend / UI/UX Work
 
