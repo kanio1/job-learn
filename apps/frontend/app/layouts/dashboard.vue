@@ -85,6 +85,14 @@ const allLinks: (NavigationMenuItem & { testid: string; visible: ComputedRef<boo
     visible: computed(() => can.value.canReadMerchants || can.value.canReadPlatformPayments),
   },
   {
+    testid: 'nav-link-users',
+    label: 'Users',
+    icon: 'i-lucide-users',
+    to: '/admin/users',
+    onSelect: closeSidebar,
+    visible: computed(() => can.value.canManageUsers),
+  },
+  {
     testid: 'nav-link-error-lab',
     label: 'Error Lab',
     icon: 'i-lucide-flask-conical',
@@ -146,6 +154,14 @@ const searchGroups = computed<any[]>(() => [
             label: 'Payment orders',
             icon: 'i-lucide-receipt',
             to: '/admin/merchants',
+          }]
+        : []),
+      ...(can.value.canManageUsers
+        ? [{
+            id: 'user-management',
+            label: 'User management',
+            icon: 'i-lucide-users',
+            to: '/admin/users',
           }]
         : []),
       {

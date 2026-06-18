@@ -47,6 +47,7 @@
  * Requirements: 9.4, 9.5
  */
 
+import ProblemDetailsCard from '~/components/shared/ProblemDetailsCard.vue'
 import type { ProblemDetails } from '~/types/api'
 
 defineProps<{

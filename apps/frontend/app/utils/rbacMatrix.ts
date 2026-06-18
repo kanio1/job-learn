@@ -37,6 +37,8 @@ export const COMPOSITE_ROLES: readonly CompositeRole[] = [
 //   canReadPlatformPayments → platform:payments:read
 //   canRunLifecycle         → merchant:payments:lifecycle | platform:payments:lifecycle
 //   canReadAudit            → platform:payments:audit
+//   canManageUsers          → platform:users:* | tenant:users:*
+//   canAssignRoles          → platform:users:assign-roles | tenant:users:assign-roles
 export interface Capability {
   canCreateMerchant: boolean
   canReadMerchants: boolean
@@ -46,6 +48,8 @@ export interface Capability {
   canReadPlatformPayments: boolean
   canRunLifecycle: boolean
   canReadAudit: boolean
+  canManageUsers: boolean
+  canAssignRoles: boolean
 }
 
 // Convenience constant for a fully-denied capability set (no grants).
@@ -58,6 +62,8 @@ const DENY_ALL: Capability = {
   canReadPlatformPayments: false,
   canRunLifecycle: false,
   canReadAudit: false,
+  canManageUsers: false,
+  canAssignRoles: false,
 }
 
 /**
@@ -83,6 +89,8 @@ export const rbacMatrix: Record<CompositeRole, Capability> = {
     canReadPlatformPayments: true,
     canRunLifecycle: true,
     canReadAudit: true,
+    canManageUsers: true,
+    canAssignRoles: true,
   },
 
   TENANT_ADMIN: {
@@ -91,6 +99,8 @@ export const rbacMatrix: Record<CompositeRole, Capability> = {
     canReadMerchants: true,
     canUpdateMerchantStatus: true,
     canReadMerchantPayments: true,
+    canManageUsers: true,
+    canAssignRoles: true,
   },
 
   MERCHANT_MANAGER: {

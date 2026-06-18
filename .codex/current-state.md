@@ -373,3 +373,50 @@ Completed on 2026-06-18.
 - WireMock was not used for task 6.7.
 - `.kiro/**` was not modified.
 - Wave 8 go/no-go: GO when explicitly requested. Wave 8 was not started.
+
+## Wave 8 — User-management frontend foundation
+
+Completed on 2026-06-18.
+
+- Wave 8 status: `COMPLETED`.
+- Added Zod request/response contracts in `app/schemas/user.schema.ts`.
+- Added the header-aware, response-validating `useUsersApi` composable.
+- Added five `/server/api/users/**` routes using the existing server-side bearer-token proxy.
+- Added `canManageUsers` and `canAssignRoles` for `PLATFORM_ADMIN` and `TENANT_ADMIN` only.
+- Frontend typecheck: GREEN.
+- Frontend unit tests: GREEN, 34 files and 442 tests passed.
+- No backend production files, `.kiro/**`, Playwright files, user-management UI components, page, or navigation were changed.
+- Wave 9 go/no-go: GO when explicitly requested.
+- Next recommended wave: Wave 9 — Frontend UI. Do not start automatically.
+
+## Wave 9 — User-management frontend UI
+
+Completed on 2026-06-18.
+
+- Wave 9 status: `COMPLETED`.
+- Added the CSR-only `/admin/users` page with URL-backed role/status/search filters and pagination.
+- Added `UserTable`, `CreateUserForm`, `EditUserDrawer`, and `RoleAssignmentSelect` using existing Nuxt UI dashboard patterns.
+- Added role-gated Users navigation and dashboard search entries for `PLATFORM_ADMIN` and `TENANT_ADMIN` only.
+- Implemented loading, empty, filtered-empty, error, forbidden, success, and conflict states.
+- Temporary passwords remain local to the create request flow and are cleared on submission/close; no token, secret, credential, raw Authorization header, or raw Keycloak representation is browser-visible.
+- Frontend typecheck: GREEN.
+- Frontend unit tests: GREEN, 34 files and 442 tests passed.
+- No backend, Keycloak realm, `.kiro/**`, frontend test, or Playwright file was changed.
+- Next recommended wave: Wave 10 — Frontend tests. Do not start automatically.
+- Wave 10 go/no-go: GO when explicitly requested.
+
+## Wave 10 — User-management frontend tests
+
+Completed on 2026-06-18.
+
+- Wave 10 status: `COMPLETED`.
+- Added fast-check Property 5 proving the user-management capability biconditional for all five composite roles with 100 runs.
+- Added component tests for loading, empty, filtered-empty, error/problem details, forbidden/no API call, success toast, and conflict states.
+- Added security assertions that rendered UI contains no token, secret, temporary-password request field, credential, or raw Keycloak representation markers.
+- Assertions use visible text, accessible action names, and focused state identifiers instead of whole-DOM snapshots or generated CSS classes.
+- Tests revealed and drove minimal fixes for directory-prefixed component resolution and invalid empty-string `USelect` options.
+- Frontend typecheck: GREEN.
+- Frontend unit tests: GREEN, 38 files and 468 tests passed.
+- Wave 10 changed no backend, Keycloak realm, `.kiro/**`, or Playwright file; Playwright was not run. An unrelated concurrent `PaymentErrorSpecs.java` worktree change was observed and left untouched.
+- Next recommended wave: Wave 11 — Final checkpoint. Do not start automatically.
+- Wave 11 go/no-go: GO when explicitly requested.

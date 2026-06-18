@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "modern-web-guidance": "^0.0.173"
+  },
+  "_npx": {
+    "packages": [
+      "modern-web-guidance@0.0.173"
+    ]
+  }
+}

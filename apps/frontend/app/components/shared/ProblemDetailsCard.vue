@@ -45,6 +45,7 @@
  * Requirements: 8.5, 12.7
  */
 
+import HttpStatusBadge from '~/components/shared/HttpStatusBadge.vue'
 import type { ProblemDetails } from '~/types/api'
 
 defineProps<{

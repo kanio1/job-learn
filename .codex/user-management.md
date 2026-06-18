@@ -954,3 +954,215 @@ WireMock was not used to satisfy 6.7. `.kiro/**` was not modified.
 Final 6.7 classification: `COMPLETED`.
 
 Wave 8 may start only when explicitly requested; it was not started in this wave.
+
+## Wave 8 — Frontend foundation
+
+Completed on 2026-06-18.
+
+Status: `COMPLETED`.
+
+### Schemas
+
+Created `apps/frontend/app/schemas/user.schema.ts` with:
+
+- `compositeRoleSchema` for the five assignable composite roles;
+- `userSummarySchema`, `userDetailSchema`, and `userListSchema` for backend responses;
+- `createUserSchema`, `updateUserSchema`, and `roleAssignmentSchema` for request validation;
+- inferred TypeScript types and the typed `UsersQuery` contract.
+
+Response schemas contain no password, credential, token, client-secret, or raw Keycloak fields. `temporaryPassword` exists only in the create request schema.
+
+### Composable
+
+Created `apps/frontend/app/composables/useUsersApi.ts` with `listUsers`, `createUser`, `getUser`, `updateUser`, and `assignUserRoles`. It delegates transport to `useApiClient`, validates request payloads before sending, validates every response body through the matching Zod schema, and returns the existing `ApiResponse` envelope with status and safe response metadata.
+
+### Server proxy routes
+
+Created:
+
+- `apps/frontend/server/api/users/index.get.ts`
+- `apps/frontend/server/api/users/index.post.ts`
+- `apps/frontend/server/api/users/[id]/index.get.ts`
+- `apps/frontend/server/api/users/[id]/index.patch.ts`
+- `apps/frontend/server/api/users/[id]/roles.post.ts`
+
+The routes use the existing `backendApi` helper, validate write bodies, allowlist list-query parameters, encode path ids, and forward an incoming `X-Correlation-ID` when present. The helper attaches the session bearer token only server-side and forwards only its established safe response-header allowlist, including `X-Correlation-ID`, `Location`, and `Vary`.
+
+### RBAC
+
+Extended `Capability`, `DENY_ALL`, and `useAuthorization` with `canManageUsers` and `canAssignRoles`. Both are true only for `PLATFORM_ADMIN` and `TENANT_ADMIN`; the other three roles retain denied values.
+
+### Security and scope
+
+- No bearer token, Keycloak admin token, client secret, refresh token, credential, or temporary password is added to browser response schemas or response headers.
+- No backend production code was changed.
+- No `/admin/users` page, user components, dashboard navigation, frontend property P5, or Playwright file was created.
+- The modern-web review gate was consulted; Wave 8 introduces no UI component or browser API requiring an additional accessibility/Baseline decision. UI gate items remain for Wave 9.
+- `.kiro/**` was not modified.
+
+### Validation
+
+- `cd apps/frontend && corepack pnpm typecheck`: GREEN.
+- `cd apps/frontend && corepack pnpm test:unit`: GREEN, 34 test files and 442 tests passed. Existing Nuxt Icon load warnings were non-failing.
+- `git status --short`: only the expected Wave 8 frontend and `.codex` changes, plus pre-existing work if present.
+- `git diff -- apps/frontend .codex`: reviewed.
+
+### Changed files
+
+- `apps/frontend/app/schemas/user.schema.ts`
+- `apps/frontend/app/composables/useUsersApi.ts`
+- `apps/frontend/server/api/users/index.get.ts`
+- `apps/frontend/server/api/users/index.post.ts`
+- `apps/frontend/server/api/users/[id]/index.get.ts`
+- `apps/frontend/server/api/users/[id]/index.patch.ts`
+- `apps/frontend/server/api/users/[id]/roles.post.ts`
+- `apps/frontend/app/utils/rbacMatrix.ts`
+- `apps/frontend/app/composables/useAuthorization.ts`
+- `.codex/user-management.md`
+- `.codex/current-state.md`
+
+Deferred to Wave 9: `/admin/users`, `UserTable`, `CreateUserForm`, `EditUserDrawer`, `RoleAssignmentSelect`, all user-visible states, and the dashboard users navigation link.
+
+Wave 9 may start when explicitly requested. It was not started automatically.
+
+## Wave 9 — Frontend UI
+
+Completed on 2026-06-18.
+
+Status: `COMPLETED`.
+
+### Page and components
+
+Created the CSR-only `apps/frontend/app/pages/admin/users/index.vue` route with:
+
+- role, status, and search filters synchronized to URL query parameters;
+- backend pagination synchronized to `page` and `size` query parameters;
+- capability-aware loading that does not call the users API when `canManageUsers` is false;
+- list refresh, create, edit, role management, and enable/disable flows through `useUsersApi`;
+- safe visible fields only: username, email, enabled status, tenant reference, optional merchant reference, and composite roles.
+
+Created:
+
+- `apps/frontend/app/components/user/UserTable.vue` using `UTable`, `data-testid="users-table"`, accessible row-action names, and row-scoped action identifiers derived from `User_Id`;
+- `apps/frontend/app/components/user/CreateUserForm.vue` using `UModal`, `UForm`, the Wave 8 Zod schema, role-aware tenant input, and the required create form/button test ids;
+- `apps/frontend/app/components/user/EditUserDrawer.vue` using `USlideover` and `UForm` for email, enabled state, the supported safe `merchant_id` attribute, and composite-role changes;
+- `apps/frontend/app/components/user/RoleAssignmentSelect.vue` using searchable, multiple `USelectMenu` restricted to the five named composite roles.
+
+### Navigation and role gating
+
+Extended `apps/frontend/app/layouts/dashboard.vue` with `nav-link-users` and a matching dashboard-search action. Both are present only when `can.canManageUsers` is true.
+
+`PLATFORM_ADMIN` and `TENANT_ADMIN` may enter the user-management flow. Other roles receive the page's forbidden state and do not trigger a list request. The platform-admin create form requires a tenant reference; the tenant-admin form omits the tenant control and sends no body `tenantId`.
+
+### UI states
+
+The page and its write surfaces explicitly implement:
+
+- loading via `LoadingState`;
+- empty and filtered-empty via `EmptyStateCard`;
+- error via `ErrorState` and `ProblemDetailsCard` when problem details are available;
+- forbidden via a role/403-aware `UAlert`;
+- success via dismissible Nuxt UI toasts;
+- conflict via explicit 409 alerts for duplicate username/email.
+
+### Security and confidentiality
+
+- The browser renders only fields validated by the Wave 8 response schemas.
+- No raw Keycloak representation, raw authority role, bearer/admin/refresh token, client secret, raw Authorization header, or credential is exposed.
+- The temporary password exists only in local create-form state and the write request payload. It is cleared immediately on submission and whenever the modal closes; it is never rendered after submission or stored in a route query/global store.
+- Assignable roles remain restricted to `PLATFORM_ADMIN`, `TENANT_ADMIN`, `MERCHANT_MANAGER`, `SUPPORT_AGENT`, and `READ_ONLY_USER`.
+- No backend source, Keycloak realm, `.kiro/**`, frontend test, or Playwright file was changed.
+
+### Validation
+
+- `cd apps/frontend && corepack pnpm typecheck`: GREEN.
+- `cd apps/frontend && corepack pnpm test:unit`: GREEN, 34 test files and 442 tests passed. Existing non-failing Nuxt Icon load warnings remained.
+- `git status --short`: reviewed; only the expected frontend and `.codex` work is present.
+- `git diff -- apps/frontend .codex`: reviewed.
+- Modern Web Guidance CLI search was attempted with telemetry disabled, but sandbox DNS could not reach npm; elevated execution of an unpinned `@latest` package was rejected for supply-chain risk. The local project MWG steering and accessibility gate were applied instead. No experimental browser API was introduced.
+
+### Changed files
+
+- `apps/frontend/app/pages/admin/users/index.vue`
+- `apps/frontend/app/components/user/UserTable.vue`
+- `apps/frontend/app/components/user/CreateUserForm.vue`
+- `apps/frontend/app/components/user/EditUserDrawer.vue`
+- `apps/frontend/app/components/user/RoleAssignmentSelect.vue`
+- `apps/frontend/app/layouts/dashboard.vue`
+- `.codex/user-management.md`
+- `.codex/current-state.md`
+
+### Deferred Wave 10 work
+
+No Wave 10 property, component, or Playwright tests were created or run. Wave 10 — Frontend tests may start when explicitly requested; it was not started automatically.
+
+## Wave 10 — Frontend tests
+
+Completed on 2026-06-18.
+
+Status: `COMPLETED`.
+
+### Property test P5
+
+Added `apps/frontend/tests/unit/user-management-rbac.property.test.ts`.
+
+- Uses Vitest and fast-check with `numRuns: 100`.
+- Verifies the biconditional `canManageUsers === canAssignRoles === admin role` over all five composite roles.
+- Includes readable example assertions for `PLATFORM_ADMIN`, `TENANT_ADMIN`, `MERCHANT_MANAGER`, `SUPPORT_AGENT`, and `READ_ONLY_USER`.
+- Does not inspect or duplicate backend authority strings.
+
+### Component state tests
+
+Added `apps/frontend/app/pages/admin/users/index.test.ts` using the existing Nuxt Test Utils, Vue Test Utils, Vitest, and happy-dom setup. API and authorization are mocked at the composable boundary; no network or Keycloak process is used.
+
+The tests cover all seven required states:
+
+- loading while the list promise is pending;
+- empty with a create action when no users and no filters exist;
+- filtered-empty with distinct text when search is active;
+- error with `ErrorState`, `ProblemDetailsCard`, and safe problem detail;
+- forbidden for a non-admin role, including proof that `listUsers` is not called and the create control is absent;
+- success through an accessible enable/disable row action and a success toast assertion;
+- conflict through a safe duplicate username/email alert.
+
+Assertions use visible text, accessible button names, alert/state test ids, and behavior at the API/composable boundary. They do not depend on generated Nuxt UI classes or whole-DOM snapshots.
+
+### Security and confidentiality assertions
+
+Every state test checks rendered HTML for absence of sensitive markers such as Authorization/Bearer data, access or refresh tokens, client secrets, temporary-password request fields, admin tokens, and credential representations. Mocks and fixtures contain only safe redacted user fields and no secret values.
+
+### Minimal Wave 9 fixes revealed by tests
+
+- Added explicit imports for user and shared components whose directory-prefixed Nuxt auto-import names did not match the template names.
+- Added explicit `ProblemDetailsCard` and `HttpStatusBadge` imports so the structured error surface resolves when reached from the users page.
+- Replaced empty-string `USelect` option values with the internal `all` sentinel; ReKa UI rejects empty-string select items. The sentinel is omitted from API queries and URL parameters, preserving the external contract.
+
+These are limited correctness fixes under Task 10.3; no new user-management feature or redesign was added.
+
+### Validation
+
+- `cd apps/frontend && corepack pnpm exec vitest run tests/unit/user-management-rbac.property.test.ts app/pages/admin/users/index.test.ts`: GREEN, 4 project/file executions and 26 assertions passed under the repository's configured Nuxt/happy-dom projects.
+- `cd apps/frontend && corepack pnpm typecheck`: GREEN.
+- `cd apps/frontend && corepack pnpm test:unit`: GREEN, 38 test files and 468 tests passed.
+- Existing non-failing Nuxt Icon test warnings remained.
+- `git status --short`, `git diff -- apps/frontend .codex`, and `git diff --check`: reviewed.
+- A concurrent unrelated change appeared in `apps/backend/src/test/java/lab/paymentquality/restkit/spec/PaymentErrorSpecs.java` during validation. Wave 10 did not create, edit, validate, or revert that backend test change.
+
+### Changed files
+
+- `apps/frontend/tests/unit/user-management-rbac.property.test.ts`
+- `apps/frontend/app/pages/admin/users/index.test.ts`
+- `apps/frontend/app/pages/admin/users/index.vue`
+- `apps/frontend/app/components/user/CreateUserForm.vue`
+- `apps/frontend/app/components/user/EditUserDrawer.vue`
+- `apps/frontend/app/components/shared/ErrorState.vue`
+- `apps/frontend/app/components/shared/ProblemDetailsCard.vue`
+- `.codex/user-management.md`
+- `.codex/current-state.md`
+
+### Deferred frontend test gaps
+
+- No Playwright or browser E2E coverage was added or run.
+- Create-modal and role-drawer interaction details remain candidates for later focused component or approved browser-level coverage; Wave 10 validates the required seven page states and one representative successful write path.
+
+Wave 11 — Final checkpoint may start when explicitly requested. It was not started automatically.

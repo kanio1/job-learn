@@ -61,4 +61,12 @@ public final class PaymentErrorSpecs {
     public static ResponseSpecification tooManyRequests() {
         return problem(429);
     }
+
+    public static ResponseSpecification conflict() {
+    return problem(409);
+    }
+
+    public static ResponseSpecification unprocessableContent() {
+        return problem(422);
+    }
 }
