@@ -5,6 +5,15 @@
     </template>
 
     <div class="space-y-6">
+      <UAlert
+        v-if="!canCreatePaymentOrder"
+        color="warning"
+        variant="subtle"
+        icon="i-lucide-shield-alert"
+        description="You do not have permission to create payment orders."
+        role="alert"
+      />
+
       <!-- Idempotency Key Input -->
       <IdempotencyKeyInput v-model="idempotencyKey" />
 
@@ -38,7 +47,10 @@
         <UButton
           type="submit"
           :loading="submitting"
+          :disabled="!canCreatePaymentOrder"
           label="Create Payment Order"
+          data-testid="action-create-payment-order"
+          :aria-label="canCreatePaymentOrder ? 'Create payment order' : 'Create payment order unavailable: missing payment create authority'"
         />
       </UForm>
     </div>
@@ -77,6 +89,7 @@ const emit = defineEmits<{
 
 const { createOrder } = usePaymentOrdersApi()
 const toast = useToast()
+const { can } = useAuthorization()
 
 const submitting = ref(false)
 const errorMessage = ref<string | null>(null)
@@ -92,6 +105,8 @@ const formState = reactive({
   currency: undefined as 'PLN' | 'EUR' | 'USD' | undefined,
   clientOrderReference: '',
 })
+
+const canCreatePaymentOrder = computed(() => can.value.canCreatePaymentOrder)
 
 /**
  * The idempotency key drives the IdempotencyKeyInput component.
@@ -131,6 +146,8 @@ watch(
 )
 
 async function onSubmit() {
+  if (!canCreatePaymentOrder.value) return
+
   submitting.value = true
   errorMessage.value = null
   errorProblem.value = null

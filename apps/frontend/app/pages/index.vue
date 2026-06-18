@@ -24,7 +24,7 @@
            GET /api/merchants/{merchantId}/payment-orders/summary
            No client-side recomputation of counts (Req 1.1, 1.7)
            ───────────────────────────────────────────────────────────── -->
-      <section aria-label="Summary">
+      <section v-if="canReadOverviewSummary" aria-label="Summary">
         <h2 class="text-base font-semibold mb-4">Platform Summary</h2>
 
         <!-- Loading state for summary section — Req 1.4 -->
@@ -41,7 +41,7 @@
         <!-- Summary cards from backend data only — Req 1.1, 1.7 -->
         <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <!-- Merchant count — from GET /api/merchants -->
-          <UCard>
+          <UCard v-if="canReadMerchants">
             <div class="flex items-center gap-3">
               <UIcon name="i-lucide-store" class="text-2xl text-primary" />
               <div>
@@ -52,7 +52,7 @@
           </UCard>
 
           <!-- Payment order count — from summary endpoint -->
-          <UCard>
+          <UCard v-if="canReadPaymentOrders && selectedMerchantId">
             <div class="flex items-center gap-3">
               <UIcon name="i-lucide-receipt" class="text-2xl text-primary" />
               <div>
@@ -63,7 +63,7 @@
           </UCard>
 
           <!-- Per-Payment_Status count cards — from summary.byStatus (Req 1.1) -->
-          <template v-for="statusEntry in byStatus" :key="statusEntry.status">
+          <template v-for="statusEntry in canReadPaymentOrders ? byStatus : []" :key="statusEntry.status">
             <UCard>
               <div class="flex items-center justify-between">
                 <BusinessStatusBadge :status="statusEntry.status" />
@@ -79,7 +79,7 @@
            ≤10 orders, ordered by creation time descending
            from GET /api/merchants/{merchantId}/payment-orders (Req 1.2)
            ───────────────────────────────────────────────────────────── -->
-      <section aria-label="Recent payment orders">
+      <section v-if="canReadPaymentOrders && selectedMerchantId" aria-label="Recent payment orders">
         <h2 class="text-base font-semibold mb-4">Recent Payment Orders</h2>
 
         <!-- Loading state — Req 1.4 -->
@@ -104,33 +104,16 @@
         <!-- Recent orders table — Req 1.2 -->
         <UCard v-else>
           <UTable
-            :rows="recentOrders"
+            :data="recentOrders"
             :columns="orderColumns"
-          >
-            <template #status-data="{ row }">
-              <BusinessStatusBadge :status="row.status" />
-            </template>
-            <template #createdAt-data="{ row }">
-              <span class="text-sm text-muted">{{ formatDate(row.createdAt) }}</span>
-            </template>
-            <template #actions-data="{ row }">
-              <UButton
-                :to="`/admin/merchants/${row.merchantId}/payments/${row.paymentOrderId}`"
-                variant="ghost"
-                size="xs"
-                icon="i-lucide-arrow-right"
-              >
-                View
-              </UButton>
-            </template>
-          </UTable>
+          />
         </UCard>
       </section>
 
       <!-- ─────────────────────────────────────────────────────────────
            No merchant scope info card — shown when there are no merchants
            ───────────────────────────────────────────────────────────── -->
-      <div v-if="!summaryLoading && !summaryError && merchantCount === 0 && !ordersLoading">
+      <div v-if="canReadMerchants && !summaryLoading && !summaryError && merchantCount === 0 && !ordersLoading">
         <EmptyStateCard
           description="No merchants registered yet. Create a merchant to see payment order data."
           action-label="Go to Merchants"
@@ -163,9 +146,16 @@
 
 import type { ProblemDetails } from '~/types/api'
 import type { PaymentOrderResponse } from '~/schemas/payment-order.schema'
+import type { TableColumn } from '@nuxt/ui'
+import { h, resolveComponent } from 'vue'
 
 const { listMerchants } = useMerchantsApi()
 const { getOrderSummary, listOrders } = usePaymentOrdersApi()
+const { can } = useAuthorization()
+
+const canReadMerchants = computed(() => can.value.canReadMerchants)
+const canReadPaymentOrders = computed(() => can.value.canReadMerchantPayments || can.value.canReadPlatformPayments)
+const canReadOverviewSummary = computed(() => canReadMerchants.value || canReadPaymentOrders.value)
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -200,13 +190,34 @@ const TIMEOUT_MS = 10_000
 
 // ─── Column definitions for the recent-orders table ──────────────────────────
 
-const orderColumns = [
-  { key: 'clientOrderReference', label: 'Reference' },
-  { key: 'status', label: 'Status' },
-  { key: 'currency', label: 'Currency' },
-  { key: 'amountMinor', label: 'Amount (minor)' },
-  { key: 'createdAt', label: 'Created' },
-  { key: 'actions', label: '' },
+const BusinessStatusBadgeComponent = resolveComponent('BusinessStatusBadge')
+const UButtonComponent = resolveComponent('UButton')
+
+const orderColumns: TableColumn<PaymentOrderResponse>[] = [
+  { accessorKey: 'clientOrderReference', header: 'Reference' },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => h(BusinessStatusBadgeComponent, { status: row.original.status }),
+  },
+  { accessorKey: 'currency', header: 'Currency' },
+  { accessorKey: 'amountMinor', header: 'Amount (minor)' },
+  {
+    accessorKey: 'createdAt',
+    header: 'Created',
+    cell: ({ row }) => h('span', { class: 'text-sm text-muted' }, formatDate(row.original.createdAt)),
+  },
+  {
+    id: 'actions',
+    cell: ({ row }) =>
+      h(UButtonComponent, {
+        to: `/admin/merchants/${row.original.merchantId}/payments/${row.original.paymentOrderId}`,
+        variant: 'ghost',
+        size: 'xs',
+        icon: 'i-lucide-arrow-right',
+        label: 'View',
+      }),
+  },
 ]
 
 // ─── Fetch helpers ────────────────────────────────────────────────────────────
@@ -216,6 +227,14 @@ const orderColumns = [
  * Populates merchantCount, totalOrders, byStatus, and selectedMerchantId.
  */
 async function fetchSummary(): Promise<void> {
+  if (!canReadMerchants.value) {
+    merchantCount.value = 0
+    totalOrders.value = 0
+    byStatus.value = []
+    selectedMerchantId.value = null
+    return
+  }
+
   summaryLoading.value = true
   summaryError.value = null
   summaryProblem.value = null
@@ -251,6 +270,12 @@ async function fetchSummary(): Promise<void> {
     // This is merchant-scoped; see module comment above for the reasoning.
     const firstMerchant = merchantsRes.data.content[0]!
     selectedMerchantId.value = firstMerchant.merchantId
+
+    if (!canReadPaymentOrders.value) {
+      totalOrders.value = 0
+      byStatus.value = []
+      return
+    }
 
     // Step 3: fetch summary for the selected merchant
     const summaryRes = await Promise.race([getOrderSummary(firstMerchant.merchantId), timeout])
@@ -289,7 +314,7 @@ async function fetchSummary(): Promise<void> {
  * ≤10 orders, ordered by creation time descending — Req 1.2.
  */
 async function fetchRecentOrders(): Promise<void> {
-  if (!selectedMerchantId.value) {
+  if (!canReadPaymentOrders.value || !selectedMerchantId.value) {
     // No merchant scope available — nothing to fetch
     return
   }

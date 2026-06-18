@@ -24,6 +24,15 @@
     </UFormField>
 
     <UAlert
+      v-if="!canCreateMerchant"
+      color="warning"
+      variant="subtle"
+      icon="i-lucide-shield-alert"
+      description="You do not have permission to create merchants."
+      role="alert"
+    />
+
+    <UAlert
       v-if="error"
       color="error"
       variant="subtle"
@@ -36,7 +45,13 @@
       <UButton variant="outline" type="button" @click="$emit('cancel')">
         Cancel
       </UButton>
-      <UButton type="submit" color="primary" :loading="submitting">
+      <UButton
+        type="submit"
+        color="primary"
+        :loading="submitting"
+        :disabled="!canCreateMerchant"
+        :aria-label="canCreateMerchant ? 'Create merchant' : 'Create merchant unavailable: missing merchant create authority'"
+      >
         Create
       </UButton>
     </div>
@@ -66,12 +81,16 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
+const { can } = useAuthorization()
+const canCreateMerchant = computed(() => can.value.canCreateMerchant)
+
 const formState = reactive<Partial<CreateMerchantForm>>({
   merchantReference: '',
   displayName: '',
 })
 
 function onSubmit() {
+  if (!canCreateMerchant.value) return
   // UForm validates against `createMerchantSchema` before calling this handler.
   // If validation fails, UForm shows field-level messages and does not call onSubmit.
   emit('submit', formState as CreateMerchantForm)

@@ -212,10 +212,24 @@ public final class TestJwtSupport {
                 "PLATFORM_TENANT");
     }
 
+    public static String platformUserAdminToken() {
+        return tokenWithRolesAndTenantId("platform.user.admin",
+                List.of("platform:users:read", "platform:users:create", "platform:users:update",
+                        "platform:users:assign-roles"),
+                "PLATFORM_TENANT");
+    }
+
     public static String tenantAdminToken() {
         return tokenWithRolesAndTenantId("tenant.admin",
                 List.of("merchants:create", "merchants:read", "merchants:update-status",
                         "merchant:payments:read"),
+                "TENANT_ALPHA");
+    }
+
+    public static String tenantUserAdminToken() {
+        return tokenWithRolesAndTenantId("tenant.user.admin",
+                List.of("tenant:users:read", "tenant:users:create", "tenant:users:update",
+                        "tenant:users:assign-roles"),
                 "TENANT_ALPHA");
     }
 

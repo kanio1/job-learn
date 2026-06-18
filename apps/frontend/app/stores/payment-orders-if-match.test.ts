@@ -90,7 +90,7 @@ function makeOrderResponse(overrides: Partial<PaymentOrderResponse> = {}): Payme
 /** Build a successful ApiResponse<PaymentOrderResponse> with the given ETag. */
 function makeSuccessApiResponse(
   etag: string,
-  status: string = 'AUTHORIZED'
+  status: PaymentOrderResponse['status'] = 'AUTHORIZED'
 ): ApiResponse<PaymentOrderResponse> {
   return {
     data: makeOrderResponse({ status }),

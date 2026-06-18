@@ -319,3 +319,43 @@ Run backend verification from `apps/backend` while respecting the repository rul
 - `apps/backend/src/test/java/lab/paymentquality/paymentsupport/**`
 
 Do not proceed beyond Wave 6 unless explicitly requested.
+
+### Wave 7B — Corrected 6.7 Keycloak IT (user-management spec)
+
+Completed on 2026-06-18.
+
+Status: BLOCKED_BY_LOCAL_DOCKER_OR_TESTCONTAINERS_RUNTIME.
+
+**Summary:**
+- Removed incorrect WireMock-based `KeycloakAdminClientIT.java` that was pretending to satisfy task 6.7.
+- Created proper `KeycloakContainerSupport` helper using GenericContainer with real Keycloak 26.6.1 image.
+- Created `UserManagementKeycloakAdminIT.java` with real Keycloak integration tests.
+- Container fails to start in local environment (connection refused during health check).
+- Backend tests remain GREEN (339 tests, 0 failures, 5 skipped) when excluding the blocked IT.
+
+**Backend status:** GREEN (excluding blocked Keycloak IT).
+
+**Wave 8 allowed:** NO — task 6.7 is NON-optional and remains blocked by local Docker/Testcontainers runtime issues.
+
+**Next action:** Investigate Keycloak container startup issues or defer 6.7 to CI/CD environment with explicit user approval.
+
+### Wave 7B — Realm duplicate fix and Podman Keycloak IT retry (user-management spec)
+
+Completed on 2026-06-18.
+
+Status: BLOCKED_BY_REALM_IMPORT_OR_SERVICE_ACCOUNT_CONFIGURATION.
+
+**Summary:**
+- Fixed duplicate `platform.operator` user in realm JSON by merging attributes/roles
+- Updated KeycloakContainerSupport to use `KC_BOOTSTRAP_ADMIN_USERNAME`/`KC_BOOTSTRAP_ADMIN_PASSWORD`
+- Keycloak container now starts successfully via Testcontainers
+- Realm imports successfully
+- Service account authentication works
+- **Blocker:** User attributes (tenant_id) are not being persisted or returned by Keycloak Admin API
+- Integration tests fail because tenantId is null in responses
+
+**Backend status:** GREEN (339 tests, 0 failures, 5 skipped) when excluding blocked IT.
+
+**Wave 8 allowed:** NO — task 6.7 is NON-optional and remains blocked by user attribute persistence issue.
+
+**Next action:** Debug Keycloak Admin API attribute handling or defer 6.7 with explicit user approval.

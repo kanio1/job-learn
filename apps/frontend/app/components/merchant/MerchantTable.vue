@@ -39,7 +39,7 @@ export interface Merchant {
   merchantId: string
   merchantReference: string
   displayName: string
-  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | string
+  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED'
   createdAt: string
   updatedAt: string
 }
@@ -55,6 +55,10 @@ const emit = defineEmits<{
   activate: [merchant: Merchant]
   suspend: [merchant: Merchant]
 }>()
+
+const { can } = useAuthorization()
+const canUpdateMerchantStatus = computed(() => can.value.canUpdateMerchantStatus)
+const canCreatePaymentOrder = computed(() => can.value.canCreatePaymentOrder)
 
 function statusColor(status: string) {
   switch (status) {
@@ -99,45 +103,55 @@ const columns: TableColumn<Merchant>[] = [
       const status = row.original.status
 
       // Activate: available for PENDING and SUSPENDED merchants (Req 2.6)
-      if (status === 'PENDING' || status === 'SUSPENDED') {
+      if ((status === 'PENDING' || status === 'SUSPENDED') && canUpdateMerchantStatus.value) {
         buttons.push(
-          h(UButton, {
-            size: 'xs',
-            color: 'primary',
-            variant: 'ghost',
-            icon: 'i-lucide-play',
-            label: 'Activate',
-            'aria-label': `Activate ${row.original.merchantReference}`,
-            'data-testid': 'activate-merchant-button',
-            onClick: () => emit('activate', row.original)
-          })
+          h('span', { 'data-testid': 'action-activate-merchant' }, [
+            h(UButton, {
+              size: 'xs',
+              color: 'primary',
+              variant: 'ghost',
+              icon: 'i-lucide-play',
+              label: 'Activate',
+              'aria-label': `Activate ${row.original.merchantReference}`,
+              'data-testid': 'activate-merchant-button',
+              onClick: () => emit('activate', row.original)
+            })
+          ])
         )
       }
 
       // ACTIVE merchants: navigate to payments or suspend
       if (status === 'ACTIVE') {
-        buttons.push(
-          h(UButton, {
-            size: 'xs',
-            color: 'primary',
-            variant: 'ghost',
-            icon: 'i-lucide-credit-card',
-            label: 'New Payment',
-            'aria-label': `Create payment for ${row.original.merchantReference}`,
-            to: `/admin/merchants/${row.original.merchantId}/payments/new`
-          })
-        )
-        buttons.push(
-          h(UButton, {
-            size: 'xs',
-            color: 'error',
-            variant: 'ghost',
-            icon: 'i-lucide-pause',
-            label: 'Suspend',
-            'aria-label': `Suspend ${row.original.merchantReference}`,
-            onClick: () => emit('suspend', row.original)
-          })
-        )
+        if (canCreatePaymentOrder.value) {
+          buttons.push(
+            h('span', { 'data-testid': 'action-create-payment-order' }, [
+              h(UButton, {
+                size: 'xs',
+                color: 'primary',
+                variant: 'ghost',
+                icon: 'i-lucide-credit-card',
+                label: 'New Payment',
+                'aria-label': `Create payment for ${row.original.merchantReference}`,
+                to: `/admin/merchants/${row.original.merchantId}/payments/new`
+              })
+            ])
+          )
+        }
+        if (canUpdateMerchantStatus.value) {
+          buttons.push(
+            h('span', { 'data-testid': 'action-suspend-merchant' }, [
+              h(UButton, {
+                size: 'xs',
+                color: 'error',
+                variant: 'ghost',
+                icon: 'i-lucide-pause',
+                label: 'Suspend',
+                'aria-label': `Suspend ${row.original.merchantReference}`,
+                onClick: () => emit('suspend', row.original)
+              })
+            ])
+          )
+        }
       }
 
       return h('div', { class: 'flex items-center justify-end gap-1' }, buttons)

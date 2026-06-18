@@ -10,7 +10,7 @@ Implementation is done by the main Codex CLI session. Helper agents and skills a
 
 `AGENTS.md` is the single primary Codex agent instruction file for this repository. Do not create or keep additional `AGENTS-overlay.md` files.
 
-`.codex/**` is the mutable Codex execution layer. Use it for continuation notes, execution status, review checklists, and prompts.
+`.codex/**` is the mutable Codex execution layer. Use it for continuation notes, execution status, review checklists, and prompts. OpenCode also uses `.codex/**` as the shared execution overlay; `opencode.jsonc` loads the same instruction files.
 
 `.kiro/**` files are read-only during Codex implementation unless the user explicitly asks to maintain Kiro specs. Codex may read `.kiro/specs/**` for requirements, design, and task sequencing, but must not check or uncheck tasks, rewrite plans, or adjust Kiro task files during normal implementation. Track implementation status in `.codex/current-state.md`, not in `.kiro`.
 
@@ -66,6 +66,13 @@ Run from `apps/backend`:
 ```
 
 `./mvnw test` runs `*Test.java`. `./mvnw verify` also runs `*IT.java` through Failsafe.
+
+Codex backend validation must skip tests under:
+
+- `apps/backend/src/test/java/lab/paymentquality/restkit/`
+- `apps/backend/src/test/java/lab/paymentquality/paymentsupport/`
+
+Treat these as excluded suites even when a task generally asks to run backend tests, unless the user explicitly asks to include `restkit/` or `paymentsupport/`.
 
 ## Frontend Commands
 
@@ -126,7 +133,7 @@ Payment orders:
 - DB-dependent tests extend `PostgresContainerSupport`; Flyway owns schema.
 - Repository tests use Spring/Testcontainers patterns already present in the repo.
 - REST Assured tests belong in `apps/backend/src/test/java/lab/paymentquality/rest`.
-- Do not run backend tests from `apps/backend/src/test/java/lab/paymentquality/restkit/` or `apps/backend/src/test/java/lab/paymentquality/paymentsupport/` unless the user explicitly asks for those suites.
+- Do not run backend tests from `apps/backend/src/test/java/lab/paymentquality/restkit/` or `apps/backend/src/test/java/lab/paymentquality/paymentsupport/` unless the user explicitly asks for those suites. This is a standing rule for Codex validation, including broad backend test requests.
 - Security tests belong in `security` and import `TestJwtConfiguration`.
 - Architecture/module boundaries are checked by `ModulithArchitectureTest`, `MerchantModuleTest`, and `PaymentModuleTest`.
 - Playwright tests live under `apps/frontend/tests` and use the existing auth setup/storage state pattern.

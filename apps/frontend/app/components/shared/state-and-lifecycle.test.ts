@@ -243,6 +243,7 @@ async function mountWithStatus(status: string | undefined) {
     props: {
       paymentOrderId: 'order-123',
       merchantId: 'merchant-abc',
+      canRunLifecycle: true,
     },
   })
 
@@ -267,6 +268,7 @@ async function mountWithStatus(status: string | undefined) {
     props: {
       paymentOrderId: 'order-123',
       merchantId: 'merchant-abc',
+      canRunLifecycle: true,
     },
   })
 
@@ -280,7 +282,7 @@ describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one
 
   it('renders NO lifecycle buttons when status is undefined', async () => {
     const wrapper = await mountSuspended(PaymentOrderLifecycleActions, {
-      props: { paymentOrderId: 'order-x', merchantId: 'merch-x' },
+      props: { paymentOrderId: 'order-x', merchantId: 'merch-x', canRunLifecycle: true },
     })
     const html = wrapper.html()
     for (const testId of ALL_ACTION_TEST_IDS) {
@@ -290,7 +292,7 @@ describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one
 
   it('shows "no actions available" message when no actions exist', async () => {
     const wrapper = await mountSuspended(PaymentOrderLifecycleActions, {
-      props: { paymentOrderId: 'order-x', merchantId: 'merch-x' },
+      props: { paymentOrderId: 'order-x', merchantId: 'merch-x', canRunLifecycle: true },
     })
     expect(wrapper.text()).toContain('No actions available')
   })
@@ -305,7 +307,7 @@ describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one
       setActivePinia(createPinia())
 
       const wrapper = await mountSuspended(PaymentOrderLifecycleActions, {
-        props: { paymentOrderId: 'order-123', merchantId: 'merchant-abc' },
+        props: { paymentOrderId: 'order-123', merchantId: 'merchant-abc', canRunLifecycle: true },
       })
 
       const store = usePaymentOrdersStore()
@@ -323,7 +325,7 @@ describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one
 
       // Re-mount after setting store state
       const w2 = await mountSuspended(PaymentOrderLifecycleActions, {
-        props: { paymentOrderId: 'order-123', merchantId: 'merchant-abc' },
+        props: { paymentOrderId: 'order-123', merchantId: 'merchant-abc', canRunLifecycle: true },
       })
 
       const html = w2.html()
@@ -349,7 +351,7 @@ describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one
     setActivePinia(createPinia())
 
     const wrapper = await mountSuspended(PaymentOrderLifecycleActions, {
-      props: { paymentOrderId: 'order-auth', merchantId: 'merchant-abc' },
+      props: { paymentOrderId: 'order-auth', merchantId: 'merchant-abc', canRunLifecycle: true },
     })
 
     const store = usePaymentOrdersStore()
@@ -366,7 +368,7 @@ describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one
     } as any
 
     const w2 = await mountSuspended(PaymentOrderLifecycleActions, {
-      props: { paymentOrderId: 'order-auth', merchantId: 'merchant-abc' },
+      props: { paymentOrderId: 'order-auth', merchantId: 'merchant-abc', canRunLifecycle: true },
     })
 
     expect(w2.html()).toContain('data-testid="lifecycle-capture"')

@@ -20,11 +20,12 @@
           </UTooltip>
 
           <UButton
-            v-if="!insufficientAuthority"
+            v-if="!insufficientAuthority && canCreateMerchant"
             icon="i-lucide-plus"
             size="md"
             class="rounded-full"
             aria-label="Create merchant"
+            data-testid="action-create-merchant"
             @click="showCreateModal = true"
           />
         </template>
@@ -95,9 +96,9 @@
             <UEmpty
               icon="i-lucide-store"
               title="Registry is empty"
-              description="No merchants have been registered yet. Create the first merchant to start the activation workflow."
+                description="No merchants have been registered yet. Create the first merchant to start the activation workflow."
             >
-              <template #actions>
+              <template v-if="canCreateMerchant" #actions>
                 <UButton icon="i-lucide-plus" @click="showCreateModal = true">
                   Create your first merchant
                 </UButton>
@@ -173,6 +174,7 @@ definePageMeta({
 
 const toast = useToast()
 const { listMerchants, createMerchant, activateMerchant, suspendMerchant } = useMerchantsApi()
+const { can } = useAuthorization()
 
 // ---------------------------------------------------------------------------
 // State
@@ -198,6 +200,8 @@ const statusItems = [
   { label: 'Active', value: 'ACTIVE' },
   { label: 'Suspended', value: 'SUSPENDED' },
 ]
+
+const canCreateMerchant = computed(() => can.value.canCreateMerchant)
 
 // ---------------------------------------------------------------------------
 // Computed

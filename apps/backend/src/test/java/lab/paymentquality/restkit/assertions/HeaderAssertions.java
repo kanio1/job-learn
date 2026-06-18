@@ -66,5 +66,40 @@ public class HeaderAssertions {
         assertNoStore(response);
     }
 
+    public static void assertVaryContainsAccept(Response response) {
+        String allVaryValues = String.join(", ", response.headers().getValues("Vary"));
+        assertThat(allVaryValues)
+            .as("Vary should contain Accept")
+            .contains(ApiHeaders.ACCEPT);
+    }
+
+    public static void assertVaryContainsIdempotencyKey(Response response) {
+        String allVaryValues = String.join(", ", response.headers().getValues("Vary"));
+        assertThat(allVaryValues)
+            .as("Vary should contain Idempotency-Key")
+            .contains(ApiHeaders.IDEMPOTENCY_KEY);
+    }
+
+    public static void assertLocationPointsToPaymentOrder(
+        Response response,
+        String merchantId,
+        String paymentOrderId
+    ) {
+        String location = response.header(ApiHeaders.LOCATION);
+
+        assertThat(location).as("Location header should point to the created payment order resource")
+            .isNotBlank().contains("/api/merchants" + merchantId + "/payment-orders/" + paymentOrderId);
+    }
+
+    public static void assertRetryAfterDelaySeconds(Response response, int expectedSeconds) {
+        String retryAfter = response.header(ApiHeaders.RETRY_AFTER);
+        assertThat(retryAfter)
+            .as("Retry-After should tell the client how long to wait before retrying")
+            .isNotBlank();
+        assertThat(Integer.parseInt(retryAfter))
+            .as("Retry-After should be " + expectedSeconds + " seconds")
+            .isEqualTo(expectedSeconds);
+    }
+
 
 }

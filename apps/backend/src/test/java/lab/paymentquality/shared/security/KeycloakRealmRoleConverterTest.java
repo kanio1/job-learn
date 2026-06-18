@@ -32,7 +32,7 @@ class KeycloakRealmRoleConverterTest {
 
     private static final KeycloakRealmRoleConverter CONVERTER = new KeycloakRealmRoleConverter();
 
-    /** All 10 known realm role names mapped to their expected authority strings. */
+    /** All 18 known realm role names mapped to their expected authority strings. */
     private static final Map<String, String> KNOWN_ROLE_MAPPING = Map.ofEntries(
             Map.entry("merchants:create",            "platform:merchants:create"),
             Map.entry("merchants:read",              "platform:merchants:read"),
@@ -43,7 +43,15 @@ class KeycloakRealmRoleConverterTest {
             Map.entry("merchant:payments:lifecycle", "merchant:payments:lifecycle"),
             Map.entry("platform:payments:read",      "platform:payments:read"),
             Map.entry("platform:payments:lifecycle", "platform:payments:lifecycle"),
-            Map.entry("platform:payments:audit",     "platform:payments:audit")
+            Map.entry("platform:payments:audit",     "platform:payments:audit"),
+            Map.entry("platform:users:read",         "platform:users:read"),
+            Map.entry("platform:users:create",       "platform:users:create"),
+            Map.entry("platform:users:update",       "platform:users:update"),
+            Map.entry("platform:users:assign-roles", "platform:users:assign-roles"),
+            Map.entry("tenant:users:read",           "tenant:users:read"),
+            Map.entry("tenant:users:create",         "tenant:users:create"),
+            Map.entry("tenant:users:update",         "tenant:users:update"),
+            Map.entry("tenant:users:assign-roles",   "tenant:users:assign-roles")
     );
 
     private static final Set<String> KNOWN_ROLES = KNOWN_ROLE_MAPPING.keySet();
@@ -124,7 +132,7 @@ class KeycloakRealmRoleConverterTest {
     }
 
     @Test
-    void all_ten_known_roles_together_produce_all_ten_authorities() {
+    void all_known_roles_together_produce_all_authorities() {
         List<String> allRoles = new ArrayList<>(KNOWN_ROLES);
         Collection<GrantedAuthority> result = CONVERTER.convert(jwtWithRoles(allRoles));
         assertThat(result)
@@ -133,7 +141,7 @@ class KeycloakRealmRoleConverterTest {
     }
 
     /**
-     * Property 1 (PBT): for any non-empty subset of the 10 known roles (any order),
+     * Property 1 (PBT): for any non-empty subset of the known roles (any order),
      * the converter produces exactly the set of authorities those roles map to —
      * no extras, no missing.
      *
@@ -158,7 +166,7 @@ class KeycloakRealmRoleConverterTest {
     }
 
     /**
-     * Generates a non-empty subset of the 10 known role names as a list (any order).
+     * Generates a non-empty subset of the known role names as a list (any order).
      */
     @Provide
     Arbitrary<List<String>> nonEmptyKnownRoleSubsets() {
@@ -199,7 +207,7 @@ class KeycloakRealmRoleConverterTest {
     /**
      * Property 2 (PBT): an unknown role produces NO authority (fail-closed).
      *
-     * <p>For any role name not in the 10 Known_Roles — mixed with any subset of Known_Roles —
+     * <p>For any role name not in the Known_Roles — mixed with any subset of Known_Roles —
      * the converter produces authorities only for the Known_Roles present and produces no
      * authority derived from the unknown name (in particular, never {@code platform:<unknown>}).
      *
@@ -260,7 +268,8 @@ class KeycloakRealmRoleConverterTest {
                 .ofMaxLength(20)
                 .filter(s -> !KNOWN_ROLES.contains(s))
                 .filter(s -> !s.startsWith("merchant:"))
-                .filter(s -> !s.startsWith("platform:"));
+                .filter(s -> !s.startsWith("platform:"))
+                .filter(s -> !s.startsWith("tenant:"));
     }
 
     /**

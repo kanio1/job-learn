@@ -1,55 +1,68 @@
 <template>
   <div class="flex flex-wrap gap-2">
-    <UButton
-      v-if="availableActions.includes('authorize')"
-      data-testid="lifecycle-authorize"
-      color="info"
-      variant="soft"
-      size="sm"
-      icon="i-lucide-shield-check"
-      @click="triggerAction('authorize')"
-    >
-      Authorize
-    </UButton>
-
-    <UButton
-      v-if="availableActions.includes('capture')"
-      data-testid="lifecycle-capture"
-      color="success"
-      variant="soft"
-      size="sm"
-      icon="i-lucide-check-circle"
-      @click="triggerAction('capture')"
-    >
-      Capture
-    </UButton>
-
-    <UButton
-      v-if="availableActions.includes('cancel')"
-      data-testid="lifecycle-cancel"
+    <UAlert
+      v-if="!canRunLifecycle"
       color="warning"
-      variant="soft"
-      size="sm"
-      icon="i-lucide-x-circle"
-      @click="triggerAction('cancel')"
-    >
-      Cancel
-    </UButton>
+      variant="subtle"
+      icon="i-lucide-shield-alert"
+      description="You do not have permission to run payment lifecycle actions."
+      role="alert"
+    />
 
-    <UButton
-      v-if="availableActions.includes('refund')"
-      data-testid="lifecycle-refund"
-      color="error"
-      variant="soft"
-      size="sm"
-      icon="i-lucide-rotate-ccw"
-      @click="triggerAction('refund')"
-    >
-      Refund
-    </UButton>
+    <span v-if="availableActions.includes('authorize')" data-testid="action-lifecycle-authorize">
+      <UButton
+        data-testid="lifecycle-authorize"
+        color="info"
+        variant="soft"
+        size="sm"
+        icon="i-lucide-shield-check"
+        @click="triggerAction('authorize')"
+      >
+        Authorize
+      </UButton>
+    </span>
+
+    <span v-if="availableActions.includes('capture')" data-testid="action-lifecycle-capture">
+      <UButton
+        data-testid="lifecycle-capture"
+        color="success"
+        variant="soft"
+        size="sm"
+        icon="i-lucide-check-circle"
+        @click="triggerAction('capture')"
+      >
+        Capture
+      </UButton>
+    </span>
+
+    <span v-if="availableActions.includes('cancel')" data-testid="action-lifecycle-cancel">
+      <UButton
+        data-testid="lifecycle-cancel"
+        color="warning"
+        variant="soft"
+        size="sm"
+        icon="i-lucide-x-circle"
+        @click="triggerAction('cancel')"
+      >
+        Cancel
+      </UButton>
+    </span>
+
+    <span v-if="availableActions.includes('refund')" data-testid="action-lifecycle-refund">
+      <UButton
+        data-testid="lifecycle-refund"
+        color="error"
+        variant="soft"
+        size="sm"
+        icon="i-lucide-rotate-ccw"
+        @click="triggerAction('refund')"
+      >
+        Refund
+      </UButton>
+    </span>
 
     <p
-      v-if="availableActions.length === 0"
+      v-if="canRunLifecycle && availableActions.length === 0"
       class="text-sm text-gray-400 italic"
     >
       No actions available for current status
@@ -72,6 +85,7 @@
 const props = defineProps<{
   paymentOrderId: string
   merchantId: string
+  canRunLifecycle?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -79,8 +93,11 @@ const emit = defineEmits<{
 }>()
 
 const store = usePaymentOrdersStore()
+const { can } = useAuthorization()
+const canRunLifecycle = computed(() => props.canRunLifecycle ?? can.value.canRunLifecycle)
 
 const availableActions = computed<string[]>(() => {
+  if (!canRunLifecycle.value) return []
   const status = store.currentOrder?.paymentOrderId === props.paymentOrderId
     ? store.currentOrder?.status
     : undefined

@@ -27,7 +27,15 @@ public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<Gra
         Map.entry("merchant:payments:lifecycle", Authorities.MERCHANT_PAYMENTS_LIFECYCLE),
         Map.entry("platform:payments:read",      Authorities.PLATFORM_PAYMENTS_READ),
         Map.entry("platform:payments:lifecycle", Authorities.PLATFORM_PAYMENTS_LIFECYCLE),
-        Map.entry("platform:payments:audit",     Authorities.PLATFORM_PAYMENTS_AUDIT));
+        Map.entry("platform:payments:audit",     Authorities.PLATFORM_PAYMENTS_AUDIT),
+        Map.entry("platform:users:read",         Authorities.PLATFORM_USERS_READ),
+        Map.entry("platform:users:create",       Authorities.PLATFORM_USERS_CREATE),
+        Map.entry("platform:users:update",       Authorities.PLATFORM_USERS_UPDATE),
+        Map.entry("platform:users:assign-roles", Authorities.PLATFORM_USERS_ASSIGN_ROLES),
+        Map.entry("tenant:users:read",           Authorities.TENANT_USERS_READ),
+        Map.entry("tenant:users:create",         Authorities.TENANT_USERS_CREATE),
+        Map.entry("tenant:users:update",         Authorities.TENANT_USERS_UPDATE),
+        Map.entry("tenant:users:assign-roles",   Authorities.TENANT_USERS_ASSIGN_ROLES));
 
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {

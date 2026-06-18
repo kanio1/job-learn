@@ -1,5 +1,5 @@
-import type { CompositeRole } from '~/app/utils/rbacMatrix'
-import { COMPOSITE_ROLES } from '~/app/utils/rbacMatrix'
+import type { CompositeRole } from '~/utils/rbacMatrix'
+import { COMPOSITE_ROLES } from '~/utils/rbacMatrix'
 
 export default defineOAuthOidcEventHandler({
   config: {
@@ -16,8 +16,14 @@ export default defineOAuthOidcEventHandler({
     let merchantId: string | undefined
 
     try {
+      const encodedPayload = tokens.access_token.split('.')[1] ?? ''
+      const normalizedPayload = encodedPayload.replace(/-/g, '+').replace(/_/g, '/')
+      const paddedPayload = normalizedPayload.padEnd(
+        normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
+        '='
+      )
       const payload = JSON.parse(
-        Buffer.from(tokens.access_token.split('.')[1]!, 'base64url').toString('utf8')
+        globalThis.atob(paddedPayload)
       )
       const raw: unknown = payload?.realm_access?.roles
       realmRoles = Array.isArray(raw) ? (raw as string[]) : []

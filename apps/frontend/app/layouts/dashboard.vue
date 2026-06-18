@@ -114,7 +114,7 @@ const visibleLinks = computed<NavigationMenuItem[]>(() =>
  * UDashboardSearch groups — mirrors the visible links so search stays in sync
  * with role-aware navigation (Requirement 9.1 of iam-roles spec).
  */
-const searchGroups = computed(() => [
+const searchGroups = computed<any[]>(() => [
   {
     id: 'links',
     label: 'Go to',

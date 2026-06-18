@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AuthorityCatalogDriftTest {
 
     // -------------------------------------------------------------------------
-    // Property 4 — all 9 enforced constants must equal their documented literals
+    // Property 4 — all enforced constants must equal their documented literals
     // -------------------------------------------------------------------------
 
     @Test
@@ -68,14 +68,48 @@ class AuthorityCatalogDriftTest {
         assertThat(Authorities.PLATFORM_PAYMENTS_AUDIT)
                 .as("PLATFORM_PAYMENTS_AUDIT must equal the literal enforced by SecurityConfig URL rules")
                 .isEqualTo("platform:payments:audit");
+
+        // User management (platform-scoped) — enforced by future user-management @PreAuthorize
+        assertThat(Authorities.PLATFORM_USERS_READ)
+                .as("PLATFORM_USERS_READ must equal the documented user-management literal")
+                .isEqualTo("platform:users:read");
+
+        assertThat(Authorities.PLATFORM_USERS_CREATE)
+                .as("PLATFORM_USERS_CREATE must equal the documented user-management literal")
+                .isEqualTo("platform:users:create");
+
+        assertThat(Authorities.PLATFORM_USERS_UPDATE)
+                .as("PLATFORM_USERS_UPDATE must equal the documented user-management literal")
+                .isEqualTo("platform:users:update");
+
+        assertThat(Authorities.PLATFORM_USERS_ASSIGN_ROLES)
+                .as("PLATFORM_USERS_ASSIGN_ROLES must equal the documented user-management literal")
+                .isEqualTo("platform:users:assign-roles");
+
+        // User management (tenant-scoped) — enforced by future user-management @PreAuthorize
+        assertThat(Authorities.TENANT_USERS_READ)
+                .as("TENANT_USERS_READ must equal the documented user-management literal")
+                .isEqualTo("tenant:users:read");
+
+        assertThat(Authorities.TENANT_USERS_CREATE)
+                .as("TENANT_USERS_CREATE must equal the documented user-management literal")
+                .isEqualTo("tenant:users:create");
+
+        assertThat(Authorities.TENANT_USERS_UPDATE)
+                .as("TENANT_USERS_UPDATE must equal the documented user-management literal")
+                .isEqualTo("tenant:users:update");
+
+        assertThat(Authorities.TENANT_USERS_ASSIGN_ROLES)
+                .as("TENANT_USERS_ASSIGN_ROLES must equal the documented user-management literal")
+                .isEqualTo("tenant:users:assign-roles");
     }
 
     @Test
     @Tag("backend-authority-refactor")
     @DisplayName("Property 4: catalog no-drift")
-    void catalogContainsExactlyNineEnforcedAuthorities() {
+    void catalogContainsExactlySeventeenEnforcedAuthorities() {
         // Guard against accidental additions or removals from the catalog.
-        // The design mandates exactly 9 enforced authorities (Data Models table).
+        // The current design mandates exactly 17 enforced authorities.
         var allConstants = new String[]{
                 Authorities.MERCHANTS_CREATE,
                 Authorities.MERCHANTS_READ,
@@ -85,12 +119,20 @@ class AuthorityCatalogDriftTest {
                 Authorities.MERCHANT_PAYMENTS_LIFECYCLE,
                 Authorities.PLATFORM_PAYMENTS_READ,
                 Authorities.PLATFORM_PAYMENTS_LIFECYCLE,
-                Authorities.PLATFORM_PAYMENTS_AUDIT
+                Authorities.PLATFORM_PAYMENTS_AUDIT,
+                Authorities.PLATFORM_USERS_READ,
+                Authorities.PLATFORM_USERS_CREATE,
+                Authorities.PLATFORM_USERS_UPDATE,
+                Authorities.PLATFORM_USERS_ASSIGN_ROLES,
+                Authorities.TENANT_USERS_READ,
+                Authorities.TENANT_USERS_CREATE,
+                Authorities.TENANT_USERS_UPDATE,
+                Authorities.TENANT_USERS_ASSIGN_ROLES
         };
 
         assertThat(allConstants)
-                .as("The enforced authority catalog must contain exactly 9 constants")
-                .hasSize(9);
+                .as("The enforced authority catalog must contain exactly 17 constants")
+                .hasSize(17);
     }
 
     @Test
@@ -108,13 +150,21 @@ class AuthorityCatalogDriftTest {
                 Authorities.MERCHANT_PAYMENTS_LIFECYCLE,
                 Authorities.PLATFORM_PAYMENTS_READ,
                 Authorities.PLATFORM_PAYMENTS_LIFECYCLE,
-                Authorities.PLATFORM_PAYMENTS_AUDIT
+                Authorities.PLATFORM_PAYMENTS_AUDIT,
+                Authorities.PLATFORM_USERS_READ,
+                Authorities.PLATFORM_USERS_CREATE,
+                Authorities.PLATFORM_USERS_UPDATE,
+                Authorities.PLATFORM_USERS_ASSIGN_ROLES,
+                Authorities.TENANT_USERS_READ,
+                Authorities.TENANT_USERS_CREATE,
+                Authorities.TENANT_USERS_UPDATE,
+                Authorities.TENANT_USERS_ASSIGN_ROLES
         };
 
         for (String authority : allConstants) {
             assertThat(authority)
-                    .as("Authority '%s' must start with 'platform:' or 'merchant:'", authority)
-                    .matches("^(platform|merchant):.+:.+$");
+                    .as("Authority '%s' must start with 'platform:', 'merchant:', or 'tenant:'", authority)
+                    .matches("^(platform|merchant|tenant):.+:.+$");
         }
     }
 }

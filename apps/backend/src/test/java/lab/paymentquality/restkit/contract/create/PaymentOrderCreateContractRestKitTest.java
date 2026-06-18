@@ -12,7 +12,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import io.restassured.http.ContentType;
+import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import lab.paymentquality.restkit.assertions.HeaderAssertions;
 import lab.paymentquality.restkit.assertions.ProblemDetailsAssertions;
 import lab.paymentquality.restkit.spec.PaymentErrorSpecs;
 import lab.paymentquality.testsupport.PostgresContainerSupport;
@@ -165,7 +167,85 @@ public class PaymentOrderCreateContractRestKitTest extends PostgresContainerSupp
         ProblemDetailsAssertions.assertSafeProblem(conflictResponse);
         ProblemDetailsAssertions.assertProblemError(conflictResponse, "idempotency_conflict");
         
+    }
 
+    @Test
+    void createPaymentOrderVaryContainsAuthorizationAndIdempotencyKeyBecauseReplayDependsOnKey() {
+        MerchantApi merchantApi = new MerchantApi(port);
+        PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
 
+        String merchantId = merchantApi.createActiveMerchantAndReturnId("create-vary-idempotency-key");
+        String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+
+        String reference = PaymentReferences.unique("create-vary-idempotency-key");
+        CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
+
+        String idempotencyKey = IdempotencyKeys.forScenario("create-vary-idempotency-key");
+        String correlationId = CorrelationIds.forScenario("create-vary-idempotency-key");
+
+        Response response = paymentOrderApi.createOrder(
+                merchantId,
+                creatorToken,
+                payload,
+                idempotencyKey,
+                correlationId
+            )
+            .statusCode(201)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.LOCATION, notNullValue())
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("paymentOrderId", notNullValue())
+            .body("status", equalTo("CREATED"))
+            .extract()
+            .response();
+
+        HeaderAssertions.assertSensitiveResponseIsNotCacheable(response);
+        HeaderAssertions.assertVaryContainsAuthorization(response);
+        HeaderAssertions.assertVaryContainsIdempotencyKey(response);
+    }
+
+    @Test
+    void notAcceptableProblemResponseVaryContainsAcceptBecauseResponseDependsOnRequestedMediaType() {
+        MerchantApi merchantApi = new MerchantApi(port);
+        PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
+
+        String merchantId = merchantApi.createActiveMerchantAndReturnId("vary-accept-not-acceptable");
+        String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+        String readerToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        String reference = PaymentReferences.unique("vary-accept-not-acceptable");
+        CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
+
+        ExtractableResponse<Response> created = paymentOrderApi.createOrder(
+                merchantId,
+                creatorToken,
+                payload,
+                IdempotencyKeys.forScenario("vary-accept-not-acceptable-create"),
+                CorrelationIds.forScenario("vary-accept-not-acceptable-create")
+            )
+            .statusCode(201)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("paymentOrderId", notNullValue())
+            .extract();
+
+        String paymentOrderId = created.path("paymentOrderId");
+
+        Response response = paymentOrderApi.readOrderWithAccept(
+                merchantId,
+                paymentOrderId,
+                readerToken,
+                "application/xml"
+            )
+            .spec(PaymentErrorSpecs.notAcceptable())
+            .header(ApiHeaders.X_CORRELATION_ID, notNullValue())
+            .extract()
+            .response();
+
+        ProblemDetailsAssertions.assertSafeProblem(response);
+        ProblemDetailsAssertions.assertProblemError(response, "not_acceptable");
+        HeaderAssertions.assertSensitiveResponseIsNotCacheable(response);
+        HeaderAssertions.assertVaryContainsAuthorization(response);
+        HeaderAssertions.assertVaryContainsAccept(response);
     }
 }

@@ -8,7 +8,7 @@ package lab.paymentquality.shared.security;
  * via concatenation
  * ({@code @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_CREATE + "')")}).
  *
- * <p>Exactly 9 enforced authorities are declared here. The known-but-unenforced
+ * <p>Exactly 17 enforced authorities are declared here. The known-but-unenforced
  * {@code merchant:payments:operate} authority is intentionally excluded; it lives as a
  * documented constant local to {@link KeycloakRealmRoleConverter}.
  */
@@ -37,6 +37,24 @@ public final class Authorities {
     public static final String PLATFORM_PAYMENTS_READ      = "platform:payments:read";
     public static final String PLATFORM_PAYMENTS_LIFECYCLE = "platform:payments:lifecycle";
     public static final String PLATFORM_PAYMENTS_AUDIT     = "platform:payments:audit";
+
+    // -------------------------------------------------------------------------
+    // User management (platform-scoped)
+    // -------------------------------------------------------------------------
+
+    public static final String PLATFORM_USERS_READ         = "platform:users:read";
+    public static final String PLATFORM_USERS_CREATE       = "platform:users:create";
+    public static final String PLATFORM_USERS_UPDATE       = "platform:users:update";
+    public static final String PLATFORM_USERS_ASSIGN_ROLES = "platform:users:assign-roles";
+
+    // -------------------------------------------------------------------------
+    // User management (tenant-scoped)
+    // -------------------------------------------------------------------------
+
+    public static final String TENANT_USERS_READ         = "tenant:users:read";
+    public static final String TENANT_USERS_CREATE       = "tenant:users:create";
+    public static final String TENANT_USERS_UPDATE       = "tenant:users:update";
+    public static final String TENANT_USERS_ASSIGN_ROLES = "tenant:users:assign-roles";
 
     private Authorities() {}
 }

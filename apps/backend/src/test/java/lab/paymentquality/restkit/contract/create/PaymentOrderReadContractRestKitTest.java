@@ -482,4 +482,98 @@ public class PaymentOrderReadContractRestKitTest  extends PostgresContainerSuppo
         HeaderAssertions.assertVaryContainsAuthorization(response);
         HeaderAssertions.assertVaryContainsIfMatch(response);
     }
+
+    @Test
+    void readPaymentOrderVaryContainsAuthorizationBecauseResponseDependsOnToken() {
+        MerchantApi merchantApi = new MerchantApi(port);
+        PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
+
+        String merchantId = merchantApi.createActiveMerchantAndReturnId("read-vary-authorization");
+        String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+        String readerToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        String reference = PaymentReferences.unique("read-vary-authorization");
+        CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
+
+        ExtractableResponse<Response> created = paymentOrderApi.createOrder(
+                merchantId,
+                creatorToken,
+                payload,
+                IdempotencyKeys.forScenario("read-vary-authorization-create"),
+                CorrelationIds.forScenario("read-vary-authorization-create")
+            )
+            .statusCode(201)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("paymentOrderId", notNullValue())
+            .extract();
+
+        String paymentOrderId = created.path("paymentOrderId");
+
+        Response response = paymentOrderApi.readOrder(
+            merchantId,
+            paymentOrderId,
+            readerToken
+        )
+        .statusCode(200)
+        .contentType(ContentType.JSON)
+        .header(ApiHeaders.ETAG, startsWith("\"v"))
+        .body("paymentOrderId", equalTo(paymentOrderId))
+        .body("merchantId", equalTo(merchantId))
+        .extract()
+        .response();
+
+        HeaderAssertions.assertSensitiveResponseIsNotCacheable(response);
+        HeaderAssertions.assertVaryContainsAuthorization(response);
+    }
+
+    @Test
+    void authorizePaymentOrderVaryContainsAuthorizationAndIfMatchBecauseMutationDependsOnTokenAndVersion() {
+        MerchantApi merchantApi = new MerchantApi(port);
+        PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
+
+        String merchantId = merchantApi.createActiveMerchantAndReturnId("authorize-vary-if-match");
+        String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+        String operatorToken = TestJwtSupport.merchantPaymentOperatorToken(merchantId);
+
+        String reference = PaymentReferences.unique("authorize-vary-if-match");
+        CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
+
+        ExtractableResponse<Response> created = paymentOrderApi.createOrder(
+                merchantId,
+                creatorToken,
+                payload,
+                IdempotencyKeys.forScenario("authorize-vary-if-match-create"),
+                CorrelationIds.forScenario("authorize-vary-if-match-create")
+            )
+            .statusCode(201)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("paymentOrderId", notNullValue())
+            .body("status", equalTo("CREATED"))
+            .extract();
+
+        String paymentOrderId = created.path("paymentOrderId");
+        String currentEtag = created.header(ApiHeaders.ETAG);
+
+        Response response = paymentOrderApi.authorizeOrder(
+            merchantId,
+            paymentOrderId,
+            operatorToken,
+            Map.of("reason", "vary-if-match"),
+            IdempotencyKeys.forScenario("authorize-vary-if-match-command"),
+            currentEtag,
+            CorrelationIds.forScenario("authorize-vary-if-match-command")
+        )
+        .statusCode(200)
+        .contentType(ContentType.JSON)
+        .header(ApiHeaders.ETAG, startsWith("\"v"))
+        .body("paymentOrderId", equalTo(paymentOrderId))
+        .body("status", equalTo("AUTHORIZED"))
+        .extract()
+        .response();
+
+
+
+    }
 }

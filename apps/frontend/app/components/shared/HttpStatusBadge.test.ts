@@ -68,7 +68,7 @@ describe('HttpStatusBadge — Property 5: HTTP status category mapping', () => {
     await fc.assert(
       fc.asyncProperty(statusArb, async (status) => {
         const leadingDigit = Math.floor(status / 100)
-        const expectedLabel = EXPECTED_CATEGORY[leadingDigit]
+        const expectedLabel = EXPECTED_CATEGORY[leadingDigit]!
 
         const text = await renderBadge(status)
         expect(text.toLowerCase()).toContain(expectedLabel.toLowerCase())

@@ -7,7 +7,7 @@
  *
  * Feature: iam-roles-and-keycloak-login
  */
-import { rbacMatrix, type Capability, type CompositeRole } from '~/app/utils/rbacMatrix'
+import { rbacMatrix, type Capability, type CompositeRole } from '~/utils/rbacMatrix'
 
 export function useAuthorization() {
   const { user } = useUserSession()

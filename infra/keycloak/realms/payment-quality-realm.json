@@ -5,16 +5,60 @@
   "displayName": "Payment Quality Engineering Lab",
   "roles": {
     "realm": [
-      {"name": "merchants:create"},
-      {"name": "merchants:read"},
-      {"name": "merchants:update-status"},
-      {"name": "merchant:payments:create"},
-      {"name": "merchant:payments:read"},
-      {"name": "merchant:payments:operate"},
-      {"name": "merchant:payments:lifecycle"},
-      {"name": "platform:payments:read"},
-      {"name": "platform:payments:lifecycle"},
-      {"name": "platform:payments:audit"},
+      {
+        "name": "merchants:create"
+      },
+      {
+        "name": "merchants:read"
+      },
+      {
+        "name": "merchants:update-status"
+      },
+      {
+        "name": "merchant:payments:create"
+      },
+      {
+        "name": "merchant:payments:read"
+      },
+      {
+        "name": "merchant:payments:operate"
+      },
+      {
+        "name": "merchant:payments:lifecycle"
+      },
+      {
+        "name": "platform:payments:read"
+      },
+      {
+        "name": "platform:payments:lifecycle"
+      },
+      {
+        "name": "platform:payments:audit"
+      },
+      {
+        "name": "platform:users:read"
+      },
+      {
+        "name": "platform:users:create"
+      },
+      {
+        "name": "platform:users:update"
+      },
+      {
+        "name": "platform:users:assign-roles"
+      },
+      {
+        "name": "tenant:users:read"
+      },
+      {
+        "name": "tenant:users:create"
+      },
+      {
+        "name": "tenant:users:update"
+      },
+      {
+        "name": "tenant:users:assign-roles"
+      },
       {
         "name": "PLATFORM_ADMIN",
         "composite": true,
@@ -25,7 +69,11 @@
             "merchants:update-status",
             "platform:payments:read",
             "platform:payments:lifecycle",
-            "platform:payments:audit"
+            "platform:payments:audit",
+            "platform:users:read",
+            "platform:users:create",
+            "platform:users:update",
+            "platform:users:assign-roles"
           ]
         }
       },
@@ -37,7 +85,11 @@
             "merchants:create",
             "merchants:read",
             "merchants:update-status",
-            "merchant:payments:read"
+            "merchant:payments:read",
+            "tenant:users:read",
+            "tenant:users:create",
+            "tenant:users:update",
+            "tenant:users:assign-roles"
           ]
         }
       },
@@ -83,8 +135,12 @@
       "protocol": "openid-connect",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
-      "redirectUris": ["http://localhost:3000/*"],
-      "webOrigins": ["http://localhost:3000"],
+      "redirectUris": [
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ],
       "attributes": {
         "pkce.code.challenge.method": "S256"
       },
@@ -118,24 +174,32 @@
           }
         }
       ]
+    },
+    {
+      "clientId": "payment-quality-admin",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "secret": "${PAYMENT_QUALITY_KEYCLOAK_ADMIN_CLIENT_SECRET}"
     }
   ],
   "users": [
     {
-      "username": "platform.operator",
+      "username": "service-account-payment-quality-admin",
       "enabled": true,
-      "firstName": "Platform",
-      "lastName": "Operator",
-      "email": "platform.operator@example.test",
-      "emailVerified": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "platform.operator",
-          "temporary": false
-        }
-      ],
-      "realmRoles": ["merchants:create", "merchants:read", "merchants:update-status"]
+      "serviceAccountClientId": "payment-quality-admin",
+      "clientRoles": {
+        "realm-management": [
+          "view-realm",
+          "query-users",
+          "view-users",
+          "manage-users"
+        ]
+      }
     },
     {
       "username": "merchant.denied",
@@ -174,7 +238,9 @@
         "merchant_id": "PLACEHOLDER_MERCHANT_ID",
         "tenant_id": "PLACEHOLDER_TENANT_ID"
       },
-      "realmRoles": ["merchant:payments:create"]
+      "realmRoles": [
+        "merchant:payments:create"
+      ]
     },
     {
       "username": "merchant.payment.reader",
@@ -194,7 +260,9 @@
         "merchant_id": "PLACEHOLDER_MERCHANT_ID",
         "tenant_id": "PLACEHOLDER_TENANT_ID"
       },
-      "realmRoles": ["merchant:payments:read"]
+      "realmRoles": [
+        "merchant:payments:read"
+      ]
     },
     {
       "username": "merchant.payment.operator",
@@ -214,7 +282,9 @@
         "merchant_id": "PLACEHOLDER_MERCHANT_ID",
         "tenant_id": "PLACEHOLDER_TENANT_ID"
       },
-      "realmRoles": ["merchant:payments:operate"]
+      "realmRoles": [
+        "merchant:payments:operate"
+      ]
     },
     {
       "username": "platform.payment.reader",
@@ -230,7 +300,9 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["platform:payments:read"]
+      "realmRoles": [
+        "platform:payments:read"
+      ]
     },
     {
       "username": "merchant.payment.lifecycle",
@@ -250,7 +322,11 @@
         "merchant_id": "PLACEHOLDER_MERCHANT_ID",
         "tenant_id": "PLACEHOLDER_TENANT_ID"
       },
-      "realmRoles": ["merchant:payments:create", "merchant:payments:read", "merchant:payments:lifecycle"]
+      "realmRoles": [
+        "merchant:payments:create",
+        "merchant:payments:read",
+        "merchant:payments:lifecycle"
+      ]
     },
     {
       "username": "platform.payment.admin",
@@ -266,7 +342,10 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["platform:payments:read", "platform:payments:lifecycle"]
+      "realmRoles": [
+        "platform:payments:read",
+        "platform:payments:lifecycle"
+      ]
     },
     {
       "username": "platform.payment.auditor",
@@ -282,7 +361,10 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["platform:payments:read", "platform:payments:audit"]
+      "realmRoles": [
+        "platform:payments:read",
+        "platform:payments:audit"
+      ]
     },
     {
       "username": "platform.admin",
@@ -301,7 +383,9 @@
       "attributes": {
         "tenant_id": "PLATFORM_TENANT"
       },
-      "realmRoles": ["PLATFORM_ADMIN"]
+      "realmRoles": [
+        "PLATFORM_ADMIN"
+      ]
     },
     {
       "username": "tenant.admin",
@@ -320,7 +404,9 @@
       "attributes": {
         "tenant_id": "TENANT_ALPHA"
       },
-      "realmRoles": ["TENANT_ADMIN"]
+      "realmRoles": [
+        "TENANT_ADMIN"
+      ]
     },
     {
       "username": "merchant.manager",
@@ -340,7 +426,9 @@
         "merchant_id": "MERCHANT_ALPHA_001",
         "tenant_id": "TENANT_ALPHA"
       },
-      "realmRoles": ["MERCHANT_MANAGER"]
+      "realmRoles": [
+        "MERCHANT_MANAGER"
+      ]
     },
     {
       "username": "support.agent",
@@ -359,7 +447,9 @@
       "attributes": {
         "tenant_id": "PLATFORM_TENANT"
       },
-      "realmRoles": ["SUPPORT_AGENT"]
+      "realmRoles": [
+        "SUPPORT_AGENT"
+      ]
     },
     {
       "username": "readonly.user",
@@ -378,14 +468,16 @@
       "attributes": {
         "tenant_id": "TENANT_ALPHA"
       },
-      "realmRoles": ["READ_ONLY_USER"]
+      "realmRoles": [
+        "READ_ONLY_USER"
+      ]
     },
     {
       "username": "platform.operator",
       "enabled": true,
       "firstName": "Platform",
-      "lastName": "Operator (Legacy)",
-      "email": "platform.operator.legacy@example.test",
+      "lastName": "Operator",
+      "email": "platform.operator@example.test",
       "emailVerified": true,
       "credentials": [
         {
@@ -397,7 +489,12 @@
       "attributes": {
         "tenant_id": "PLACEHOLDER_TENANT_ID"
       },
-      "realmRoles": ["merchants:create", "merchants:read", "merchants:update-status", "PLATFORM_ADMIN"]
+      "realmRoles": [
+        "merchants:create",
+        "merchants:read",
+        "merchants:update-status",
+        "PLATFORM_ADMIN"
+      ]
     }
   ]
 }

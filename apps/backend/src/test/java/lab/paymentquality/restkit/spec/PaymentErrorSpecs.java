@@ -58,6 +58,7 @@ public final class PaymentErrorSpecs {
         return problem(412);
     }
 
-
-
+    public static ResponseSpecification tooManyRequests() {
+        return problem(429);
+    }
 }

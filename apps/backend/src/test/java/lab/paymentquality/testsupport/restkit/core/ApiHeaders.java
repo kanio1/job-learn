@@ -17,6 +17,7 @@ public final class ApiHeaders {
     public static final String VARY = "Vary";
     public static final String ACCEPT_PATCH = "Accept-Patch";
     public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
+    public static final String RETRY_AFTER = "Retry-After";
 
     private ApiHeaders() {
     }

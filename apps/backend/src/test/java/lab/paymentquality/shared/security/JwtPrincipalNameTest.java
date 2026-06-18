@@ -333,7 +333,7 @@ class JwtPrincipalNameTest {
     }
 
     /**
-     * Generates lists of known realm role names (any non-empty subset of the 10 known roles,
+     * Generates lists of known realm role names (any non-empty subset of known roles,
      * plus the empty list) to verify authority preservation.
      */
     @Provide
@@ -348,7 +348,15 @@ class JwtPrincipalNameTest {
                 "merchant:payments:lifecycle",
                 "platform:payments:read",
                 "platform:payments:lifecycle",
-                "platform:payments:audit");
+                "platform:payments:audit",
+                "platform:users:read",
+                "platform:users:create",
+                "platform:users:update",
+                "platform:users:assign-roles",
+                "tenant:users:read",
+                "tenant:users:create",
+                "tenant:users:update",
+                "tenant:users:assign-roles");
         return Arbitraries.subsetOf(knownRoles).map(java.util.ArrayList::new);
     }
 }
