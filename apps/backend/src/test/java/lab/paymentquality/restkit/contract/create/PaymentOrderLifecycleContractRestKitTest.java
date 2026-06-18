@@ -1,6 +1,5 @@
 package lab.paymentquality.restkit.contract.create;
 
-import static io.restassured.RestAssured.head;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -23,7 +22,6 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import io.restassured.http.ContentType;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
-import io.restassured.response.ResponseOptions;
 import lab.paymentquality.restkit.assertions.HeaderAssertions;
 import lab.paymentquality.restkit.assertions.ProblemDetailsAssertions;
 import lab.paymentquality.restkit.spec.PaymentErrorSpecs;
@@ -709,7 +707,162 @@ public class PaymentOrderLifecycleContractRestKitTest extends PostgresContainerS
         HeaderAssertions.assertNoStore(response);
         HeaderAssertions.assertVaryContainsAuthorization(response);
         HeaderAssertions.assertVaryContainsIfMatch(response);
-}
+    }
+
+    @Test
+    void captureCreatedPaymentOrderReturns409ConflictProblem() {
+        MerchantApi merchantApi = new MerchantApi(port);
+        PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
+
+        String merchantId = merchantApi.createActiveMerchantAndReturnId("capture-created-conflict");
+        String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+        String operatorToken = TestJwtSupport.merchantPaymentOperatorToken(merchantId);
+
+        String reference = PaymentReferences.unique("capture-created-conflict");
+        CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
+
+        ExtractableResponse<Response> created = paymentOrderApi.createOrder(
+                merchantId,
+                creatorToken,
+                payload,
+                IdempotencyKeys.forScenario("capture-created-conflict-create"),
+                CorrelationIds.forScenario("capture-created-conflict-create")
+            )
+            .statusCode(201)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("paymentOrderId", notNullValue())
+            .body("status", equalTo("CREATED"))
+            .extract();
+
+        String paymentOrderId = created.path("paymentOrderId");
+        String currentEtag = created.header(ApiHeaders.ETAG);
+
+        Response response = paymentOrderApi.captureOrder(
+                merchantId,
+                paymentOrderId,
+                operatorToken,
+                Map.of(
+                    "amountMinor", 12500,
+                    "reason", "capture-before-authorize"
+                ),
+                IdempotencyKeys.forScenario("capture-created-conflict-capture"),
+                currentEtag,
+                CorrelationIds.forScenario("capture-created-conflict-capture")
+            )
+            .spec(PaymentErrorSpecs.conflict())
+            .header(ApiHeaders.X_CORRELATION_ID, notNullValue())
+            .extract()
+            .response();
+
+        ProblemDetailsAssertions.assertSafeProblem(response);
+        ProblemDetailsAssertions.assertProblemError(response, "payment_order_state_conflict");
+        HeaderAssertions.assertSensitiveResponseIsNotCacheable(response);
+        HeaderAssertions.assertVaryContainsAuthorization(response);
+        HeaderAssertions.assertVaryContainsIfMatch(response);
+    }
+
+    @Test
+    void refundMoreThanCapturedAmountReturns422UnprocessableContentProblem() {
+        MerchantApi merchantApi = new MerchantApi(port);
+        PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
+
+        String merchantId = merchantApi.createActiveMerchantAndReturnId("refund-too-much-unprocessable");
+        String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+        String operatorToken = TestJwtSupport.merchantPaymentOperatorToken(merchantId);
+
+        String reference = PaymentReferences.unique("refund-too-much-unprocessable");
+        CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
+
+        ExtractableResponse<Response> created = paymentOrderApi.createOrder(
+                merchantId,
+                creatorToken,
+                payload,
+                IdempotencyKeys.forScenario("refund-too-much-unprocessable-create"),
+                CorrelationIds.forScenario("refund-too-much-unprocessable-create")
+            )
+            .statusCode(201)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("paymentOrderId", notNullValue())
+            .body("status", equalTo("CREATED"))
+            .extract();
+
+        String paymentOrderId = created.path("paymentOrderId");
+        String createdEtag = created.header(ApiHeaders.ETAG);
+
+        ExtractableResponse<Response> authorized = paymentOrderApi.authorizeOrder(
+                merchantId,
+                paymentOrderId,
+                operatorToken,
+                Map.of("reason", "prepare-refund-too-much"),
+                IdempotencyKeys.forScenario("refund-too-much-unprocessable-authorize"),
+                createdEtag,
+                CorrelationIds.forScenario("refund-too-much-unprocessable-authorize")
+            )
+            .statusCode(200)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("status", equalTo("AUTHORIZED"))
+            .extract();
+
+        String authorizedEtag = authorized.header(ApiHeaders.ETAG);
+
+        ExtractableResponse<Response> captured = paymentOrderApi.captureOrder(
+                merchantId,
+                paymentOrderId,
+                operatorToken,
+                Map.of(
+                    "amountMinor", 12500,
+                    "reason", "capture-before-too-large-refund"
+                ),
+                IdempotencyKeys.forScenario("refund-too-much-unprocessable-capture"),
+                authorizedEtag,
+                CorrelationIds.forScenario("refund-too-much-unprocessable-capture")
+            )
+            .statusCode(200)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("status", equalTo("CAPTURED"))
+            .body("capturedAmountMinor", equalTo(12500))
+            .extract();
+
+        String capturedEtag = captured.header(ApiHeaders.ETAG);
+
+        Response response = paymentOrderApi.refundOrder(
+                merchantId,
+                paymentOrderId,
+                operatorToken,
+                Map.of(
+                    "amountMinor", 13000,
+                    "reason", "refund-more-than-captured"
+                ),
+                IdempotencyKeys.forScenario("refund-too-much-unprocessable-refund"),
+                capturedEtag,
+                CorrelationIds.forScenario("refund-too-much-unprocessable-refund")
+            )
+            .spec(PaymentErrorSpecs.unprocessableContent())
+            .header(ApiHeaders.X_CORRELATION_ID, notNullValue())
+            .extract()
+            .response();
+
+        ProblemDetailsAssertions.assertSafeProblem(response);
+        ProblemDetailsAssertions.assertProblemError(response, "payment_order_amount_exceeds_captured_amount");
+        HeaderAssertions.assertSensitiveResponseIsNotCacheable(response);
+        HeaderAssertions.assertVaryContainsAuthorization(response);
+        HeaderAssertions.assertVaryContainsIfMatch(response);
+
+        paymentOrderApi.readOrder(
+            merchantId,
+            paymentOrderId,
+            TestJwtSupport.merchantPaymentReaderToken(merchantId)
+        )
+        .statusCode(200)
+        .contentType(ContentType.JSON)
+        .body("paymentOrderId", equalTo(paymentOrderId))
+        .body("status", equalTo("CAPTURED"))
+        .body("capturedAmountMinor", equalTo(12500));
+    }
 
 
 }

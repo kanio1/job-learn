@@ -1166,3 +1166,158 @@ These are limited correctness fixes under Task 10.3; no new user-management feat
 - Create-modal and role-drawer interaction details remain candidates for later focused component or approved browser-level coverage; Wave 10 validates the required seven page states and one representative successful write path.
 
 Wave 11 — Final checkpoint may start when explicitly requested. It was not started automatically.
+
+## Wave 11 — Final checkpoint
+
+Completed on 2026-06-18.
+
+### Status
+
+`COMPLETE_WITH_OPTIONAL_GAPS`.
+
+All required `user-management` spec tasks (Waves 0–10) are implemented and verified. Optional tasks that were skipped are explicitly documented below. Backend and frontend validation are green. No `.kiro/**` files were modified. No Playwright files were created. No token, secret, or temporary-password exposure was found. No local user database, JPA entity, repository, or Flyway migration was added.
+
+### Backend validation
+
+Environment: Podman 5.8.2 socket at `unix:///run/user/1000/podman/podman.sock`, `TESTCONTAINERS_RYUK_DISABLED=true`.
+
+Commands and results:
+
+- `cd apps/backend && ./mvnw -q -Dsurefire.excludes='**/restkit/**/*.java,**/paymentsupport/**/*.java' clean test`
+  - Result: GREEN (exit 0).
+  - Surefire summary: `Tests run: 321, Failures: 0, Errors: 0, Skipped: 5`.
+  - IAM Surefire tests: `IamModuleTest` 4, `UserManagementServiceTest` 20, `UserManagementControllerSecurityTest` 17, `UserMapperTest` 6 — all GREEN.
+  - `ModulithArchitectureTest`, `MerchantModuleTest`, `TenantModuleTest` — all GREEN.
+- `cd apps/backend && ./mvnw -q -Dsurefire.excludes='**/restkit/**/*.java,**/paymentsupport/**/*.java' verify`
+  - Result: GREEN (exit 0).
+  - Failsafe summary: `Tests run: 16, Failures: 0, Errors: 0, Skipped: 0`.
+  - `UserManagementKeycloakAdminIT`: 3 tests GREEN (real Keycloak 26.6.1 via Testcontainers/Podman, 24.36 s).
+  - `TenantIsolationIT`: 9 tests GREEN.
+  - `MerchantPersistenceIT`: 4 tests GREEN.
+
+Excluded suites (per `AGENTS.md`):
+
+- `apps/backend/src/test/java/lab/paymentquality/restkit/**`
+- `apps/backend/src/test/java/lab/paymentquality/paymentsupport/**`
+
+Compilation workaround note:
+
+- The untracked file `apps/backend/src/test/java/lab/paymentquality/restkit/contract/create/PaymentOrderSecurityContractRestKitTest.java` (created by concurrent work outside the `user-management` spec, in the excluded `restkit/` suite) references two methods that do not exist in `HeaderAssertions` (`assertWwwAuthenticatePresent`, `assertAuthorizationTokenIsNotLeaked`).
+- The `surefire.excludes` flag excludes test execution but not test compilation, so this broken excluded-suite file blocked `test-compile` for the entire project.
+- The `maven.compiler.testExcludes` property was not recognized by `maven-compiler-plugin` 3.14.1.
+- Workaround: the broken untracked file was temporarily moved to `/tmp/opencode/` during validation, then restored exactly afterward. `git status --short` confirmed the file was restored to its original untracked state.
+- No tracked files, `.kiro/**` files, or `user-management` source files were modified by this workaround. The broken file remains in the working tree as found.
+
+### Frontend validation
+
+Commands and results:
+
+- `cd apps/frontend && corepack pnpm typecheck`
+  - Result: GREEN (exit 0).
+- `cd apps/frontend && corepack pnpm test:unit`
+  - Result: GREEN (exit 0).
+  - Vitest summary: `Test Files 38 passed (38)`, `Tests 468 passed (468)`.
+  - Includes `user-management-rbac.property.test.ts` (Property 5 fast-check, 100 runs) and `app/pages/admin/users/index.test.ts` (seven UI state component tests).
+  - Existing non-failing Nuxt Icon load warnings remained.
+
+Playwright was not run. No Playwright files were created.
+
+### Spec compliance
+
+Backend (all `DONE_VERIFIED` unless noted):
+
+1. No local user database: confirmed — no `app_user` table, no user Flyway migration (only `merchant`, `payment`, `tenant` migration directories exist), no `@Entity` in `iam`, no repository in `iam`.
+2. Keycloak remains source of truth: confirmed — `iam` module holds no persistence; all operations delegate to `KeycloakAdminClient`.
+3. No `keycloak-admin-client` dependency: confirmed — `grep "keycloak-admin-client" pom.xml` returns no matches.
+4. Thin Spring `RestClient` wrapper: confirmed — `KeycloakAdminClient` and `KeycloakAdminTokenProvider` use `org.springframework.web.client.RestClient`.
+5. Service-account client credentials: confirmed — `KeycloakAdminTokenProvider` uses `client_credentials` grant with `KeycloakAdminProperties` credentials.
+6. Principal bearer token never reused as admin token: confirmed — `KeycloakAdminClient` has no acting-principal JWT input; controller uses `jwt` only for `TenantResolver.resolve()`.
+7. Admin token never browser-exposed: confirmed — token held only in `KeycloakAdminTokenProvider` private state; no outbound DTO has a credential/token field.
+8. 404/409/502 mapping exists and is tested: confirmed — `UserManagementExceptionHandler` maps `UserNotFoundException`→404, `DuplicateUserException`→409, `KeycloakAdminUnavailableException`→502; tested in `UserManagementControllerSecurityTest` and `UserManagementKeycloakAdminIT`.
+9. Platform/tenant scoping implemented: confirmed — `UserManagementService` enforces read boundary (masked 404) and write boundary (403) for tenant-scoped cross-tenant access; platform-scoped callers have cross-tenant visibility.
+10. Real Keycloak Testcontainers IT exists and passes: confirmed — `UserManagementKeycloakAdminIT` 3/3 GREEN with real Keycloak 26.6.1 via Podman.
+11. `IamModuleTest` passes: confirmed — 4 tests GREEN (module boots, `ApplicationModules.verify()`, no JPA entity, no Flyway migration).
+12. `ModulithArchitectureTest` passes: confirmed — 1 test GREEN.
+13. Realm changes additive: confirmed — 16 user-management authority role references in realm JSON; no existing role removed or renamed.
+14. No duplicate realm usernames: confirmed — `sort | uniq -d` on realm usernames returns no duplicates.
+15. Service account has necessary role mappings: confirmed — `payment-quality-admin` client with `realm-management` privileges for user and role-mapping administration.
+
+Frontend (all `DONE_VERIFIED`):
+
+1. Zod schemas exist: confirmed — `app/schemas/user.schema.ts` with `compositeRoleSchema`, `userSummarySchema`, `userDetailSchema`, `userListSchema`, `createUserSchema`, `updateUserSchema`, `roleAssignmentSchema`.
+2. `useUsersApi` exists and validates responses: confirmed — `app/composables/useUsersApi.ts` with `listUsers`, `createUser`, `getUser`, `updateUser`, `assignUserRoles`; validates every response through Zod.
+3. Nuxt server proxy routes exist: confirmed — five routes under `server/api/users/**` using existing `backendApi` helper.
+4. Server proxy routes do not expose bearer/admin token: confirmed — helper attaches bearer server-side only; forwards only safe response-header allowlist.
+5. `canManageUsers` and `canAssignRoles` implemented: confirmed — in `rbacMatrix.ts` and `useAuthorization.ts`.
+6. Capabilities granted only to `PLATFORM_ADMIN` and `TENANT_ADMIN`: confirmed — other three roles retain `false`.
+7. `/admin/users` page exists: confirmed — `app/pages/admin/users/index.vue` (CSR-only).
+8. User table, create form, edit drawer, role assignment select exist: confirmed — four components under `app/components/user/`.
+9. Dashboard users nav link is role-gated: confirmed — `nav-link-users` in `dashboard.vue` included only when `can.canManageUsers` is true.
+10. Dashboard search users entry is role-gated: confirmed — parallel `UDashboardSearch` group entry.
+11. Seven UI states implemented: confirmed — loading, empty, filtered-empty, error, forbidden, success, conflict (tested in `index.test.ts`).
+12. Frontend tests exist for Wave 10: confirmed — `user-management-rbac.property.test.ts` (P5) and `index.test.ts` (seven state component tests), 38 files/468 tests GREEN.
+13. No Playwright files created: confirmed — no `.spec.ts` or Playwright config for user-management.
+14. No temporary password rendered or stored after create: confirmed — temporary password exists only in local create-form state and is cleared on submission/close.
+
+### Security and confidentiality
+
+Security grep (`admin token|access_token|refresh_token|client_secret|clientSecret|Authorization|Bearer|temporaryPassword|KEYCLOAK_ADMIN|KC_BOOTSTRAP_ADMIN_PASSWORD`) was run across `apps/backend`, `apps/frontend`, `infra/keycloak`, and `.codex`.
+
+Findings — all legitimate, no browser-exposed secrets:
+
+- `Authorization` header references in backend shared/web config, CORS, `Vary` headers, and payment domain logic (`AuthorizationExpiredException`, `voidAuthorization`) — legitimate, not HTTP auth token exposure.
+- `clientSecret` in `KeycloakAdminProperties` — config holder bound from env, no `toString()` that logs it.
+- `client_secret` form parameter in `KeycloakAdminTokenProvider` — sent to Keycloak token endpoint server-side only.
+- `access_token` `@JsonProperty` in `KeycloakAdminTokenProvider` — deserializes Keycloak's token response into a private inner class; never exposed.
+- `setBearerAuth(token)` in `KeycloakAdminClient` — attaches admin token server-side to Keycloak Admin API calls; never reaches browser.
+- `temporaryPassword` in `CreateUserRequest` and `UserManagementService` — inbound only; never in outbound DTOs.
+- `KC_BOOTSTRAP_ADMIN_PASSWORD=admin` and `PAYMENT_QUALITY_KEYCLOAK_ADMIN_CLIENT_SECRET=test-admin-secret` in `KeycloakContainerSupport` — testcontainers test config, not production, not a real secret.
+- Test assertions checking absence of secrets (e.g., `doesNotContain("access_token")`) — legitimate negative assertions.
+
+No token, secret, temporary password, client secret, refresh token, or raw Keycloak representation was found in any browser-exposed UI, proxy response, or log surface.
+
+### Optional tasks
+
+Required (NON-optional) tasks — all `DONE_VERIFIED`:
+
+- 6.6 `IamModuleTest` (module boundary): DONE_VERIFIED — 4 tests GREEN.
+- 6.7 Integration tests with Testcontainers-Keycloak: DONE_VERIFIED — `UserManagementKeycloakAdminIT` 3/3 GREEN.
+
+Optional (`*`) tasks:
+
+- 6.1 Unit test `KeycloakAdminTokenProvider`: `OPTIONAL_SKIPPED_ACCEPTABLE` — deferred due to private inner `TokenResponse` class preventing clean mocking; documented in Wave 7 notes.
+- 6.2 Unit test `UserMapper`: `DONE_VERIFIED` — 6 tests GREEN.
+- 6.3 Unit test `resolveCreateTenant` branches: `DONE_VERIFIED` — within `UserManagementServiceTest`.
+- 6.4 Unit test safe-edit ordering: `DONE_VERIFIED` — within `UserManagementServiceTest` (Mockito `InOrder`).
+- 6.5 `@WebMvcTest` slice for `UserManagementController`: `DONE_VERIFIED` — `UserManagementControllerSecurityTest` 17 tests GREEN.
+- 6.8 Realm-import smoke check: `OPTIONAL_SKIPPED_ACCEPTABLE` — covered by Wave 1 converter tests; documented.
+- 6.9 Property test P1 (tenant-scoped list + filters): `OPTIONAL_SKIPPED_ACCEPTABLE` — deferred; documented.
+- 6.10 Property test P2 (cross-tenant read→404 / write→403): `OPTIONAL_SKIPPED_ACCEPTABLE` — deferred; documented.
+- 6.11 Property test P3 (only five composite roles assignable): `OPTIONAL_SKIPPED_ACCEPTABLE` — deferred; documented.
+- 6.12 Property test P4 (create assigns tenant by scope): `OPTIONAL_SKIPPED_ACCEPTABLE` — deferred; documented.
+- 6.13 Property test P6 (secrets never browser-exposed): `OPTIONAL_SKIPPED_ACCEPTABLE` — deferred; documented.
+- 10.1 Property test P5 (rbacMatrix biconditional): `DONE_VERIFIED` — `user-management-rbac.property.test.ts` fast-check 100 runs GREEN.
+- 10.2 Component tests for seven UI states: `DONE_VERIFIED` — `index.test.ts` covers all seven states GREEN.
+
+### Remaining gaps
+
+- No backend jqwik property tests P1–P4, P6 (optional tasks 6.9–6.13) were implemented. These are optional and documented as deferred.
+- No `KeycloakAdminTokenProvider` unit test (optional task 6.1) was implemented due to the private inner class design. This is optional and documented.
+- No Playwright/E2E browser tests were created or run. The spec explicitly defers Playwright coverage to future learning lessons.
+- The untracked `restkit/` file `PaymentOrderSecurityContractRestKitTest.java` has compilation errors (missing `HeaderAssertions` methods) from concurrent work outside the `user-management` spec. This is in the excluded `restkit/` suite and does not affect `user-management` validation, but it blocks unfiltered `./mvnw test` compilation until fixed by the `restkit/` work owner.
+
+### Final recommendation
+
+The `user-management` spec (Spec #3) can be **closed** as `COMPLETE_WITH_OPTIONAL_GAPS`.
+
+- All required backend and frontend tasks are implemented and verified.
+- All NON-optional tests (6.6 `IamModuleTest`, 6.7 real Keycloak IT) are GREEN.
+- Backend validation is GREEN (321 Surefire + 16 Failsafe = 337 tests, 0 failures, 0 errors, 5 skipped).
+- Frontend validation is GREEN (typecheck + 38 files/468 tests).
+- No `.kiro/**` modifications.
+- No Playwright files created.
+- No token/secret/temporary-password exposure.
+- No local user DB, JPA entity, repository, or Flyway migration.
+- Optional gaps (6.1, 6.8, 6.9–6.13) are explicitly documented and acceptable per the spec's optional-task policy.
+
+The next spec on the SDET roadmap is `audit-log-dashboard` (Spec #4). It may start when explicitly requested by the user. It was not started during Wave 11.

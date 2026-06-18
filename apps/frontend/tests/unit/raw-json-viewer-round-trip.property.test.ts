@@ -176,9 +176,16 @@ describe('Feature: payment-operations-dashboard, Property 6: Raw JSON round-trip
           // Post-condition 1: the rendered output must itself be valid JSON
           expect(isValidJson(rendered)).toBe(true)
 
-          // Post-condition 2: re-parsing the rendered output must deep-equal the original value
+          // Post-condition 2: re-parsing the rendered output must deep-equal the
+          // JSON-normalized original value. JSON.stringify normalizes -0 to 0 and
+          // drops `undefined`, so we compare against a single JSON round-trip of
+          // the original value rather than against the raw value itself. This is
+          // the correct invariant for "the component indents JSON faithfully
+          // without data loss" — the component uses JSON.stringify(..., null, 2),
+          // which preserves the same JSON semantics as the input JSON.stringify.
           const roundTripped = JSON.parse(rendered)
-          expect(roundTripped).toEqual(value)
+          const jsonNormalized = JSON.parse(JSON.stringify(value))
+          expect(roundTripped).toEqual(jsonNormalized)
         }),
         { numRuns: 200 },
       )

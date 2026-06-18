@@ -69,4 +69,15 @@ public final class PaymentErrorSpecs {
     public static ResponseSpecification unprocessableContent() {
         return problem(422);
     }
+    public static ResponseSpecification unauthorized() {
+    return problem(401);
+    }
+
+    public static ResponseSpecification forbidden() {
+        return problem(403);
+    }
+
+    public static ResponseSpecification notFound() {
+        return problem(404);
+    }
 }

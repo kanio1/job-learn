@@ -420,3 +420,56 @@ Completed on 2026-06-18.
 - Wave 10 changed no backend, Keycloak realm, `.kiro/**`, or Playwright file; Playwright was not run. An unrelated concurrent `PaymentErrorSpecs.java` worktree change was observed and left untouched.
 - Next recommended wave: Wave 11 — Final checkpoint. Do not start automatically.
 - Wave 11 go/no-go: GO when explicitly requested.
+
+## Wave 11 — User-management final checkpoint
+
+Completed on 2026-06-18.
+
+- Wave 11 status: `COMPLETE_WITH_OPTIONAL_GAPS`.
+- `user-management` spec (Spec #3) can be **closed**.
+
+### Backend validation
+
+- Environment: Podman 5.8.2, `DOCKER_HOST=unix:///run/user/1000/podman/podman.sock`, `TESTCONTAINERS_RYUK_DISABLED=true`.
+- `cd apps/backend && ./mvnw -q -Dsurefire.excludes='**/restkit/**/*.java,**/paymentsupport/**/*.java' clean test`: GREEN.
+  - Surefire: `Tests run: 321, Failures: 0, Errors: 0, Skipped: 5`.
+- `cd apps/backend && ./mvnw -q -Dsurefire.excludes='**/restkit/**/*.java,**/paymentsupport/**/*.java' verify`: GREEN.
+  - Failsafe: `Tests run: 16, Failures: 0, Errors: 0, Skipped: 0`.
+  - `UserManagementKeycloakAdminIT`: 3/3 GREEN (real Keycloak 26.6.1 via Testcontainers/Podman).
+  - `TenantIsolationIT`: 9/9 GREEN. `MerchantPersistenceIT`: 4/4 GREEN.
+- `IamModuleTest`: 4/4 GREEN. `ModulithArchitectureTest`: 1/1 GREEN. `MerchantModuleTest`: 2/2 GREEN. `TenantModuleTest`: 2/2 GREEN.
+- IAM unit tests: `UserManagementServiceTest` 20, `UserManagementControllerSecurityTest` 17, `UserMapperTest` 6 — all GREEN.
+- Compilation workaround: untracked broken `restkit/` file (`PaymentOrderSecurityContractRestKitTest.java`, concurrent work, excluded suite) blocked `test-compile`; temporarily moved to `/tmp/opencode/` during validation, restored exactly afterward. No tracked or `.kiro/**` files modified.
+
+### Frontend validation
+
+- `cd apps/frontend && corepack pnpm typecheck`: GREEN.
+- `cd apps/frontend && corepack pnpm test:unit`: GREEN — 38 test files, 468 tests passed.
+- Playwright was not run. No Playwright files were created.
+
+### Spec compliance summary
+
+- All required Waves 0–10 tasks: `DONE_VERIFIED`.
+- All NON-optional tests (6.6 `IamModuleTest`, 6.7 real Keycloak IT): GREEN.
+- Optional tasks skipped (6.1, 6.8, 6.9–6.13): `OPTIONAL_SKIPPED_ACCEPTABLE`, explicitly documented.
+- No local user DB, JPA entity, repository, or Flyway migration: confirmed.
+- No `keycloak-admin-client` dependency: confirmed.
+- Thin Spring `RestClient` wrapper: confirmed.
+- Admin token never browser-exposed: confirmed.
+- Realm changes additive, no duplicate usernames: confirmed.
+- `canManageUsers`/`canAssignRoles` granted only to `PLATFORM_ADMIN` and `TENANT_ADMIN`: confirmed.
+- Seven UI states implemented and tested: confirmed.
+- No `.kiro/**` modifications: confirmed.
+- No token/secret/temporary-password exposure: confirmed.
+
+### Can user-management be closed?
+
+Yes — `COMPLETE_WITH_OPTIONAL_GAPS`.
+
+### Can the next spec start?
+
+Yes, when explicitly requested. The next spec on the SDET roadmap is `audit-log-dashboard` (Spec #4). It was not started during Wave 11.
+
+### Next recommended spec/wave
+
+`audit-log-dashboard` (Spec #4) — Wave 0 prerequisite gate, when explicitly requested by the user.

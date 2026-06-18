@@ -6,7 +6,6 @@ import lab.paymentquality.testsupport.restkit.core.ApiPaths;
 import lab.paymentquality.testsupport.restkit.payload.CreatePaymentOrderPayload;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.matchesRegex;
 
 import io.restassured.http.ContentType;
 
@@ -290,6 +289,32 @@ public final class PaymentOrderApi {
             .body(body)
         .when()
             .post(ApiPaths.paymentOrderLifecycleAction("capture"), merchantId, paymentOrderId)
+        .then();
+    }
+
+    public ValidatableResponse readOrderWithoutAuthorization(
+        String merchantId,
+        String paymentOrderId
+    ) {
+        return given()
+            .port(port)
+            .accept(ContentType.JSON)
+        .when()
+            .get(ApiPaths.paymentOrder(), merchantId, paymentOrderId)
+        .then();
+    }
+
+    public ValidatableResponse readOrderWithRawBearerToken(
+        String merchantId,
+        String paymentOrderId,
+        String rawToken
+    ) {
+        return given()
+            .port(port)
+            .accept(ContentType.JSON)
+            .header(ApiHeaders.AUTHORIZATION, "Bearer " + rawToken)
+        .when()
+            .get(ApiPaths.paymentOrder(), merchantId, paymentOrderId)
         .then();
     }
 }
