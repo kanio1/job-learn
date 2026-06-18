@@ -25,6 +25,8 @@ import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -35,6 +37,10 @@ class UserManagementKeycloakAdminIT extends PostgresContainerSupport {
 
     @Container
     static PostgreSQLContainer postgres = newPostgresContainer("user_mgmt_it");
+
+    static {
+        postgres.start();
+    }
 
     static KeycloakContainerSupport keycloak;
 
@@ -71,6 +77,68 @@ class UserManagementKeycloakAdminIT extends PostgresContainerSupport {
     }
 
     @Test
+    void diagnosticRawKeycloakAdminApiPersistsAttributes() {
+        String uniqueUsername = "diag-" + UUID.randomUUID().toString().substring(0, 8);
+        String email = uniqueUsername + "@example.com";
+
+        String adminToken = getAdminToken();
+
+        String userId = given()
+            .baseUri(keycloak.getBaseUrl())
+            .contentType(ContentType.JSON)
+            .header("Authorization", "Bearer " + adminToken)
+            .body("""
+                {
+                    "username": "%s",
+                    "email": "%s",
+                    "enabled": true,
+                    "attributes": {
+                        "tenant_id": ["TENANT_ALPHA"]
+                    }
+                }
+                """.formatted(uniqueUsername, email))
+        .when()
+            .post("/admin/realms/payment-quality/users")
+        .then()
+            .statusCode(201)
+            .extract().header("Location");
+
+        String userIdFromLocation = userId.substring(userId.lastIndexOf('/') + 1);
+
+        String rawUserJson = given()
+            .baseUri(keycloak.getBaseUrl())
+            .header("Authorization", "Bearer " + adminToken)
+        .when()
+            .get("/admin/realms/payment-quality/users/" + userIdFromLocation)
+        .then()
+            .statusCode(200)
+            .extract().asString();
+
+        org.junit.jupiter.api.Assertions.assertTrue(
+            rawUserJson.contains("tenant_id"),
+            "Raw Keycloak GET should contain tenant_id attribute. Raw JSON: " + rawUserJson
+        );
+        org.junit.jupiter.api.Assertions.assertTrue(
+            rawUserJson.contains("TENANT_ALPHA"),
+            "Raw Keycloak GET should contain TENANT_ALPHA value. Raw JSON: " + rawUserJson
+        );
+    }
+
+    private String getAdminToken() {
+        return given()
+            .baseUri(keycloak.getBaseUrl())
+            .contentType("application/x-www-form-urlencoded")
+            .formParam("grant_type", "client_credentials")
+            .formParam("client_id", "payment-quality-admin")
+            .formParam("client_secret", "test-admin-secret")
+        .when()
+            .post("/realms/payment-quality/protocol/openid-connect/token")
+        .then()
+            .statusCode(200)
+            .extract().path("access_token");
+    }
+
+    @Test
     void createAndManageUserThroughRealKeycloak() {
         String uniqueUsername = "testuser-" + UUID.randomUUID().toString().substring(0, 8);
         String email = uniqueUsername + "@example.com";
@@ -100,6 +168,17 @@ class UserManagementKeycloakAdminIT extends PostgresContainerSupport {
             .body("tenantId", equalTo("TENANT_ALPHA"))
             .body("roles[0]", equalTo("TENANT_ADMIN"))
             .extract().path("id");
+
+        String adminToken = getAdminToken();
+        given()
+            .baseUri(keycloak.getBaseUrl())
+            .header("Authorization", "Bearer " + adminToken)
+        .when()
+            .get("/admin/realms/payment-quality/users/{id}", userId)
+        .then()
+            .statusCode(200)
+            .body("attributes.tenant_id[0]", equalTo("TENANT_ALPHA"))
+            .body("enabled", equalTo(true));
 
         // Get user
         given()
@@ -152,6 +231,15 @@ class UserManagementKeycloakAdminIT extends PostgresContainerSupport {
             .statusCode(200)
             .body("roles", notNullValue());
 
+        given()
+            .baseUri(keycloak.getBaseUrl())
+            .header("Authorization", "Bearer " + adminToken)
+        .when()
+            .get("/admin/realms/payment-quality/users/{id}/role-mappings/realm", userId)
+        .then()
+            .statusCode(200)
+            .body("name", hasItem("MERCHANT_MANAGER"));
+
         // Remove role
         given()
             .contentType(ContentType.JSON)
@@ -166,6 +254,15 @@ class UserManagementKeycloakAdminIT extends PostgresContainerSupport {
             .post("/api/users/{id}/roles", userId)
         .then()
             .statusCode(200);
+
+        given()
+            .baseUri(keycloak.getBaseUrl())
+            .header("Authorization", "Bearer " + adminToken)
+        .when()
+            .get("/admin/realms/payment-quality/users/{id}/role-mappings/realm", userId)
+        .then()
+            .statusCode(200)
+            .body("name", not(hasItem("MERCHANT_MANAGER")));
     }
 
     @Test

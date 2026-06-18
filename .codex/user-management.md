@@ -904,3 +904,53 @@ To unblock task 6.7:
 5. Test manually with curl to isolate whether it's a code issue or Keycloak configuration issue
 
 Wave 8 cannot start until task 6.7 is resolved or explicitly deferred with user approval.
+
+## Wave 7B — Keycloak user attributes diagnosis
+
+Completed on 2026-06-18.
+
+Status: `COMPLETED`.
+
+### Failure reproduction
+
+- Real Keycloak 26.6.1 and PostgreSQL 18 containers started through Testcontainers on Podman.
+- Realm import and the `payment-quality-admin` client-credentials grant succeeded.
+- `/api/users` returned `201`, but both facade create tests returned `tenantId = null`.
+- A direct Admin API POST followed by GET also omitted `attributes.tenant_id`.
+- The test helper's user-profile PUT failed with HTTP `400`: custom attribute JSON had been inserted into the `groups` array and was parsed as an invalid `UPGroup` (`displayName` was unrecognized).
+
+### Layered diagnosis
+
+- Layer A, Java serialization: after correcting user-profile configuration, an app create followed by a direct raw GET returned `attributes.tenant_id[0] = TENANT_ALPHA`. The Java payload is correct.
+- Layer B, raw Keycloak Admin API: before the fix, raw create/read dropped `tenant_id`; after the fix, raw create/read persists and returns it.
+- Layer C, Java deserialization/mapping: after raw persistence was enabled, the facade returned `tenantId = TENANT_ALPHA`; no Java mapping change was required.
+
+### Root cause and fix
+
+Keycloak 26.6.1 requires these custom attributes to be managed by its user-profile configuration. `KeycloakContainerSupport` used `lastIndexOf("]")`, which targeted the wrong JSON array. The failed profile update was logged and ignored, leaving `tenant_id` unmanaged and causing Keycloak to discard it.
+
+The helper now parses the user-profile document with Jackson, adds `tenant_id` and `merchant_id` to the root `attributes` array, parses the bootstrap token structurally, and fails fast on token/profile failures without exposing tokens or secrets.
+
+`UserManagementKeycloakAdminIT` now proves direct raw attribute persistence, facade mapping, `enabled=true`, enable/disable behavior, direct realm-role assignment/removal, and tenant-scoped creation. The temporary credential continues to be created through the existing `temporary=true` reset-password payload; its secret is never returned or logged.
+
+### Changed files
+
+- `apps/backend/src/test/java/lab/paymentquality/testsupport/KeycloakContainerSupport.java`
+- `apps/backend/src/test/java/lab/paymentquality/iam/UserManagementKeycloakAdminIT.java`
+- `.codex/user-management.md`
+- `.codex/current-state.md`
+
+Two unrelated in-progress `restkit` sources prevented all test-source compilation. Only the missing import and missing assertion helper required to compile were added; the excluded suites were not executed.
+
+### Commands and results
+
+- `./mvnw clean -Dtest=UserManagementKeycloakAdminIT test`: GREEN, 3 tests.
+- `./mvnw -Dtest=UserManagementKeycloakAdminIT test`: GREEN, 3 tests after strengthening raw assertions.
+- `./mvnw -Dsurefire.excludes='**/restkit/**/*.java,**/paymentsupport/**/*.java' test`: GREEN, 339 tests, 0 failures, 0 errors, 5 skipped.
+- `./mvnw -Dsurefire.excludes='**/restkit/**/*.java,**/paymentsupport/**/*.java' verify`: GREEN; Surefire 339 tests, 5 skipped; Failsafe 16 tests, 0 failures, 0 errors.
+
+WireMock was not used to satisfy 6.7. `.kiro/**` was not modified.
+
+Final 6.7 classification: `COMPLETED`.
+
+Wave 8 may start only when explicitly requested; it was not started in this wave.

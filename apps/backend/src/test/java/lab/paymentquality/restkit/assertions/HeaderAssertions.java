@@ -101,5 +101,22 @@ public class HeaderAssertions {
             .isEqualTo(expectedSeconds);
     }
 
+    public static void assertRetryAfterIsValid(Response response) {
+        String retryAfter = response.header(ApiHeaders.RETRY_AFTER);
+        assertThat(retryAfter)
+            .as("Retry-After header should be present")
+            .isNotBlank();
+        assertThat(Integer.parseInt(retryAfter))
+            .as("Retry-After should be a positive integer")
+            .isPositive();
+    }
+
+    public static void assertLocationPointsToOperation(Response response) {
+        assertThat(response.header(ApiHeaders.LOCATION))
+            .as("Location header should point to an operation resource")
+            .isNotBlank()
+            .contains("/operations/");
+    }
+
 
 }

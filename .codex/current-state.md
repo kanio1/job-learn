@@ -359,3 +359,17 @@ Status: BLOCKED_BY_REALM_IMPORT_OR_SERVICE_ACCOUNT_CONFIGURATION.
 **Wave 8 allowed:** NO — task 6.7 is NON-optional and remains blocked by user attribute persistence issue.
 
 **Next action:** Debug Keycloak Admin API attribute handling or defer 6.7 with explicit user approval.
+
+## Wave 7B — Task 6.7 real Keycloak IT resolved
+
+Completed on 2026-06-18.
+
+- Final 6.7 status: `COMPLETED`.
+- Root cause: the Testcontainers helper inserted custom user-profile attributes into Keycloak's `groups` JSON array, so the profile PUT failed with HTTP 400 and Keycloak dropped unmanaged `tenant_id` values.
+- Fix: structured Jackson editing now adds `tenant_id` and `merchant_id` to the root user-profile `attributes` array and fails fast on configuration errors.
+- Real `UserManagementKeycloakAdminIT`: GREEN, 3 tests, including raw attribute persistence, facade mapping, enabled/disabled behavior, direct role assignment/removal checks, and tenant-scoped creation.
+- Filtered backend test suite: GREEN, 339 tests, 0 failures, 0 errors, 5 skipped.
+- Filtered Maven verify: GREEN; 339 Surefire tests plus 16 Failsafe integration tests, all passing (5 Surefire skips).
+- WireMock was not used for task 6.7.
+- `.kiro/**` was not modified.
+- Wave 8 go/no-go: GO when explicitly requested. Wave 8 was not started.
