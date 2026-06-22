@@ -7,29 +7,29 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-class DeterministicDataset {
+public class DeterministicDataset {
 
     private final TenantSeedCapability tenants;
     private final MerchantSeedCapability merchants;
     private final PaymentSeedCapability payments;
 
-    DeterministicDataset(TenantSeedCapability tenants,
-                         MerchantSeedCapability merchants,
-                         PaymentSeedCapability payments) {
+    public DeterministicDataset(TenantSeedCapability tenants,
+                                MerchantSeedCapability merchants,
+                                PaymentSeedCapability payments) {
         this.tenants = tenants;
         this.merchants = merchants;
         this.payments = payments;
     }
 
     @Transactional
-    void reset() {
+    public void reset() {
         payments.clear();
         merchants.clear();
         tenants.clear();
     }
 
     @Transactional
-    void seed() {
+    public void seed() {
         payments.clear();
         merchants.clear();
         tenants.clear();

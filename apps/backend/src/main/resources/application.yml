@@ -39,6 +39,10 @@ payment-quality:
   security:
     authorized-party: ${EXPECTED_AZP:payment-quality-dashboard}
 
+app:
+  testing:
+    enabled: false
+
 logging:
   level:
     lab.paymentquality: DEBUG
