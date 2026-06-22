@@ -698,3 +698,49 @@ Status: `BLOCKED_FIXTURE_CATALOG_AMBIGUITY`
 
 Next: clarify the authoritative fixture catalog, then explicitly resume Wave 1.
 Wave 2 may not start and was not started.
+
+## Deterministic Seed and Test Isolation — Wave 1R
+
+Status: `COMPLETED`
+
+- Fixture ambiguity resolved in `.codex/deterministic-seed-and-test-isolation.md`.
+- Tenant capability was pulled into Wave 1R because merchant tenant ownership is
+  mandatory and the migration's tenant UUIDs are random.
+- Fixed tenant UUIDs are now `...a1`, `...a2`, and `...a3`; fixed merchant UUIDs
+  are `...b1`, `...b2`, and `...b3`.
+- Fixtures contain 6 base payment orders and the authoritative 98-order
+  `c101..c198` expansion block. `MERCHANT_ALPHA_001` has 101 deterministic orders.
+- Dataset reset order is payment, merchant, tenant. Dataset seed first performs
+  that reset, then seeds tenant, merchant, payment in FK-safe order.
+- Payment clear removes idempotency records, status history, and payment orders;
+  every seeded order receives one deterministic synthetic creation-history row.
+- `./mvnw compile` and `./mvnw test-compile`: GREEN.
+- `ModulithArchitectureTest`, `TenantModuleTest`, `MerchantModuleTest`, and
+  `PaymentModuleTest`: GREEN, 7 tests total. The initial sandbox attempt could
+  not access Podman; the approved local-Podman rerun passed.
+- Testing-module cross-module internal-import scan: no matches.
+- No runner, endpoint, security rule, startup behavior, frontend, or Playwright
+  file was added. `.kiro/**` remains unchanged.
+
+Wave 2 may start only when explicitly requested. Wave 2 was not started.
+
+## Deterministic Seed and Test Isolation — Wave 2
+
+Status: `BLOCKED_SECURITY_CONFIG_AMBIGUITY`
+
+- Wave 1R prerequisite and required implementation files were verified complete.
+- Existing security ends with `.anyRequest().authenticated()`.
+- A permit rule only under `!prod && app.testing.enabled=true` is straightforward,
+  but with the flag disabled an unauthenticated request is rejected as `401`
+  before absent-handler resolution can return `404`.
+- Achieving disabled unauthenticated `404` requires either a disabled-path permit
+  rule, a placeholder handler, a path-specific security response, or weakening
+  the global catch-all. Each conflicts with at least one explicit Wave 2 rule.
+- No runner, controller, DTO, configuration, or security production code was
+  added. Existing endpoint security remains unchanged.
+- `.kiro/**`, frontend, and Playwright remain unchanged.
+- Full analysis and decision options are recorded in
+  `.codex/deterministic-seed-and-test-isolation.md`.
+
+Wave 3 may not start and was not started. Resume Wave 2 only after an explicit
+decision on disabled-path security handling.

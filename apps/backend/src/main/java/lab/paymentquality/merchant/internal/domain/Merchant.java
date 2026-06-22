@@ -50,6 +50,28 @@ public class Merchant {
         return m;
     }
 
+    public static Merchant seeded(UUID merchantId, String normalizedReference, String displayName,
+                                  UUID tenantId, MerchantStatus status, Instant timestamp) {
+        var merchant = new Merchant();
+        merchant.merchantId = merchantId;
+        merchant.normalizedReference = normalizedReference;
+        merchant.displayName = displayName;
+        merchant.tenantId = tenantId;
+        merchant.status = status;
+        merchant.createdAt = timestamp;
+        merchant.updatedAt = timestamp;
+        return merchant;
+    }
+
+    public void applySeed(String normalizedReference, String displayName, UUID tenantId,
+                          MerchantStatus status, Instant timestamp) {
+        this.normalizedReference = normalizedReference;
+        this.displayName = displayName;
+        this.tenantId = tenantId;
+        this.status = status;
+        this.updatedAt = timestamp;
+    }
+
     /**
      * Backward-compatible overload; tenantId will be set properly in Wave 2 MerchantService update.
      */

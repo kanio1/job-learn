@@ -31,6 +31,25 @@ public class Tenant {
 
     protected Tenant() {}
 
+    public static Tenant seeded(UUID tenantId, String tenantReference, String name,
+                                TenantType tenantType, TenantStatus status, Instant createdAt) {
+        var tenant = new Tenant();
+        tenant.tenantId = tenantId;
+        tenant.tenantReference = tenantReference;
+        tenant.name = name;
+        tenant.tenantType = tenantType;
+        tenant.status = status;
+        tenant.createdAt = createdAt;
+        return tenant;
+    }
+
+    public void applySeed(String tenantReference, String name, TenantType tenantType, TenantStatus status) {
+        this.tenantReference = tenantReference;
+        this.name = name;
+        this.tenantType = tenantType;
+        this.status = status;
+    }
+
     public UUID getTenantId() { return tenantId; }
     public String getTenantReference() { return tenantReference; }
     public String getName() { return name; }

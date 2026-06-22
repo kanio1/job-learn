@@ -96,6 +96,34 @@ public class PaymentOrder {
         return order;
     }
 
+    public static PaymentOrder seeded(UUID paymentOrderId, UUID merchantId,
+                                      String clientOrderReference, long amountMinor, String currency,
+                                      PaymentStatus status, long version, Instant createdAt, Instant updatedAt,
+                                      Instant authorizedAt, Instant expiresAt, Instant capturedAt,
+                                      Instant cancelledAt, Instant refundedAt, Long capturedAmountMinor,
+                                      Long refundedAmountMinor, String cancellationReason, String refundReason) {
+        var order = new PaymentOrder();
+        order.paymentOrderId = paymentOrderId;
+        order.merchantId = merchantId;
+        order.clientOrderReference = clientOrderReference;
+        order.amountMinor = amountMinor;
+        order.currency = currency;
+        order.status = status;
+        order.version = version;
+        order.createdAt = createdAt;
+        order.updatedAt = updatedAt;
+        order.authorizedAt = authorizedAt;
+        order.expiresAt = expiresAt;
+        order.capturedAt = capturedAt;
+        order.cancelledAt = cancelledAt;
+        order.refundedAt = refundedAt;
+        order.capturedAmountMinor = capturedAmountMinor;
+        order.refundedAmountMinor = refundedAmountMinor;
+        order.cancellationReason = cancellationReason;
+        order.refundReason = refundReason;
+        return order;
+    }
+
     public boolean canTransitionTo(PaymentStatus target) {
         var allowed = VALID_TRANSITIONS.get(this.status);
         return allowed != null && allowed.contains(target);

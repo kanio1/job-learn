@@ -62,6 +62,19 @@ public class PaymentOrderStatusHistory {
         return entry;
     }
 
+    public static PaymentOrderStatusHistory seededCreationEntry(UUID statusHistoryId, UUID paymentOrderId,
+                                                                 Instant createdAt) {
+        var entry = new PaymentOrderStatusHistory();
+        entry.statusHistoryId = statusHistoryId;
+        entry.paymentOrderId = paymentOrderId;
+        entry.fromStatus = null;
+        entry.toStatus = PaymentStatus.CREATED.name();
+        entry.actorSubject = "deterministic-seed";
+        entry.correlationId = "deterministic-seed";
+        entry.createdAt = createdAt;
+        return entry;
+    }
+
     public static PaymentOrderStatusHistory lifecycleEntry(UUID paymentOrderId,
                                                             PaymentStatus fromStatus,
                                                             PaymentStatus toStatus,
