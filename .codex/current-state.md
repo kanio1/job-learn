@@ -679,3 +679,22 @@ Next recommended work:
 - Close `audit-log-dashboard`; required audit backend/frontend validation is green.
 - Track the excluded payment-summary local-date versus UTC midnight test as deterministic-test-isolation technical debt.
 - Prepare `deterministic-seed-and-test-isolation` or run a status-hygiene audit before starting it.
+
+## Deterministic Seed and Test Isolation — Wave 1
+
+Status: `BLOCKED_FIXTURE_CATALOG_AMBIGUITY`
+
+- Prerequisite gate passed: `audit-log-dashboard` is
+  `COMPLETE_WITH_OPTIONAL_GAPS`, no next spec had been started, and the branch is
+  `018-rest-security-p1-error-auth-method-hardening`.
+- Implementation stopped before Java edits because the design does not enumerate
+  the required `...c1xx` payment-order pagination/summary fixture block. The exact
+  count, UUIDs, client order references, and fixed order fields are absent.
+- No testing module, seed capability, fixture class, dataset assembler, runner,
+  endpoint, guard, test, frontend file, or Playwright file was added.
+- `.kiro/**` remains unchanged.
+- Detailed blocker and gate evidence are recorded in
+  `.codex/deterministic-seed-and-test-isolation.md`.
+
+Next: clarify the authoritative fixture catalog, then explicitly resume Wave 1.
+Wave 2 may not start and was not started.
