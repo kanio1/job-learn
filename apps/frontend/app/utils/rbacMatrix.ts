@@ -37,6 +37,7 @@ export const COMPOSITE_ROLES: readonly CompositeRole[] = [
 //   canReadPlatformPayments → platform:payments:read
 //   canRunLifecycle         → merchant:payments:lifecycle | platform:payments:lifecycle
 //   canReadAudit            → platform:payments:audit
+//   canViewAuditLog         → platform:audit:read | tenant:audit:read
 //   canManageUsers          → platform:users:* | tenant:users:*
 //   canAssignRoles          → platform:users:assign-roles | tenant:users:assign-roles
 export interface Capability {
@@ -48,6 +49,7 @@ export interface Capability {
   canReadPlatformPayments: boolean
   canRunLifecycle: boolean
   canReadAudit: boolean
+  canViewAuditLog: boolean
   canManageUsers: boolean
   canAssignRoles: boolean
 }
@@ -62,6 +64,7 @@ const DENY_ALL: Capability = {
   canReadPlatformPayments: false,
   canRunLifecycle: false,
   canReadAudit: false,
+  canViewAuditLog: false,
   canManageUsers: false,
   canAssignRoles: false,
 }
@@ -89,6 +92,7 @@ export const rbacMatrix: Record<CompositeRole, Capability> = {
     canReadPlatformPayments: true,
     canRunLifecycle: true,
     canReadAudit: true,
+    canViewAuditLog: true,
     canManageUsers: true,
     canAssignRoles: true,
   },
@@ -99,6 +103,7 @@ export const rbacMatrix: Record<CompositeRole, Capability> = {
     canReadMerchants: true,
     canUpdateMerchantStatus: true,
     canReadMerchantPayments: true,
+    canViewAuditLog: true,
     canManageUsers: true,
     canAssignRoles: true,
   },
@@ -115,6 +120,7 @@ export const rbacMatrix: Record<CompositeRole, Capability> = {
     canReadMerchants: true,
     canReadPlatformPayments: true,
     canReadAudit: true,
+    canViewAuditLog: true,
   },
 
   READ_ONLY_USER: {

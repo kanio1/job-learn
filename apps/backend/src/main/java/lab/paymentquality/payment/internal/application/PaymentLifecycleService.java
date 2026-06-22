@@ -2,9 +2,11 @@ package lab.paymentquality.payment.internal.application;
 
 import lab.paymentquality.payment.internal.domain.*;
 import lab.paymentquality.payment.internal.infrastructure.*;
+import lab.paymentquality.shared.events.AuditableActionEventFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -22,15 +24,18 @@ public class PaymentLifecycleService {
     private final JpaIdempotencyRecordRepository idempotencyRecordRepository;
     private final JpaPaymentOrderStatusHistoryRepository statusHistoryRepository;
     private final PspClient pspClient;
+    private final ApplicationEventPublisher eventPublisher;
 
     public PaymentLifecycleService(JpaPaymentOrderRepository paymentOrderRepository,
                                     JpaIdempotencyRecordRepository idempotencyRecordRepository,
                                     JpaPaymentOrderStatusHistoryRepository statusHistoryRepository,
-                                    PspClient pspClient) {
+                                    PspClient pspClient,
+                                    ApplicationEventPublisher eventPublisher) {
         this.paymentOrderRepository = paymentOrderRepository;
         this.idempotencyRecordRepository = idempotencyRecordRepository;
         this.statusHistoryRepository = statusHistoryRepository;
         this.pspClient = pspClient;
+        this.eventPublisher = eventPublisher;
     }
 
     public PaymentOrder authorize(UUID merchantId, UUID paymentOrderId, String reason,
@@ -57,6 +62,7 @@ public class PaymentLifecycleService {
 
         log.info("payment.authorize.succeeded merchantId={} paymentOrderId={} correlationId={}",
                 merchantId, paymentOrderId, correlationId);
+        publishSuccess("PAYMENT_AUTHORIZED", paymentOrderId, actorSubject, correlationId);
         return order;
     }
 
@@ -85,6 +91,7 @@ public class PaymentLifecycleService {
 
         log.info("payment.capture.succeeded merchantId={} paymentOrderId={} capturedAmountMinor={} correlationId={}",
                 merchantId, paymentOrderId, order.getCapturedAmountMinor(), correlationId);
+        publishSuccess("PAYMENT_CAPTURED", paymentOrderId, actorSubject, correlationId);
         return order;
     }
 
@@ -116,6 +123,7 @@ public class PaymentLifecycleService {
 
         log.info("payment.cancel.succeeded merchantId={} paymentOrderId={} correlationId={}",
                 merchantId, paymentOrderId, correlationId);
+        publishSuccess("PAYMENT_CANCELLED", paymentOrderId, actorSubject, correlationId);
         return order;
     }
 
@@ -144,6 +152,7 @@ public class PaymentLifecycleService {
 
         log.info("payment.refund.succeeded merchantId={} paymentOrderId={} refundedAmountMinor={} correlationId={}",
                 merchantId, paymentOrderId, order.getRefundedAmountMinor(), correlationId);
+        publishSuccess("PAYMENT_REFUNDED", paymentOrderId, actorSubject, correlationId);
         return order;
     }
 
@@ -230,5 +239,19 @@ public class PaymentLifecycleService {
                 order.getPaymentOrderId(), previousStatus, order.getStatus(), action,
                 actorSubject, correlationId, idempotencyKeyHash, reason, amountMinor, pspReference);
         statusHistoryRepository.saveAndFlush(entry);
+    }
+
+    private void publishSuccess(
+            String action,
+            UUID paymentOrderId,
+            String actorSubject,
+            String correlationId) {
+        eventPublisher.publishEvent(AuditableActionEventFactory.success(
+                action,
+                "PAYMENT_ORDER",
+                paymentOrderId.toString(),
+                null,
+                actorSubject,
+                correlationId));
     }
 }

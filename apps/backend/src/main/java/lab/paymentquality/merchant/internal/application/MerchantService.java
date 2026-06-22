@@ -5,6 +5,7 @@ import lab.paymentquality.merchant.internal.infrastructure.JpaMerchantRepository
 import lab.paymentquality.merchant.internal.web.DuplicateMerchantReferenceException;
 import lab.paymentquality.merchant.internal.web.MerchantMapper;
 import lab.paymentquality.merchant.internal.web.MerchantResponse;
+import lab.paymentquality.shared.events.AuditableActionEventFactory;
 import lab.paymentquality.tenant.TenantContext;
 import lab.paymentquality.tenant.TenantReference;
 import lab.paymentquality.tenant.TenantResolutionException;
@@ -13,6 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,10 +35,20 @@ public class MerchantService {
 
     private final JpaMerchantRepository repository;
     private final TenantResolver tenantResolver;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public MerchantService(JpaMerchantRepository repository, TenantResolver tenantResolver) {
+    @Autowired
+    public MerchantService(
+            JpaMerchantRepository repository,
+            TenantResolver tenantResolver,
+            ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.tenantResolver = tenantResolver;
+        this.eventPublisher = eventPublisher;
+    }
+
+    public MerchantService(JpaMerchantRepository repository, TenantResolver tenantResolver) {
+        this(repository, tenantResolver, event -> { });
     }
 
     public Merchant create(String ref, String displayName) {
@@ -72,6 +85,10 @@ public class MerchantService {
 
         log.info("merchant.create.succeeded merchantId={} normalizedReference={} status={} correlationId={}",
                 id, normalized, merchant.getStatus(), MDC.get("correlationId"));
+        String auditTenantReference = tenantContext.isTenantScoped()
+                ? tenantContext.tenantReference().value()
+                : requestedTenantRef;
+        publishSuccess("MERCHANT_CREATED", id, auditTenantReference);
         return merchant;
     }
 
@@ -152,6 +169,7 @@ public class MerchantService {
         repository.saveAndFlush(merchant);
         log.info("merchant.status.activate.succeeded merchantId={} status={} correlationId={}",
                 id, merchant.getStatus(), MDC.get("correlationId"));
+        publishSuccess("MERCHANT_ACTIVATED", id, null);
         return MerchantMapper.toResponse(merchant);
     }
 
@@ -161,6 +179,7 @@ public class MerchantService {
         repository.saveAndFlush(merchant);
         log.info("merchant.status.activate.succeeded merchantId={} status={} correlationId={}",
                 id, merchant.getStatus(), MDC.get("correlationId"));
+        publishSuccess("MERCHANT_ACTIVATED", id, tenantContext.tenantReference().value());
         return MerchantMapper.toResponse(merchant);
     }
 
@@ -171,6 +190,7 @@ public class MerchantService {
         repository.saveAndFlush(merchant);
         log.info("merchant.status.suspend.succeeded merchantId={} status={} correlationId={}",
                 id, merchant.getStatus(), MDC.get("correlationId"));
+        publishSuccess("MERCHANT_SUSPENDED", id, null);
         return MerchantMapper.toResponse(merchant);
     }
 
@@ -180,7 +200,16 @@ public class MerchantService {
         repository.saveAndFlush(merchant);
         log.info("merchant.status.suspend.succeeded merchantId={} status={} correlationId={}",
                 id, merchant.getStatus(), MDC.get("correlationId"));
+        publishSuccess("MERCHANT_SUSPENDED", id, tenantContext.tenantReference().value());
         return MerchantMapper.toResponse(merchant);
+    }
+
+    private void publishSuccess(String action, UUID merchantId, String tenantReference) {
+        eventPublisher.publishEvent(AuditableActionEventFactory.success(
+                action,
+                "MERCHANT",
+                merchantId.toString(),
+                tenantReference));
     }
 
     private Merchant findMerchantEnforcingTenantBoundary(UUID id, TenantContext tenantContext) {

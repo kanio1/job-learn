@@ -32,6 +32,7 @@ export function useAuthorization() {
       canReadPlatformPayments: false,
       canRunLifecycle: false,
       canReadAudit: false,
+      canViewAuditLog: false,
       canManageUsers: false,
       canAssignRoles: false,
     }
@@ -46,6 +47,7 @@ export function useAuthorization() {
       if (cap.canReadPlatformPayments) merged.canReadPlatformPayments = true
       if (cap.canRunLifecycle) merged.canRunLifecycle = true
       if (cap.canReadAudit) merged.canReadAudit = true
+      if (cap.canViewAuditLog) merged.canViewAuditLog = true
       if (cap.canManageUsers) merged.canManageUsers = true
       if (cap.canAssignRoles) merged.canAssignRoles = true
     }

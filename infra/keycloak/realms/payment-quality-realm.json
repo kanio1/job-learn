@@ -36,6 +36,12 @@
         "name": "platform:payments:audit"
       },
       {
+        "name": "platform:audit:read"
+      },
+      {
+        "name": "tenant:audit:read"
+      },
+      {
         "name": "platform:users:read"
       },
       {
@@ -70,6 +76,7 @@
             "platform:payments:read",
             "platform:payments:lifecycle",
             "platform:payments:audit",
+            "platform:audit:read",
             "platform:users:read",
             "platform:users:create",
             "platform:users:update",
@@ -86,6 +93,7 @@
             "merchants:read",
             "merchants:update-status",
             "merchant:payments:read",
+            "tenant:audit:read",
             "tenant:users:read",
             "tenant:users:create",
             "tenant:users:update",
@@ -111,7 +119,8 @@
           "realm": [
             "merchants:read",
             "platform:payments:read",
-            "platform:payments:audit"
+            "platform:payments:audit",
+            "platform:audit:read"
           ]
         }
       },

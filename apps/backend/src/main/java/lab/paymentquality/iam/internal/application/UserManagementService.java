@@ -14,11 +14,14 @@ import lab.paymentquality.iam.internal.web.dto.UpdateUserRequest;
 import lab.paymentquality.iam.internal.web.dto.UserDetail;
 import lab.paymentquality.iam.internal.web.dto.UserListResponse;
 import lab.paymentquality.iam.internal.web.dto.UserSummary;
+import lab.paymentquality.shared.events.AuditableActionEventFactory;
 import lab.paymentquality.tenant.TenantContext;
 import lab.paymentquality.tenant.TenantReference;
 import lab.paymentquality.tenant.TenantResolutionException;
 import lab.paymentquality.tenant.TenantResolver;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -36,12 +39,15 @@ public class UserManagementService {
 
     private final KeycloakAdminClient adminClient;
     private final TenantResolver tenantResolver;
+    private final ApplicationEventPublisher eventPublisher;
 
     public UserManagementService(
             KeycloakAdminClient adminClient,
-            TenantResolver tenantResolver) {
+            TenantResolver tenantResolver,
+            ApplicationEventPublisher eventPublisher) {
         this.adminClient = adminClient;
         this.tenantResolver = tenantResolver;
+        this.eventPublisher = eventPublisher;
     }
 
     public UserListResponse list(UserListQuery query, TenantContext tenantContext) {
@@ -68,6 +74,7 @@ public class UserManagementService {
         return UserMapper.toDetail(user);
     }
 
+    @Transactional
     public UserDetail create(CreateUserRequest request, TenantContext tenantContext) {
         validateRolesAreComposite(request.roles());
         String tenantReference = resolveCreateTenant(tenantContext, request.tenantId());
@@ -76,9 +83,12 @@ public class UserManagementService {
         adminClient.setTemporaryPassword(userId, request.temporaryPassword());
         adminClient.assignRealmComposites(userId, request.roles());
 
-        return UserMapper.toDetail(findUser(userId));
+        UserDetail created = UserMapper.toDetail(findUser(userId));
+        publishSuccess("USER_CREATED", created);
+        return created;
     }
 
+    @Transactional
     public UserDetail update(
             String id,
             UpdateUserRequest request,
@@ -88,9 +98,12 @@ public class UserManagementService {
 
         UpdateUserRequest scopedRequest = preserveTenantScope(request, tenantContext);
         adminClient.updateUser(id, current, scopedRequest);
-        return UserMapper.toDetail(findUser(id));
+        UserDetail updated = UserMapper.toDetail(findUser(id));
+        publishSuccess("USER_UPDATED", updated);
+        return updated;
     }
 
+    @Transactional
     public UserDetail assignRoles(
             String id,
             RoleAssignmentRequest request,
@@ -103,7 +116,9 @@ public class UserManagementService {
 
         adminClient.assignRealmComposites(id, request.assign());
         adminClient.removeRealmComposites(id, request.remove());
-        return UserMapper.toDetail(findUser(id));
+        UserDetail updated = UserMapper.toDetail(findUser(id));
+        publishSuccess("USER_ROLES_ASSIGNED", updated);
+        return updated;
     }
 
     private ManagedUser findUser(String id) {
@@ -225,5 +240,13 @@ public class UserManagementService {
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private void publishSuccess(String action, UserDetail user) {
+        eventPublisher.publishEvent(AuditableActionEventFactory.success(
+                action,
+                "USER",
+                user.id(),
+                user.tenantId()));
     }
 }

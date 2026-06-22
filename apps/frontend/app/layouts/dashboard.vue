@@ -93,6 +93,14 @@ const allLinks: (NavigationMenuItem & { testid: string; visible: ComputedRef<boo
     visible: computed(() => can.value.canManageUsers),
   },
   {
+    testid: 'nav-link-audit',
+    label: 'Audit Log',
+    icon: 'i-lucide-scroll-text',
+    to: '/admin/audit',
+    onSelect: closeSidebar,
+    visible: computed(() => can.value.canViewAuditLog),
+  },
+  {
     testid: 'nav-link-error-lab',
     label: 'Error Lab',
     icon: 'i-lucide-flask-conical',
@@ -162,6 +170,15 @@ const searchGroups = computed<any[]>(() => [
             label: 'User management',
             icon: 'i-lucide-users',
             to: '/admin/users',
+          }]
+        : []),
+      ...(can.value.canViewAuditLog
+        ? [{
+            id: 'audit-log',
+            label: 'Audit log',
+            icon: 'i-lucide-scroll-text',
+            to: '/admin/audit',
+            'data-testid': 'search-link-audit',
           }]
         : []),
       {

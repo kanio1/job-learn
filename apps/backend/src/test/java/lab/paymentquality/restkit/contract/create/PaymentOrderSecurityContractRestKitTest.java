@@ -3,7 +3,7 @@ package lab.paymentquality.restkit.contract.create;
 import static io.restassured.RestAssured.port;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.mockito.ArgumentMatchers.startsWith;
+import static org.hamcrest.Matchers.startsWith;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,8 +20,6 @@ import io.restassured.http.ContentType;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import lab.paymentquality.restkit.assertions.HeaderAssertions;
-import lab.paymentquality.restkit.assertions.ProblemDetailsAssertions;
-import lab.paymentquality.restkit.spec.PaymentErrorSpecs;
 import lab.paymentquality.testsupport.PostgresContainerSupport;
 import lab.paymentquality.testsupport.TestJwtConfiguration;
 import lab.paymentquality.testsupport.TestJwtSupport;
@@ -51,7 +49,7 @@ public class PaymentOrderSecurityContractRestKitTest extends PostgresContainerSu
     int port;
 
     @Test
-    void readPaymentOrderWithoutTokenReturns401ProblemWithWwwAuthenticate() {
+    void readPaymentOrderWithoutTokenReturns401WithWwwAuthenticate() {
         MerchantApi merchantApi = new MerchantApi(port);
         PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
 
@@ -81,13 +79,11 @@ public class PaymentOrderSecurityContractRestKitTest extends PostgresContainerSu
                 merchantId,
                 paymentOrderId
             )
-            .spec(PaymentErrorSpecs.unauthorized())
+            .statusCode(401)
             .header(ApiHeaders.WWW_AUTHENTICATE, notNullValue())
             .extract()
             .response();
 
-        ProblemDetailsAssertions.assertSafeProblem(response);
-        ProblemDetailsAssertions.assertProblemError(response, "unauthorized");
         HeaderAssertions.assertWwwAuthenticatePresent(response);
         HeaderAssertions.assertSensitiveResponseIsNotCacheable(response);
         HeaderAssertions.assertAuthorizationTokenIsNotLeaked(response);

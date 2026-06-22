@@ -28,6 +28,8 @@ public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<Gra
         Map.entry("platform:payments:read",      Authorities.PLATFORM_PAYMENTS_READ),
         Map.entry("platform:payments:lifecycle", Authorities.PLATFORM_PAYMENTS_LIFECYCLE),
         Map.entry("platform:payments:audit",     Authorities.PLATFORM_PAYMENTS_AUDIT),
+        Map.entry("platform:audit:read",         Authorities.PLATFORM_AUDIT_READ),
+        Map.entry("tenant:audit:read",           Authorities.TENANT_AUDIT_READ),
         Map.entry("platform:users:read",         Authorities.PLATFORM_USERS_READ),
         Map.entry("platform:users:create",       Authorities.PLATFORM_USERS_CREATE),
         Map.entry("platform:users:update",       Authorities.PLATFORM_USERS_UPDATE),

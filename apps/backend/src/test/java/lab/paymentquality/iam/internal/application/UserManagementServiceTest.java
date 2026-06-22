@@ -21,6 +21,7 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,9 @@ class UserManagementServiceTest {
 
     @Mock
     TenantResolver tenantResolver;
+
+    @Mock
+    ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     UserManagementService service;

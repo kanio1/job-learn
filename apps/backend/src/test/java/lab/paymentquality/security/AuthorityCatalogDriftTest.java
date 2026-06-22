@@ -69,6 +69,15 @@ class AuthorityCatalogDriftTest {
                 .as("PLATFORM_PAYMENTS_AUDIT must equal the literal enforced by SecurityConfig URL rules")
                 .isEqualTo("platform:payments:audit");
 
+        // Global audit log reads, deliberately distinct from payment audit
+        assertThat(Authorities.PLATFORM_AUDIT_READ)
+                .as("PLATFORM_AUDIT_READ must equal the documented audit-log literal")
+                .isEqualTo("platform:audit:read");
+
+        assertThat(Authorities.TENANT_AUDIT_READ)
+                .as("TENANT_AUDIT_READ must equal the documented audit-log literal")
+                .isEqualTo("tenant:audit:read");
+
         // User management (platform-scoped) — enforced by future user-management @PreAuthorize
         assertThat(Authorities.PLATFORM_USERS_READ)
                 .as("PLATFORM_USERS_READ must equal the documented user-management literal")
@@ -107,9 +116,9 @@ class AuthorityCatalogDriftTest {
     @Test
     @Tag("backend-authority-refactor")
     @DisplayName("Property 4: catalog no-drift")
-    void catalogContainsExactlySeventeenEnforcedAuthorities() {
+    void catalogContainsExactlyNineteenEnforcedAuthorities() {
         // Guard against accidental additions or removals from the catalog.
-        // The current design mandates exactly 17 enforced authorities.
+        // The current design mandates exactly 19 enforced authorities.
         var allConstants = new String[]{
                 Authorities.MERCHANTS_CREATE,
                 Authorities.MERCHANTS_READ,
@@ -120,6 +129,8 @@ class AuthorityCatalogDriftTest {
                 Authorities.PLATFORM_PAYMENTS_READ,
                 Authorities.PLATFORM_PAYMENTS_LIFECYCLE,
                 Authorities.PLATFORM_PAYMENTS_AUDIT,
+                Authorities.PLATFORM_AUDIT_READ,
+                Authorities.TENANT_AUDIT_READ,
                 Authorities.PLATFORM_USERS_READ,
                 Authorities.PLATFORM_USERS_CREATE,
                 Authorities.PLATFORM_USERS_UPDATE,
@@ -131,8 +142,8 @@ class AuthorityCatalogDriftTest {
         };
 
         assertThat(allConstants)
-                .as("The enforced authority catalog must contain exactly 17 constants")
-                .hasSize(17);
+                .as("The enforced authority catalog must contain exactly 19 constants")
+                .hasSize(19);
     }
 
     @Test
@@ -151,6 +162,8 @@ class AuthorityCatalogDriftTest {
                 Authorities.PLATFORM_PAYMENTS_READ,
                 Authorities.PLATFORM_PAYMENTS_LIFECYCLE,
                 Authorities.PLATFORM_PAYMENTS_AUDIT,
+                Authorities.PLATFORM_AUDIT_READ,
+                Authorities.TENANT_AUDIT_READ,
                 Authorities.PLATFORM_USERS_READ,
                 Authorities.PLATFORM_USERS_CREATE,
                 Authorities.PLATFORM_USERS_UPDATE,

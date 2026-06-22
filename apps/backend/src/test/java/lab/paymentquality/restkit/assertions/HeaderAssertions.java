@@ -66,6 +66,23 @@ public class HeaderAssertions {
         assertNoStore(response);
     }
 
+    public static void assertWwwAuthenticatePresent(Response response) {
+        assertThat(response.header(ApiHeaders.WWW_AUTHENTICATE))
+            .as("WWW-Authenticate should describe the bearer authentication challenge")
+            .isNotBlank()
+            .startsWith("Bearer");
+    }
+
+    public static void assertAuthorizationTokenIsNotLeaked(Response response) {
+        assertThat(response.header(ApiHeaders.AUTHORIZATION))
+            .as("Authorization must never be returned as a response header")
+            .isNull();
+        assertThat(response.asString())
+            .as("Response body must not expose authorization credentials")
+            .doesNotContain(ApiHeaders.AUTHORIZATION)
+            .doesNotContain("Bearer ");
+    }
+
     public static void assertVaryContainsAccept(Response response) {
         String allVaryValues = String.join(", ", response.headers().getValues("Vary"));
         assertThat(allVaryValues)

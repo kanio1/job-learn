@@ -32,7 +32,7 @@ class KeycloakRealmRoleConverterTest {
 
     private static final KeycloakRealmRoleConverter CONVERTER = new KeycloakRealmRoleConverter();
 
-    /** All 18 known realm role names mapped to their expected authority strings. */
+    /** All 20 known realm role names mapped to their expected authority strings. */
     private static final Map<String, String> KNOWN_ROLE_MAPPING = Map.ofEntries(
             Map.entry("merchants:create",            "platform:merchants:create"),
             Map.entry("merchants:read",              "platform:merchants:read"),
@@ -44,6 +44,8 @@ class KeycloakRealmRoleConverterTest {
             Map.entry("platform:payments:read",      "platform:payments:read"),
             Map.entry("platform:payments:lifecycle", "platform:payments:lifecycle"),
             Map.entry("platform:payments:audit",     "platform:payments:audit"),
+            Map.entry("platform:audit:read",         "platform:audit:read"),
+            Map.entry("tenant:audit:read",           "tenant:audit:read"),
             Map.entry("platform:users:read",         "platform:users:read"),
             Map.entry("platform:users:create",       "platform:users:create"),
             Map.entry("platform:users:update",       "platform:users:update"),

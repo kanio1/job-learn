@@ -473,3 +473,209 @@ Yes, when explicitly requested. The next spec on the SDET roadmap is `audit-log-
 ### Next recommended spec/wave
 
 `audit-log-dashboard` (Spec #4) — Wave 0 prerequisite gate, when explicitly requested by the user.
+
+## Audit Log Dashboard — Wave 0 Prerequisite Gate
+
+Verified on 2026-06-18.
+
+- Wave 0 status: `READY_FOR_WAVE_1`.
+- Spec #1 `iam-roles-and-keycloak-login`: prerequisite satisfied. Five composite roles, the shared `Authorities` catalog, converter allowlist, `tenant_id` claim mapping, and backend/frontend RBAC foundations are present.
+- Spec #2 `tenant-model-and-isolation`: prerequisite satisfied. The tenant module and public `TenantResolver`, `TenantContext`, and `TenantReference` APIs exist; masked-404 reads and generic-403 writes are implemented and covered by tenant isolation tests.
+- Spec #3 `user-management`: `COMPLETE_WITH_OPTIONAL_GAPS`; Task 6.3 IAM/user-management emitters are in scope for the later emitter wave.
+- Event baseline: no `ApplicationEventPublisher` or `@ApplicationModuleListener` usage exists in backend production or test sources. This spec will introduce the first Spring Modulith event usage.
+- No backend code, frontend code, dependencies, tests, Playwright files, or `.kiro/**` files were changed. No tests were run for this verify-only gate.
+- Execution evidence, commands, risks, and deferred work are recorded in `.codex/audit-log-dashboard.md`.
+- Wave 1 may start only when explicitly requested. It was not started during Wave 0.
+
+## Audit Log Dashboard — Wave 1 Cross-Spec Authority Extensions
+
+Completed on 2026-06-18.
+
+- Wave 1 status: `COMPLETED`.
+- Added realm roles `platform:audit:read` and `tenant:audit:read` additively.
+- Granted platform audit read to `PLATFORM_ADMIN` and `SUPPORT_AGENT`; granted tenant audit read to `TENANT_ADMIN`; did not grant either authority to `MERCHANT_MANAGER` or `READ_ONLY_USER`.
+- Added `PLATFORM_AUDIT_READ` and `TENANT_AUDIT_READ` to `Authorities` and the two matching data-only converter allowlist entries. `platform:payments:audit` and the fail-closed conversion rule remain unchanged.
+- Updated the existing converter and authority-catalog regression tests for 20 known realm roles and 19 enforced catalog authorities.
+- Targeted validation: GREEN, 21 tests, 0 failures, 0 errors, 0 skipped.
+- Filtered backend validation outside the sandbox with Podman: GREEN, 339 tests, 0 failures, 0 errors, 5 skipped. Excluded `**/restkit/**/*.java` and `**/paymentsupport/**/*.java` per repository rules.
+- The known untracked broken RestKit source blocked `testCompile`; it was temporarily moved to `/tmp` during validation and restored automatically without content changes.
+- No dependencies, audit module, migrations, event code, frontend files, Playwright files, or `.kiro/**` files were changed. Playwright was not run.
+- Full commands, static checks, changed files, risks, and deferred work are recorded in `.codex/audit-log-dashboard.md`.
+- Wave 2 may start only when explicitly requested. It was not started during Wave 1.
+
+## Audit Log Dashboard — Wave 2
+
+Completed on 2026-06-18.
+
+- Status: `COMPLETED`.
+- Shared event contract: completed; `AuditableActionOccurredTest` GREEN, 3 tests.
+- Durable event dependencies: completed. Added `spring-modulith-events-api` and `spring-modulith-events-jpa`, version-managed by the existing Spring Modulith 2.0.6 BOM.
+- Event publication config/schema: completed. Republish-on-restart is enabled, an application-level Jackson `EventSerializer` is registered, and shared Flyway migration `V6__create_event_publication.sql` is active in production and tests.
+- Dependencies added: yes, only the two explicitly approved Spring Modulith artifacts.
+- Backend validation: `CORE_GREEN_WITH_KNOWN_RESTKIT_BLOCKER`. Production compile, 3 event-contract tests, PostgreSQL Flyway V6, Hibernate validation, and a full application-context smoke test are green. Standard/filtered Maven test lifecycle is currently blocked at shared `testCompile` by 11 unresolved symbols in the excluded `restkit/contract/create/PaymentOrderSecurityContractRestKitTest.java`.
+- Security review: the production event contract contains no token, secret, password, Authorization, PAN/CVV, raw body, or generic payload field.
+- `.kiro/**` modified: no.
+- Playwright files created or run: no.
+- Detailed commands, schema/config decisions, exact unrelated validation blocker, changed files, and deferred work are recorded in `.codex/audit-log-dashboard.md`.
+
+Next recommended wave: Wave 3 — Audit module foundation, only after explicit user request. Wave 3 was not started.
+
+## Audit Log Dashboard — Wave 3
+
+Completed on 2026-06-19.
+
+Status: `COMPLETED`
+
+- Audit module declaration: completed; no PUBLIC API.
+- Audit Flyway migration: completed as global version `V7` to avoid collision with existing merchant `V1`; `classpath:db/migration/audit` is registered additively.
+- Audit entity/repository/exception: completed; `AuditEvent.fromEvent(...)` maps only explicit safe shared-event fields.
+- Backend validation: focused green (5 tests, including Modulith architecture and PostgreSQL persistence/Hibernate validation); broad validation blocked by the known excluded RestKit compilation defect and the Wave 2 `eventSerializer` incompatibility with three existing `@DataJpaTest` classes (12 errors in 343 executed tests).
+- Security/confidentiality grep: green; no secret/token/password/payment-sensitive/raw-body/generic-payload audit field.
+- `.kiro/**` modified: no.
+- Playwright files created: no. Playwright was not run.
+- Wave 4 was not started.
+
+Next recommended wave: Wave 4 — listener, read service, controller, DTOs, and handler, only after explicit user request. Wave 4 may start, with the existing broad-suite blockers kept visible.
+
+## Audit Log Dashboard — Wave 4
+
+Completed on 2026-06-19.
+
+Status: `COMPLETED`
+
+- Audit listener: completed; consumes the shared event and persists one mapped audit row per invocation.
+- Audit query/service/controller/DTOs/handler: completed; list and single-entry reads are tenant-aware, DTOs redact internal actor subject, and failures use masked ProblemDetail responses.
+- Endpoints: `GET /api/audit` and `GET /api/audit/{id}`; no write endpoint was added.
+- Backend validation: `WAVE_4_CORE_GREEN_WITH_KNOWN_UNRELATED_BROAD_SUITE_FAILURES`. Compile and 5 focused audit/Modulith tests are green. The filtered broad suite has the existing 12 JPA-slice errors caused by the Wave 2 `eventSerializer` requiring an unavailable `ObjectMapper`. The former RestKit compilation blocker is resolved; excluded RestKit execution still has unrelated contract failures.
+- `.kiro/**` modified: no.
+- Playwright files created or run: no.
+- Wave 5 started: no.
+
+Next recommended wave: Wave 5 — emitter event publication, only after explicit user request. Wave 5 may start with the unrelated broad-suite failures kept visible.
+
+## Audit Log Dashboard — Wave 5
+
+Completed on 2026-06-19.
+
+Status: `COMPLETED`
+
+- Merchant emitters: completed for create, activate, and suspend successes.
+- Payment emitters: completed for authorize, capture, cancel, and refund successes; idempotent replay does not emit again and status-history semantics are unchanged.
+- IAM/user-management emitters: completed for create, update, and role-assignment successes.
+- Actor/correlation/tenant metadata: captured at publication time through the safe shared factory from explicit lifecycle context, JWT claims, the authenticated name, and the existing correlation-id MDC; non-request calls use safe non-null fallbacks.
+- Module boundary check: passed; emitters use only `shared.events` and no module imports `audit.internal.*`.
+- Backend validation: `WAVE_5_CORE_GREEN_WITH_KNOWN_UNRELATED_BROAD_SUITE_FAILURES`. Compile/testCompile, 61 focused tests, 9 module/context tests, and `ModulithArchitectureTest` are green. The filtered broad run retains 12 known Wave 2 JPA-slice errors; excluded RestKit execution retains unrelated failures but no longer blocks compilation.
+- `.kiro/**` modified: no.
+- Playwright files created or run: no.
+- Wave 6 started: no.
+
+Next recommended wave: Wave 6 — backend tests, only after explicit user request. Wave 6 may start with the unrelated broad-suite failures kept visible.
+
+## Audit Log Dashboard — Wave 6 validation repair
+
+Completed on 2026-06-19.
+
+Status: `COMPLETED`
+
+- Unit tests: 8/8 green.
+- Repository/PostgreSQL tests: 3/3 green.
+- Web MVC tests: 8/8 green.
+- Non-container plus architecture tests: 17/17 green.
+- Container-backed repository/listener/module tests: 10/10 green.
+- REST Assured audit security matrix: 5/5 green.
+- Podman socket: available at `/run/user/1000/podman/podman.sock`; user socket active/listening and Docker-compatible API responsive.
+- Repository-approved filtered `./mvnw test`: green, 369 tests, 0 failures/errors, 5 skipped.
+- Repository-approved filtered `./mvnw verify`: green, 369 Surefire tests plus 21 Failsafe ITs, 0 failures/errors.
+- Broad validation exclusions: `**/restkit/**` and `**/paymentsupport/**`, required by `AGENTS.md`.
+- RestKit compile blocker: resolved; runtime suite not executed because it is repository-excluded.
+- Minimal production fix: durable `EventSerializer` now resolves Jackson lazily through `ObjectProvider`, allowing both JPA slices and full/module contexts to start correctly.
+- Module boundary check: passed; no production module imports `audit.internal.*`.
+- `.kiro/**` modified: no.
+- Playwright files created or run: no.
+- Wave 7 started: no.
+
+Next recommended wave: Wave 7 — Frontend foundation, only after explicit user request.
+
+## Audit Log Dashboard — Wave 7
+
+Completed on 2026-06-19.
+
+Status: `COMPLETED`
+
+- Zod schemas: completed; safe event/list/query contracts match backend DTOs and validate native dates plus pagination bounds.
+- `useAuditApi`: completed; delegates to `useApiClient`, validates all responses, captures safe metadata, and maps detail 404 to null.
+- Server proxy routes: completed for list and detail GET only; safe query whitelist and correlation/header forwarding preserved.
+- `canViewAuditLog`: completed and exposed through `useAuthorization`; true only for PLATFORM_ADMIN, SUPPORT_AGENT, and TENANT_ADMIN.
+- Frontend validation: green; `corepack pnpm typecheck` passed and 468 Vitest tests across 38 files passed.
+- Backend files modified by Wave 7: no. Pre-existing backend worktree changes remain untouched.
+- `.kiro/**` modified: no.
+- Playwright files created or run: no.
+- Wave 8 started: no.
+
+Next recommended wave: Wave 8 — Frontend UI, only after explicit user request.
+
+## Audit Log Dashboard — Wave 8
+
+Completed on 2026-06-19.
+
+Status: `COMPLETED`
+
+- `/admin/audit` page: completed with URL query/filter synchronization, pagination, and `?entry={id}` drawer deep links.
+- `AuditTable`: completed with safe read-only columns, row selection, visible outcome text, and stable test ids.
+- `AuditFilters`: completed with labeled actor/action/target/date controls and clear/apply behavior.
+- `AuditEntryDrawer`: completed with safe detail fields only.
+- `nav-link-audit`: completed together with the role-gated dashboard search destination.
+- Six UI states: completed for loading, empty, filtered-empty, error, forbidden, and deep-link-not-found.
+- Frontend validation: green; `corepack pnpm typecheck` passed and 468 Vitest tests across 38 files passed.
+- Backend files modified by Wave 8: no. Pre-existing backend worktree changes remain untouched.
+- `.kiro/**` modified: no.
+- Playwright files created or run: no.
+- Wave 9 started: no.
+
+Next recommended wave: Wave 9 — Frontend tests, only after explicit user request.
+
+## Audit Log Dashboard — Wave 9
+
+Completed on 2026-06-20.
+
+Status: `COMPLETED`
+
+- Property 5: completed with fast-check over all five composite roles plus an unknown role, 100 iterations.
+- Capability distinction: verified; `canViewAuditLog` remains separate from `canReadAudit`.
+- Six UI state component tests: completed for loading, empty, filtered-empty, error, forbidden, and deep-link-not-found; both frontend and backend forbidden paths are covered.
+- Test-driven frontend fix: blank optional date filters now normalize to absent values before audit query validation.
+- Frontend validation: green; `corepack pnpm typecheck` passed and 498 Vitest tests across 42 files passed.
+- Backend files modified by Wave 9: no. Pre-existing backend worktree changes remain untouched.
+- `.kiro/**` modified: no.
+- Playwright files created or run: no.
+- Final checkpoint started: no.
+
+Next recommended wave: Final checkpoint, only after explicit user request.
+
+## Audit Log Dashboard — Final checkpoint
+
+Status: `COMPLETE_WITH_OPTIONAL_GAPS`
+
+- Required backend waves: complete and audit-specific validation green.
+- Required frontend waves: complete and verified.
+- Backend repository-approved filtered `./mvnw test`: green, 368 tests run, 0 failures/errors, 5 skipped; one explicitly accepted payment-summary method excluded.
+- Backend repository-approved filtered `./mvnw verify`: green; Surefire 368 tests and Failsafe 21 tests, 0 failures/errors.
+- `ModulithArchitectureTest`: green.
+- `AuditModuleTest`: green.
+- Audit migration + JPA validate: green with PostgreSQL/Testcontainers.
+- REST Assured audit security matrix: green, 5/5 tests.
+- Frontend typecheck: green.
+- Frontend unit tests: green, 498/498 tests.
+- Security/confidentiality scan: passed; internal actor subject is not browser-visible and no sensitive audit payload is exposed.
+- Podman socket and Docker-compatible API: available and green.
+- RestKit/payment-support validation suites: excluded as required by `AGENTS.md`.
+- `.kiro/**` modified: no.
+- Playwright files created by this spec: no.
+- Playwright run: no.
+- Next spec started: no.
+
+Next recommended work:
+
+- Close `audit-log-dashboard`; required audit backend/frontend validation is green.
+- Track the excluded payment-summary local-date versus UTC midnight test as deterministic-test-isolation technical debt.
+- Prepare `deterministic-seed-and-test-isolation` or run a status-hygiene audit before starting it.
