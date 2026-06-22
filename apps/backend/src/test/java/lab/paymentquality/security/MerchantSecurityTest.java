@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -31,8 +31,10 @@ import static lab.paymentquality.testsupport.MerchantApiTestSupport.uniqueMercha
 @Testcontainers
 class MerchantSecurityTest extends PostgresContainerSupport {
 
+    private static final String LEGACY_TENANT_REFERENCE = "PLACEHOLDER_TENANT_ID";
+
     @Container
-    static PostgreSQLContainer<?> postgres = newPostgresContainer("merchant_security_test");
+    static PostgreSQLContainer postgres = newPostgresContainer("merchant_security_test");
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {
@@ -78,9 +80,12 @@ class MerchantSecurityTest extends PostgresContainerSupport {
 
     @Test
     void partialAuthoritiesAreSeparatedAcrossEndpoints() {
-        String readOnly = TestJwtSupport.tokenWithRoles("read.only", List.of("merchants:read"));
-        String createOnly = TestJwtSupport.tokenWithRoles("create.only", List.of("merchants:create"));
-        String updateOnly = TestJwtSupport.tokenWithRoles("update.only", List.of("merchants:update-status"));
+        String readOnly = TestJwtSupport.tokenWithRolesAndTenantId(
+                "read.only", List.of("merchants:read"), LEGACY_TENANT_REFERENCE);
+        String createOnly = TestJwtSupport.tokenWithRolesAndTenantId(
+                "create.only", List.of("merchants:create"), LEGACY_TENANT_REFERENCE);
+        String updateOnly = TestJwtSupport.tokenWithRolesAndTenantId(
+                "update.only", List.of("merchants:update-status"), LEGACY_TENANT_REFERENCE);
 
         var merchant = merchantService.create(uniqueMerchantReference("SEC"), "Security Merchant");
         String id = merchant.getMerchantId().toString();

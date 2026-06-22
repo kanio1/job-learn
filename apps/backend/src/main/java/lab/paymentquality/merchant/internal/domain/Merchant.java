@@ -32,18 +32,51 @@ public class Merchant {
     @Column(name = "version")
     private Long version;
 
+    @Column(name = "tenant_id", updatable = false)
+    private UUID tenantId;
+
     protected Merchant() {
     }
 
-    public static Merchant create(UUID merchantId, String normalizedReference, String displayName) {
+    public static Merchant create(UUID merchantId, String normalizedReference, String displayName, UUID tenantId) {
         var m = new Merchant();
         m.merchantId = merchantId;
         m.normalizedReference = normalizedReference;
         m.displayName = displayName;
+        m.tenantId = tenantId;
         m.status = MerchantStatus.DRAFT;
         m.createdAt = Instant.now();
         m.updatedAt = m.createdAt;
         return m;
+    }
+
+    public static Merchant seeded(UUID merchantId, String normalizedReference, String displayName,
+                                  UUID tenantId, MerchantStatus status, Instant timestamp) {
+        var merchant = new Merchant();
+        merchant.merchantId = merchantId;
+        merchant.normalizedReference = normalizedReference;
+        merchant.displayName = displayName;
+        merchant.tenantId = tenantId;
+        merchant.status = status;
+        merchant.createdAt = timestamp;
+        merchant.updatedAt = timestamp;
+        return merchant;
+    }
+
+    public void applySeed(String normalizedReference, String displayName, UUID tenantId,
+                          MerchantStatus status, Instant timestamp) {
+        this.normalizedReference = normalizedReference;
+        this.displayName = displayName;
+        this.tenantId = tenantId;
+        this.status = status;
+        this.updatedAt = timestamp;
+    }
+
+    /**
+     * Backward-compatible overload; tenantId will be set properly in Wave 2 MerchantService update.
+     */
+    public static Merchant create(UUID merchantId, String normalizedReference, String displayName) {
+        return create(merchantId, normalizedReference, displayName, null);
     }
 
     public void activate() {
@@ -88,5 +121,9 @@ public class Merchant {
 
     public Long getVersion() {
         return version;
+    }
+
+    public UUID getTenantId() {
+        return tenantId;
     }
 }

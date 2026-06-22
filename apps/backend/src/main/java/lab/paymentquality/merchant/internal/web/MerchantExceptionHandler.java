@@ -1,10 +1,12 @@
 package lab.paymentquality.merchant.internal.web;
 
 import lab.paymentquality.merchant.internal.domain.*;
+import lab.paymentquality.tenant.TenantResolutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -39,6 +41,24 @@ public class MerchantExceptionHandler {
                 .body(new ErrorResponse("validation", "Invalid merchant request", details));
     }
 
+    @ExceptionHandler({MissingTenantReferenceException.class, UnresolvableTenantReferenceException.class})
+    public ResponseEntity<ErrorResponse> handleTenantValidation(RuntimeException e) {
+        log.warn("merchant.tenant.failed.validation type={} correlationId={}",
+                e.getClass().getSimpleName(), MDC.get("correlationId"));
+        return ResponseEntity.badRequest()
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(new ErrorResponse("validation", "Invalid merchant request", e.getMessage()));
+    }
+
+    @ExceptionHandler({TenantResolutionException.class, TenantBoundaryViolationException.class})
+    public ResponseEntity<ErrorResponse> handleTenantForbidden(RuntimeException e) {
+        log.warn("merchant.tenant.failed.forbidden type={} correlationId={}",
+                e.getClass().getSimpleName(), MDC.get("correlationId"));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(new ErrorResponse("forbidden", "Forbidden", "Access denied"));
+    }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
         log.warn("merchant.lookup.failed.not-found correlationId={}", MDC.get("correlationId"));
@@ -65,6 +85,7 @@ public class MerchantExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNotFound(MerchantNotFoundException e) {
         log.warn("merchant.lookup.failed.not-found correlationId={}", MDC.get("correlationId"));
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .body(new ErrorResponse("not_found", e.getMessage()));
     }
 

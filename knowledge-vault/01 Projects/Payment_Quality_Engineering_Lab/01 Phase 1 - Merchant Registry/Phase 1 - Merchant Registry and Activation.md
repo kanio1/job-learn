@@ -11,7 +11,13 @@ Phase 1 introduces the first real business module before payment orders: merchan
 - Test design: `docs/testing/phase-1-merchant-test-design.md`
 - Payment gateway roadmap analysis: `docs/architecture/payment-gateway-roadmap-analysis.md`
 - SDET learning plan: `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/Payment Gateway SDET Learning Plan.md`
+- Learning prompts: `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/Learning Prompts/README.md`
 - REST Assured learning path: `knowledge-vault/02 Areas/Technical Learning/JUnit REST Assured/REST Assured from Zero to Professional Backend API Testing/README.md`
+- SQL learning path: `knowledge-vault/02 Areas/Technical Learning/PostgreSQL and SQL From Zero/README.md`
+- Java 25 learning path: `knowledge-vault/02 Areas/Technical Learning/Java 25 For SDET/README.md`
+- Spring MVC learning path: `knowledge-vault/02 Areas/Technical Learning/Spring Boot Spring MVC/README.md`
+- Spring Data JPA and Flyway path: `knowledge-vault/02 Areas/Technical Learning/Spring Data JPA and Flyway/README.md`
+- Security learning path: `knowledge-vault/02 Areas/Technical Learning/Security and Authorization Testing/README.md`
 
 ## Learning Themes
 
@@ -21,3 +27,4 @@ Phase 1 introduces the first real business module before payment orders: merchan
 - Parallel-safe test data from the first mutating feature.
 - REST Assured from zero to professional API testing.
 - Merchant Registry as a learning laboratory before Payment Order.
+- Spiral learning: each backend sprint repeats REST/API/test data/security while adding one new concept.

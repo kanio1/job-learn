@@ -14,7 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -32,7 +32,7 @@ class MerchantPersistenceIT extends PostgresContainerSupport {
     private static String durableReference;
 
     @Container
-    static PostgreSQLContainer<?> postgres = newPostgresContainer("merchant_persistence_test");
+    static PostgreSQLContainer postgres = newPostgresContainer("merchant_persistence_test");
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {

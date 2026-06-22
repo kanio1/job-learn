@@ -1,6 +1,7 @@
 package lab.paymentquality.rest;
 
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import lab.paymentquality.testsupport.PostgresContainerSupport;
 import lab.paymentquality.testsupport.TestJwtConfiguration;
 import org.junit.jupiter.api.Test;
@@ -10,7 +11,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -18,8 +19,8 @@ import java.util.UUID;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.Matchers.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.*;
 import static lab.paymentquality.testsupport.MerchantApiTestSupport.createMerchantBody;
 import static lab.paymentquality.testsupport.MerchantApiTestSupport.operatorRequest;
 import static lab.paymentquality.testsupport.MerchantApiTestSupport.uniqueMerchantReference;
@@ -31,7 +32,7 @@ import static lab.paymentquality.testsupport.MerchantApiTestSupport.uniqueMercha
 class MerchantRestAssuredTest extends PostgresContainerSupport {
 
     @Container
-    static PostgreSQLContainer<?> postgres = newPostgresContainer("merchant_rest_test");
+    static PostgreSQLContainer postgres = newPostgresContainer("merchant_rest_test");
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {
@@ -80,7 +81,7 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
     }
 
     @Test
-    void listReturnsSeededMerchantsNewestFirst() {
+    void listReturnSeededMErchantNewestFirst() {
         String prefix = uniqueMerchantReference("ORDER");
         String first = prefix + "-A";
         String second = prefix + "-B";
@@ -91,16 +92,15 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
         createMerchant(third, "Third Merchant").then().statusCode(201);
 
         List<Map<String, Object>> merchants = operatorRequest(port)
-        .when().get("/api/merchants")
-        .then()
-                .statusCode(200)
+                .when().get("/api/merchants")
+                .then().statusCode(200)
                 .extract().path("merchants");
 
         List<String> orderedReferences = merchants.stream()
                 .map(row -> (String) row.get("merchantReference"))
                 .filter(reference -> reference.startsWith(prefix))
                 .toList();
-
+        
         assertThat(orderedReferences).containsExactly(third, second, first);
     }
 
@@ -235,7 +235,7 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
                 .body("error", equalTo("not_found"));
     }
 
-    private io.restassured.response.Response createMerchant(String reference, String displayName) {
+    private Response createMerchant(String reference, String displayName) {
         return operatorRequest(port)
                 .contentType(ContentType.JSON)
                 .body(createMerchantBody(reference, displayName))

@@ -62,7 +62,7 @@ Recommended order:
 | 3 | Foundation | HTTP Method, Endpoint, Content-Type and Accept | Teaches how request intent is expressed |
 | 4 | Foundation | Path Params, Query Params and Headers | Teaches the three common input channels beyond body |
 | 5 | Foundation | Request Body, JSON, `Map.of`, DTO and Serialization | Explains stable request payload construction |
-| 6 | Foundation | Response Assertions | Teaches status, content type and body checks |
+| 6 | Accelerated Business Flow | PayU-like Business Flow: Response Contracts, Correlation IDs, Idempotency, ETag and Security Oracles | Uses response assertions as executable product oracles for a future payment-order sprint |
 | 7 | Foundation | Nested Responses and Lists | Teaches assertions for collection-shaped API responses |
 | 8 | Foundation | Extraction and Deserialization | Enables multi-step scenario tests |
 | 9 | Foundation | Auth and Security Tests | Teaches 401, 403 and Bearer token testing |

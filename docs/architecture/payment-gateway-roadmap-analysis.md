@@ -39,6 +39,8 @@ Najważniejsza rekomendacja:
 - nie rozbijać systemu na mikroserwisy,
 - nie udawać produkcyjnego operatora płatności.
 
+Interpretacja PayU-like lab jest teraz jawnie ograniczona do kontrolowanego learning clone: Payment Order REST API/idempotency/lifecycle, security/ownership/tenant isolation oraz reliability/data integrity/audit/webhook/event evolution. Szczegolowa mapa scope znajduje sie w `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/Strategy/Three Advanced Learning Paths for API Testing and Payment Lab.md`.
+
 ## 2. Czy Kierunek PayU-Like Ma Sens Dla Nauki Senior QA Automation?
 
 Ten kierunek ma bardzo duży sens, ponieważ payment gateway daje naturalne, realistyczne problemy testowe.

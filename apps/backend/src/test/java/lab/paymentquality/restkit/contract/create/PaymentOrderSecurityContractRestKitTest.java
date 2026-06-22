@@ -1,0 +1,91 @@
+package lab.paymentquality.restkit.contract.create;
+
+import static io.restassured.RestAssured.port;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.startsWith;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+
+import io.restassured.http.ContentType;
+import io.restassured.response.ExtractableResponse;
+import io.restassured.response.Response;
+import lab.paymentquality.restkit.assertions.HeaderAssertions;
+import lab.paymentquality.testsupport.PostgresContainerSupport;
+import lab.paymentquality.testsupport.TestJwtConfiguration;
+import lab.paymentquality.testsupport.TestJwtSupport;
+import lab.paymentquality.testsupport.restkit.client.MerchantApi;
+import lab.paymentquality.testsupport.restkit.client.PaymentOrderApi;
+import lab.paymentquality.testsupport.restkit.core.ApiHeaders;
+import lab.paymentquality.testsupport.restkit.core.CorrelationIds;
+import lab.paymentquality.testsupport.restkit.idempotency.IdempotencyKeys;
+import lab.paymentquality.testsupport.restkit.payload.CreatePaymentOrderPayload;
+import lab.paymentquality.testsupport.restkit.payload.PaymentReferences;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
+@Import(TestJwtConfiguration.class)
+@Testcontainers
+public class PaymentOrderSecurityContractRestKitTest extends PostgresContainerSupport {
+
+    @Container
+    static PostgreSQLContainer postgres = newPostgresContainer("payment_order_create_contract_restkit_test");
+
+    @DynamicPropertySource
+    static void postgresProperties(DynamicPropertyRegistry registry) {
+        registerPostgresProperties(registry, postgres);
+    }
+
+    @LocalServerPort
+    int port;
+
+    @Test
+    void readPaymentOrderWithoutTokenReturns401WithWwwAuthenticate() {
+        MerchantApi merchantApi = new MerchantApi(port);
+        PaymentOrderApi paymentOrderApi = new PaymentOrderApi(port);
+
+        String merchantId = merchantApi.createActiveMerchantAndReturnId("security-missing-token");
+        String creatorToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+
+        String reference = PaymentReferences.unique("security-missing-token");
+        CreatePaymentOrderPayload payload = CreatePaymentOrderPayload.pln(12500, reference);
+
+        ExtractableResponse<Response> created = paymentOrderApi.createOrder(
+                merchantId,
+                creatorToken,
+                payload,
+                IdempotencyKeys.forScenario("security-missing-token-create"),
+                CorrelationIds.forScenario("security-missing-token-create")
+            )
+            .statusCode(201)
+            .contentType(ContentType.JSON)
+            .header(ApiHeaders.ETAG, startsWith("\"v"))
+            .body("paymentOrderId", notNullValue())
+            .body("status", equalTo("CREATED"))
+            .extract();
+
+        String paymentOrderId = created.path("paymentOrderId");
+
+        Response response = paymentOrderApi.readOrderWithoutAuthorization(
+                merchantId,
+                paymentOrderId
+            )
+            .statusCode(401)
+            .header(ApiHeaders.WWW_AUTHENTICATE, notNullValue())
+            .extract()
+            .response();
+
+        HeaderAssertions.assertWwwAuthenticatePresent(response);
+        HeaderAssertions.assertSensitiveResponseIsNotCacheable(response);
+        HeaderAssertions.assertAuthorizationTokenIsNotLeaked(response);
+    }
+}

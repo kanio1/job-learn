@@ -12,19 +12,20 @@ import org.springframework.modulith.test.ApplicationModuleTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ApplicationModuleTest(mode = ApplicationModuleTest.BootstrapMode.STANDALONE)
+// Merchant depends on the tenant module public API for Wave 2 tenant-aware service behavior.
+@ApplicationModuleTest(mode = ApplicationModuleTest.BootstrapMode.DIRECT_DEPENDENCIES)
 @ActiveProfiles("test")
 @Testcontainers
 class MerchantModuleTest extends PostgresContainerSupport {
 
     @Container
-    static PostgreSQLContainer<?> postgres = newPostgresContainer("merchant_module_test");
+    static PostgreSQLContainer postgres = newPostgresContainer("merchant_module_test");
 
     static {
         postgres.start();

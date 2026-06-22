@@ -55,6 +55,10 @@ It is part of the broader project roadmap in `knowledge-vault/01 Projects/Paymen
 - JDK 25 / Mockito / Maven tooling awareness.
 - Deferred risk notes after green builds.
 
+## Lesson 08 Project Bridge
+
+- [[Lesson 08 - Aggregation Contract, Security, and Business Flow Tests]] — aggregation contract tests, security matrix, business flow with explicit oracle, SoftAssertions, tuple assertions
+
 ## Related Project Notes
 
 - `../REST API From Zero/Merchant Request and Response Flow.md`

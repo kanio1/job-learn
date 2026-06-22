@@ -12,8 +12,11 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
-    locations: classpath:db/migration/merchant
+    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit
     baseline-on-migrate: false
+  modulith:
+    events:
+      republish-outstanding-events-on-restart: true
   security:
     oauth2:
       resourceserver:
@@ -23,9 +26,22 @@ spring:
 
 server:
   port: 8080
+  # Local/test backend does not trust Forwarded or X-Forwarded-* headers.
+  # Link-producing payment endpoints use relative Location values unless a future trusted-proxy profile says otherwise.
+  forward-headers-strategy: none
+  error:
+    include-binding-errors: never
+    include-message: never
+    include-stacktrace: never
 
 payment-quality:
   phase: foundation
+  security:
+    authorized-party: ${EXPECTED_AZP:payment-quality-dashboard}
+
+app:
+  testing:
+    enabled: false
 
 logging:
   level:
