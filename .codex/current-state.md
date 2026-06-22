@@ -4,13 +4,31 @@
 
 `018-rest-security-p1-error-auth-method-hardening`
 
-## Goal
+## Current active spec
 
-Continue `tenant-model-and-isolation` after Wave 1, using `.kiro` specs as read-only design input and `.codex` files as the mutable execution layer.
+`deterministic-seed-and-test-isolation`
+
+## Current status
+
+- Wave 1R: completed.
+- Wave 2R: completed.
+- Wave 3R: completed.
+
+`deterministic-seed-and-test-isolation` spec is **COMPLETED**.
 
 ## Important Rule
 
-Do not modify files under `.kiro/specs/tenant-model-and-isolation/` during implementation. If execution status changes, update this file or another `.codex/*.md` file instead.
+Do not modify files under `.kiro/**` during implementation. If execution status changes, update `.codex/*.md` files instead.
+
+## Next action
+
+No further work on `deterministic-seed-and-test-isolation` unless explicitly requested. Await next spec assignment.
+
+---
+
+## Historical context (tenant-model-and-isolation and earlier specs)
+
+The following sections record all prior waves from `tenant-model-and-isolation`, `user-management`, `audit-log-dashboard`, and earlier `deterministic-seed-and-test-isolation` waves.
 
 ## Verified / Reported Completion
 
@@ -724,23 +742,19 @@ Status: `COMPLETED`
 
 Wave 2 may start only when explicitly requested. Wave 2 was not started.
 
-## Deterministic Seed and Test Isolation — Wave 2
+## Deterministic Seed and Test Isolation — Wave 2R (Checkpoint Repair)
 
-Status: `BLOCKED_SECURITY_CONFIG_AMBIGUITY`
+Status: `COMPLETED`
 
-- Wave 1R prerequisite and required implementation files were verified complete.
-- Existing security ends with `.anyRequest().authenticated()`.
-- A permit rule only under `!prod && app.testing.enabled=true` is straightforward,
-  but with the flag disabled an unauthenticated request is rejected as `401`
-  before absent-handler resolution can return `404`.
-- Achieving disabled unauthenticated `404` requires either a disabled-path permit
-  rule, a placeholder handler, a path-specific security response, or weakening
-  the global catch-all. Each conflicts with at least one explicit Wave 2 rule.
-- No runner, controller, DTO, configuration, or security production code was
-  added. Existing endpoint security remains unchanged.
-- `.kiro/**`, frontend, and Playwright remain unchanged.
-- Full analysis and decision options are recorded in
-  `.codex/deterministic-seed-and-test-isolation.md`.
+- Wave 1R prerequisite verified complete.
+- Security decision: narrow pass-through `SecurityFilterChain` (`@Order(2)`) for exactly `POST /api/test/reset` and `POST /api/test/seed` — this is not the feature flag, it only lets MVC produce absent-handler 404 when the controller is absent.
+- `SeedRunner`: `@Profile("seed & !prod")`, implements `ApplicationRunner`, calls `DeterministicDataset.seed()`.
+- `TestController`: `@ConditionalOnProperty(name="app.testing.enabled", havingValue="true")` + `@Profile("!prod")`.
+- `TestOperationResponse`: minimal record with `operation` and `status` only.
+- `app.testing.enabled=false` in both `application.yml` (default) and `application-prod.yml` (prod override).
+- `SecurityConfig.testEndpointPassThroughFilterChain` (`@Order(2)`): POST-only exact match, `permitAll` — main chain (`@Order(3)`) still ends with `.anyRequest().authenticated()`.
+- compile: GREEN; test-compile: GREEN; `ModulithArchitectureTest`: GREEN (1 test); `TenantModuleTest`, `MerchantModuleTest`, `PaymentModuleTest`: GREEN (6 tests, Podman available); static checks: clean.
+- `.kiro/**`, frontend, and Playwright unchanged.
+- Full Wave 2R analysis is recorded in `.codex/deterministic-seed-and-test-isolation.md`.
 
-Wave 3 may not start and was not started. Resume Wave 2 only after an explicit
-decision on disabled-path security handling.
+Wave 3R may start only when explicitly requested. Wave 3R was not started.
