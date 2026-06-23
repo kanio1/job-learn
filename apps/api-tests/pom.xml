@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Standalone module — no Spring parent. Black-box: backend not on classpath. -->
+    <groupId>lab.paymentquality</groupId>
+    <artifactId>payment-quality-api-tests</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>payment-quality-api-tests</name>
+    <description>
+        Black-box REST Assured 6 API test framework for the Payment Quality Engineering Lab.
+        Tests the backend through HTTP only — no Spring context, no MockMvc, no backend DTOs.
+        Also a learning artifact for Senior QA Automation / SDET practice.
+    </description>
+
+    <properties>
+        <java.version>25</java.version>
+        <maven.compiler.release>25</maven.compiler.release>
+        <maven.compiler.parameters>true</maven.compiler.parameters>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Versions — kept in sync with apps/backend/pom.xml -->
+        <junit.version>6.0.3</junit.version>
+        <testcontainers.version>2.0.5</testcontainers.version>
+        <rest-assured.version>6.0.0</rest-assured.version>
+        <assertj.version>3.27.7</assertj.version>
+
+        <!-- Phase 4: add when json-schema-validator is in local ~/.m2 -->
+        <!-- <json-schema-validator.version>6.0.0</json-schema-validator.version> -->
+
+        <!-- Phase 3: add when testcontainers + keycloak TC are needed -->
+        <!-- <testcontainers-keycloak.version>3.7.0</testcontainers-keycloak.version> -->
+        <!-- <awaitility.version>4.3.0</awaitility.version> -->
+
+        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
+        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+        <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- JUnit 6 BOM — pins jupiter, vintage, platform -->
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Testcontainers BOM — pinned but deps are deferred to Phase 6 -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- ── Core (offline-safe, all in local ~/.m2) ─────────────────────── -->
+
+        <!-- REST Assured 6: given/when/then, filters, specs, parsers -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${rest-assured.version}</version>
+            <scope>test</scope>
+            <!-- Exclude Groovy transitive; we use Jackson 2 (not Jackson 3) per §11 of spec -->
+        </dependency>
+
+        <!-- JUnit Jupiter (from BOM) -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- AssertJ — custom ProblemAssert, fluent assertions in scenarios -->
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- ── Phase 4 (deferred — json-schema-validator not yet in ~/.m2) ── -->
+        <!--
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>${rest-assured.version}</version>
+            <scope>test</scope>
+        </dependency>
+        -->
+
+        <!-- ── Phase 6B-lite (Testcontainers core stack — all in ~/.m2) ──── -->
+        <!-- TC 2.0.x renamed artifact IDs: postgresql→testcontainers-postgresql, etc. -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- ── Phase 6B-full (deferred — Keycloak TC + Awaitility) ──────── -->
+        <!--
+        <dependency>
+            <groupId>com.github.dasniko</groupId>
+            <artifactId>testcontainers-keycloak</artifactId>
+            <version>${testcontainers-keycloak.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>${awaitility.version}</version>
+            <scope>test</scope>
+        </dependency>
+        -->
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                    <parameters>${maven.compiler.parameters}</parameters>
+                </configuration>
+            </plugin>
+
+            <!-- Surefire: runs *Test.java (unit wiring tests, offline) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Test.java</include>
+                    </includes>
+                </configuration>
+            </plugin>
+
+            <!-- Failsafe: runs *Spec.java (live integration tests, Phase 7+) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven-failsafe-plugin.version}</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Spec.java</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Enforcer: pins JDK and Maven versions — mirrors backend constraint -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven-enforcer-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-versions</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[25,26)</version>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>[3.9.11,)</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

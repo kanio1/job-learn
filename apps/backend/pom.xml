@@ -258,4 +258,34 @@
             </plugin>
         </plugins>
     </build>
+
+    <!--
+        Rootless Podman profile for Spring Boot build-image on Fedora.
+        Connects to the user Podman socket and tells the Paketo builder to
+        bind the host socket into the builder container so it can reach the daemon.
+
+        Usage:
+          ./mvnw -Ppodman-build-image spring-boot:build-image \
+                 -DskipTests \
+                 -Dspring-boot.build-image.imageName=payment-quality/backend:local
+    -->
+    <profiles>
+        <profile>
+            <id>podman-build-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <configuration>
+                            <docker>
+                                <host>unix://${env.XDG_RUNTIME_DIR}/podman/podman.sock</host>
+                                <bindHostToBuilder>true</bindHostToBuilder>
+                            </docker>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
