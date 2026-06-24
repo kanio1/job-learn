@@ -10,37 +10,34 @@ import java.time.Duration;
 /**
  * Wraps a TC {@link GenericContainer} for the backend Spring Boot OCI image.
  *
- * <p>The backend joins the shared TC network so it can reach postgres via the
- * {@code postgres-db} network alias. The 8080 port is mapped to a random host port;
+ * <p>The backend joins the shared TC network so it can reach both {@code postgres-db} and
+ * {@code keycloak} via their network aliases. The 8080 port is mapped to a random host port;
  * {@link #baseUri()} returns the host-accessible URL for REST Assured.
  *
- * <p><strong>Keycloak wiring — Phase 6B-lite note:</strong> placeholder JWT issuer/JWKS URLs
- * are passed so the backend starts without a live Keycloak. Spring Boot uses {@code jwk-set-uri}
- * for the JWK decoder when explicitly set, and does NOT eagerly fetch it at startup — validation
- * only happens on authenticated requests. Since 6B-lite only exercises public endpoints,
- * the placeholder URLs are never actually fetched. Replace with real Keycloak URLs in Phase 6B-full.
+ * <p><strong>Keycloak URL strategy:</strong> ISSUER_URI uses the host-mapped Keycloak URL (matches
+ * the {@code iss} claim in tokens minted from the test JVM). JWK_SET_URI uses the internal network
+ * alias (the backend container must reach Keycloak's JWKS endpoint to verify token signatures, and
+ * cannot use {@code localhost} to do so from within the TC network).
+ *
+ * <p>See {@link KeycloakSupport} for issuer/JWKS URL details and the rationale for the split.
  */
 public final class BackendSupport {
 
     private static final int BACKEND_PORT = 8080;
     private static final Duration STARTUP_TIMEOUT = Duration.ofSeconds(120);
 
-    private static final String PLACEHOLDER_KEYCLOAK_BASE =
-            "http://keycloak-placeholder.invalid/realms/payment-quality";
-
     private final GenericContainer<?> container;
 
-    public BackendSupport(String image, PostgresSupport postgres, Network network) {
+    @SuppressWarnings("resource")
+    public BackendSupport(String image, PostgresSupport postgres, KeycloakSupport keycloak, Network network) {
         this.container = new GenericContainer<>(DockerImageName.parse(image))
                 .withNetwork(network)
                 .withExposedPorts(BACKEND_PORT)
                 .withEnv("DB_URL", postgres.internalJdbcUrl())
                 .withEnv("DB_USER", postgres.username())
                 .withEnv("DB_PASSWORD", postgres.password())
-                .withEnv("SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI",
-                        PLACEHOLDER_KEYCLOAK_BASE)
-                .withEnv("SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI",
-                        PLACEHOLDER_KEYCLOAK_BASE + "/protocol/openid-connect/certs")
+                .withEnv("SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI", keycloak.issuerUri())
+                .withEnv("SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI", keycloak.internalJwksUri())
                 .withEnv("APP_TESTING_ENABLED", "true")
                 .withEnv("SPRING_PROFILES_ACTIVE", "dev")
                 .withLogConsumer(frame -> System.err.print("[BACKEND] " + frame.getUtf8String()))

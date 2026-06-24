@@ -173,7 +173,12 @@ apps/api-tests/
 | 6A | Stack discovery: runtime reality, image strategy, Keycloak strategy, first endpoint plan | ✅ done |
 | 6B-lite | TC deps (core/postgresql/junit-jupiter), `PostgresSupport`, `BackendSupport`, `ApiStack`, `ApiStackExtension`, `ApiTest`, `StatusApi`, `StatusSpec` | ✅ done |
 | 6B-full | `KeycloakSupport`, `KeycloakTokenFactory`, update `Identities`, `SeedApi` | deferred |
-| 7 | Authenticated specs: merchant contract → payment lifecycle → tenant isolation | deferred |
+| 6C | Keycloak 26 TC container, ROPC token factory, `SecuritySmokeSpec` (401 + 403 without seed data) | ✅ done |
+| 6D | Local merchant DTOs, `MerchantsApi` facade, `SeedApi`, `MerchantsContractSpec` (8 scenarios: 201/200/400/409/404) | ✅ done |
+| 6E | Contract hardening: `activate`/`suspend` API + 5 new contract tests (lifecycle 200, invalid_transition 409, missing tenantRef 400, tenant-filter list), refactor 5 error tests to ProblemAssert, add `DUPLICATE_MERCHANT_REFERENCE`/`INVALID_TRANSITION` to `ProblemCodes` | ✅ done |
+| 7A | Payment order contract foundation: `Seeds`, `PaymentOrdersApi` (GET, LIST), `PaymentOrdersContractSpec` (6 specs: GET body, headers, AUTHORIZED status, LIST pagination, 404, 400 malformed); create deferred (Keycloak realm gap) | ✅ done |
+| 7B | Keycloak realm fix (`merchant.alpha.creator` user with real merchant UUID), `seededMerchantCreator()` persona, `CreatePaymentOrderRequest` DTO, `PaymentOrdersApi.create()` + `createWithoutIdempotencyKey()`, 3 create specs (201 + 403 scope mismatch + 400 missing Idempotency-Key) | ✅ done |
+| 7+ | Tenant isolation, merchant lifecycle boundary, lifecycle (authorize/capture/cancel/refund), PATCH, history, summary | deferred |
 
 Spec §19 ordering (stack → http → context → auth → support → seed → payment → problem → schema →
 **first green `PaymentLifecycleSpec`** → rest) governs Phases 3–7.

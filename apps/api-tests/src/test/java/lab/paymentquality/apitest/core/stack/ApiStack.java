@@ -1,5 +1,7 @@
 package lab.paymentquality.apitest.core.stack;
 
+import lab.paymentquality.apitest.core.auth.Identities;
+import lab.paymentquality.apitest.core.auth.KeycloakTokenFactory;
 import org.testcontainers.containers.Network;
 
 /**
@@ -10,9 +12,13 @@ import org.testcontainers.containers.Network;
  *   <li>If {@code API_BASE_URI} env var is set → {@link StackMode#EXTERNAL}: no containers
  *       are started; the specified URI is used directly. Suitable for local dev when the full
  *       compose stack is already running.</li>
- *   <li>Otherwise → {@link StackMode#TESTCONTAINERS}: starts Postgres 18 and the backend
- *       OCI image as TC containers. Requires {@code BACKEND_IMAGE} env var.</li>
+ *   <li>Otherwise → {@link StackMode#TESTCONTAINERS}: starts Postgres 18, Keycloak 26, and the
+ *       backend OCI image as TC containers. Requires {@code BACKEND_IMAGE} env var.</li>
  * </ul>
+ *
+ * <p>Container startup order: Postgres → Keycloak → Backend. Keycloak must be healthy before the
+ * backend starts so that JWK_SET_URI is reachable for token validation. The {@link KeycloakTokenFactory}
+ * is installed in {@link Identities} so all live specs use real ROPC tokens.
  *
  * <p>Obtain the singleton with {@link #get()}. {@link #stop()} releases containers and the TC
  * network; {@link lab.paymentquality.apitest.support.ApiStackExtension} calls it automatically
@@ -34,6 +40,7 @@ public final class ApiStack {
     // Non-null only in TESTCONTAINERS mode
     private Network network;
     private PostgresSupport postgres;
+    private KeycloakSupport keycloak;
     private BackendSupport backend;
 
     private ApiStack() {
@@ -59,10 +66,19 @@ public final class ApiStack {
                     "Or set API_BASE_URI to use EXTERNAL mode against a running stack.");
         }
         network = Network.newNetwork();
+
         postgres = new PostgresSupport(network);
         postgres.start();
-        backend = new BackendSupport(image, postgres, network);
+
+        keycloak = new KeycloakSupport(network);
+        keycloak.start();
+
+        KeycloakTokenFactory tokenFactory = new KeycloakTokenFactory(keycloak.tokenEndpoint());
+        Identities.install(tokenFactory);
+
+        backend = new BackendSupport(image, postgres, keycloak, network);
         backend.start();
+
         return backend.baseUri();
     }
 
@@ -86,6 +102,9 @@ public final class ApiStack {
     public void stop() {
         if (backend != null) {
             backend.stop();
+        }
+        if (keycloak != null) {
+            keycloak.stop();
         }
         if (postgres != null) {
             postgres.stop();

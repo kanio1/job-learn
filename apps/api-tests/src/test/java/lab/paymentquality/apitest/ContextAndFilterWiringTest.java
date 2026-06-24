@@ -152,7 +152,7 @@ class ContextAndFilterWiringTest {
 
         assertThat(admin.isAnonymous()).isFalse();
         assertThat(admin.logicalName()).contains("platform-admin");
-        assertThat(admin.roles()).contains("platform:admin");
+        assertThat(admin.roles()).contains("PLATFORM_ADMIN");
         assertThat(admin.token()).isNotBlank();
     }
 
@@ -168,7 +168,7 @@ class ContextAndFilterWiringTest {
     void identities_paymentCreator_hasExpectedRole() {
         Identity creator = Identities.paymentCreator("merchant-abc");
 
-        assertThat(creator.roles()).contains("platform:payment_creator");
+        assertThat(creator.roles()).contains("merchant:payments:create");
         assertThat(creator.isAnonymous()).isFalse();
     }
 

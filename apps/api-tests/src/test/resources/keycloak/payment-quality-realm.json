@@ -1,0 +1,531 @@
+{
+  "id": "payment-quality",
+  "realm": "payment-quality",
+  "enabled": true,
+  "displayName": "Payment Quality Engineering Lab",
+  "roles": {
+    "realm": [
+      {
+        "name": "merchants:create"
+      },
+      {
+        "name": "merchants:read"
+      },
+      {
+        "name": "merchants:update-status"
+      },
+      {
+        "name": "merchant:payments:create"
+      },
+      {
+        "name": "merchant:payments:read"
+      },
+      {
+        "name": "merchant:payments:operate"
+      },
+      {
+        "name": "merchant:payments:lifecycle"
+      },
+      {
+        "name": "platform:payments:read"
+      },
+      {
+        "name": "platform:payments:lifecycle"
+      },
+      {
+        "name": "platform:payments:audit"
+      },
+      {
+        "name": "platform:audit:read"
+      },
+      {
+        "name": "tenant:audit:read"
+      },
+      {
+        "name": "platform:users:read"
+      },
+      {
+        "name": "platform:users:create"
+      },
+      {
+        "name": "platform:users:update"
+      },
+      {
+        "name": "platform:users:assign-roles"
+      },
+      {
+        "name": "tenant:users:read"
+      },
+      {
+        "name": "tenant:users:create"
+      },
+      {
+        "name": "tenant:users:update"
+      },
+      {
+        "name": "tenant:users:assign-roles"
+      },
+      {
+        "name": "PLATFORM_ADMIN",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "merchants:create",
+            "merchants:read",
+            "merchants:update-status",
+            "platform:payments:read",
+            "platform:payments:lifecycle",
+            "platform:payments:audit",
+            "platform:audit:read",
+            "platform:users:read",
+            "platform:users:create",
+            "platform:users:update",
+            "platform:users:assign-roles"
+          ]
+        }
+      },
+      {
+        "name": "TENANT_ADMIN",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "merchants:create",
+            "merchants:read",
+            "merchants:update-status",
+            "merchant:payments:read",
+            "tenant:audit:read",
+            "tenant:users:read",
+            "tenant:users:create",
+            "tenant:users:update",
+            "tenant:users:assign-roles"
+          ]
+        }
+      },
+      {
+        "name": "MERCHANT_MANAGER",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "merchant:payments:create",
+            "merchant:payments:read",
+            "merchant:payments:lifecycle"
+          ]
+        }
+      },
+      {
+        "name": "SUPPORT_AGENT",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "merchants:read",
+            "platform:payments:read",
+            "platform:payments:audit",
+            "platform:audit:read"
+          ]
+        }
+      },
+      {
+        "name": "READ_ONLY_USER",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "merchants:read",
+            "platform:payments:read"
+          ]
+        }
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "payment-quality-dashboard",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "merchant-id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "merchant_id",
+            "claim.name": "merchant_id",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "tenant-id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "payment-quality-admin",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "secret": "${PAYMENT_QUALITY_KEYCLOAK_ADMIN_CLIENT_SECRET}"
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-payment-quality-admin",
+      "enabled": true,
+      "serviceAccountClientId": "payment-quality-admin",
+      "clientRoles": {
+        "realm-management": [
+          "view-realm",
+          "query-users",
+          "view-users",
+          "manage-users"
+        ]
+      }
+    },
+    {
+      "username": "merchant.denied",
+      "enabled": true,
+      "firstName": "Merchant",
+      "lastName": "Denied",
+      "email": "merchant.denied@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.denied",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenant_id": "PLACEHOLDER_TENANT_ID"
+      },
+      "realmRoles": []
+    },
+    {
+      "username": "merchant.payment.creator",
+      "enabled": false,
+      "firstName": "Merchant Payment",
+      "lastName": "Creator",
+      "email": "merchant.payment.creator@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.payment.creator",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "PLACEHOLDER_MERCHANT_ID",
+        "tenant_id": "PLACEHOLDER_TENANT_ID"
+      },
+      "realmRoles": [
+        "merchant:payments:create"
+      ]
+    },
+    {
+      "username": "merchant.payment.reader",
+      "enabled": false,
+      "firstName": "Merchant Payment",
+      "lastName": "Reader",
+      "email": "merchant.payment.reader@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.payment.reader",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "PLACEHOLDER_MERCHANT_ID",
+        "tenant_id": "PLACEHOLDER_TENANT_ID"
+      },
+      "realmRoles": [
+        "merchant:payments:read"
+      ]
+    },
+    {
+      "username": "merchant.payment.operator",
+      "enabled": false,
+      "firstName": "Merchant Payment",
+      "lastName": "Operator",
+      "email": "merchant.payment.operator@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.payment.operator",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "PLACEHOLDER_MERCHANT_ID",
+        "tenant_id": "PLACEHOLDER_TENANT_ID"
+      },
+      "realmRoles": [
+        "merchant:payments:operate"
+      ]
+    },
+    {
+      "username": "platform.payment.reader",
+      "enabled": true,
+      "firstName": "Platform Payment",
+      "lastName": "Reader",
+      "email": "platform.payment.reader@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "platform.payment.reader",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "platform:payments:read"
+      ]
+    },
+    {
+      "username": "merchant.payment.lifecycle",
+      "enabled": true,
+      "firstName": "Merchant Payment",
+      "lastName": "Lifecycle",
+      "email": "merchant.payment.lifecycle@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.payment.lifecycle",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "PLACEHOLDER_MERCHANT_ID",
+        "tenant_id": "PLACEHOLDER_TENANT_ID"
+      },
+      "realmRoles": [
+        "merchant:payments:create",
+        "merchant:payments:read",
+        "merchant:payments:lifecycle"
+      ]
+    },
+    {
+      "username": "platform.payment.admin",
+      "enabled": true,
+      "firstName": "Platform Payment",
+      "lastName": "Admin",
+      "email": "platform.payment.admin@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "platform.payment.admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "platform:payments:read",
+        "platform:payments:lifecycle"
+      ]
+    },
+    {
+      "username": "platform.payment.auditor",
+      "enabled": true,
+      "firstName": "Platform Payment",
+      "lastName": "Auditor",
+      "email": "platform.payment.auditor@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "platform.payment.auditor",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "platform:payments:read",
+        "platform:payments:audit"
+      ]
+    },
+    {
+      "username": "platform.admin",
+      "enabled": true,
+      "firstName": "Platform",
+      "lastName": "Admin",
+      "email": "platform.admin@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "platform.admin",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenant_id": "PLATFORM_TENANT"
+      },
+      "realmRoles": [
+        "PLATFORM_ADMIN"
+      ]
+    },
+    {
+      "username": "tenant.admin",
+      "enabled": true,
+      "firstName": "Tenant",
+      "lastName": "Admin",
+      "email": "tenant.admin@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "tenant.admin",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenant_id": "TENANT_ALPHA"
+      },
+      "realmRoles": [
+        "TENANT_ADMIN"
+      ]
+    },
+    {
+      "username": "merchant.manager",
+      "enabled": true,
+      "firstName": "Merchant",
+      "lastName": "Manager",
+      "email": "merchant.manager@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.manager",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "MERCHANT_ALPHA_001",
+        "tenant_id": "TENANT_ALPHA"
+      },
+      "realmRoles": [
+        "MERCHANT_MANAGER"
+      ]
+    },
+    {
+      "username": "support.agent",
+      "enabled": true,
+      "firstName": "Support",
+      "lastName": "Agent",
+      "email": "support.agent@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "support.agent",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenant_id": "PLATFORM_TENANT"
+      },
+      "realmRoles": [
+        "SUPPORT_AGENT"
+      ]
+    },
+    {
+      "username": "readonly.user",
+      "enabled": true,
+      "firstName": "Read Only",
+      "lastName": "User",
+      "email": "readonly.user@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "readonly.user",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenant_id": "TENANT_ALPHA"
+      },
+      "realmRoles": [
+        "READ_ONLY_USER"
+      ]
+    },
+    {
+      "username": "platform.operator",
+      "enabled": true,
+      "firstName": "Platform",
+      "lastName": "Operator",
+      "email": "platform.operator@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "platform.operator",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenant_id": "PLACEHOLDER_TENANT_ID"
+      },
+      "realmRoles": [
+        "merchants:create",
+        "merchants:read",
+        "merchants:update-status",
+        "PLATFORM_ADMIN"
+      ]
+    },
+    {
+      "username": "merchant.alpha.creator",
+      "enabled": true,
+      "firstName": "Merchant Alpha",
+      "lastName": "Creator",
+      "email": "merchant.alpha.creator@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.alpha.creator",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "00000000-0000-0000-0000-0000000000b1",
+        "tenant_id": "TENANT_ALPHA"
+      },
+      "realmRoles": [
+        "MERCHANT_MANAGER"
+      ]
+    }
+  ]
+}

@@ -63,5 +63,11 @@ public final class ProblemCodes {
     /** 400 — merchant is not eligible for payment operations (wrong status). */
     public static final String MERCHANT_NOT_ELIGIBLE = "merchant_not_payment_eligible";
 
+    /** 409 — duplicate merchant reference; a merchant with this reference already exists. */
+    public static final String DUPLICATE_MERCHANT_REFERENCE = "duplicate_merchant_reference";
+
+    /** 409 — invalid lifecycle state transition (e.g. ACTIVE → ACTIVE, or SUSPENDED → ACTIVE). */
+    public static final String INVALID_TRANSITION = "invalid_transition";
+
     private ProblemCodes() {}
 }

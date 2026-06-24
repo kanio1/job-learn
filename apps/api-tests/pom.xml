@@ -116,6 +116,14 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- ── Phase 6C: Jackson for Keycloak ROPC token response parsing ── -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.21.2</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- ── Phase 6B-full (deferred — Keycloak TC + Awaitility) ──────── -->
         <!--
         <dependency>
