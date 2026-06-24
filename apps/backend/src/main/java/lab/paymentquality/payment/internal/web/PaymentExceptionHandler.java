@@ -37,6 +37,7 @@ public class PaymentExceptionHandler {
     private static final String ERROR_CAPTURE_AMOUNT_EXCEEDS_AUTHORIZED = "capture_amount_exceeds_authorized";
     private static final String ERROR_REFUND_AMOUNT_EXCEEDS_CAPTURED = "refund_amount_exceeds_captured";
     private static final String ERROR_CONCURRENCY_CONFLICT = "concurrency_conflict";
+    private static final String ERROR_IDEMPOTENCY_CREATE_IN_PROGRESS = "create_in_progress";
     private static final String ERROR_MISSING_REQUIRED_HEADER = "missing_required_header";
     private static final String ERROR_PRECONDITION_REQUIRED = "precondition_required";
     private static final String ERROR_MALFORMED_IF_MATCH = "malformed_if_match";
@@ -100,6 +101,13 @@ public class PaymentExceptionHandler {
     public ResponseEntity<PaymentErrorResponse> handleIdempotencyConflict(IdempotencyConflictException ex,
                                                                           HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, ERROR_IDEMPOTENCY_CONFLICT, ex.getMessage(), headersForRequest(request));
+    }
+
+    @ExceptionHandler(IdempotencyCreateInProgressException.class)
+    public ResponseEntity<PaymentErrorResponse> handleIdempotencyCreateInProgress(
+            IdempotencyCreateInProgressException ex, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, ERROR_IDEMPOTENCY_CREATE_IN_PROGRESS, ex.getMessage(),
+                headersForRequest(request));
     }
 
     @ExceptionHandler(PaymentOrderNotFoundException.class)

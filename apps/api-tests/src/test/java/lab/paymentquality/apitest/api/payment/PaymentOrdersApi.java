@@ -45,6 +45,16 @@ public final class PaymentOrdersApi {
             "/api/merchants/{merchantId}/payment-orders/{paymentOrderId}";
     private static final String LIST_PATH =
             "/api/merchants/{merchantId}/payment-orders";
+    private static final String AUTHORIZE_PATH =
+            "/api/merchants/{merchantId}/payment-orders/{paymentOrderId}/authorize";
+    private static final String CAPTURE_PATH =
+            "/api/merchants/{merchantId}/payment-orders/{paymentOrderId}/capture";
+    private static final String CANCEL_PATH =
+            "/api/merchants/{merchantId}/payment-orders/{paymentOrderId}/cancel";
+    private static final String REFUND_PATH =
+            "/api/merchants/{merchantId}/payment-orders/{paymentOrderId}/refund";
+    private static final String HISTORY_PATH =
+            "/api/merchants/{merchantId}/payment-orders/{paymentOrderId}/history";
 
     private PaymentOrdersApi() {}
 
@@ -128,5 +138,232 @@ public final class PaymentOrdersApi {
                 .body(requestBody)
                 .when()
                 .post(LIST_PATH);
+    }
+
+    /**
+     * {@code POST /api/merchants/{merchantId}/payment-orders/{paymentOrderId}/authorize}
+     * — transition a CREATED payment order to AUTHORIZED.
+     *
+     * <p>Requires: {@code merchant:payments:lifecycle} (or {@code platform:payments:lifecycle})
+     * authority AND a JWT {@code merchant_id} claim equal to the {@code merchantId} path UUID
+     * (for merchant-scoped callers). Both {@code If-Match} and {@code Idempotency-Key} are
+     * functionally required.
+     *
+     * <p>Required headers: {@code If-Match: "v{N}"} (current ETag), {@code Idempotency-Key},
+     * {@code Content-Type: application/json}.
+     *
+     * <p>Happy-path expectation: 200 with {@code PaymentOrderResponse} body, status AUTHORIZED,
+     * {@code ETag: "v{N+1}"} (incremented from request), {@code Vary: If-Match},
+     * {@code Cache-Control: no-store}.
+     *
+     * <p>Error cases:
+     * <ul>
+     *   <li>Missing {@code If-Match} → 428 {@code precondition_required} (see
+     *       {@link #authorizeWithoutIfMatch}).</li>
+     *   <li>Stale {@code If-Match} → 412 {@code payment_order_version_mismatch}.</li>
+     *   <li>Wrong merchant scope → 403 {@code forbidden}.</li>
+     *   <li>Order not in CREATED state → 422 {@code invalid_transition}.</li>
+     * </ul>
+     *
+     * <p>Phase 7D: first lifecycle endpoint covered. Uses {@code RequestSpecs.lifecycle()} which
+     * adds both {@code If-Match} and {@code Idempotency-Key} to the base authenticated spec.
+     * Body is {@code {}} — {@code AuthorizeRequest.reason} is optional and not needed for the
+     * contract foundation tests.
+     */
+    public static Response authorize(
+            String merchantId, String paymentOrderId, String ifMatch, String idempotencyKey) {
+        return RequestSpecs.lifecycle(ifMatch, idempotencyKey)
+                .contentType(ContentTypes.JSON)
+                .pathParam("merchantId", merchantId)
+                .pathParam("paymentOrderId", paymentOrderId)
+                .body("{}")
+                .when()
+                .post(AUTHORIZE_PATH);
+    }
+
+    /**
+     * {@code POST .../authorize} without {@code If-Match} header — negative-test variant.
+     *
+     * <p>Intentionally omits {@code If-Match} to trigger the backend's precondition guard.
+     * Expected: 428 with {@code error: "precondition_required"}.
+     *
+     * <p>{@code If-Match} is declared {@code required = false} at the Spring MVC layer but is
+     * functionally required: {@code PaymentEtag.requireVersion(null)} throws
+     * {@code PaymentPreconditionRequiredException} → mapped to 428 by
+     * {@code PaymentExceptionHandler}. This is distinct from a missing-header 400: the
+     * HTTP spec reserves 428 specifically for missing precondition headers.
+     */
+    public static Response authorizeWithoutIfMatch(
+            String merchantId, String paymentOrderId, String idempotencyKey) {
+        return RequestSpecs.idempotent(idempotencyKey)
+                .contentType(ContentTypes.JSON)
+                .pathParam("merchantId", merchantId)
+                .pathParam("paymentOrderId", paymentOrderId)
+                .body("{}")
+                .when()
+                .post(AUTHORIZE_PATH);
+    }
+
+    /**
+     * {@code POST /api/merchants/{merchantId}/payment-orders/{paymentOrderId}/capture}
+     * — transition an AUTHORIZED payment order to CAPTURED.
+     *
+     * <p>Requires: {@code merchant:payments:lifecycle} authority AND a JWT {@code merchant_id}
+     * claim equal to the {@code merchantId} path UUID. Both {@code If-Match} and
+     * {@code Idempotency-Key} are functionally required.
+     *
+     * <p>Required headers: {@code If-Match: "v{N}"} (current ETag from the AUTHORIZED order,
+     * typically {@code "v1"} after authorize), {@code Idempotency-Key},
+     * {@code Content-Type: application/json}.
+     *
+     * <p>Happy-path expectation: 200 with {@code PaymentLifecycleResponse} body,
+     * status CAPTURED, {@code capturedAmountMinor} set to the order amount (full capture when no
+     * body amount supplied), {@code capturedAt} non-null, {@code ETag: "v2"},
+     * {@code Vary: If-Match}, {@code Cache-Control: no-store}.
+     *
+     * <p>Error cases:
+     * <ul>
+     *   <li>Order not in AUTHORIZED state → 422 {@code invalid_transition}.</li>
+     *   <li>Stale {@code If-Match} → 412 {@code payment_order_version_mismatch}.</li>
+     *   <li>Missing {@code If-Match} → 428 {@code precondition_required}.</li>
+     * </ul>
+     *
+     * <p>Body is {@code {}} — {@code CaptureRequest.amountMinor} is optional; omitting it
+     * triggers a full capture (captured amount equals the original authorization amount).
+     *
+     * <p>Phase 7E: second lifecycle endpoint covered. Uses {@code RequestSpecs.lifecycle()}
+     * which adds both {@code If-Match} and {@code Idempotency-Key}.
+     */
+    public static Response capture(
+            String merchantId, String paymentOrderId, String ifMatch, String idempotencyKey) {
+        return RequestSpecs.lifecycle(ifMatch, idempotencyKey)
+                .contentType(ContentTypes.JSON)
+                .pathParam("merchantId", merchantId)
+                .pathParam("paymentOrderId", paymentOrderId)
+                .body("{}")
+                .when()
+                .post(CAPTURE_PATH);
+    }
+
+    /**
+     * {@code POST /api/merchants/{merchantId}/payment-orders/{paymentOrderId}/cancel}
+     * — transition a CREATED or AUTHORIZED payment order to CANCELLED.
+     *
+     * <p>Requires: {@code merchant:payments:lifecycle} authority AND a JWT {@code merchant_id}
+     * claim equal to the {@code merchantId} path UUID. Both {@code If-Match} and
+     * {@code Idempotency-Key} are functionally required.
+     *
+     * <p>Required headers: {@code If-Match: "v{N}"} (current ETag), {@code Idempotency-Key},
+     * {@code Content-Type: application/json}.
+     *
+     * <p>Happy-path expectation: 200 with {@code PaymentLifecycleResponse} body, status CANCELLED,
+     * {@code cancelledAt} non-null, {@code ETag: "v{N+1}"}, {@code Vary: If-Match},
+     * {@code Cache-Control: no-store}.
+     *
+     * <p>Valid source states: CREATED (ETag {@code "v0"} → result {@code "v1"}) and AUTHORIZED
+     * (ETag {@code "v1"} → result {@code "v2"}). The backend calls
+     * {@code pspClient.voidAuthorization()} only when cancelling an AUTHORIZED order.
+     *
+     * <p>Error cases:
+     * <ul>
+     *   <li>Order in CAPTURED or REFUNDED state → 422 {@code invalid_transition}.</li>
+     *   <li>Stale {@code If-Match} → 412 {@code payment_order_version_mismatch}.</li>
+     *   <li>Missing {@code If-Match} → 428 {@code precondition_required}.</li>
+     * </ul>
+     *
+     * <p>Body is {@code {}} — {@code CancelRequest.reason} is optional.
+     *
+     * <p>Phase 7E: third lifecycle endpoint covered.
+     */
+    public static Response cancel(
+            String merchantId, String paymentOrderId, String ifMatch, String idempotencyKey) {
+        return RequestSpecs.lifecycle(ifMatch, idempotencyKey)
+                .contentType(ContentTypes.JSON)
+                .pathParam("merchantId", merchantId)
+                .pathParam("paymentOrderId", paymentOrderId)
+                .body("{}")
+                .when()
+                .post(CANCEL_PATH);
+    }
+
+    /**
+     * {@code POST /api/merchants/{merchantId}/payment-orders/{paymentOrderId}/refund}
+     * — transition a CAPTURED payment order to REFUNDED.
+     *
+     * <p>Requires: {@code merchant:payments:lifecycle} authority AND a JWT {@code merchant_id}
+     * claim equal to the {@code merchantId} path UUID. Both {@code If-Match} and
+     * {@code Idempotency-Key} are functionally required.
+     *
+     * <p>Required headers: {@code If-Match: "v{N}"} (current ETag from the CAPTURED order,
+     * typically {@code "v2"} after a full authorize→capture chain), {@code Idempotency-Key},
+     * {@code Content-Type: application/json}.
+     *
+     * <p>Happy-path expectation: 200 with {@code PaymentLifecycleResponse} body,
+     * status REFUNDED, {@code refundedAmountMinor} set to the captured amount (full refund when
+     * no body amount supplied), {@code refundedAt} non-null, {@code ETag: "v3"},
+     * {@code Vary: If-Match}, {@code Cache-Control: no-store}.
+     *
+     * <p>Body is {@code {}} — {@code RefundRequest.amountMinor} and {@code RefundRequest.reason}
+     * are both optional. Omitting {@code amountMinor} triggers a full refund: the backend uses
+     * {@code order.getCapturedAmountMinor()} as the effective refund amount, so
+     * {@code refundedAmountMinor} in the response equals {@code capturedAmountMinor}.
+     *
+     * <p>Partial refund (body with {@code amountMinor} less than {@code capturedAmountMinor})
+     * is also supported by the backend but deferred to a future phase.
+     *
+     * <p>Error cases:
+     * <ul>
+     *   <li>Order not in CAPTURED state → 422 {@code invalid_transition}
+     *       (e.g. refund from AUTHORIZED or CREATED).</li>
+     *   <li>Stale {@code If-Match} → 412 {@code payment_order_version_mismatch}.</li>
+     *   <li>Missing {@code If-Match} → 428 {@code precondition_required}.</li>
+     * </ul>
+     *
+     * <p>Phase 7F: fourth and final lifecycle endpoint covered. Completes the full
+     * CREATED → AUTHORIZED → CAPTURED → REFUNDED happy path.
+     */
+    public static Response refund(
+            String merchantId, String paymentOrderId, String ifMatch, String idempotencyKey) {
+        return RequestSpecs.lifecycle(ifMatch, idempotencyKey)
+                .contentType(ContentTypes.JSON)
+                .pathParam("merchantId", merchantId)
+                .pathParam("paymentOrderId", paymentOrderId)
+                .body("{}")
+                .when()
+                .post(REFUND_PATH);
+    }
+
+    /**
+     * {@code GET /api/merchants/{merchantId}/payment-orders/{paymentOrderId}/history}
+     * — retrieve the status-transition history for a payment order.
+     *
+     * <p>Requires one of: {@code merchant:payments:read}, {@code merchant:payments:lifecycle},
+     * {@code platform:payments:read}, {@code platform:payments:lifecycle},
+     * {@code platform:payments:audit}. Additional controller-level check: unless the caller
+     * has a platform-scoped authority, the JWT {@code merchant_id} claim must equal the
+     * {@code merchantId} path parameter.
+     *
+     * <p>Happy-path expectation: 200 with body
+     * {@code {"content": [...StatusHistoryEntry]}}.
+     *
+     * <p><strong>Important contract note — creation entry excluded:</strong> the backend
+     * queries with {@code WHERE action IS NOT NULL}, so the initial CREATED entry is never
+     * returned. A freshly created order returns {@code {"content":[]}}. Only AUTHORIZE,
+     * CAPTURE, CANCEL, and REFUND action entries appear.
+     *
+     * <p>Entries are ordered by {@code createdAt ASC} (chronological, oldest first).
+     * Each entry carries {@code paymentOrderId}, {@code fromStatus}, {@code toStatus},
+     * {@code action}, {@code actorSubject}, {@code correlationId}, and {@code createdAt}.
+     *
+     * <p>Response headers: {@code Vary: Authorization}, {@code Cache-Control: no-store}.
+     *
+     * <p>Phase 7J: history/audit contract coverage.
+     */
+    public static Response history(String merchantId, String paymentOrderId) {
+        return RequestSpecs.base()
+                .pathParam("merchantId", merchantId)
+                .pathParam("paymentOrderId", paymentOrderId)
+                .when()
+                .get(HISTORY_PATH);
     }
 }

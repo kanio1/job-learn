@@ -69,5 +69,58 @@ public final class ProblemCodes {
     /** 409 — invalid lifecycle state transition (e.g. ACTIVE → ACTIVE, or SUSPENDED → ACTIVE). */
     public static final String INVALID_TRANSITION = "invalid_transition";
 
+    /**
+     * 428 — {@code If-Match} header is required for this operation but was not sent.
+     * The backend validates it as a functional precondition, not a missing-header error.
+     * Client must re-fetch the resource, read its current ETag, and resend with If-Match.
+     */
+    public static final String PRECONDITION_REQUIRED = "precondition_required";
+
+    /**
+     * 412 — {@code If-Match} version does not match the current JPA {@code @Version} counter.
+     * The resource was modified after the client last read it; the optimistic lock failed.
+     * Client must re-fetch the current ETag and retry the lifecycle operation.
+     */
+    public static final String PAYMENT_ORDER_VERSION_MISMATCH = "payment_order_version_mismatch";
+
+    /**
+     * 412 — JPA optimistic lock failure caught at flush time.
+     *
+     * <p>Distinct from {@link #PAYMENT_ORDER_VERSION_MISMATCH}: that code is returned when the
+     * service-level ETag pre-check fails (client sent a stale {@code If-Match} before any DB
+     * operation ran). This code is returned when two concurrent requests <em>both</em> passed
+     * the ETag pre-check (both read the same version), but only one could commit the
+     * {@code UPDATE WHERE version = N} — the other triggers
+     * {@code ObjectOptimisticLockingFailureException} at JPA flush time.
+     *
+     * <p>Client handling is the same: re-read the current ETag and retry.
+     *
+     * <p>Mapped by {@code PaymentExceptionHandler.handleOptimisticLock()} →
+     * {@code HTTP 412 Precondition Failed} with {@code Vary: If-Match} and
+     * {@code Cache-Control: no-store}.
+     */
+    public static final String CONCURRENCY_CONFLICT = "concurrency_conflict";
+
+    /**
+     * 409 — a concurrent create request reserved this idempotency key but has not yet written the
+     * {@code paymentOrderId} (i.e., {@code complete()} has not been called).
+     *
+     * <p>This replaces the previously unhandled {@code IllegalStateException} (500) that would
+     * have been thrown if a second concurrent create found the idempotency record with
+     * {@code paymentOrderId == null}. The idempotency record is written in two phases:
+     * {@code reserveIfAbsent()} inserts it without a {@code paymentOrderId}, then
+     * {@code complete()} updates it with the real ID. Under PostgreSQL READ COMMITTED, both
+     * phases commit atomically, so this code path is very rarely triggered in production.
+     *
+     * <p><strong>Client recovery:</strong> retry the same create with the same
+     * {@code Idempotency-Key} and body. The retry will either get a 201 (if the first
+     * request failed after reserving) or a 200 idempotency replay (if it succeeded).
+     *
+     * <p>Mapped by {@code PaymentExceptionHandler.handleIdempotencyCreateInProgress()} →
+     * {@code HTTP 409 Conflict} with {@code Vary: Authorization, Idempotency-Key} and
+     * {@code Cache-Control: no-store}.
+     */
+    public static final String IDEMPOTENCY_CREATE_IN_PROGRESS = "create_in_progress";
+
     private ProblemCodes() {}
 }

@@ -54,7 +54,12 @@ public class PaymentOrderService {
         if (existing.isPresent()) {
             IdempotencyRecord record = existing.get();
             if (record.getRequestFingerprintHash().equals(fingerprint.fingerprintHash())) {
-                PaymentOrder order = paymentOrderRepository.findByPaymentOrderId(record.getPaymentOrderId())
+                UUID existingPaymentOrderId = record.getPaymentOrderId();
+                if (existingPaymentOrderId == null) {
+                    // Concurrent request reserved this key but hasn't completed yet.
+                    throw new IdempotencyCreateInProgressException();
+                }
+                PaymentOrder order = paymentOrderRepository.findByPaymentOrderId(existingPaymentOrderId)
                         .orElseThrow(() -> new IllegalStateException("Idempotency record references missing payment order"));
                 log.info("payment.create.replay merchantId={} paymentOrderId={} correlationId={}",
                         merchantId, order.getPaymentOrderId(), MDC.get("correlationId"));
@@ -100,7 +105,8 @@ public class PaymentOrderService {
         }
         UUID paymentOrderId = record.getPaymentOrderId();
         if (paymentOrderId == null) {
-            throw new IllegalStateException("Idempotency record is not completed");
+            // The concurrent request that reserved this key hasn't called complete() yet.
+            throw new IdempotencyCreateInProgressException();
         }
         PaymentOrder order = paymentOrderRepository.findByPaymentOrderId(paymentOrderId)
                 .orElseThrow(() -> new IllegalStateException("Idempotency record references missing payment order"));

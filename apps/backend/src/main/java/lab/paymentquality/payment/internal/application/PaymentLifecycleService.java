@@ -143,6 +143,14 @@ public class PaymentLifecycleService {
             return order;
         }
 
+        // Guard: verify the state transition is valid before calling the PSP.
+        // Without this check, orders without a captured amount (e.g. AUTHORIZED) would reach
+        // pspClient.refund() with a null amount (getCapturedAmountMinor() == null), causing NPE
+        // before order.refund() could fire its own canTransitionTo() guard.
+        if (!order.canTransitionTo(PaymentStatus.REFUNDED)) {
+            throw new InvalidStateTransitionException(order.getStatus(), PaymentStatus.REFUNDED);
+        }
+
         PspClient.PspResult pspResult = pspClient.refund(paymentOrderId,
                 amountMinor != null ? amountMinor : order.getCapturedAmountMinor(), order.getCurrency());
         order.refund(amountMinor, reason);

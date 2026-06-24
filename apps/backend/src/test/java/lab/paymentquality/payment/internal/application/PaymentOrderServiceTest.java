@@ -108,6 +108,46 @@ class PaymentOrderServiceTest {
     }
 
     @Test
+    void createInProgressWhenResolveFindsIncompleteRecord() {
+        IdempotencyKey key = IdempotencyKey.of("idem-race-a");
+        RequestFingerprint fingerprint = RequestFingerprint.of(merchantId, 12500, "PLN", "PAY-001");
+        // Reserved but not completed — paymentOrderId is null
+        IdempotencyRecord incompleteRecord = IdempotencyRecord.reserve(
+                UUID.randomUUID(), merchantId, key.keyHash(), fingerprint.fingerprintHash());
+
+        when(merchantEligibilityService.findEligibility(merchantId))
+                .thenReturn(Optional.of(new MerchantPaymentEligibility(merchantId, "MERCH-001", true)));
+        // First call (initial lookup) → empty; second call (resolveExisting) → incomplete record
+        when(idempotencyRecordRepository.findByMerchantIdAndIdempotencyKeyHash(merchantId, key.keyHash()))
+                .thenReturn(Optional.empty(), Optional.of(incompleteRecord));
+        when(idempotencyRecordRepository.reserveIfAbsent(any(), any(), any(), any())).thenReturn(0);
+
+        assertThatThrownBy(() -> service.create(merchantId,
+                PaymentAmount.of(12500), CurrencyCode.of("PLN"),
+                ClientOrderReference.of("PAY-001"), key, actor, "corr-race-a"))
+                .isInstanceOf(IdempotencyCreateInProgressException.class);
+    }
+
+    @Test
+    void createInProgressWhenInitialLookupFindsIncompleteRecord() {
+        IdempotencyKey key = IdempotencyKey.of("idem-race-b");
+        RequestFingerprint fingerprint = RequestFingerprint.of(merchantId, 12500, "PLN", "PAY-001");
+        // Reserved but not completed — paymentOrderId is null
+        IdempotencyRecord incompleteRecord = IdempotencyRecord.reserve(
+                UUID.randomUUID(), merchantId, key.keyHash(), fingerprint.fingerprintHash());
+
+        when(merchantEligibilityService.findEligibility(merchantId))
+                .thenReturn(Optional.of(new MerchantPaymentEligibility(merchantId, "MERCH-001", true)));
+        when(idempotencyRecordRepository.findByMerchantIdAndIdempotencyKeyHash(merchantId, key.keyHash()))
+                .thenReturn(Optional.of(incompleteRecord));
+
+        assertThatThrownBy(() -> service.create(merchantId,
+                PaymentAmount.of(12500), CurrencyCode.of("PLN"),
+                ClientOrderReference.of("PAY-001"), key, actor, "corr-race-b"))
+                .isInstanceOf(IdempotencyCreateInProgressException.class);
+    }
+
+    @Test
     void createRejectsNonActiveMerchant() {
         when(merchantEligibilityService.findEligibility(merchantId))
                 .thenReturn(Optional.of(new MerchantPaymentEligibility(merchantId, "MERCH-001", false)));
