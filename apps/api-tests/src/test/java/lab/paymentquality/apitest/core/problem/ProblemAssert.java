@@ -187,17 +187,31 @@ public final class ProblemAssert extends AbstractAssert<ProblemAssert, Response>
     }
 
     /**
-     * Asserts the response body matches the problem JSON schema.
+     * Asserts the response body conforms to {@code schema/problem.schema.json}.
      *
-     * <p><strong>Deferred to Phase 4+</strong>: requires the {@code json-schema-validator}
-     * dependency in {@code pom.xml} ({@code io.rest-assured:json-schema-validator:6.0.0}).
-     * The dependency is not yet in the local Maven cache — add it when network is available.
+     * <p>Validates the structural contract of the whole {@code application/problem+json}
+     * body — required fields, value types, and status code range — beyond what
+     * individual field assertions like {@link #hasError} and {@link #hasCorrelationId} can check.
      *
-     * @throws UnsupportedOperationException until json-schema-validator is added
+     * <p>Activated in Phase 8H once {@code io.rest-assured:json-schema-validator:6.0.0} was
+     * added to {@code pom.xml}. The validation uses {@link SchemaAssertions#matchesProblemSchema}
+     * which calls {@code matchesJsonSchemaInClasspath("schema/problem.schema.json")} via Hamcrest.
+     *
+     * <p><strong>When to use:</strong> include in one dedicated schema contract test
+     * (see {@code JsonSchemaContractSpec}) rather than in every error-path scenario.
+     * Schema structure changes relatively infrequently; testing it once per error type
+     * is sufficient. Use {@link #hasError} and {@link #hasStatus} for frequent assertion.
+     *
+     * <p><strong>SDET learning:</strong> schema validation catches structural drift
+     * (a renamed field, a dropped required property) that field-level checks miss because
+     * field checks only fail if you explicitly assert the field that changed.
+     *
+     * @return {@code this} for fluent chaining
+     * @throws AssertionError if the body does not conform to the schema
      */
     public ProblemAssert matchesProblemSchema() {
-        throw new UnsupportedOperationException(
-                "matchesProblemSchema() requires json-schema-validator dependency (Phase 4+). " +
-                "Add io.rest-assured:json-schema-validator:6.0.0 to pom.xml when network is available.");
+        isNotNull();
+        SchemaAssertions.matchesProblemSchema(actual);
+        return this;
     }
 }

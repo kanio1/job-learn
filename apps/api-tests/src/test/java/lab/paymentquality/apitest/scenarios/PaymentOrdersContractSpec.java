@@ -15,6 +15,7 @@ import lab.paymentquality.apitest.core.data.Seeds;
 import lab.paymentquality.apitest.core.data.IdempotencyKeys;
 import lab.paymentquality.apitest.core.data.UniqueReferences;
 import lab.paymentquality.apitest.core.http.Headers;
+import lab.paymentquality.apitest.core.http.ResponseSpecs;
 import lab.paymentquality.apitest.core.problem.ProblemAssert;
 import lab.paymentquality.apitest.core.problem.ProblemCodes;
 import lab.paymentquality.apitest.support.ApiTest;
@@ -194,7 +195,7 @@ class PaymentOrdersContractSpec {
                 Seeds.MERCHANT_ALPHA_001_ID,
                 Seeds.PAYMENT_ORDER_ALPHA_001_CREATED_ID);
 
-        response.then().statusCode(200);
+        response.then().statusCode(200).spec(ResponseSpecs.sensitive());
 
         // ETag format: "vN" (quoted, where N is the JPA @Version counter)
         // CREATED order = version 0 → ETag = "v0"
@@ -202,17 +203,6 @@ class PaymentOrdersContractSpec {
         assertThat(etag).isNotNull()
                 .startsWith("\"v")
                 .endsWith("\"");
-
-        // Cache-Control: no-store — payment data must never be cached by intermediaries
-        String cacheControl = response.header(Headers.CACHE_CONTROL);
-        assertThat(cacheControl).isNotNull().contains("no-store");
-
-        // Vary: Authorization — caching must not share responses across JWT holders
-        String vary = response.header(Headers.VARY);
-        assertThat(vary).isNotNull().containsIgnoringCase("Authorization");
-
-        // X-Correlation-ID propagated from request context to response
-        assertThat(response.header(Headers.CORRELATION_ID)).isNotNull();
     }
 
     // -------------------------------------------------------------------------
@@ -734,13 +724,8 @@ class PaymentOrdersContractSpec {
         assertThat(authorizeEtag.raw()).isEqualTo("\"v1\"");
         assertThat(authorizeEtag.version()).isGreaterThan(createEtag.version());
 
-        // Vary must include If-Match — caching must not share responses between If-Match values
-        assertThat(authorizeResponse.header(Headers.VARY))
-                .isNotNull()
-                .containsIgnoringCase("If-Match");
-
-        // Cache-Control: no-store — lifecycle responses contain financial state
-        assertThat(authorizeResponse.header(Headers.CACHE_CONTROL)).isNotNull().contains("no-store");
+        // Vary: If-Match + Cache-Control: no-store + X-Correlation-ID — lifecycle mutation contract
+        authorizeResponse.then().spec(ResponseSpecs.conditional());
     }
 
     /**
@@ -948,11 +933,8 @@ class PaymentOrdersContractSpec {
         assertThat(captureEtag.raw()).isEqualTo("\"v2\"");
         assertThat(captureEtag.version()).isGreaterThan(authorizeEtag.version());
 
-        // Vary: If-Match and Cache-Control: no-store
-        assertThat(captureResponse.header(Headers.VARY))
-                .isNotNull()
-                .containsIgnoringCase("If-Match");
-        assertThat(captureResponse.header(Headers.CACHE_CONTROL)).isNotNull().contains("no-store");
+        // Vary: If-Match + Cache-Control: no-store + X-Correlation-ID — lifecycle mutation contract
+        captureResponse.then().spec(ResponseSpecs.conditional());
     }
 
     /**
@@ -1023,11 +1005,8 @@ class PaymentOrdersContractSpec {
         assertThat(cancelEtag.raw()).isEqualTo("\"v1\"");
         assertThat(cancelEtag.version()).isGreaterThan(createEtag.version());
 
-        // Vary: If-Match and Cache-Control: no-store
-        assertThat(cancelResponse.header(Headers.VARY))
-                .isNotNull()
-                .containsIgnoringCase("If-Match");
-        assertThat(cancelResponse.header(Headers.CACHE_CONTROL)).isNotNull().contains("no-store");
+        // Vary: If-Match + Cache-Control: no-store + X-Correlation-ID — lifecycle mutation contract
+        cancelResponse.then().spec(ResponseSpecs.conditional());
     }
 
     /**
@@ -1196,11 +1175,8 @@ class PaymentOrdersContractSpec {
         assertThat(refundEtag.raw()).isEqualTo("\"v3\"");
         assertThat(refundEtag.version()).isGreaterThan(captureEtag.version());
 
-        // Vary: If-Match and Cache-Control: no-store
-        assertThat(refundResponse.header(Headers.VARY))
-                .isNotNull()
-                .containsIgnoringCase("If-Match");
-        assertThat(refundResponse.header(Headers.CACHE_CONTROL)).isNotNull().contains("no-store");
+        // Vary: If-Match + Cache-Control: no-store + X-Correlation-ID — lifecycle mutation contract
+        refundResponse.then().spec(ResponseSpecs.conditional());
     }
 
     /**
@@ -1743,9 +1719,8 @@ class PaymentOrdersContractSpec {
                 Seeds.MERCHANT_ALPHA_001_ID, paymentOrderId.toString());
         historyResponse.then().statusCode(200);
 
-        // Vary: Authorization on history response — same sensitivity contract as payment order GET
-        assertThat(historyResponse.header(Headers.VARY)).containsIgnoringCase("Authorization");
-        assertThat(historyResponse.header(Headers.CACHE_CONTROL)).contains("no-store");
+        // Same sensitivity contract as payment order GET: Vary: Authorization + Cache-Control: no-store + X-Correlation-ID
+        historyResponse.then().spec(ResponseSpecs.sensitive());
 
         PaymentHistoryResponse history = historyResponse.as(PaymentHistoryResponse.class);
         assertThat(history.content())

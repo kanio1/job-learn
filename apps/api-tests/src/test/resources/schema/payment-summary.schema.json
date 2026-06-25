@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PaymentOrderSummary",
+  "description": "Aggregate summary response from GET /api/merchants/{merchantId}/payment-orders/summary. All four top-level fields are always present; byCurrency and byStatus may be empty arrays when no matching orders exist.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "totalOrders",
+    "totalAmountMinor",
+    "byCurrency",
+    "byStatus"
+  ],
+  "properties": {
+    "totalOrders": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of payment orders matching the query filter"
+    },
+    "totalAmountMinor": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Sum of amountMinor across all matching payment orders"
+    },
+    "byCurrency": {
+      "type": "array",
+      "description": "Aggregate breakdown per ISO-4217 currency, ordered ASC by currency string",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["currency", "orderCount", "totalAmountMinor"],
+        "properties": {
+          "currency": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 3,
+            "description": "ISO-4217 currency code (e.g. PLN, EUR, USD)"
+          },
+          "orderCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of orders with this currency in the result set"
+          },
+          "totalAmountMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Sum of amountMinor for orders with this currency"
+          }
+        }
+      }
+    },
+    "byStatus": {
+      "type": "array",
+      "description": "Aggregate breakdown per lifecycle status, ordered ASC by status string",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status", "orderCount", "totalAmountMinor"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Lifecycle status (CREATED | AUTHORIZED | CAPTURED | CANCELLED | REFUNDED)"
+          },
+          "orderCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of orders with this status in the result set"
+          },
+          "totalAmountMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Sum of amountMinor for orders with this status"
+          }
+        }
+      }
+    }
+  },
+  "_note": "additionalProperties: false on both the root and nested item schemas. If the backend adds fields (e.g. currencyCode vs currency), this schema fails intentionally. Phase 8H."
+}

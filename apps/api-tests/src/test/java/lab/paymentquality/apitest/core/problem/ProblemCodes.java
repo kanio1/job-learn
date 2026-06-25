@@ -102,6 +102,22 @@ public final class ProblemCodes {
     public static final String CONCURRENCY_CONFLICT = "concurrency_conflict";
 
     /**
+     * 422 — refund amount is invalid: either exceeds the captured amount or is zero/negative.
+     *
+     * <p>Thrown by {@code InvalidRefundAmountException} from {@code PaymentOrder.refund()} when
+     * {@code effectiveAmount <= 0 || effectiveAmount > capturedAmountMinor}.
+     * The error code is the same for both over-refund and zero/negative — the name {@code _exceeds_}
+     * is technically imprecise for the zero/negative case but matches the backend's exception class name.
+     *
+     * <p>Mapped by {@code PaymentExceptionHandler.handleInvalidRefundAmount()} →
+     * {@code HTTP 422 Unprocessable Entity} with {@code Vary: Authorization, If-Match} and
+     * {@code Cache-Control: no-store}.
+     *
+     * <p>Guard fires inside {@code order.refund()}, AFTER the state-machine pre-check and PSP call.
+     */
+    public static final String REFUND_AMOUNT_EXCEEDS_CAPTURED = "refund_amount_exceeds_captured";
+
+    /**
      * 409 — a concurrent create request reserved this idempotency key but has not yet written the
      * {@code paymentOrderId} (i.e., {@code complete()} has not been called).
      *

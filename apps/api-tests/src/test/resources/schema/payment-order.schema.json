@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PaymentOrder",
+  "description": "Single payment order response body from GET /api/merchants/{merchantId}/payment-orders/{paymentOrderId}. Required fields are the stable, always-present contract fields. Lifecycle timestamps and amounts are optional/nullable — they are null for orders that have not yet reached the corresponding lifecycle state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "paymentOrderId",
+    "merchantId",
+    "clientOrderReference",
+    "amountMinor",
+    "currency",
+    "status",
+    "createdAt",
+    "updatedAt"
+  ],
+  "properties": {
+    "paymentOrderId": {
+      "type": "string",
+      "description": "UUID of the payment order"
+    },
+    "merchantId": {
+      "type": "string",
+      "description": "UUID of the owning merchant"
+    },
+    "clientOrderReference": {
+      "type": "string",
+      "description": "Client-provided order reference (normalised to uppercase)"
+    },
+    "amountMinor": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Total order amount in the currency's minor unit (e.g. cents, grosze)"
+    },
+    "currency": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 3,
+      "description": "ISO-4217 currency code"
+    },
+    "status": {
+      "type": "string",
+      "description": "Lifecycle status: CREATED | AUTHORIZED | CAPTURED | CANCELLED | REFUNDED"
+    },
+    "capturedAmountMinor": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Amount captured in minor units; null until CAPTURED"
+    },
+    "refundedAmountMinor": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Amount refunded in minor units; null until REFUNDED"
+    },
+    "authorizedAt": {
+      "type": ["string", "null"],
+      "description": "ISO-8601 instant when the order was authorized; null until AUTHORIZED"
+    },
+    "expiresAt": {
+      "type": ["string", "null"],
+      "description": "ISO-8601 instant when the authorization expires; null until AUTHORIZED"
+    },
+    "capturedAt": {
+      "type": ["string", "null"],
+      "description": "ISO-8601 instant when the order was captured; null until CAPTURED"
+    },
+    "cancelledAt": {
+      "type": ["string", "null"],
+      "description": "ISO-8601 instant when the order was cancelled; null until CANCELLED"
+    },
+    "refundedAt": {
+      "type": ["string", "null"],
+      "description": "ISO-8601 instant when the order was refunded; null until REFUNDED"
+    },
+    "cancellationReason": {
+      "type": ["string", "null"],
+      "description": "Optional cancellation reason text"
+    },
+    "refundReason": {
+      "type": ["string", "null"],
+      "description": "Optional refund reason text"
+    },
+    "metadata": {
+      "description": "Free-form metadata set via PATCH. Null until metadata is patched. May be a JSON object or null.",
+      "anyOf": [
+        { "type": "null" },
+        { "type": "object", "additionalProperties": { "type": "string" } }
+      ]
+    },
+    "createdAt": {
+      "type": "string",
+      "description": "ISO-8601 instant when the order was created; always present"
+    },
+    "updatedAt": {
+      "type": "string",
+      "description": "ISO-8601 instant of the last update; always present"
+    }
+  },
+  "_note": "additionalProperties: false catches field additions or renames in the backend response. If the backend adds a new field, this schema fails intentionally — review and extend the schema to accept it. Phase 8H."
+}
