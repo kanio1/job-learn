@@ -30,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>Missing {@code If-Match} → 428 {@code precondition_required}</li>
  *   <li>Wrong {@code Content-Type} → 415 {@code unsupported_media_type} + {@code Accept-Patch}</li>
  *   <li>Unknown top-level field → 400 {@code unknown_top_level_field} with field details</li>
+ *   <li>Stale {@code If-Match} → 412 {@code payment_order_version_mismatch}</li>
  * </ol>
  *
  * <p><strong>Backend contract source:</strong>
@@ -68,6 +69,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@code merchant.alpha.creator} whose JWT carries {@code merchant_id = MERCHANT_ALPHA_001_ID}
  * and the {@code merchant:payments:lifecycle} (and {@code merchant:payments:create}) authority.
  */
+@Tag("contract")
+@Tag("http")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PatchMetadataContractSpec {
 
@@ -220,5 +223,53 @@ class PatchMetadataContractSpec {
                 .hasCorrelationId()
                 .hasFieldError("unknownField")
                 .hasNoStore();
+    }
+
+    /**
+     * PATCH with a stale {@code If-Match} returns 412 {@code payment_order_version_mismatch}.
+     *
+     * <p>The first PATCH uses the fresh {@code ETag: "v0"} from create and succeeds, moving the
+     * payment order version to {@code "v1"}. The second PATCH deliberately reuses the stale
+     * original {@code "v0"} ETag with an otherwise valid merge-patch body. Because the body has
+     * only the allowed {@code metadata} top-level field, the request reaches
+     * {@code paymentLifecycleService.updateMetadata()}, where the version precondition fails.
+     *
+     * <p>This confirms the guard order discovered in Phase 8E: unknown-field validation happens
+     * before ETag parsing, but a structurally valid merge patch reaches the stale-version guard and
+     * maps to 412 rather than 400 or 428.
+     */
+    @Test
+    @Order(5)
+    void patch_with_stale_if_match_returns_412_payment_order_version_mismatch() {
+        Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
+
+        String ref = UniqueReferences.paymentRef("patch-stale-etag");
+        Response created = PaymentOrdersApi.create(
+                Seeds.MERCHANT_ALPHA_001_ID,
+                CreatePaymentOrderRequest.valid(1_250L, "PLN", ref),
+                IdempotencyKeys.generate("patch-stale-create"));
+        assertThat(created.statusCode()).as("create must succeed").isEqualTo(201);
+        String paymentOrderId = created.jsonPath().getString("paymentOrderId");
+        String staleEtag = created.header(Headers.ETAG);
+        assertThat(staleEtag).as("freshly created order starts at v0").isEqualTo("\"v0\"");
+
+        PatchMetadataRequest firstPatch = new PatchMetadataRequest(Map.of("phase", "8j", "step", "fresh"));
+        Response firstPatchResponse = PaymentOrdersApi.patch(
+                Seeds.MERCHANT_ALPHA_001_ID, paymentOrderId, staleEtag, firstPatch);
+        assertThat(firstPatchResponse.statusCode()).as("first PATCH with current ETag succeeds").isEqualTo(200);
+        assertThat(firstPatchResponse.header(Headers.ETAG)).as("PATCH increments ETag to v1").isEqualTo("\"v1\"");
+
+        PatchMetadataRequest secondPatch = new PatchMetadataRequest(Map.of("phase", "8j", "step", "stale"));
+        Response stalePatchResponse = PaymentOrdersApi.patch(
+                Seeds.MERCHANT_ALPHA_001_ID, paymentOrderId, staleEtag, secondPatch);
+
+        ProblemAssert.assertThat(stalePatchResponse)
+                .hasStatus(412)
+                .hasError(ProblemCodes.PAYMENT_ORDER_VERSION_MISMATCH)
+                .hasContentTypeProblemJson()
+                .hasCorrelationId()
+                .hasNoStore()
+                .varyContains("If-Match")
+                .matchesProblemSchema();
     }
 }

@@ -27,8 +27,8 @@ import java.util.List;
  * you get {@code as()}, {@code describedAs()}, {@code satisfies()}, and {@code SoftAssertions}
  * support for free. Failure messages include the full response body for fast diagnosis.
  *
- * <p>The {@code matchesProblemSchema()} method is deferred to Phase 4+ when the
- * {@code json-schema-validator} dependency is added to {@code pom.xml}.
+ * <p>Phase 8H enabled {@link #matchesProblemSchema()} via REST Assured's JSON Schema
+ * validator, so scenarios can opt into structural problem-body checks when useful.
  *
  * <p>Category: Problem/error contract support.
  */

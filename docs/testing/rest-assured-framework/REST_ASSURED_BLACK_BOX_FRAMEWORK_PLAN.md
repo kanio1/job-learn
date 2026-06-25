@@ -30,19 +30,19 @@ Black-box invariants (hard):
 
 ---
 
-## 2. Current repository findings (Current Run Findings)
+## 2. Current repository state
 
 Verified on branch **`001-project-foundation`** (note: `CLAUDE.md` and `.codex/current-state.md`
 still reference the older `018-…` branch; the working branch is `001-project-foundation`).
 
 | Question | Finding |
 |---|---|
-| Does `apps/api-tests/` exist? | **No.** Created by this work. |
-| Does the spec's "skeleton already exists" claim hold? | **No.** The spec (§intro) says signatures + TODO already exist; they do not. Phase 1 creates the module from scratch. |
-| Existing REST Assured tests | `apps/backend/src/test/java/lab/paymentquality/rest/*` (in-process, Spring-context, `@ActiveProfiles("test")`) and legacy `restkit/` contract/smoke/spec tests. All in-process — **not** black-box. |
+| Does `apps/api-tests/` exist? | **Yes.** It is the active standalone black-box REST Assured module. |
+| Current validation baseline | 79 offline tests and 72 live specs pass; current through Phase 8S. |
+| Existing REST Assured coverage | `apps/api-tests` owns the black-box suite. Older backend in-process REST tests and legacy `restkit/` tests remain historical/reference context only. |
 | Helpers that MUST NOT be reused | `…/restkit/**` and `…/testsupport/**` (incl. `testsupport/restkit/**`). Read-only reference. |
 | Backend stack | Spring Boot 4.0.6, Java 25, Spring Modulith 2.0.6, PostgreSQL 18 (Flyway), Keycloak resource server. |
-| Backend test libs (repo truth) | REST Assured **6.0.0**, JUnit **6.0.3** (`junit-bom`), Testcontainers **2.0.5**, AssertJ 3.27.7, Awaitility 4.3.0, Hamcrest 3.0 — all in local `~/.m2`. `json-schema-validator` is **not** cached (needs network → deferred to Phase 4). |
+| Backend test libs (repo truth) | REST Assured **6.0.0**, JUnit **6.0.3** (`junit-bom`), Testcontainers **2.0.5**, AssertJ 3.27.7, Awaitility 4.3.0, Hamcrest 3.0, and REST Assured JSON schema validator 6.0.0. |
 | Build tooling | Maven 3.9.11, JDK 25.0.3, compiler/surefire/failsafe/enforcer plugins cached. |
 
 ### Backend endpoint reality (confirmed in `…/main/java`)
@@ -63,16 +63,15 @@ Deterministic seed (`testing/internal/seed/*`): fixed UUIDs (`…0000b1/b2/b3` m
 `SecurityConfig` exposes `ETag, Cache-Control, Vary, X-Correlation-ID, Location` via CORS and
 applies `no-store` / `Vary` on sensitive resources — matches the spec's `ResponseSpecs` contract.
 
-### How the backend can be driven black-box
+### How the backend is driven black-box
 
-The spec's run model (§3) is: build the backend as a Docker image
-(`./mvnw spring-boot:build-image`), run it under Testcontainers with PostgreSQL 18 + Keycloak 26
-on a shared network, env-driven (`SPRING_PROFILES_ACTIVE=seed`), readiness via
-`GET /api/status == 200`. Tokens are minted against Keycloak's host-mapped port while the
-backend validates `iss` against the network alias (issuer-mismatch fix, spec §17).
+The live suite runs the backend image under Testcontainers with PostgreSQL 18 + Keycloak 26 on
+a shared network, seeds deterministic data through the test endpoint, and waits for
+`GET /api/status == 200`. Tokens are minted from the imported Keycloak test realm and injected
+by REST Assured filters from the current `TestContext`.
 
-**This is real but heavy and belongs to Phase 3+ (stack/auth).** Phases 1–2 build the module
-and the HTTP plumbing without containers, so they compile and run offline.
+Offline `mvn test` still validates framework helpers only; live `mvn verify` runs the black-box
+`*Spec` classes.
 
 ---
 
@@ -126,7 +125,7 @@ api/*              per-resource domain DSL              contentType(), header()
 scenarios/*        what we test (end-to-end asserts)    everything above
 ```
 
-Glue: `Ctx` (`ScopedValue<TestContext>`) carries identity + `correlationId`. Filters read `Ctx`
+Glue: `Ctx` (`ThreadLocal<TestContext>`) carries identity + `correlationId`. Filters read `Ctx`
 and inject `Authorization` + `X-Correlation-ID`. Scenarios never touch auth/correlation headers.
 
 ### Proposed package tree (spec §5, adopted)
@@ -168,11 +167,11 @@ apps/api-tests/
 | 1 | Module skeleton: `pom.xml`, `README.md`, `junit-platform.properties`, layer `package-info.java`, plan docs | ✅ done |
 | 2 | `core/http`: `Headers`, `ContentTypes`, `ApiConfig`, `RestAssuredSetup`, `RequestSpecs`, `ResponseSpecs` + wiring test | ✅ done |
 | 3 | `core/context` (`Ctx`, `TestContext`), `core/auth` (`Identity`, `Identities`, `TokenFactory`), `AuthFilter`, `CorrelationFilter` | ✅ done |
-| 4 | `core/problem` (`ProblemDetail`, `ProblemCodes`, `ProblemAssert`), `schema/problem.schema.json` | ✅ done (json-schema-validator dep deferred — not in ~/.m2) |
+| 4 | `core/problem` (`ProblemDetail`, `ProblemCodes`, `ProblemAssert`), `schema/problem.schema.json`; full JSON schema validator activation landed later in Phase 8H | ✅ done |
 | 5 | `core/data` (`CorrelationIds`, `IdempotencyKeys`, `UniqueReferences`, `ETag`, `Versioned<T>`) | ✅ done |
 | 6A | Stack discovery: runtime reality, image strategy, Keycloak strategy, first endpoint plan | ✅ done |
 | 6B-lite | TC deps (core/postgresql/junit-jupiter), `PostgresSupport`, `BackendSupport`, `ApiStack`, `ApiStackExtension`, `ApiTest`, `StatusApi`, `StatusSpec` | ✅ done |
-| 6B-full | `KeycloakSupport`, `KeycloakTokenFactory`, update `Identities`, `SeedApi` | deferred |
+| 6B-full | `KeycloakSupport`, `KeycloakTokenFactory`, update `Identities`, `SeedApi` | superseded/landed via 6C+ live stack work |
 | 6C | Keycloak 26 TC container, ROPC token factory, `SecuritySmokeSpec` (401 + 403 without seed data) | ✅ done |
 | 6D | Local merchant DTOs, `MerchantsApi` facade, `SeedApi`, `MerchantsContractSpec` (8 scenarios: 201/200/400/409/404) | ✅ done |
 | 6E | Contract hardening: `activate`/`suspend` API + 5 new contract tests (lifecycle 200, invalid_transition 409, missing tenantRef 400, tenant-filter list), refactor 5 error tests to ProblemAssert, add `DUPLICATE_MERCHANT_REFERENCE`/`INVALID_TRANSITION` to `ProblemCodes` | ✅ done |
@@ -195,7 +194,17 @@ apps/api-tests/
 | 8G | HTTP method semantics and content-negotiation contract: `HttpMethodSemanticsContractSpec` (4 specs); key findings: HEAD and OPTIONS are explicit controller handlers (not Spring defaults); OPTIONS is `permitAll()`; HEAD returns ETag + Vary:Authorization + no-store with no body; OPTIONS 204 with Allow:GET,HEAD,PATCH,OPTIONS + Accept-Patch:application/merge-patch+json; DELETE → 405 `method_not_allowed` + Allow header (RFC 9110 §15.5.6 mandatory); `Accept: text/xml` → 406 `not_acceptable` with problem+json body regardless of Accept; auth required for HEAD/DELETE (anyRequest.authenticated), not for OPTIONS; `headById()`, `optionsById()` (anonymous), `deleteById()`, `getByIdWithAccept()` facades added; PHASE_8G doc added; 79+64 all pass | ✅ done |
 | 8H | JSON Schema contract validation foundation: `json-schema-validator:6.0.0` resolved from Maven Central (2026-06-25) and enabled in `pom.xml` (was deferred since Phase 4); `payment-order.schema.json` + `payment-summary.schema.json` created (draft-07, `additionalProperties: false` to catch field renames/additions; `problem.schema.json` pre-existing); `SchemaAssertions` helper (`matchesProblemSchema / matchesPaymentOrderSchema / matchesPaymentSummarySchema`); `ProblemAssert.matchesProblemSchema()` activated (was `UnsupportedOperationException`); `JsonSchemaContractSpec` (3 tests: payment-order schema, 404 problem schema, summary schema); all transitive deps from `com.github.java-json-tools` confirmed in `~/.m2`; PHASE_8H doc added; 79+67 all pass | ✅ done |
 | 8I | ResponseSpecs contract assertion cleanup: discovered that `ResponseSpecs` had a Vary: Authorization bug in `conditional()` and `created()` (both extended `sensitive()` which checks Vary: Authorization, but lifecycle 200 responses carry Vary: If-Match only and 201 responses carry Vary: Idempotency-Key only); fixed by extracting private `noCache()` base (X-Correlation-ID + Cache-Control: no-store) that `conditional()` and `created()` now extend instead of `sensitive()`; added Location header check to `created()`; applied specs to 8 locations across 3 scenario files (6 in `PaymentOrdersContractSpec`: GET security headers + 4 lifecycle happy paths + history; 1 in `PaymentSummaryContractSpec`: summary GET; 1 in `PartialRefundContractSpec`: refund happy path); kept 59 remaining tests explicit where specificity matters or refactoring would reduce readability; no new spec classes added; PHASE_8I doc added; 79+67 all pass | ✅ done |
-| 8+ | Cancel from AUTHORIZED, stale ETag on PATCH (412), refund idempotency replay, tenant admin merchant boundary | deferred |
+| 8J | PATCH stale ETag contract: added `PatchMetadataContractSpec.patch_with_stale_if_match_returns_412_payment_order_version_mismatch`; flow creates order (`ETag: "v0"`), successfully PATCHes metadata to increment ETag to `"v1"`, then reuses stale `"v0"` on a second valid merge-patch request; asserts 412 `payment_order_version_mismatch`, `application/problem+json`, `Cache-Control: no-store`, `Vary: If-Match`, correlation ID, and problem schema; confirms structurally valid PATCH reaches version precondition after the Phase 8E unknown-field guard ordering; PHASE_8J doc added; 79+68 all pass | ✅ done |
+| 8K | Cancel from AUTHORIZED contract: added `PaymentOrdersContractSpec.create_authorize_cancel_happy_path_returns_200_and_records_history`; flow creates order (`ETag: "v0"`), authorizes to `"v1"`, cancels with `If-Match: "v1"` to `"v2"`; asserts 200, `ResponseSpecs.conditional()`, status `CANCELLED`, `cancelledAt` non-null, `expiresAt` cleared, capture/refund fields null, and synchronous history entries `AUTHORIZE` then `CANCEL`; confirms backend voids PSP authorization before state mutation for previous `AUTHORIZED` orders; PHASE_8K doc added; 79+69 all pass | ✅ done |
+| 8L | Refund idempotency replay contract: added `LifecycleIdempotencyContractSpec.refund_replay_returns_stable_200_and_does_not_create_duplicate_history_entry`; flow creates order (`ETag: "v0"`), authorizes to `"v1"`, captures to `"v2"`, full-refunds to `"v3"`, then replays the same refund with the same `Idempotency-Key` and original refund `If-Match: "v2"`; asserts 200, `ResponseSpecs.conditional()`, stable `ETag: "v3"`, stable `REFUNDED` body and `refundedAmountMinor`, and history remains exactly `AUTHORIZE`, `CAPTURE`, `REFUND` with one `REFUND` entry; confirms refund replay check fires before semantic version/state guards while controller still requires syntactically valid `If-Match`; PHASE_8L doc added; 79+70 all pass | ✅ done |
+| 8M | Tenant admin merchant boundary contract: added 2 specs in `TenantIsolationContractSpec`; `tenant_admin_reads_and_lists_only_own_tenant_merchants` verifies real `tenant.admin` (`TENANT_ADMIN`, `tenant_id=TENANT_ALPHA`, no `merchant_id`) can read/list TENANT_ALPHA merchants, list excludes `MERCHANT_BETA_001`, and cross-tenant merchant GET is masked as 404; `tenant_admin_without_merchant_id_cannot_read_same_tenant_payment_order` verifies tenant admin cannot directly read even same-tenant payment orders because payment reads require matching `merchant_id` or `platform:payments:read`; confirms merchant administration is tenant-scoped while payment data remains merchant/platform-scoped; PHASE_8M doc added; 79+72 all pass | ✅ done |
+| 8N | Documentation cleanup and framework index: refreshed stale `scenarios/package-info.java`, rewrote `apps/api-tests/README.md` as a concise framework index/runbook, updated this plan's stale current-state/deferred text, and added PHASE_8N doc; no tests or assertions changed; 79+72 all pass | ✅ done |
+| 8O | JUnit tags and selective run workflow: added compact JUnit tag taxonomy (`smoke`, `contract`, `security`, `lifecycle`, `idempotency`, `audit`, `schema`, `http`, `concurrency`, `regression`) across live scenario specs; used class-level tags where intent is clear and method-level tags only for mixed `PaymentOrdersContractSpec`; documented Surefire/Failsafe 3.5.4 tag filters via `-Dgroups` / `-DexcludedGroups` in README and PHASE_8O doc; no POM change needed and default full-suite behavior remains unchanged; 79+72 all pass | ✅ done |
+| 8P | Pre-commit review and consistency audit: review-only pass over the uncommitted 8J-8O work; checked phase-doc references, README commands/counts, tag taxonomy, black-box guardrails, `ResponseSpecs` usage, problem/schema consistency, and stale docs; no files modified; no P0/P1 findings; P2/P3 cleanup items deferred to 8Q/8S; PHASE_8P doc added; 79 offline tests pass | ✅ done |
+| 8Q | Targeted cleanup fixes from Phase 8P review: applied `ResponseSpecs.created()` to the primary payment-order create happy-path test while keeping exact `Location` and `"v0"` assertions explicit; refreshed `ProblemAssert` schema-validation JavaDoc; corrected current baseline wording through Phase 8Q; clarified 6B-full as superseded/landed through later live-stack work; PHASE_8Q doc added; 79+72 validation rerun | ✅ done |
+| 8R | Final commit-prep checklist and diff consistency review: review-only pass over the 8J-8Q diff; confirmed no code/test blockers, no backend imports, no Spring test/MockMvc usage, plan/README command consistency, and 79 offline tests passing; recommended only documentation ledger polish, handled in 8S | ✅ done |
+| 8S | Final documentation ledger polish: added PHASE_8P review note, updated README baseline wording, tightened `scenarios/package-info.java` current-coverage wording, added 8P/8R/8S ledger rows, and created PHASE_8S doc; no behavior changes; 79 offline tests pass | ✅ done |
+| 8+ | Advanced HTTP backlog (redirects, multipart, SSL/proxy, OpenAPI drift) | deferred |
 
 Spec §19 ordering (stack → http → context → auth → support → seed → payment → problem → schema →
 **first green `PaymentLifecycleSpec`** → rest) governs Phases 3–7.
@@ -325,10 +334,10 @@ export TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED=true
 
 ## 16. Intentionally deferred
 
-Containers/stack, Keycloak token minting, filters, `ProblemAssert`, JSON-schema validation,
-data generators, API clients, and all live `*Spec` scenarios are deferred to Phases 3–7.
-`json-schema-validator` dependency is deferred to Phase 4 (not in local `~/.m2`; needs network).
-Advanced HTTP backlog (redirects, multipart, SSL/proxy, OpenAPI drift) per spec §22 is later still.
+The core black-box framework, stack, Keycloak token minting, filters, API facades, schemas, and
+live scenario suite are implemented through Phase 8S. Remaining deferred work is the advanced
+HTTP backlog from spec §22: redirects, multipart, SSL/proxy coverage, OpenAPI drift checks, and
+future product capabilities outside the current payment-order scope.
 
 ---
 

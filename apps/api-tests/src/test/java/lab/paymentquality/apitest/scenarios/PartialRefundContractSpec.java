@@ -85,6 +85,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@code capturedAmountMinor = 3300} USD). Because the domain exception causes a transaction
  * rollback, the seeded order remains in CAPTURED state and is not consumed by these tests.
  */
+@Tag("contract")
+@Tag("lifecycle")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PartialRefundContractSpec {
 

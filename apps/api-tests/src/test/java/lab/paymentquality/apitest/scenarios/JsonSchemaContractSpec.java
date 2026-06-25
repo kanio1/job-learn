@@ -70,6 +70,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Phase 8H. All tests are live (Failsafe): they require the full container stack.
  */
+@Tag("schema")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class JsonSchemaContractSpec {
 

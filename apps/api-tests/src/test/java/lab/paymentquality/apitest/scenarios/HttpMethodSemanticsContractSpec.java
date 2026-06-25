@@ -52,6 +52,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Tests 1, 3, and 4 use {@link Identities#merchantReader} (has {@code platform:payments:read}
  * — bypasses merchant ownership check). Test 2 requires no authentication.
  */
+@Tag("http")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class HttpMethodSemanticsContractSpec {
 

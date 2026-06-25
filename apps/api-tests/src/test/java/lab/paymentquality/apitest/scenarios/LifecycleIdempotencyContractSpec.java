@@ -5,12 +5,15 @@ import lab.paymentquality.apitest.api.SeedApi;
 import lab.paymentquality.apitest.api.payment.PaymentOrdersApi;
 import lab.paymentquality.apitest.api.payment.dto.CreatePaymentOrderRequest;
 import lab.paymentquality.apitest.api.payment.dto.PaymentHistoryResponse;
+import lab.paymentquality.apitest.api.payment.dto.PaymentOrderResponse;
 import lab.paymentquality.apitest.core.auth.Identities;
 import lab.paymentquality.apitest.core.context.Ctx;
 import lab.paymentquality.apitest.core.context.TestContext;
 import lab.paymentquality.apitest.core.data.IdempotencyKeys;
 import lab.paymentquality.apitest.core.data.Seeds;
 import lab.paymentquality.apitest.core.data.UniqueReferences;
+import lab.paymentquality.apitest.core.http.Headers;
+import lab.paymentquality.apitest.core.http.ResponseSpecs;
 import lab.paymentquality.apitest.core.problem.ProblemAssert;
 import lab.paymentquality.apitest.core.problem.ProblemCodes;
 import lab.paymentquality.apitest.support.ApiTest;
@@ -18,6 +21,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -116,6 +120,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </ul>
  */
 @ApiTest
+@Tag("idempotency")
+@Tag("lifecycle")
 @DisplayName("Lifecycle idempotency replay — contract")
 class LifecycleIdempotencyContractSpec {
 
@@ -353,6 +359,108 @@ class LifecycleIdempotencyContractSpec {
         assertThat(historyAfterReplay.content())
                 .as("history after capture replay must still have exactly 2 entries — no duplicate CAPTURE")
                 .hasSize(2);
+    }
+
+    // -------------------------------------------------------------------------
+    // Refund replay: same key + same body → stable 200, no duplicate history
+    // -------------------------------------------------------------------------
+
+    /**
+     * Refund replay with the same Idempotency-Key returns 200 and does not write
+     * a duplicate history entry.
+     *
+     * <p><strong>Test category:</strong> Idempotency — lifecycle refund replay.
+     *
+     * <p><strong>HTTP/REST concept:</strong> the replay call intentionally resends the original
+     * refund {@code If-Match} value ({@code "v2"}). After the first refund, the persisted order
+     * is already at {@code "v3"}, so this header is stale for a normal write. The service checks
+     * {@code isIdempotentLifecycleReplay()} before {@code PaymentVersionPrecondition}, so a true
+     * replay is accepted and returns the current {@code REFUNDED} representation with stable ETag.
+     *
+     * <p><strong>Payment/PSP risk:</strong> refund retry is financially sensitive: if the backend
+     * repeated the PSP refund or wrote a second audit event after a network timeout, the platform
+     * could issue duplicate credits or create misleading compliance history. The contract proves
+     * a full-refund replay is read from the idempotency record instead of executing the transition
+     * again.
+     *
+     * <p><strong>SDET interview angle:</strong> a strong API contract test verifies more than
+     * status code. This scenario checks optimistic-lock headers, final business state, amount
+     * stability, ETag stability, and history cardinality through public endpoints only.
+     */
+    @Test
+    @DisplayName("refund replay returns stable 200 and does not create duplicate history entry [Phase 8L]")
+    void refund_replay_returns_stable_200_and_does_not_create_duplicate_history_entry() {
+        Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
+        String merchantId = Seeds.MERCHANT_ALPHA_001_ID;
+        long amountMinor = 3300L;
+
+        String createKey = IdempotencyKeys.generate("8l-ref-create");
+        CreatePaymentOrderRequest createBody = CreatePaymentOrderRequest.valid(
+                amountMinor, "PLN", UniqueReferences.paymentRef("8l-refund-replay"));
+        Response createResp = PaymentOrdersApi.create(merchantId, createBody, createKey);
+        createResp.then().statusCode(201);
+        String paymentOrderId = createResp.jsonPath().getString("paymentOrderId");
+        String eTagV0 = createResp.getHeader(Headers.ETAG);
+        assertThat(eTagV0).isEqualTo("\"v0\"");
+
+        String authorizeKey = IdempotencyKeys.generate("8l-ref-auth");
+        Response authorizeResp = PaymentOrdersApi.authorize(merchantId, paymentOrderId, eTagV0, authorizeKey);
+        authorizeResp.then().statusCode(200);
+        String eTagV1 = authorizeResp.getHeader(Headers.ETAG);
+        assertThat(eTagV1).isEqualTo("\"v1\"");
+
+        String captureKey = IdempotencyKeys.generate("8l-ref-cap");
+        Response captureResp = PaymentOrdersApi.capture(merchantId, paymentOrderId, eTagV1, captureKey);
+        captureResp.then().statusCode(200);
+        String eTagV2 = captureResp.getHeader(Headers.ETAG);
+        assertThat(eTagV2).isEqualTo("\"v2\"");
+
+        String refundKey = IdempotencyKeys.generate("8l-ref-replay");
+        Response firstRefund = PaymentOrdersApi.refund(merchantId, paymentOrderId, eTagV2, refundKey);
+        firstRefund.then()
+                .statusCode(200)
+                .spec(ResponseSpecs.conditional());
+        String eTagAfterRefund = firstRefund.getHeader(Headers.ETAG);
+        assertThat(eTagAfterRefund).isEqualTo("\"v3\"");
+
+        PaymentOrderResponse firstRefundBody = firstRefund.as(PaymentOrderResponse.class);
+        assertThat(firstRefundBody.paymentOrderId().toString()).isEqualTo(paymentOrderId);
+        assertThat(firstRefundBody.status()).isEqualTo("REFUNDED");
+        assertThat(firstRefundBody.refundedAmountMinor()).isEqualTo(amountMinor);
+
+        PaymentHistoryResponse historyBeforeReplay = PaymentOrdersApi.history(merchantId, paymentOrderId)
+                .then().statusCode(200)
+                .extract().as(PaymentHistoryResponse.class);
+        assertThat(historyBeforeReplay.content())
+                .as("history before refund replay must have AUTHORIZE, CAPTURE, REFUND")
+                .hasSize(3);
+        assertThat(historyBeforeReplay.content().get(0).action()).isEqualTo("AUTHORIZE");
+        assertThat(historyBeforeReplay.content().get(1).action()).isEqualTo("CAPTURE");
+        assertThat(historyBeforeReplay.content().get(2).action()).isEqualTo("REFUND");
+
+        Response replayRefund = PaymentOrdersApi.refund(merchantId, paymentOrderId, eTagV2, refundKey);
+        replayRefund.then()
+                .statusCode(200)
+                .spec(ResponseSpecs.conditional())
+                .header(Headers.ETAG, eTagAfterRefund);
+
+        PaymentOrderResponse replayRefundBody = replayRefund.as(PaymentOrderResponse.class);
+        assertThat(replayRefundBody.paymentOrderId()).isEqualTo(firstRefundBody.paymentOrderId());
+        assertThat(replayRefundBody.status()).isEqualTo("REFUNDED");
+        assertThat(replayRefundBody.refundedAmountMinor()).isEqualTo(amountMinor);
+
+        PaymentHistoryResponse historyAfterReplay = PaymentOrdersApi.history(merchantId, paymentOrderId)
+                .then().statusCode(200)
+                .extract().as(PaymentHistoryResponse.class);
+        long refundEntries = historyAfterReplay.content().stream()
+                .filter(entry -> "REFUND".equals(entry.action()))
+                .count();
+        assertThat(historyAfterReplay.content())
+                .as("history after refund replay must still have exactly 3 lifecycle entries")
+                .hasSize(3);
+        assertThat(refundEntries)
+                .as("refund replay must not append a duplicate REFUND history row")
+                .isEqualTo(1);
     }
 
     // -------------------------------------------------------------------------

@@ -4,6 +4,7 @@ import io.restassured.http.ContentType;
 import lab.paymentquality.apitest.api.StatusApi;
 import lab.paymentquality.apitest.support.ApiTest;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -18,6 +19,7 @@ import static org.hamcrest.Matchers.equalTo;
  * SDET risk: if this test fails, all other specs are meaningless; run first in CI.
  */
 @ApiTest
+@Tag("smoke")
 @DisplayName("Status endpoint")
 class StatusSpec {
 

@@ -1,6 +1,9 @@
 package lab.paymentquality.apitest.scenarios;
 
 import lab.paymentquality.apitest.api.SeedApi;
+import lab.paymentquality.apitest.api.merchant.MerchantsApi;
+import lab.paymentquality.apitest.api.merchant.dto.MerchantListResponse;
+import lab.paymentquality.apitest.api.merchant.dto.MerchantResponse;
 import lab.paymentquality.apitest.api.payment.PaymentOrdersApi;
 import lab.paymentquality.apitest.api.payment.dto.PaymentOrderResponse;
 import lab.paymentquality.apitest.core.auth.Identities;
@@ -14,7 +17,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -84,6 +91,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </ul>
  */
 @ApiTest
+@Tag("security")
 @DisplayName("Tenant / merchant isolation — security contract")
 class TenantIsolationContractSpec {
 
@@ -343,5 +351,107 @@ class TenantIsolationContractSpec {
         assertThat(body.currency())
                 .as("currency must be PLN (seed fixture)")
                 .isEqualTo("PLN");
+    }
+
+    // -------------------------------------------------------------------------
+    // Tenant admin boundary — merchant administration is tenant-scoped
+    // -------------------------------------------------------------------------
+
+    /**
+     * Tenant admin can read and list merchants in its tenant, but cannot read a merchant
+     * from another tenant.
+     *
+     * <p><strong>Test category:</strong> Multi-tenant authorization — verifies the tenant-scoped
+     * merchant administration boundary for the real {@code tenant.admin} Keycloak persona.
+     *
+     * <p><strong>HTTP/REST concept:</strong> the same endpoint family has different visibility
+     * depending on the resolved tenant context. {@code GET /api/merchants/{id}} returns 200 for
+     * a merchant in the caller's tenant, while a merchant outside that tenant is masked as 404.
+     * {@code GET /api/merchants} returns a collection filtered to the caller's tenant.
+     *
+     * <p><strong>Multi-tenant security risk:</strong> tenant administrators manage merchant
+     * setup for one tenant. If tenant filtering is missing or applied after fetching global data,
+     * a tenant admin could enumerate or manage merchants belonging to another tenant.
+     *
+     * <p><strong>BOLA/BFLA angle:</strong> GET-by-ID is object-level authorization (BOLA) and is
+     * masked as 404 across the tenant boundary. GET-list is function/collection-level
+     * authorization (BFLA) and must return only authorized tenant objects.
+     *
+     * <p><strong>SDET interview angle:</strong> this test proves the complete chain: Keycloak
+     * user attribute {@code tenant_id=TENANT_ALPHA} → JWT claim → tenant resolution →
+     * repository filtering / not-found masking. No backend classes or direct SQL are used.
+     */
+    @Test
+    @DisplayName("tenant admin reads/lists only own-tenant merchants and cross-tenant merchant is masked [Phase 8M]")
+    void tenant_admin_reads_and_lists_only_own_tenant_merchants() {
+        Ctx.set(TestContext.of(Identities.tenantAdmin("TENANT_ALPHA")));
+
+        MerchantResponse ownMerchant = MerchantsApi.getById(Seeds.MERCHANT_ALPHA_001_ID)
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(MerchantResponse.class);
+        assertThat(ownMerchant.merchantId().toString()).isEqualTo(Seeds.MERCHANT_ALPHA_001_ID);
+        assertThat(ownMerchant.status()).isEqualTo("ACTIVE");
+
+        MerchantListResponse list = MerchantsApi.list()
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(MerchantListResponse.class);
+        Set<String> visibleMerchantIds = list.merchants().stream()
+                .map(merchant -> merchant.merchantId().toString())
+                .collect(Collectors.toSet());
+        assertThat(visibleMerchantIds)
+                .as("tenant.admin for TENANT_ALPHA must see TENANT_ALPHA merchants")
+                .contains(Seeds.MERCHANT_ALPHA_001_ID, Seeds.MERCHANT_ALPHA_002_ID);
+        assertThat(visibleMerchantIds)
+                .as("tenant.admin for TENANT_ALPHA must not see PLATFORM_TENANT merchant")
+                .doesNotContain(Seeds.MERCHANT_BETA_001_ID);
+
+        ProblemAssert.assertThat(MerchantsApi.getById(Seeds.MERCHANT_BETA_001_ID))
+                .hasStatus(404)
+                .hasContentTypeProblemJson()
+                .hasError(ProblemCodes.NOT_FOUND);
+    }
+
+    /**
+     * Tenant admin cannot read payment orders directly, even for a merchant in its tenant,
+     * because payment order reads are merchant-scoped unless the caller has platform payment
+     * authority.
+     *
+     * <p><strong>Test category:</strong> Multi-tenant payment data boundary — verifies that a
+     * tenant administration persona is not automatically a payment-order reader.
+     *
+     * <p><strong>HTTP/REST concept:</strong> successful authentication and a broad tenant claim
+     * are not enough for object access. The payment order controller requires either
+     * {@code platform:payments:read} or a JWT {@code merchant_id} claim matching the path
+     * merchant. {@code tenant.admin} has neither.
+     *
+     * <p><strong>Multi-tenant security risk:</strong> merchant administration and payment data
+     * access are separate privileges. Conflating tenant admin with payment reader would expose
+     * customer payment data to operational users who only need merchant setup capabilities.
+     *
+     * <p><strong>BOLA/BFLA angle:</strong> this is a same-tenant BOLA guard. The target order
+     * exists under TENANT_ALPHA, but the caller is not scoped to that merchant object, so the
+     * backend masks the resource as 404.
+     *
+     * <p><strong>SDET interview angle:</strong> this catches the common multi-tenant mistake of
+     * checking only {@code tenant_id}. Secure payment APIs usually require a narrower object or
+     * merchant scope for payment data, plus separate platform break-glass authorities.
+     */
+    @Test
+    @DisplayName("tenant admin without merchant_id cannot read same-tenant payment order → 404 masked [Phase 8M]")
+    void tenant_admin_without_merchant_id_cannot_read_same_tenant_payment_order() {
+        Ctx.set(TestContext.of(Identities.tenantAdmin("TENANT_ALPHA")));
+
+        ProblemAssert.assertThat(PaymentOrdersApi.getById(
+                        Seeds.MERCHANT_ALPHA_001_ID,
+                        Seeds.PAYMENT_ORDER_ALPHA_001_CREATED_ID))
+                .hasStatus(404)
+                .hasContentTypeProblemJson()
+                .hasError(ProblemCodes.NOT_FOUND)
+                .hasNoStore()
+                .varyContains("Authorization");
     }
 }

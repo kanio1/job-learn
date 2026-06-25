@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -101,6 +102,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </ul>
  */
 @ApiTest
+@Tag("contract")
 @DisplayName("Payment Orders API — contract")
 class PaymentOrdersContractSpec {
 
@@ -397,7 +399,9 @@ class PaymentOrdersContractSpec {
                 CreatePaymentOrderRequest.valid(5_000L, "PLN", clientRef),
                 idempotencyKey);
 
-        response.then().statusCode(201);
+        response.then()
+                .statusCode(201)
+                .spec(ResponseSpecs.created());
 
         // Location header points to the new payment order resource
         String location = response.header(Headers.LOCATION);
@@ -440,6 +444,7 @@ class PaymentOrdersContractSpec {
      * binding, not role assignment.
      */
     @Test
+    @Tag("security")
     @DisplayName("POST with mismatched merchant_id claim → 403 forbidden")
     void create_with_mismatched_merchant_scope_returns_403() {
         // seededMerchantCreator has merchant_id claim = MERCHANT_ALPHA_001_ID
@@ -528,6 +533,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("idempotency")
     @DisplayName("POST same Idempotency-Key + same body → 200 replay with same paymentOrderId and ETag")
     void idempotency_replay_with_same_key_and_body_returns_200() {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -618,6 +624,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("idempotency")
     @DisplayName("POST same Idempotency-Key + different body → 409 idempotency_conflict")
     void idempotency_conflict_with_same_key_different_body_returns_409() {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -688,6 +695,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("lifecycle")
     @DisplayName("POST authorize with correct If-Match → 200 AUTHORIZED, ETag incremented to v1")
     void authorize_with_correct_if_match_returns_200_and_increments_etag() {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -762,6 +770,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("lifecycle")
     @DisplayName("POST authorize without If-Match → 428 precondition_required")
     void authorize_without_if_match_returns_428() {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -820,6 +829,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("lifecycle")
     @DisplayName("POST authorize with stale If-Match (v1 on v0 order) → 412 payment_order_version_mismatch")
     void authorize_with_stale_if_match_returns_412() {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -885,6 +895,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("lifecycle")
     @DisplayName("POST create → authorize → capture → 200 CAPTURED, ETag v0 → v1 → v2")
     void create_authorize_capture_happy_path_returns_200_and_increments_etag_to_v2() {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -968,6 +979,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("lifecycle")
     @DisplayName("POST create → cancel → 200 CANCELLED, ETag v0 → v1")
     void create_cancel_happy_path_returns_200_and_increments_etag_to_v1() {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -1010,6 +1022,116 @@ class PaymentOrdersContractSpec {
     }
 
     /**
+     * Cancel from AUTHORIZED state: create → authorize → cancel returns 200 CANCELLED, ETag v2.
+     *
+     * <p><strong>Test category:</strong> Lifecycle contract — verifies the second valid cancel
+     * path in the payment state machine. CREATED → CANCELLED is already covered above; this test
+     * covers CREATED → AUTHORIZED → CANCELLED, where the backend must void the PSP authorization
+     * before marking the order as cancelled.
+     *
+     * <p><strong>HTTP/REST concept:</strong> cancel is a conditional mutation. The client must
+     * send the fresh ETag from the authorize response ({@code "v1"}) as {@code If-Match}. A stale
+     * {@code "v0"} would be rejected with 412 before the state transition. On success, the
+     * lifecycle response carries the new ETag ({@code "v2"}) and the conditional response headers.
+     *
+     * <p><strong>Business risk:</strong> an AUTHORIZED order has reserved customer funds at the
+     * PSP. Cancelling it must release that reservation by voiding the authorization, then record
+     * the domain transition to CANCELLED. If the backend skipped this path, customers could see
+     * funds held for orders the merchant considers cancelled.
+     *
+     * <p><strong>SDET interview topics:</strong>
+     * <ul>
+     *   <li>Why does cancel from AUTHORIZED need a PSP void while cancel from CREATED does not?</li>
+     *   <li>Why is the history sequence AUTHORIZE then CANCEL, not just CANCELLED final state?</li>
+     *   <li>Why must the cancel call use the ETag from authorize rather than from create?</li>
+     * </ul>
+     */
+    @Test
+    @Tag("lifecycle")
+    @DisplayName("POST create → authorize → cancel → 200 CANCELLED, ETag v0 → v1 → v2 [Phase 8K]")
+    void create_authorize_cancel_happy_path_returns_200_and_records_history() {
+        Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
+
+        // Step 1: create — ETag "v0", status CREATED
+        String clientRef = UniqueReferences.paymentRef("cancel-authorized");
+        Response createResponse = PaymentOrdersApi.create(
+                Seeds.MERCHANT_ALPHA_001_ID,
+                CreatePaymentOrderRequest.valid(4_600L, "PLN", clientRef),
+                IdempotencyKeys.generate("create"));
+        createResponse.then().statusCode(201);
+
+        PaymentOrderResponse created = createResponse.as(PaymentOrderResponse.class);
+        UUID paymentOrderId = created.paymentOrderId();
+        ETag createEtag = ETag.of(createResponse.header(Headers.ETAG));
+        assertThat(createEtag.raw()).isEqualTo("\"v0\"");
+
+        // Step 2: authorize with If-Match "v0" → ETag "v1"
+        Response authorizeResponse = PaymentOrdersApi.authorize(
+                Seeds.MERCHANT_ALPHA_001_ID,
+                paymentOrderId.toString(),
+                createEtag.raw(),
+                IdempotencyKeys.generate("authorize"));
+        authorizeResponse.then().statusCode(200);
+        ETag authorizeEtag = ETag.of(authorizeResponse.header(Headers.ETAG));
+        assertThat(authorizeEtag.raw()).isEqualTo("\"v1\"");
+
+        // Step 3: cancel with If-Match "v1" → 200 CANCELLED, ETag "v2"
+        Response cancelResponse = PaymentOrdersApi.cancel(
+                Seeds.MERCHANT_ALPHA_001_ID,
+                paymentOrderId.toString(),
+                authorizeEtag.raw(),
+                IdempotencyKeys.generate("cancel"));
+        cancelResponse.then().statusCode(200).spec(ResponseSpecs.conditional());
+
+        PaymentOrderResponse cancelBody = cancelResponse.as(PaymentOrderResponse.class);
+        assertThat(cancelBody.paymentOrderId()).isEqualTo(paymentOrderId);
+        assertThat(cancelBody.status()).isEqualTo("CANCELLED");
+        assertThat(cancelBody.authorizedAt()).as("authorization timestamp remains part of the audit trail").isNotNull();
+        assertThat(cancelBody.cancelledAt()).as("cancel timestamp is populated").isNotNull();
+        assertThat(cancelBody.expiresAt()).as("authorization expiry is cleared after cancel").isNull();
+        assertThat(cancelBody.capturedAt()).isNull();
+        assertThat(cancelBody.refundedAt()).isNull();
+        assertThat(cancelBody.capturedAmountMinor()).isNull();
+        assertThat(cancelBody.refundedAmountMinor()).isNull();
+
+        ETag cancelEtag = ETag.of(cancelResponse.header(Headers.ETAG));
+        assertThat(cancelEtag.raw()).isEqualTo("\"v2\"");
+        assertThat(cancelEtag.version()).isGreaterThan(authorizeEtag.version());
+
+        // History is synchronous: the two lifecycle actions are visible immediately.
+        PaymentHistoryResponse history = PaymentOrdersApi.history(
+                        Seeds.MERCHANT_ALPHA_001_ID,
+                        paymentOrderId.toString())
+                .then()
+                .statusCode(200)
+                .spec(ResponseSpecs.sensitive())
+                .extract()
+                .as(PaymentHistoryResponse.class);
+
+        assertThat(history.content())
+                .as("authorized cancel should produce exactly AUTHORIZE and CANCEL history entries")
+                .hasSize(2);
+
+        PaymentHistoryResponse.StatusHistoryEntry authorizeEntry = history.content().get(0);
+        assertThat(authorizeEntry.action()).isEqualTo("AUTHORIZE");
+        assertThat(authorizeEntry.fromStatus()).isEqualTo("CREATED");
+        assertThat(authorizeEntry.toStatus()).isEqualTo("AUTHORIZED");
+        assertThat(authorizeEntry.paymentOrderId()).isEqualTo(paymentOrderId);
+        assertThat(authorizeEntry.statusHistoryId()).isNotNull();
+        assertThat(authorizeEntry.correlationId()).isNotNull().isNotBlank();
+        assertThat(authorizeEntry.createdAt()).isNotNull();
+
+        PaymentHistoryResponse.StatusHistoryEntry cancelEntry = history.content().get(1);
+        assertThat(cancelEntry.action()).isEqualTo("CANCEL");
+        assertThat(cancelEntry.fromStatus()).isEqualTo("AUTHORIZED");
+        assertThat(cancelEntry.toStatus()).isEqualTo("CANCELLED");
+        assertThat(cancelEntry.paymentOrderId()).isEqualTo(paymentOrderId);
+        assertThat(cancelEntry.statusHistoryId()).isNotNull();
+        assertThat(cancelEntry.correlationId()).isNotNull().isNotBlank();
+        assertThat(cancelEntry.createdAt()).isNotNull();
+    }
+
+    /**
      * Invalid transition: capture a CREATED (non-authorized) order → 422 invalid_transition.
      *
      * <p><strong>Test category:</strong> State machine boundary — negative test for an invalid
@@ -1048,6 +1170,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("lifecycle")
     @DisplayName("POST capture on CREATED order (no authorize) → 422 invalid_transition")
     void capture_on_created_order_returns_422_invalid_transition() {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -1118,6 +1241,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("lifecycle")
     @DisplayName("POST create → authorize → capture → refund → 200 REFUNDED, ETag v0 → v1 → v2 → v3")
     void create_authorize_capture_refund_happy_path_returns_200_and_increments_etag_to_v3() {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -1212,6 +1336,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("lifecycle")
     @DisplayName("POST cancel on CAPTURED order → 422 invalid_transition")
     void cancel_on_captured_order_returns_422_invalid_transition() {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -1307,6 +1432,8 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("lifecycle")
+    @Tag("regression")
     @DisplayName("POST refund on AUTHORIZED order (not captured) → 422 invalid_transition [Phase 7G regression]")
     void refund_on_authorized_order_returns_422_invalid_transition() {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -1416,6 +1543,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("concurrency")
     @DisplayName("Two concurrent authorizes (different Idempotency-Keys, same ETag) → exactly one 200, one 412 [Phase 7H concurrency]")
     void concurrent_authorize_with_different_idempotency_keys_yields_one_success_and_one_412() throws Exception {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -1563,6 +1691,9 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("concurrency")
+    @Tag("idempotency")
+    @Tag("regression")
     @DisplayName("Two concurrent creates with same Idempotency-Key → no 500, exactly one create [Phase 7I idempotency race]")
     void concurrent_create_with_same_idempotency_key_yields_no_500_and_one_create() throws Exception {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -1687,6 +1818,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("lifecycle")
     @DisplayName("GET history after authorize+capture → 2 ordered entries, correct transitions [Phase 7J]")
     void history_after_lifecycle_contains_ordered_entries() {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -1778,6 +1910,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("lifecycle")
     @DisplayName("GET history for newly created order → 200 with empty content list [Phase 7J]")
     void history_for_newly_created_order_returns_empty_list() {
         Ctx.set(TestContext.of(Identities.seededMerchantCreator()));
@@ -1831,6 +1964,7 @@ class PaymentOrdersContractSpec {
      * </ul>
      */
     @Test
+    @Tag("security")
     @DisplayName("GET history with denied user (no roles) → 403 Forbidden [Phase 7J]")
     void history_access_forbidden_without_required_authority() {
         Ctx.set(TestContext.of(Identities.denied()));

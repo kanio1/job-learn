@@ -7,6 +7,7 @@ import lab.paymentquality.apitest.core.http.RequestSpecs;
 import lab.paymentquality.apitest.support.ApiTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -30,6 +31,8 @@ import org.junit.jupiter.api.Test;
  * This is a key invariant of the Spring Security filter chain order.
  */
 @ApiTest
+@Tag("smoke")
+@Tag("security")
 @DisplayName("Security smoke")
 class SecuritySmokeSpec {
 

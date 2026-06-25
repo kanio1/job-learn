@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Locale;
@@ -68,6 +69,7 @@ import static org.hamcrest.Matchers.notNullValue;
  * to prevent data bleed into subsequent spec classes.
  */
 @ApiTest
+@Tag("contract")
 @DisplayName("Merchants API — contract")
 class MerchantsContractSpec {
 
