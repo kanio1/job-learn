@@ -34,7 +34,7 @@ Expected services:
 From `apps/backend`:
 
 ```bash
-./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
 ```
 
 Public health/status check:

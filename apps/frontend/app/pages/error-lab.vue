@@ -1,11 +1,15 @@
 <template>
-  <UDashboardPanel>
-    <UDashboardNavbar
-      title="Error Lab"
-      description="Intentionally trigger HTTP error scenarios to explore how the API responds"
-    />
+  <UDashboardPanel id="error-lab">
+    <template #header>
+      <UDashboardNavbar title="Error Lab">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
+      </UDashboardNavbar>
+    </template>
 
-    <div class="p-6 space-y-4">
+    <template #body>
+    <div class="space-y-4">
       <UAlert
         icon="i-lucide-flask-conical"
         color="warning"
@@ -90,6 +94,7 @@
         </UCard>
       </div>
     </div>
+    </template>
   </UDashboardPanel>
 </template>
 
@@ -106,6 +111,8 @@
  *
  * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7
  */
+
+definePageMeta({ layout: 'dashboard' })
 
 import { z } from 'zod'
 import type { ProblemDetails } from '~/types/api'

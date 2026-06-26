@@ -1,0 +1,94 @@
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - button:
+          - generic: Payment Quality
+      - generic:
+        - button:
+          - generic: Search...
+          - generic:
+            - generic: Ctrl
+            - generic: k
+        - navigation:
+          - list:
+            - listitem:
+              - link:
+                - /url: /
+                - generic: Overview
+            - listitem:
+              - link:
+                - /url: /admin/merchants
+                - generic: Merchants
+            - listitem:
+              - link:
+                - /url: /admin/merchants
+                - generic: Payment Orders
+            - listitem:
+              - link:
+                - /url: /admin/users
+                - generic: Users
+            - listitem:
+              - link:
+                - /url: /admin/audit
+                - generic: Audit Log
+            - listitem:
+              - link:
+                - /url: /error-lab
+                - generic: Error Lab
+      - generic:
+        - button [expanded]:
+          - generic: platform.operator
+    - generic:
+      - generic:
+        - generic:
+          - button
+          - heading [level=1]: Merchants
+        - generic:
+          - button
+          - button
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: Problem Details
+                - generic:
+                  - generic:
+                    - generic:
+                      - term: Type
+                      - definition: —
+                    - generic:
+                      - term: Title
+                      - definition: —
+                    - generic:
+                      - term: Status
+                      - definition: —
+                    - generic:
+                      - term: Detail
+                      - definition: —
+                    - generic:
+                      - term: Instance
+                      - definition: —
+            - button: Retry
+  - generic:
+    - img
+  - generic [ref=e87]:
+    - button [ref=e101] [cursor=pointer]:
+      - img [ref=e89]
+    - generic [ref=e102]:
+      - generic [ref=e93]: "325"
+      - generic [ref=e94]: ms
+    - button [ref=e103] [cursor=pointer]:
+      - img [ref=e97]
+  - menu "platform.operator" [active] [ref=e104]:
+    - group "platform.operator" [ref=e105]:
+      - generic [ref=e110]: platform.operator
+    - group [ref=e111]:
+      - menuitem "Appearance" [ref=e112]:
+        - generic [ref=e115]: Appearance
+    - group [ref=e118]:
+      - menuitem "Sign out" [ref=e119]:
+        - generic [ref=e122]: Sign out

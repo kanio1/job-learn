@@ -1,0 +1,5 @@
+- generic [ref=e4]:
+  - heading "Payment Quality Lab" [level=1] [ref=e6]
+  - generic [ref=e7]:
+    - status [ref=e8]: Sign in with your Keycloak account to continue.
+    - button "Continue to Keycloak" [ref=e9]

@@ -24,7 +24,7 @@
 ```bash
 cd apps/backend
 ./mvnw test
-./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
 ```
 
 Check:

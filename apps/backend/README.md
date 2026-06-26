@@ -16,8 +16,10 @@ This backend is the Spring Boot foundation for the Payment Quality Engineering L
 ```bash
 ./mvnw test
 ./mvnw verify
-./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
 ```
+
+> **`dev` profile is required for local startup.** It activates `corsConfigurationSource` for `http://localhost:3000` (Nuxt frontend). Without it the application context fails to load. The `test` profile is reserved for the test suite. Do not remove `@Profile({"dev","test"})` from `SecurityConfig` as a workaround.
 
 ## Public Status Endpoint
 

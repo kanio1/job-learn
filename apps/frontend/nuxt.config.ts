@@ -2,6 +2,7 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@pinia/nuxt', 'nuxt-auth-utils'],
   css: ['~/assets/css/main.css'],
   devtools: { enabled: true },
+  components: [{ path: '~/components', pathPrefix: false }],
   colorMode: {
     preference: 'light',
     fallback: 'light'

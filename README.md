@@ -97,8 +97,11 @@ From `apps/backend`:
 
 ```bash
 ./mvnw test
-./mvnw spring-boot:run
+./mvnw verify
+SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
 ```
+
+> **Local dev profile required.** The `dev` profile activates CORS for the Nuxt frontend on `http://localhost:3000`. Running without `-Dspring-boot.run.profiles=dev` or `SPRING_PROFILES_ACTIVE=dev` fails at startup with a missing `corsConfigurationSource` bean. The `test` profile is for the test suite only. Do not disable security or CORS as a workaround.
 
 The backend exposes the public technical status endpoint and secured merchant endpoints:
 

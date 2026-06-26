@@ -13,7 +13,7 @@ Payment Quality Engineering Lab — a learning-oriented payment platform for pra
 ```bash
 ./mvnw test           # runs *Test.java (unit, integration, module, security, REST Assured)
 ./mvnw verify         # also runs *IT.java via Failsafe
-./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run  # dev profile required — activates CORS bean
 ```
 
 **Always skip these suites** when running backend tests (unless explicitly asked):

@@ -15,7 +15,7 @@
 
 ```bash
 docker compose --env-file infra/compose/.env -f infra/compose/compose.yml up -d
-cd apps/backend && ./mvnw spring-boot:run
+cd apps/backend && SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
 cd apps/frontend && corepack pnpm dev
 ```
 

@@ -96,10 +96,27 @@ const emit = defineEmits<{
   clear: []
 }>()
 
-const local = reactive<AuditFilterState>({ ...props.modelValue })
+function toLocal(state: AuditFilterState): AuditFilterState {
+  return {
+    ...state,
+    action: state.action || 'all',
+    targetType: state.targetType || 'all',
+  }
+}
+
+function fromLocal(state: AuditFilterState): AuditFilterState {
+  return {
+    ...state,
+    actor: state.actor.trim(),
+    action: state.action === 'all' ? '' : state.action,
+    targetType: state.targetType === 'all' ? '' : state.targetType,
+  }
+}
+
+const local = reactive<AuditFilterState>(toLocal(props.modelValue))
 
 const actionOptions = [
-  { label: 'All actions', value: '' },
+  { label: 'All actions', value: 'all' },
   { label: 'Merchant created', value: 'MERCHANT_CREATED' },
   { label: 'Merchant activated', value: 'MERCHANT_ACTIVATED' },
   { label: 'Merchant suspended', value: 'MERCHANT_SUSPENDED' },
@@ -113,30 +130,25 @@ const actionOptions = [
 ]
 
 const targetTypeOptions = [
-  { label: 'All target types', value: '' },
+  { label: 'All target types', value: 'all' },
   { label: 'Merchant', value: 'MERCHANT' },
   { label: 'Payment order', value: 'PAYMENT_ORDER' },
   { label: 'User', value: 'USER' },
 ]
 
 const hasFilters = computed(() => Boolean(
-  local.actor.trim() || local.action || local.targetType || local.from || local.to
+  local.actor.trim() || (local.action && local.action !== 'all')
+  || (local.targetType && local.targetType !== 'all') || local.from || local.to
 ))
 
 function applyFilters() {
-  emit('apply', {
-    actor: local.actor.trim(),
-    action: local.action,
-    targetType: local.targetType,
-    from: local.from,
-    to: local.to,
-  })
+  emit('apply', fromLocal(local))
 }
 
 function clearFilters() {
-  Object.assign(local, { actor: '', action: '', targetType: '', from: '', to: '' })
+  Object.assign(local, { actor: '', action: 'all', targetType: 'all', from: '', to: '' })
   emit('clear')
 }
 
-watch(() => props.modelValue, value => Object.assign(local, value), { deep: true })
+watch(() => props.modelValue, value => Object.assign(local, toLocal(value)), { deep: true })
 </script>

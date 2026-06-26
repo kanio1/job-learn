@@ -28,10 +28,10 @@ Phase 1 adds a Keycloak realm import. See `infra/keycloak/realms/` for the realm
 
 ```bash
 cd apps/backend
-./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
 ```
 
-Backend on `http://localhost:8080`.
+Backend on `http://localhost:8080`. The `dev` profile is required — it enables CORS for the local Nuxt frontend on port 3000.
 
 On first startup, Flyway runs the `V1__create_merchants.sql` migration against the local PostgreSQL, creating the `merchants` table.
 

@@ -62,8 +62,10 @@ Run from `apps/backend`:
 ```bash
 ./mvnw test
 ./mvnw verify
-./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
 ```
+
+The `dev` profile is required for local startup — it activates the CORS bean needed by the Nuxt frontend on `http://localhost:3000`. Running without it fails at startup.
 
 `./mvnw test` runs `*Test.java`. `./mvnw verify` also runs `*IT.java` through Failsafe.
 

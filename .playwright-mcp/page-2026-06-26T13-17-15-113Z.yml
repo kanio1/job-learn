@@ -1,0 +1,18 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - heading "Payment Quality Lab" [level=1] [ref=e6]
+    - generic [ref=e7]:
+      - status [ref=e8]: Sign in with your Keycloak account to continue.
+      - button "Continue to Keycloak" [active] [ref=e9]
+  - region "Notifications (F8)":
+    - list
+  - generic:
+    - img
+  - generic [ref=e10]:
+    - button "Toggle Nuxt DevTools" [ref=e11] [cursor=pointer]:
+      - img [ref=e12]
+    - generic "Page load time" [ref=e15]:
+      - generic [ref=e16]: "40"
+      - generic [ref=e17]: ms
+    - button "Toggle Component Inspector" [ref=e19] [cursor=pointer]:
+      - img [ref=e20]

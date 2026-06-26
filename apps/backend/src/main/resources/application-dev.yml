@@ -1,0 +1,7 @@
+payment-quality:
+  keycloak:
+    admin:
+      base-url: ${KEYCLOAK_ADMIN_BASE_URL:http://localhost:8081}
+      realm: ${KEYCLOAK_ADMIN_REALM:payment-quality}
+      client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:payment-quality-admin}
+      client-secret: ${PAYMENT_QUALITY_KEYCLOAK_ADMIN_CLIENT_SECRET:dev-admin-client-secret}

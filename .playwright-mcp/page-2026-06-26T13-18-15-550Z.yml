@@ -1,0 +1,124 @@
+- generic:
+  - generic [ref=e1]:
+    - generic [ref=e2]:
+      - button "Payment Quality" [ref=e4]:
+        - generic [ref=e7]: Payment Quality
+      - generic [ref=e9]:
+        - button "Search... Ctrl k" [ref=e10]:
+          - generic [ref=e12]: Search...
+          - generic [ref=e13]:
+            - generic [ref=e14]: Ctrl
+            - generic [ref=e15]: k
+        - navigation [ref=e16]:
+          - list [ref=e17]:
+            - listitem [ref=e18]:
+              - link "Overview" [ref=e19] [cursor=pointer]:
+                - /url: /
+                - generic [ref=e21]: Overview
+            - listitem [ref=e22]:
+              - link "Merchants" [ref=e23] [cursor=pointer]:
+                - /url: /admin/merchants
+                - generic [ref=e25]: Merchants
+            - listitem [ref=e26]:
+              - link "Payment Orders" [ref=e27] [cursor=pointer]:
+                - /url: /admin/merchants
+                - generic [ref=e29]: Payment Orders
+            - listitem [ref=e30]:
+              - link "Users" [ref=e31] [cursor=pointer]:
+                - /url: /admin/users
+                - generic [ref=e33]: Users
+            - listitem [ref=e34]:
+              - link "Audit Log" [ref=e35] [cursor=pointer]:
+                - /url: /admin/audit
+                - generic [ref=e37]: Audit Log
+            - listitem [ref=e38]:
+              - link "Error Lab" [active] [ref=e39] [cursor=pointer]:
+                - /url: /error-lab
+                - generic [ref=e41]: Error Lab
+      - button "platform.operator" [ref=e43]:
+        - generic [ref=e46]: platform.operator
+    - separator
+    - generic [ref=e218]:
+      - generic [ref=e220]:
+        - button "Collapse sidebar" [ref=e221]
+        - heading "Error Lab" [level=1] [ref=e223]
+      - generic [ref=e225]:
+        - generic [ref=e228]:
+          - generic [ref=e229]: Learning surface
+          - generic [ref=e230]: Each button below crafts a request designed to produce the listed HTTP status code. Request and response details are shown immediately after the call completes.
+        - generic [ref=e231]:
+          - generic [ref=e232]:
+            - generic [ref=e235]:
+              - generic [ref=e236]: 400 Client Error
+              - generic [ref=e237]: Bad Request
+            - generic [ref=e239]:
+              - paragraph [ref=e240]: POST a payment order with an invalid body (negative amountMinor). The backend validation layer rejects it and returns 400 with a problem+json body.
+              - button "Trigger 400" [ref=e241]: Trigger 400
+          - generic [ref=e243]:
+            - generic [ref=e246]:
+              - generic [ref=e247]: 401 Client Error
+              - generic [ref=e248]: Unauthorized
+            - generic [ref=e250]:
+              - paragraph [ref=e251]: Call a protected endpoint without a valid bearer token. The backend returns 401 because no Authorization header is sent.
+              - button "Trigger 401" [ref=e252]: Trigger 401
+          - generic [ref=e254]:
+            - generic [ref=e257]:
+              - generic [ref=e258]: 403 Client Error
+              - generic [ref=e259]: Forbidden
+            - generic [ref=e261]:
+              - paragraph [ref=e262]: Submit a request with an invalid/insufficient token. The backend returns 403 — the token is present but lacks the required authority.
+              - button "Trigger 403" [ref=e263]: Trigger 403
+          - generic [ref=e265]:
+            - generic [ref=e268]:
+              - generic [ref=e269]: 404 Client Error
+              - generic [ref=e270]: Not Found
+            - generic [ref=e272]:
+              - paragraph [ref=e273]: Request a merchant UUID that does not exist. The backend returns 404 with a problem+json body.
+              - button "Trigger 404" [ref=e274]: Trigger 404
+          - generic [ref=e276]:
+            - generic [ref=e279]:
+              - generic [ref=e280]: 406 Client Error
+              - generic [ref=e281]: Not Acceptable
+            - generic [ref=e283]:
+              - paragraph [ref=e284]: "Send Accept: application/xml. The backend only produces application/json, so it returns 406."
+              - button "Trigger 406" [ref=e285]: Trigger 406
+          - generic [ref=e287]:
+            - generic [ref=e290]:
+              - generic [ref=e291]: 409 Client Error
+              - generic [ref=e292]: Conflict (Idempotency)
+            - generic [ref=e294]:
+              - paragraph [ref=e295]: Repeat the same Idempotency-Key with a different payload. The backend detects the key/payload mismatch and returns 409 idempotency_conflict.
+              - button "Trigger 409" [ref=e296]: Trigger 409
+          - generic [ref=e298]:
+            - generic [ref=e301]:
+              - generic [ref=e302]: 412 Client Error
+              - generic [ref=e303]: Precondition Failed (Stale ETag)
+            - generic [ref=e305]:
+              - paragraph [ref=e306]: Send a lifecycle action with a stale If-Match value. Creates a real order first, then authorizes it with the wrong ETag → 412.
+              - button "Trigger 412" [ref=e307]: Trigger 412
+          - generic [ref=e309]:
+            - generic [ref=e312]:
+              - generic [ref=e313]: 415 Client Error
+              - generic [ref=e314]: Unsupported Media Type
+            - generic [ref=e316]:
+              - paragraph [ref=e317]: "POST with Content-Type: text/plain instead of application/json. The backend rejects the content type and returns 415."
+              - button "Trigger 415" [ref=e318]: Trigger 415
+          - generic [ref=e320]:
+            - generic [ref=e323]:
+              - generic [ref=e324]: 428 Client Error
+              - generic [ref=e325]: Precondition Required (Missing If-Match)
+            - generic [ref=e327]:
+              - paragraph [ref=e328]: Send an authorize action without the required If-Match header. Creates a real order first, then authorizes it without If-Match → 428.
+              - button "Trigger 428" [ref=e329]: Trigger 428
+  - generic:
+    - img
+  - generic [ref=e85]:
+    - button "Toggle Nuxt DevTools" [ref=e86] [cursor=pointer]:
+      - img [ref=e87]
+    - generic "Page load time" [ref=e90]:
+      - generic [ref=e91]: "48"
+      - generic [ref=e92]: ms
+    - button "Toggle Component Inspector" [ref=e94] [cursor=pointer]:
+      - img [ref=e95]
+  - region "Notifications (F8)":
+    - list

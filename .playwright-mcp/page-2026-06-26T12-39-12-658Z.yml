@@ -1,0 +1,88 @@
+- generic:
+  - generic [ref=e1]:
+    - generic [ref=e2]:
+      - button "Payment Quality" [ref=e4]:
+        - generic [ref=e7]: Payment Quality
+      - generic [ref=e9]:
+        - button "Search... Ctrl k" [ref=e10]:
+          - generic [ref=e12]: Search...
+          - generic [ref=e13]:
+            - generic [ref=e14]: Ctrl
+            - generic [ref=e15]: k
+        - navigation [ref=e16]:
+          - list [ref=e17]:
+            - listitem [ref=e18]:
+              - link "Overview" [ref=e19] [cursor=pointer]:
+                - /url: /
+                - generic [ref=e21]: Overview
+            - listitem [ref=e22]:
+              - link "Merchants" [ref=e23] [cursor=pointer]:
+                - /url: /admin/merchants
+                - generic [ref=e25]: Merchants
+            - listitem [ref=e26]:
+              - link "Payment Orders" [ref=e27] [cursor=pointer]:
+                - /url: /admin/merchants
+                - generic [ref=e29]: Payment Orders
+            - listitem [ref=e30]:
+              - link "Users" [ref=e31] [cursor=pointer]:
+                - /url: /admin/users
+                - generic [ref=e33]: Users
+            - listitem [ref=e34]:
+              - link "Audit Log" [ref=e35] [cursor=pointer]:
+                - /url: /admin/audit
+                - generic [ref=e37]: Audit Log
+            - listitem [ref=e38]:
+              - link "Error Lab" [ref=e39] [cursor=pointer]:
+                - /url: /error-lab
+                - generic [ref=e41]: Error Lab
+      - button "platform.operator" [ref=e43]:
+        - generic [ref=e46]: platform.operator
+    - separator
+    - generic [ref=e48]:
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - button "Collapse sidebar" [ref=e51]
+          - heading "Audit log" [level=1] [ref=e53]
+        - button "Refresh audit log" [ref=e55]
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - heading "Audit log" [active] [level=1] [ref=e60]
+          - paragraph [ref=e61]: Tenant-scoped, read-only visibility into important platform actions.
+        - generic [ref=e62]:
+          - generic [ref=e65]:
+            - heading "Filters" [level=2] [ref=e66]
+            - paragraph [ref=e67]: Narrow the read-only audit view.
+          - generic [ref=e69]:
+            - generic [ref=e70]:
+              - generic [ref=e73]: Actor
+              - textbox "Actor" [ref=e76]:
+                - /placeholder: Actor display name
+            - generic [ref=e77]:
+              - generic [ref=e80]: Action
+              - combobox "Action" [ref=e82]:
+                - generic: All actions
+            - generic [ref=e85]:
+              - generic [ref=e88]: Target type
+              - combobox "Target type" [ref=e90]:
+                - generic: All target types
+            - generic [ref=e93]:
+              - generic [ref=e96]: From date
+              - textbox "From date" [ref=e99]
+            - generic [ref=e100]:
+              - generic [ref=e103]: To date
+              - textbox "To date" [ref=e106]
+          - button "Apply filters" [ref=e109]:
+            - generic [ref=e111]: Apply filters
+        - paragraph [ref=e118]: No audit events are available in your current scope.
+  - generic:
+    - img
+  - generic [ref=e119]:
+    - button "Toggle Nuxt DevTools" [ref=e120] [cursor=pointer]:
+      - img [ref=e121]
+    - generic "Page load time" [ref=e124]:
+      - generic [ref=e125]: "142"
+      - generic [ref=e126]: ms
+    - button "Toggle Component Inspector" [ref=e128] [cursor=pointer]:
+      - img [ref=e129]
+  - region "Notifications (F8)":
+    - list
