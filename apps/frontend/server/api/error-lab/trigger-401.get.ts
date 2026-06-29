@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
       method: 'GET',
       headers,
     })
-    for (const name of ['ETag', 'Cache-Control', 'Vary', 'X-Correlation-ID', 'Content-Type']) {
+    for (const name of ['ETag', 'Cache-Control', 'Vary', 'X-Correlation-ID', 'Content-Type', 'WWW-Authenticate']) {
       const val = response.headers.get(name)
       if (val) setHeader(event, name, val)
     }
@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
     const statusCode: number = error?.response?.status ?? error?.statusCode ?? 503
     const errorData = error?.response?._data ?? error?.data
     if (error?.response?.headers) {
-      for (const name of ['ETag', 'Cache-Control', 'Vary', 'X-Correlation-ID', 'Content-Type']) {
+      for (const name of ['ETag', 'Cache-Control', 'Vary', 'X-Correlation-ID', 'Content-Type', 'WWW-Authenticate']) {
         const val = error.response.headers.get(name)
         if (val) setHeader(event, name, val)
       }

@@ -5,6 +5,8 @@ import lab.paymentquality.audit.internal.domain.AuditEvent;
 import lab.paymentquality.audit.internal.domain.exception.AuditEventNotFoundException;
 import lab.paymentquality.audit.internal.infrastructure.JpaAuditEventRepository;
 import lab.paymentquality.audit.internal.web.dto.AuditEventDetail;
+import lab.paymentquality.audit.internal.web.dto.AuditExportEvent;
+import lab.paymentquality.audit.internal.web.dto.AuditExportResponse;
 import lab.paymentquality.audit.internal.web.dto.AuditEventSummary;
 import lab.paymentquality.audit.internal.web.dto.AuditListResponse;
 import lab.paymentquality.audit.internal.web.dto.AuditQuery;
@@ -32,9 +34,7 @@ public class AuditEventService {
     }
 
     public AuditListResponse list(AuditQuery query, TenantContext tenantContext) {
-        Sort sort = Sort.by(Sort.Direction.DESC, "occurredAt");
-        PageRequest pageRequest = PageRequest.of(query.page(), query.size(), sort);
-        Page<AuditEvent> result = repository.findAll(specification(query, tenantContext), pageRequest);
+        Page<AuditEvent> result = findPage(query, tenantContext);
         List<AuditEventSummary> content = result.getContent().stream()
                 .map(AuditEventSummary::from)
                 .toList();
@@ -44,6 +44,25 @@ public class AuditEventService {
                 result.getSize(),
                 result.getTotalElements(),
                 result.getTotalPages());
+    }
+
+    public AuditExportResponse export(AuditQuery query, TenantContext tenantContext) {
+        Page<AuditEvent> result = findPage(query, tenantContext);
+        List<AuditExportEvent> content = result.getContent().stream()
+                .map(AuditExportEvent::from)
+                .toList();
+        return new AuditExportResponse(
+                content,
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages());
+    }
+
+    private Page<AuditEvent> findPage(AuditQuery query, TenantContext tenantContext) {
+        Sort sort = Sort.by(Sort.Direction.DESC, "occurredAt");
+        PageRequest pageRequest = PageRequest.of(query.page(), query.size(), sort);
+        return repository.findAll(specification(query, tenantContext), pageRequest);
     }
 
     public AuditEventDetail get(String id, TenantContext tenantContext) {

@@ -6,6 +6,17 @@
           <UDashboardSidebarCollapse />
         </template>
         <template #right>
+          <UTooltip v-if="canViewAuditLog && !forbiddenByApi" text="Export audit log">
+            <UButton
+              data-testid="export-audit-log"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-download"
+              label="Export audit log"
+              aria-label="Export audit log"
+              @click="handleExportAuditLog"
+            />
+          </UTooltip>
           <UTooltip v-if="canViewAuditLog && !forbiddenByApi" text="Refresh audit log">
             <UButton
               color="neutral"
@@ -263,6 +274,22 @@ async function openEntry(entry: AuditEvent) {
 async function closeEntry() {
   const { entry: _entry, ...query } = route.query
   await router.replace({ query })
+}
+
+function handleExportAuditLog() {
+  const params = new URLSearchParams()
+
+  for (const key of ['actor', 'action', 'targetType', 'from', 'to', 'page', 'size']) {
+    const value = route.query[key]
+    if (typeof value === 'string' && value) {
+      params.set(key, value)
+    }
+  }
+
+  const suffix = params.size > 0 ? `?${params.toString()}` : ''
+  const link = document.createElement('a')
+  link.href = `/api/audit/export.json${suffix}`
+  link.click()
 }
 
 function handleDrawerOpen(open: boolean) {

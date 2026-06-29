@@ -42,6 +42,7 @@ export interface Merchant {
   status: 'PENDING' | 'ACTIVE' | 'SUSPENDED'
   createdAt: string
   updatedAt: string
+  riskFlagged: boolean
 }
 
 withDefaults(defineProps<{
@@ -76,7 +77,16 @@ const columns: TableColumn<Merchant>[] = [
   },
   {
     accessorKey: 'displayName',
-    header: 'Display Name'
+    header: 'Display Name',
+    cell: ({ row }) => {
+      return h(UButton, {
+        variant: 'link',
+        color: 'primary',
+        size: 'sm',
+        label: row.original.displayName,
+        to: `/admin/merchants/${row.original.merchantId}`,
+      })
+    }
   },
   {
     accessorKey: 'status',
@@ -87,6 +97,19 @@ const columns: TableColumn<Merchant>[] = [
         variant: 'subtle',
         color: statusColor(row.original.status)
       }, () => row.original.status)
+    }
+  },
+  {
+    id: 'riskFlagged',
+    header: 'Risk',
+    cell: ({ row }) => {
+      if (!row.original.riskFlagged) return null
+      return h(UBadge, {
+        'data-testid': 'merchant-risk-badge',
+        variant: 'subtle',
+        color: 'error',
+        icon: 'i-lucide-flag',
+      }, () => 'Risk flagged')
     }
   },
   {

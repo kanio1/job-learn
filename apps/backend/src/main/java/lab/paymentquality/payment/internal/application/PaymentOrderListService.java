@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -51,6 +52,12 @@ public class PaymentOrderListService {
                 request.clientOrderReference()));
 
         return paymentOrderRepository.findAll(spec, PageRequest.of(page, size, sort));
+    }
+
+    public List<PaymentOrder> findAllForExport(UUID merchantId) {
+        Specification<PaymentOrder> spec = PaymentOrderSpecification.hasMerchantId(merchantId);
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        return paymentOrderRepository.findAll(spec, sort);
     }
 
     private LocalDate parseDateSafely(String dateStr) {

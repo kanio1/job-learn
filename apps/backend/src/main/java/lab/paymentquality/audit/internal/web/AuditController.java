@@ -2,6 +2,7 @@ package lab.paymentquality.audit.internal.web;
 
 import lab.paymentquality.audit.internal.application.AuditEventService;
 import lab.paymentquality.audit.internal.web.dto.AuditEventDetail;
+import lab.paymentquality.audit.internal.web.dto.AuditExportResponse;
 import lab.paymentquality.audit.internal.web.dto.AuditListResponse;
 import lab.paymentquality.audit.internal.web.dto.AuditQuery;
 import lab.paymentquality.shared.security.Authorities;
@@ -47,6 +48,28 @@ public class AuditController {
         return ResponseEntity.ok()
                 .varyBy("Authorization")
                 .body(service.list(query, tenantContext));
+    }
+
+    @GetMapping(value = "/export.json", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyAuthority('" + Authorities.PLATFORM_AUDIT_READ
+            + "','" + Authorities.TENANT_AUDIT_READ + "')")
+    public ResponseEntity<AuditExportResponse> exportJson(
+            @RequestParam(required = false) String actor,
+            @RequestParam(required = false) String action,
+            @RequestParam(name = "target_type", required = false) String targetType,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size,
+            @AuthenticationPrincipal Jwt jwt) {
+        TenantContext tenantContext = tenantResolver.resolve(jwt);
+        AuditQuery query = AuditQuery.of(actor, action, targetType, from, to, page, size);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Content-Disposition", "attachment; filename=\"audit-events.json\"")
+                .header("Cache-Control", "no-store")
+                .varyBy("Authorization")
+                .body(service.export(query, tenantContext));
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)

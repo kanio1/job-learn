@@ -3,22 +3,30 @@ package lab.paymentquality.payment.internal.web;
 import jakarta.validation.Valid;
 import lab.paymentquality.payment.internal.application.PaymentActorContext;
 import lab.paymentquality.payment.internal.application.PaymentCreateResult;
+import lab.paymentquality.payment.internal.application.PaymentEvidenceService;
 import lab.paymentquality.payment.internal.application.PaymentOrderListService;
+import lab.paymentquality.payment.internal.application.PaymentOrderNoteService;
 import lab.paymentquality.payment.internal.application.PaymentOrderSummaryService;
 import lab.paymentquality.payment.internal.application.PaymentOrderService;
 import lab.paymentquality.payment.internal.application.PaymentLifecycleService;
 import lab.paymentquality.payment.internal.domain.*;
+import lab.paymentquality.shared.security.Authorities;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,15 +38,21 @@ public class PaymentOrderController {
     private final PaymentOrderListService paymentOrderListService;
     private final PaymentOrderSummaryService paymentOrderSummaryService;
     private final PaymentLifecycleService paymentLifecycleService;
+    private final PaymentEvidenceService paymentEvidenceService;
+    private final PaymentOrderNoteService paymentOrderNoteService;
 
     public PaymentOrderController(PaymentOrderService paymentOrderService,
                                    PaymentOrderListService paymentOrderListService,
                                    PaymentOrderSummaryService paymentOrderSummaryService,
-                                   PaymentLifecycleService paymentLifecycleService) {
+                                   PaymentLifecycleService paymentLifecycleService,
+                                   PaymentEvidenceService paymentEvidenceService,
+                                   PaymentOrderNoteService paymentOrderNoteService) {
         this.paymentOrderService = paymentOrderService;
         this.paymentOrderListService = paymentOrderListService;
         this.paymentOrderSummaryService = paymentOrderSummaryService;
         this.paymentLifecycleService = paymentLifecycleService;
+        this.paymentEvidenceService = paymentEvidenceService;
+        this.paymentOrderNoteService = paymentOrderNoteService;
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -72,12 +86,14 @@ public class PaymentOrderController {
             return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.created(location),
                             PaymentHttpHeaders.VARY_AUTHORIZATION_IDEMPOTENCY_KEY)
                     .header("ETag", etag)
+                    .header("Idempotency-Replayed", "false")
                     .body(response);
         }
 
         return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
                         PaymentHttpHeaders.VARY_AUTHORIZATION_IDEMPOTENCY_KEY)
                 .header("ETag", etag)
+                .header("Idempotency-Replayed", "true")
                 .body(response);
     }
 
@@ -85,6 +101,7 @@ public class PaymentOrderController {
     public ResponseEntity<PaymentOrderResponse> getPaymentOrder(
             @PathVariable UUID merchantId,
             @PathVariable UUID paymentOrderId,
+            @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch,
             Authentication authentication,
             @AuthenticationPrincipal Jwt jwt) {
 
@@ -102,12 +119,24 @@ public class PaymentOrderController {
             order = paymentOrderService.findForMerchant(merchantId, paymentOrderId);
         }
 
-        PaymentOrderResponse response = PaymentOrderMapper.toResponse(order);
         String etag = PaymentEtag.from(order);
+
+        if (etag.equals(ifNoneMatch)) {
+            return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
+                    .header("ETag", etag)
+                    .header(PaymentHttpHeaders.X_CORRELATION_ID, PaymentHttpHeaders.correlationId())
+                    .header("Cache-Control", "no-store")
+                    .header("Vary", PaymentHttpHeaders.VARY_AUTHORIZATION)
+                    .build();
+        }
+
+        PaymentOrderResponse response = PaymentOrderMapper.toResponse(order);
+        String lastModified = DateTimeFormatter.RFC_1123_DATE_TIME.format(order.getUpdatedAt().atOffset(ZoneOffset.UTC));
 
         return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
                         PaymentHttpHeaders.VARY_AUTHORIZATION)
                 .header("ETag", etag)
+                .header("Last-Modified", lastModified)
                 .body(response);
     }
 
@@ -115,14 +144,28 @@ public class PaymentOrderController {
     public ResponseEntity<Void> headPaymentOrder(
             @PathVariable UUID merchantId,
             @PathVariable UUID paymentOrderId,
+            @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch,
             Authentication authentication,
             @AuthenticationPrincipal Jwt jwt) {
 
         PaymentOrder order = findReadablePaymentOrder(merchantId, paymentOrderId, authentication, jwt);
+        String etag = PaymentEtag.from(order);
+        String lastModified = DateTimeFormatter.RFC_1123_DATE_TIME.format(order.getUpdatedAt().atOffset(ZoneOffset.UTC));
+
+        if (etag.equals(ifNoneMatch)) {
+            return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
+                    .header("ETag", etag)
+                    .header(PaymentHttpHeaders.X_CORRELATION_ID, PaymentHttpHeaders.correlationId())
+                    .header("Cache-Control", "no-store")
+                    .header("Vary", PaymentHttpHeaders.VARY_AUTHORIZATION)
+                    .header("Last-Modified", lastModified)
+                    .build();
+        }
 
         return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
                         PaymentHttpHeaders.VARY_AUTHORIZATION)
-                .header("ETag", PaymentEtag.from(order))
+                .header("ETag", etag)
+                .header("Last-Modified", lastModified)
                 .build();
     }
 
@@ -142,6 +185,16 @@ public class PaymentOrderController {
             @PathVariable String action) {
         return ResponseEntity.noContent()
                 .allow(HttpMethod.POST, HttpMethod.OPTIONS)
+                .header(PaymentHttpHeaders.X_CORRELATION_ID, PaymentHttpHeaders.correlationId())
+                .build();
+    }
+
+    @RequestMapping(value = "/{paymentOrderId}/evidence", method = RequestMethod.OPTIONS)
+    public ResponseEntity<Void> optionsEvidence(
+            @PathVariable UUID merchantId,
+            @PathVariable UUID paymentOrderId) {
+        return ResponseEntity.noContent()
+                .allow(HttpMethod.GET, HttpMethod.POST, HttpMethod.OPTIONS)
                 .header(PaymentHttpHeaders.X_CORRELATION_ID, PaymentHttpHeaders.correlationId())
                 .build();
     }
@@ -184,6 +237,33 @@ public class PaymentOrderController {
         return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
                         PaymentHttpHeaders.VARY_AUTHORIZATION)
                 .body(response);
+    }
+
+    @GetMapping(value = "/export", produces = "text/csv;charset=utf-8")
+    public ResponseEntity<String> exportPaymentOrdersCsv(
+            @PathVariable UUID merchantId,
+            Authentication authentication,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        boolean isPlatformReader = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("platform:payments:read"));
+
+        if (!isPlatformReader) {
+            String jwtMerchantId = jwt.getClaimAsString("merchant_id");
+            if (jwtMerchantId == null || !merchantId.toString().equals(jwtMerchantId)) {
+                throw new AccessDeniedException("Merchant scope mismatch");
+            }
+        }
+
+        List<PaymentOrder> orders = paymentOrderListService.findAllForExport(merchantId);
+        String csv = PaymentOrderCsvExporter.toCsv(orders);
+
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"payment-orders-" + merchantId + ".csv\"")
+                .header("Cache-Control", "no-store")
+                .header("Vary", PaymentHttpHeaders.VARY_AUTHORIZATION)
+                .header(PaymentHttpHeaders.X_CORRELATION_ID, PaymentHttpHeaders.correlationId())
+                .body(csv);
     }
 
     @GetMapping(value = "/summary", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -395,6 +475,77 @@ public class PaymentOrderController {
         return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
                         PaymentHttpHeaders.VARY_AUTHORIZATION)
                 .body(response);
+    }
+
+    @PostMapping(value = "/{paymentOrderId}/evidence",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PaymentEvidenceResponse> uploadEvidence(
+            @PathVariable UUID merchantId,
+            @PathVariable UUID paymentOrderId,
+            @RequestPart("file") MultipartFile file,
+            Authentication authentication,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        verifyMerchantOwnership(merchantId, jwt, authentication);
+        PaymentOrderEvidence evidence = paymentEvidenceService.uploadForOrder(merchantId, paymentOrderId, file);
+        PaymentEvidenceResponse response = PaymentEvidenceMapper.toResponse(evidence);
+        URI location = URI.create("/api/merchants/" + merchantId + "/payment-orders/"
+                + paymentOrderId + "/evidence/" + evidence.getEvidenceId());
+
+        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.created(location),
+                        PaymentHttpHeaders.VARY_AUTHORIZATION)
+                .body(response);
+    }
+
+    @GetMapping(value = "/{paymentOrderId}/evidence", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PaymentEvidenceResponse.ListResponse> listEvidence(
+            @PathVariable UUID merchantId,
+            @PathVariable UUID paymentOrderId,
+            Authentication authentication,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        findReadablePaymentOrder(merchantId, paymentOrderId, authentication, jwt);
+        List<PaymentEvidenceResponse> content = paymentEvidenceService.listForOrder(merchantId, paymentOrderId)
+                .stream()
+                .map(PaymentEvidenceMapper::toResponse)
+                .toList();
+
+        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+                        PaymentHttpHeaders.VARY_AUTHORIZATION)
+                .body(new PaymentEvidenceResponse.ListResponse(content));
+    }
+
+    @GetMapping(value = "/{paymentOrderId}/notes", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAuthority('" + Authorities.PLATFORM_PAYMENT_NOTES_READ + "')")
+    public ResponseEntity<List<PaymentOrderNoteDto>> listNotes(
+            @PathVariable UUID merchantId,
+            @PathVariable UUID paymentOrderId) {
+
+        List<PaymentOrderNoteDto> notes = paymentOrderNoteService.listNotes(merchantId, paymentOrderId);
+        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+                        PaymentHttpHeaders.VARY_AUTHORIZATION)
+                .body(notes);
+    }
+
+    @PostMapping(value = "/{paymentOrderId}/notes", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAuthority('" + Authorities.PLATFORM_PAYMENT_NOTES_CREATE + "')")
+    public ResponseEntity<PaymentOrderNoteDto> addNote(
+            @PathVariable UUID merchantId,
+            @PathVariable UUID paymentOrderId,
+            @Valid @RequestBody CreateNoteRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        String authorDisplay = jwt.getSubject();
+        PaymentOrderNoteDto note = paymentOrderNoteService.addNote(
+                merchantId, paymentOrderId, request.body(), authorDisplay);
+
+        URI location = URI.create("/api/merchants/" + merchantId
+                + "/payment-orders/" + paymentOrderId + "/notes/" + note.id());
+        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.created(location),
+                        PaymentHttpHeaders.VARY_AUTHORIZATION)
+                .body(note);
     }
 
 }

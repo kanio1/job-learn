@@ -9,6 +9,15 @@
         <template #right>
           <UButton color="neutral" variant="ghost" :to="'/admin/merchants'" label="Merchants" />
           <UButton
+            data-testid="export-payment-orders-csv"
+            icon="i-lucide-download"
+            color="neutral"
+            variant="ghost"
+            square
+            aria-label="Export payment orders CSV"
+            @click="handleExportCsv"
+          />
+          <UButton
             icon="i-lucide-refresh-cw"
             color="neutral"
             variant="ghost"
@@ -75,12 +84,14 @@
 <script setup lang="ts">
 import type { ProblemDetails } from '~/types/api'
 import type { PaymentOrderListResponse, PaymentOrderSummaryResponse, PaymentOrderListQuery } from '~/schemas/payment-order.schema'
+import { paymentOrderListQuerySchema } from '~/schemas/payment-order.schema'
 
 definePageMeta({
   layout: 'dashboard',
 })
 
 const route = useRoute()
+const router = useRouter()
 const merchantId = route.params.merchantId as string
 const { listOrders, getOrderSummary } = usePaymentOrdersApi()
 
@@ -105,9 +116,7 @@ const listProblem = ref<ProblemDetails | null>(null)
 // Query state (filter + pagination) — defaults: page=0, size=20
 // ---------------------------------------------------------------------------
 const currentQuery = ref<PaymentOrderListQuery>({
-  page: 0,
-  size: 20,
-  sort: 'createdAt,desc',
+  ...paymentQueryFromRoute(),
 })
 
 // ---------------------------------------------------------------------------
@@ -176,7 +185,86 @@ async function reload() {
 // ---------------------------------------------------------------------------
 function onQueryChange(query: PaymentOrderListQuery) {
   currentQuery.value = query
+  void syncQueryToUrl(query)
   reloadList()
+}
+
+function paymentQueryFromRoute(): PaymentOrderListQuery {
+  const rawQuery = {
+    status: singleQueryValue(route.query.status),
+    currency: singleQueryValue(route.query.currency),
+    fromDate: singleQueryValue(route.query.fromDate),
+    toDate: singleQueryValue(route.query.toDate),
+    minAmount: numberQueryValue(route.query.minAmount),
+    maxAmount: numberQueryValue(route.query.maxAmount),
+    clientOrderReference: singleQueryValue(route.query.clientOrderReference),
+    page: numberQueryValue(route.query.page) ?? 0,
+    size: numberQueryValue(route.query.size) ?? 20,
+    sort: singleQueryValue(route.query.sort) ?? 'createdAt,desc',
+  }
+
+  const parsed = paymentOrderListQuerySchema.safeParse(rawQuery)
+
+  if (parsed.success) {
+    return parsed.data
+  }
+
+  return {
+    page: 0,
+    size: 20,
+    sort: 'createdAt,desc',
+  }
+}
+
+function singleQueryValue(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0] ? String(value[0]) : undefined
+  }
+
+  if (value === null || value === undefined || value === '') {
+    return undefined
+  }
+
+  return String(value)
+}
+
+function numberQueryValue(value: unknown): number | undefined {
+  const raw = singleQueryValue(value)
+
+  if (!raw) {
+    return undefined
+  }
+
+  const parsed = Number(raw)
+  return Number.isInteger(parsed) ? parsed : undefined
+}
+
+async function syncQueryToUrl(query: PaymentOrderListQuery) {
+  const nextQuery: Record<string, string> = {}
+
+  if (query.status) nextQuery.status = query.status
+  if (query.currency) nextQuery.currency = query.currency
+  if (query.fromDate) nextQuery.fromDate = query.fromDate
+  if (query.toDate) nextQuery.toDate = query.toDate
+  if (query.minAmount !== undefined) nextQuery.minAmount = String(query.minAmount)
+  if (query.maxAmount !== undefined) nextQuery.maxAmount = String(query.maxAmount)
+  if (query.clientOrderReference) nextQuery.clientOrderReference = query.clientOrderReference
+  if (query.page && query.page > 0) nextQuery.page = String(query.page)
+  if (query.size && query.size !== 20) nextQuery.size = String(query.size)
+  if (query.sort && query.sort !== 'createdAt,desc') nextQuery.sort = query.sort
+
+  await router.replace({ query: nextQuery })
+}
+
+// ---------------------------------------------------------------------------
+// CSV export — triggers a browser download via programmatic anchor click.
+// Content-Disposition: attachment on the BFF response makes the browser save
+// the response as a file rather than navigating.
+// ---------------------------------------------------------------------------
+function handleExportCsv() {
+  const link = document.createElement('a')
+  link.href = `/api/merchants/${merchantId}/payment-orders/export`
+  link.click()
 }
 
 // ---------------------------------------------------------------------------

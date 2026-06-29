@@ -88,7 +88,7 @@ const emit = defineEmits<{
 }>()
 
 const { createOrder } = usePaymentOrdersApi()
-const toast = useToast()
+const { success: toastSuccess } = useAppToast()
 const { can } = useAuthorization()
 
 const submitting = ref(false)
@@ -212,10 +212,7 @@ async function onSubmit() {
     idempotencyKey.value = crypto.randomUUID()
     failedSubmitSnapshot.value = null
 
-    toast.add({
-      title: `Payment order ${response.data.paymentOrderId} created successfully`,
-      color: 'success',
-    })
+    toastSuccess(`Payment order ${response.data.paymentOrderId} created successfully`)
 
     emit('created', response.data.paymentOrderId)
   } catch {

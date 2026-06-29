@@ -21,7 +21,7 @@
       <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
         <UCard
           v-for="scenario in scenarios"
-          :key="scenario.status"
+          :key="scenario.key"
           class="flex flex-col"
         >
           <template #header>
@@ -39,7 +39,7 @@
             <p class="text-sm text-gray-600 dark:text-gray-400">{{ scenario.description }}</p>
 
             <UButton
-              :data-testid="`error-lab-trigger-${scenario.status}`"
+              :data-testid="`error-lab-trigger-${scenario.key}`"
               color="error"
               variant="outline"
               icon="i-lucide-zap"
@@ -139,6 +139,8 @@ function makeScenarioState() {
 type ScenarioState = ReturnType<typeof makeScenarioState>
 
 interface ScenarioConfig {
+  /** Unique key for data-testid and v-for */
+  key: string
   status: number
   title: string
   description: string
@@ -157,6 +159,7 @@ interface ScenarioConfig {
 
 const scenarios: ScenarioConfig[] = [
   {
+    key: '400',
     status: 400,
     title: 'Bad Request',
     description:
@@ -175,10 +178,11 @@ const scenarios: ScenarioConfig[] = [
     state: makeScenarioState(),
   },
   {
+    key: '401',
     status: 401,
     title: 'Unauthorized',
     description:
-      'Call a protected endpoint without a valid bearer token. The backend returns 401 because no Authorization header is sent.',
+      'Call a protected endpoint without a valid bearer token. The backend returns 401 because no Authorization header is sent. Inspect the WWW-Authenticate response header — it tells the client which authentication scheme is expected.',
     proxyPath: '/api/error-lab/trigger-401',
     proxyMethod: 'GET',
     requestLabel: {
@@ -189,6 +193,7 @@ const scenarios: ScenarioConfig[] = [
     state: makeScenarioState(),
   },
   {
+    key: '403',
     status: 403,
     title: 'Forbidden',
     description:
@@ -206,6 +211,7 @@ const scenarios: ScenarioConfig[] = [
     state: makeScenarioState(),
   },
   {
+    key: '404',
     status: 404,
     title: 'Not Found',
     description:
@@ -222,6 +228,7 @@ const scenarios: ScenarioConfig[] = [
     state: makeScenarioState(),
   },
   {
+    key: '406',
     status: 406,
     title: 'Not Acceptable',
     description:
@@ -239,6 +246,7 @@ const scenarios: ScenarioConfig[] = [
     state: makeScenarioState(),
   },
   {
+    key: '409',
     status: 409,
     title: 'Conflict (Idempotency)',
     description:
@@ -257,6 +265,7 @@ const scenarios: ScenarioConfig[] = [
     state: makeScenarioState(),
   },
   {
+    key: '412',
     status: 412,
     title: 'Precondition Failed (Stale ETag)',
     description:
@@ -276,6 +285,7 @@ const scenarios: ScenarioConfig[] = [
     state: makeScenarioState(),
   },
   {
+    key: '415',
     status: 415,
     title: 'Unsupported Media Type',
     description:
@@ -293,10 +303,11 @@ const scenarios: ScenarioConfig[] = [
     state: makeScenarioState(),
   },
   {
+    key: '428',
     status: 428,
     title: 'Precondition Required (Missing If-Match)',
     description:
-      'Send an authorize action without the required If-Match header. Creates a real order first, then authorizes it without If-Match → 428.',
+      'Send an authorize action without the required If-Match header. Creates a real order first, then authorizes it without If-Match → 428. The requiredHeader field in the Problem Details body names the missing header exactly.',
     proxyPath: '/api/error-lab/trigger-428',
     proxyMethod: 'POST',
     requestLabel: {
@@ -308,6 +319,48 @@ const scenarios: ScenarioConfig[] = [
         'Idempotency-Key': '(generated)',
         // No If-Match — intentional
       },
+    },
+    state: makeScenarioState(),
+  },
+  {
+    key: '429',
+    status: 429,
+    title: 'Too Many Requests',
+    description: 'Simulates rate limiting. Returns 429 with a Retry-After: 30 header and a Problem Details body with retryable: true and retryAfterSeconds: 30. A well-behaved client should wait the indicated delay before retrying — not retry immediately.',
+    proxyPath: '/api/error-lab/trigger-429',
+    proxyMethod: 'POST',
+    requestLabel: {
+      method: 'POST',
+      path: '/api/merchants/{id}/payment-orders (rate limited)',
+      headers: { Authorization: 'Bearer ••••••••' },
+    },
+    state: makeScenarioState(),
+  },
+  {
+    key: '304',
+    status: 304,
+    title: 'Not Modified (Conditional GET)',
+    description: 'Two-step flow: GET payment order → capture ETag, then GET with If-None-Match: ETag → 304. 304 is not an error — it means "the resource has not changed since your last request; use your cached copy." No body is returned.',
+    proxyPath: '/api/error-lab/trigger-304',
+    proxyMethod: 'GET',
+    requestLabel: {
+      method: 'GET',
+      path: '/api/merchants/{id}/payment-orders/{orderId}',
+      headers: { Authorization: 'Bearer ••••••••', 'If-None-Match': '(previous ETag)' },
+    },
+    state: makeScenarioState(),
+  },
+  {
+    key: 'idempotency-replay',
+    status: 200,
+    title: 'Idempotency Replay (200 vs 201)',
+    description: '1st click: creates a payment order → 201 Created, Idempotency-Replayed: false. 2nd click (same Idempotency-Key): replays the cached response → 200, Idempotency-Replayed: true. 3rd click resets and starts a new cycle. Replay ≠ Conflict: the server recognises the duplicate and returns the original result safely.',
+    proxyPath: '/api/error-lab/trigger-idempotency-replay',
+    proxyMethod: 'POST',
+    requestLabel: {
+      method: 'POST',
+      path: '/api/merchants/{id}/payment-orders',
+      headers: { Authorization: 'Bearer ••••••••', 'Idempotency-Key': '(same key, second time)' },
     },
     state: makeScenarioState(),
   },
@@ -342,6 +395,10 @@ async function triggerScenario(scenario: ScenarioConfig) {
     if (h.location) responseHeaders['Location'] = h.location
     if (h.allow) responseHeaders['Allow'] = h.allow
     if (h.acceptPatch) responseHeaders['Accept-Patch'] = h.acceptPatch
+    if (h.retryAfter) responseHeaders['Retry-After'] = h.retryAfter
+    if (h.wwwAuthenticate) responseHeaders['WWW-Authenticate'] = h.wwwAuthenticate
+    if (h.idempotencyReplayed) responseHeaders['Idempotency-Replayed'] = h.idempotencyReplayed
+    if (h.lastModified) responseHeaders['Last-Modified'] = h.lastModified
 
     // Parse problem details from raw body if not already populated
     let problem = response.problem

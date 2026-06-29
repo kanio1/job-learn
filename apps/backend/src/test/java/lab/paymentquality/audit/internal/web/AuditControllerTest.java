@@ -3,6 +3,8 @@ package lab.paymentquality.audit.internal.web;
 import lab.paymentquality.audit.internal.application.AuditEventService;
 import lab.paymentquality.audit.internal.domain.exception.AuditEventNotFoundException;
 import lab.paymentquality.audit.internal.web.dto.AuditEventDetail;
+import lab.paymentquality.audit.internal.web.dto.AuditExportEvent;
+import lab.paymentquality.audit.internal.web.dto.AuditExportResponse;
 import lab.paymentquality.audit.internal.web.dto.AuditEventSummary;
 import lab.paymentquality.audit.internal.web.dto.AuditListResponse;
 import lab.paymentquality.shared.events.Outcome;
@@ -91,6 +93,36 @@ class AuditControllerTest {
     }
 
     @Test
+    void exportJsonReturnsAttachmentWithSafeFieldsOnly() throws Exception {
+        when(tenantResolver.resolve(any(Jwt.class))).thenReturn(PLATFORM_CONTEXT);
+        when(service.export(any(), eq(PLATFORM_CONTEXT))).thenReturn(new AuditExportResponse(
+                List.of(exportEvent()), 0, 100, 1, 1));
+
+        String body = mockMvc.perform(get("/api/audit/export.json")
+                        .param("action", "MERCHANT_CREATED")
+                        .header("Authorization", bearer(platformToken()))
+                        .header("X-Correlation-ID", "audit-export-correlation"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"audit-events.json\""))
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(result -> assertThat(result.getResponse().getHeaders("Vary"))
+                        .contains("Authorization"))
+                .andExpect(header().string("X-Correlation-ID", "audit-export-correlation"))
+                .andExpect(jsonPath("$.content[0].eventId").value(EVENT_ID.toString()))
+                .andExpect(jsonPath("$.content[0].actorDisplay").value("Visible Operator"))
+                .andExpect(jsonPath("$.content[0].actorSubject").doesNotExist())
+                .andExpect(jsonPath("$.content[0].tenantId").doesNotExist())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(body)
+                .doesNotContain("Bearer ")
+                .doesNotContain("Authorization")
+                .doesNotContain("eyJ")
+                .doesNotContain("internal-actor");
+    }
+
+    @Test
     void listWithoutAuditAuthorityReturns403ProblemWithoutAuthorityDisclosure() throws Exception {
         mockMvc.perform(get("/api/audit").header("Authorization", bearer(deniedToken())))
                 .andExpect(status().isForbidden())
@@ -176,6 +208,13 @@ class AuditControllerTest {
                 summary.id(), summary.occurredAt(), summary.actorDisplay(), summary.action(),
                 summary.targetType(), summary.targetId(), summary.tenantId(),
                 summary.correlationId(), summary.outcome());
+    }
+
+    private static AuditExportEvent exportEvent() {
+        AuditEventSummary summary = summary();
+        return new AuditExportEvent(
+                summary.id(), summary.occurredAt(), summary.actorDisplay(), summary.action(),
+                summary.targetType(), summary.targetId(), summary.correlationId(), summary.outcome());
     }
 
     private static String platformToken() {

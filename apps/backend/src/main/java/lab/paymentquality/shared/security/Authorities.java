@@ -18,9 +18,10 @@ public final class Authorities {
     // Merchant registry (platform-scoped)
     // -------------------------------------------------------------------------
 
-    public static final String MERCHANTS_CREATE        = "platform:merchants:create";
-    public static final String MERCHANTS_READ          = "platform:merchants:read";
-    public static final String MERCHANTS_UPDATE_STATUS = "platform:merchants:update-status";
+    public static final String MERCHANTS_CREATE           = "platform:merchants:create";
+    public static final String MERCHANTS_READ             = "platform:merchants:read";
+    public static final String MERCHANTS_UPDATE_STATUS    = "platform:merchants:update-status";
+    public static final String MERCHANTS_UPDATE_RISK_FLAG = "platform:merchants:update-risk-flag";
 
     // -------------------------------------------------------------------------
     // Payment orders (merchant-scoped)
@@ -34,9 +35,11 @@ public final class Authorities {
     // Payment orders (platform-scoped)
     // -------------------------------------------------------------------------
 
-    public static final String PLATFORM_PAYMENTS_READ      = "platform:payments:read";
-    public static final String PLATFORM_PAYMENTS_LIFECYCLE = "platform:payments:lifecycle";
-    public static final String PLATFORM_PAYMENTS_AUDIT     = "platform:payments:audit";
+    public static final String PLATFORM_PAYMENTS_READ         = "platform:payments:read";
+    public static final String PLATFORM_PAYMENTS_LIFECYCLE    = "platform:payments:lifecycle";
+    public static final String PLATFORM_PAYMENTS_AUDIT        = "platform:payments:audit";
+    public static final String PLATFORM_PAYMENT_NOTES_READ    = "platform:payments:notes:read";
+    public static final String PLATFORM_PAYMENT_NOTES_CREATE  = "platform:payments:notes:create";
 
     // -------------------------------------------------------------------------
     // Global audit log reads
@@ -44,6 +47,13 @@ public final class Authorities {
 
     public static final String PLATFORM_AUDIT_READ = "platform:audit:read";
     public static final String TENANT_AUDIT_READ   = "tenant:audit:read";
+
+    // -------------------------------------------------------------------------
+    // Tenant settings (platform-scoped)
+    // -------------------------------------------------------------------------
+
+    public static final String TENANT_SETTINGS_READ   = "platform:tenant:settings:read";
+    public static final String TENANT_SETTINGS_UPDATE = "platform:tenant:settings:update";
 
     // -------------------------------------------------------------------------
     // User management (platform-scoped)

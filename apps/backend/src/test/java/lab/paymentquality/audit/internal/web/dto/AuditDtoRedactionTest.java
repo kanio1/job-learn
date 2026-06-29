@@ -18,10 +18,20 @@ class AuditDtoRedactionTest {
             "targetId", "tenantId", "correlationId", "outcome"
     };
 
+    private static final String[] ALLOWED_EXPORT_FIELDS = {
+            "eventId", "occurredAt", "actorDisplay", "action", "targetType",
+            "targetId", "correlationId", "outcome"
+    };
+
     @Test
     void summaryAndDetailExposeExactlyTheSafeFieldSet() {
         assertThat(componentNames(AuditEventSummary.class)).containsExactly(ALLOWED_FIELDS);
         assertThat(componentNames(AuditEventDetail.class)).containsExactly(ALLOWED_FIELDS);
+    }
+
+    @Test
+    void exportEventExposesOnlyComplianceSafeFieldSet() {
+        assertThat(componentNames(AuditExportEvent.class)).containsExactly(ALLOWED_EXPORT_FIELDS);
     }
 
     @Test
@@ -39,9 +49,12 @@ class AuditDtoRedactionTest {
 
         AuditEventSummary summary = AuditEventSummary.from(event);
         AuditEventDetail detail = AuditEventDetail.from(event);
+        AuditExportEvent exportEvent = AuditExportEvent.from(event);
 
         assertThat(summary.actorDisplay()).isEqualTo("Visible Operator");
         assertThat(detail.actorDisplay()).isEqualTo("Visible Operator");
+        assertThat(exportEvent.actorDisplay()).isEqualTo("Visible Operator");
+        assertThat(exportEvent.eventId()).isEqualTo(event.getId());
         assertThat(summary.targetId()).isEqualTo("user-9");
         assertThat(detail.tenantId()).isEqualTo("TENANT_ALPHA");
     }

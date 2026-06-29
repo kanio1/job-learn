@@ -2,8 +2,10 @@ import { expect, test } from '@playwright/test'
 import { mockAuthenticatedSession } from './merchant-support'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-const merchantId = '11111111-1111-1111-1111-111111111111'
-const paymentOrderId = '22222222-2222-2222-2222-222222222222'
+// Valid RFC 4122 UUIDs: version nibble [1-8], variant nibble [89abAB]
+// Zod 4's z.string().uuid() enforces this strictly.
+const merchantId = '11111111-1111-4111-8111-111111111111'
+const paymentOrderId = '22222222-2222-4222-8222-222222222222'
 const createUrl = `**/api/merchants/${merchantId}/payment-orders`
 
 /** Dismiss the Nuxt devtools error overlay if it appears (caused by pre-existing TS errors) */
@@ -12,16 +14,28 @@ async function dismissDevtoolsOverlay(page: import('@playwright/test').Page) {
   const closeBtn = page.getByRole('button', { name: 'Close' })
   if (await closeBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     await closeBtn.click()
-    // After clicking Close, the devtools collapses — wait a moment
-    await page.waitForTimeout(500)
+    // Wait for the overlay to collapse before interacting with the page
+    await closeBtn.waitFor({ state: 'hidden', timeout: 3000 }).catch(() => {})
   }
 }
 
 /**
  * Navigate to the payment create page and ensure the form is fully rendered.
  * Handles the Nuxt devtools overlay that appears on first page load in dev mode.
+ *
+ * Registers the session mock here rather than in each test because MERCHANT_MANAGER
+ * role is required for canCreatePaymentOrder — without it the submit button is
+ * disabled and getByRole('button', { name: 'Create Payment Order' }) fails.
+ * Playwright LIFO route ordering means this handler wins over any earlier mock.
  */
 async function gotoCreatePage(page: import('@playwright/test').Page, merchantId: string) {
+  await page.route('**/api/_auth/session', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ loggedIn: true, user: { username: 'platform.operator', roles: ['MERCHANT_MANAGER'] } }),
+    })
+  })
   await page.goto(`/admin/merchants/${merchantId}/payments/new`)
   // Wait for the page heading — confirms the page has loaded past any redirect
   await expect(page.getByRole('heading', { name: 'New Payment Order' })).toBeVisible({ timeout: 15000 })
@@ -33,8 +47,14 @@ async function gotoCreatePage(page: import('@playwright/test').Page, merchantId:
 // ─── Happy path (original test, preserved) ──────────────────────────────────
 
 test('creates a payment order and navigates to detail', async ({ page }) => {
-  await page.goto('/login')
-  await page.waitForURL('**/admin/**', { timeout: 15000 }).catch(() => {})
+  // MERCHANT_MANAGER role required: canCreatePaymentOrder enables the submit button
+  await page.route('**/api/_auth/session', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ loggedIn: true, user: { username: 'platform.operator', roles: ['MERCHANT_MANAGER'] } }),
+    })
+  })
 
   await page.route(`**/api/merchants/${merchantId}/payment-orders`, async (route) => {
     if (route.request().method() === 'POST') {
@@ -56,14 +76,18 @@ test('creates a payment order and navigates to detail', async ({ page }) => {
   })
 
   await page.goto(`/admin/merchants/${merchantId}/payments/new`)
+  await expect(page.getByRole('heading', { name: 'New Payment Order' })).toBeVisible({ timeout: 15000 })
+  await dismissDevtoolsOverlay(page)
 
   await page.getByLabel('Amount (minor units)').fill('12500')
   await page.getByLabel('Currency').click()
-  await page.getByText('PLN').click()
+  await page.locator('[data-slot="itemLabel"]').filter({ hasText: 'PLN' }).click()
   await page.getByLabel('Client Order Reference').fill('PAY-E2E-001')
   await page.getByRole('button', { name: 'Create Payment Order' }).click()
 
-  await expect(page.getByText(/created successfully/i)).toBeVisible({ timeout: 10000 })
+  // Use [data-slot="title"] to avoid matching the hidden ARIA live region that
+  // also contains the toast text for accessibility announcements.
+  await expect(page.locator('[data-slot="title"]').filter({ hasText: /created successfully/i })).toBeVisible({ timeout: 10000 })
 })
 
 // ─── Req 3.3 — Validation gating with real enum/bounds ──────────────────────
@@ -92,7 +116,7 @@ test('validation: amount 0 shows error and blocks submit', async ({ page }) => {
 
   await page.getByLabel('Amount (minor units)').fill('0')
   await page.getByLabel('Currency').click()
-  await page.getByText('PLN').click()
+  await page.locator('[data-slot="itemLabel"]').filter({ hasText: 'PLN' }).click()
   await page.getByLabel('Client Order Reference').fill('PAY-VALIDATION-001')
   await page.getByRole('button', { name: 'Create Payment Order' }).click()
 
@@ -123,7 +147,7 @@ test('validation: empty clientOrderReference shows error and blocks submit', asy
   // Fill amount and currency but leave reference empty
   await page.getByLabel('Amount (minor units)').fill('5000')
   await page.getByLabel('Currency').click()
-  await page.getByText('EUR').click()
+  await page.locator('[data-slot="itemLabel"]').filter({ hasText: 'EUR' }).click()
   // Intentionally leave Client Order Reference empty
   await page.getByRole('button', { name: 'Create Payment Order' }).click()
 
@@ -154,8 +178,9 @@ test('validation: no currency selected shows error and blocks submit', async ({ 
   await page.getByLabel('Client Order Reference').fill('PAY-NO-CURRENCY')
   await page.getByRole('button', { name: 'Create Payment Order' }).click()
 
-  // Zod enum validation: currency is required
-  await expect(page.getByText(/invalid_enum_value|currency is required|select a currency/i)).toBeVisible()
+  // Zod 4 enum error: "Invalid option: expected one of 'PLN'|'EUR'|'USD'"
+  // Zod 3 error code style: "invalid_enum_value" (kept for forward compat)
+  await expect(page.getByText(/invalid_enum_value|invalid option|currency is required|select a currency/i)).toBeVisible()
   expect(postFired).toBe(false)
 })
 
@@ -207,7 +232,7 @@ test('idempotency key is reused on unchanged resubmit after 400 failure', async 
   // Fill valid form values
   await page.getByLabel('Amount (minor units)').fill('7500')
   await page.getByLabel('Currency').click()
-  await page.getByText('USD').click()
+  await page.locator('[data-slot="itemLabel"]').filter({ hasText: 'USD' }).click()
   await page.getByLabel('Client Order Reference').fill('PAY-IDEMPOTENCY-TEST')
 
   // First submit → 400 failure

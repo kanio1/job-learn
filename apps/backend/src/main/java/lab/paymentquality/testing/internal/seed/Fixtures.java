@@ -23,10 +23,12 @@ final class Fixtures {
     static final UUID MERCHANT_ALPHA_001_ID = uuid("00000000-0000-0000-0000-0000000000b1");
     static final UUID MERCHANT_ALPHA_002_ID = uuid("00000000-0000-0000-0000-0000000000b2");
     static final UUID MERCHANT_BETA_001_ID = uuid("00000000-0000-0000-0000-0000000000b3");
+    static final UUID MERCHANT_SUSPENDED_DEMO_ID = uuid("33333333-3333-3333-3333-333333333333");
 
     static final String MERCHANT_ALPHA_001 = "MERCHANT_ALPHA_001";
     static final String MERCHANT_ALPHA_002 = "MERCHANT_ALPHA_002";
     static final String MERCHANT_BETA_001 = "MERCHANT_BETA_001";
+    static final String MERCHANT_SUSPENDED_DEMO = "SUSPENDED-DEMO-MERCHANT";
 
     private static final Instant BASE_ORDER_TIME = Instant.parse("2026-01-15T09:30:00Z");
     private static final Instant PAGINATION_ORDER_TIME = Instant.parse("2026-01-15T10:00:00Z");
@@ -39,7 +41,7 @@ final class Fixtures {
                 new TenantSeed(PLATFORM_TENANT_ID, PLATFORM_TENANT, "Platform Tenant", "PLATFORM", "ACTIVE"),
                 new TenantSeed(TENANT_ALPHA_ID, TENANT_ALPHA, "Alpha Tenant", "STANDARD", "ACTIVE"),
                 new TenantSeed(PLACEHOLDER_TENANT_ID, PLACEHOLDER_TENANT,
-                        "Placeholder Tenant", "STANDARD", "ACTIVE")
+                        "Suspended Demo Tenant", "STANDARD", "SUSPENDED")
         );
     }
 
@@ -50,7 +52,10 @@ final class Fixtures {
                 new MerchantSeed(MERCHANT_ALPHA_002_ID, MERCHANT_ALPHA_002,
                         "Alpha Merchant 002", "ACTIVE", TENANT_ALPHA_ID),
                 new MerchantSeed(MERCHANT_BETA_001_ID, MERCHANT_BETA_001,
-                        "Beta Merchant 001", "ACTIVE", PLATFORM_TENANT_ID)
+                        "Beta Merchant 001", "ACTIVE", PLATFORM_TENANT_ID),
+                // Merchant under the SUSPENDED demo tenant (SEED-MVP-001)
+                new MerchantSeed(MERCHANT_SUSPENDED_DEMO_ID, MERCHANT_SUSPENDED_DEMO,
+                        "Suspended Demo Merchant", "ACTIVE", PLACEHOLDER_TENANT_ID)
         );
     }
 

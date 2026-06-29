@@ -9,5 +9,6 @@ public record MerchantResponse(
         String displayName,
         String status,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        boolean riskFlagged) {
 }

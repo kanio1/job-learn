@@ -1,9 +1,12 @@
 <template>
   <div data-testid="if-match-input">
-  <UFormField label="If-Match">
+  <UFormField
+    label="If-Match"
+    hint="The ETag from the last GET response — required for lifecycle actions"
+  >
     <UInput
       :model-value="modelValue"
-      placeholder="ETag value for conditional update"
+      placeholder='e.g. "v3"'
       @update:model-value="val => emit('update:modelValue', val)"
     />
   </UFormField>

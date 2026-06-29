@@ -35,6 +35,9 @@ public class Merchant {
     @Column(name = "tenant_id", updatable = false)
     private UUID tenantId;
 
+    @Column(name = "risk_flagged", nullable = false)
+    private boolean riskFlagged = false;
+
     protected Merchant() {
     }
 
@@ -125,5 +128,14 @@ public class Merchant {
 
     public UUID getTenantId() {
         return tenantId;
+    }
+
+    public boolean isRiskFlagged() {
+        return riskFlagged;
+    }
+
+    public void updateRiskFlag(boolean riskFlagged) {
+        this.riskFlagged = riskFlagged;
+        this.updatedAt = Instant.now();
     }
 }

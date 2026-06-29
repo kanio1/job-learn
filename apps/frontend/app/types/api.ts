@@ -31,6 +31,14 @@ export interface ApiHeaders {
   allow?: string
   /** Accept-Patch media type accepted on PATCH endpoints. */
   acceptPatch?: string
+  /** Retry-After seconds value; present on 429 / 503 responses. */
+  retryAfter?: string
+  /** WWW-Authenticate challenge; present on 401 responses. */
+  wwwAuthenticate?: string
+  /** Idempotency-Replayed: true when POST returned a cached replay. */
+  idempotencyReplayed?: string
+  /** Last-Modified date of the resource (Phase 2). */
+  lastModified?: string
 }
 
 /**
@@ -51,6 +59,18 @@ export type ProblemDetails = {
   detail?: string
   /** URI of the specific resource or request that triggered the error. */
   instance?: string
+  /** X-Correlation-ID from backend for tracing. */
+  correlationId?: string
+  /** Machine-readable error code. */
+  error?: string
+  /** Header name that must be supplied (428 Precondition Required). */
+  requiredHeader?: string
+  /** Validation field errors (400). */
+  details?: Array<{ field: string; message: string }>
+  /** Whether the operation can be retried (Phase 2). */
+  retryable?: boolean
+  /** Seconds to wait before retry (Phase 2). */
+  retryAfterSeconds?: number
   /** Allow backend extension members to pass through. */
   [key: string]: unknown
 }

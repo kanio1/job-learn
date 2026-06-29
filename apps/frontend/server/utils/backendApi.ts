@@ -9,6 +9,7 @@ export async function backendApi(
     body?: any
     headers?: Record<string, string>
     forwardIfMatch?: string
+    forwardIfNoneMatch?: string
     idempotencyKey?: string
     correlationId?: string
   } = {}
@@ -34,6 +35,9 @@ export async function backendApi(
 
   if (opts.forwardIfMatch) {
     headers['If-Match'] = opts.forwardIfMatch
+  }
+  if (opts.forwardIfNoneMatch) {
+    headers['If-None-Match'] = opts.forwardIfNoneMatch
   }
   if (opts.idempotencyKey) {
     headers['Idempotency-Key'] = opts.idempotencyKey
@@ -65,7 +69,10 @@ export async function backendApi(
 }
 
 function forwardBackendHeaders(event: H3Event, headers: Headers) {
-  for (const name of ['ETag', 'Cache-Control', 'Vary', 'X-Correlation-ID', 'Location', 'Accept-Patch', 'Allow']) {
+  for (const name of [
+    'ETag', 'Cache-Control', 'Vary', 'X-Correlation-ID', 'Location', 'Accept-Patch', 'Allow',
+    'Retry-After', 'WWW-Authenticate', 'Idempotency-Replayed', 'Last-Modified',
+  ]) {
     const value = headers.get(name) || headers.get(name.toLowerCase())
     if (value) {
       setHeader(event, name, value)

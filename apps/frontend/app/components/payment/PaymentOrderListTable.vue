@@ -7,6 +7,7 @@
           <h3 class="text-base font-semibold">Filters</h3>
           <UButton
             v-if="hasActiveFilters"
+            data-testid="payment-filter-clear"
             size="xs"
             color="neutral"
             variant="ghost"
@@ -42,21 +43,21 @@
           />
         </UFormField>
 
-        <!-- From date -->
-        <UFormField label="From date">
+        <!-- Created from date -->
+        <UFormField label="Created from">
           <UInput
             v-model="filters.fromDate"
+            data-testid="payment-filter-created-from"
             type="date"
-            placeholder="From"
           />
         </UFormField>
 
-        <!-- To date -->
-        <UFormField label="To date">
+        <!-- Created to date -->
+        <UFormField label="Created to">
           <UInput
             v-model="filters.toDate"
+            data-testid="payment-filter-created-to"
             type="date"
-            placeholder="To"
           />
         </UFormField>
 
@@ -93,6 +94,7 @@
       <template #footer>
         <div class="flex justify-end">
           <UButton
+            data-testid="payment-filter-apply"
             icon="i-lucide-search"
             label="Apply filters"
             @click="applyFilters"
@@ -103,6 +105,7 @@
 
     <!-- Table / state area -->
     <div data-testid="payment-order-table">
+    <div data-testid="payment-orders-table">
     <UCard>
       <template #header>
         <div class="flex items-center justify-between gap-3">
@@ -128,13 +131,17 @@
       />
 
       <!-- Empty state -->
-      <EmptyStateCard
+      <div
         v-else-if="list && list.content.length === 0"
-        :description="hasActiveFilters ? 'No payment orders match the active filters.' : 'This merchant has no payment orders yet.'"
-        :action-label="hasActiveFilters ? 'Clear filters' : 'Create payment order'"
-        :action-to="hasActiveFilters ? undefined : `/admin/merchants/${merchantId}/payments/new`"
-        @action="hasActiveFilters ? clearFilters() : undefined"
-      />
+        data-testid="payment-orders-empty-state"
+      >
+        <EmptyStateCard
+          :description="hasActiveFilters ? 'No payment orders match the active filters.' : 'This merchant has no payment orders yet.'"
+          :action-label="hasActiveFilters ? 'Clear filters' : 'Create payment order'"
+          :action-to="hasActiveFilters ? undefined : `/admin/merchants/${merchantId}/payments/new`"
+          @action="hasActiveFilters ? clearFilters() : undefined"
+        />
+      </div>
 
       <!-- Data table -->
       <template v-else-if="list && list.content.length > 0">
@@ -158,6 +165,7 @@
         </div>
       </template>
     </UCard>
+    </div>
     </div>
   </div>
 </template>

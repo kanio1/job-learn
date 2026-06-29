@@ -11,23 +11,29 @@ public record PaymentErrorResponse(
         String correlationId,
         String error,
         String message,
-        List<FieldError> details
+        List<FieldError> details,
+        String requiredHeader
 ) {
 
     public record FieldError(String field, String message) {
     }
 
     public static PaymentErrorResponse of(String error, String message, String correlationId) {
-        return of(error, message, null, correlationId, 400, "Bad request");
+        return of(error, message, null, correlationId, 400, "Bad request", null);
     }
 
     public static PaymentErrorResponse withDetails(String error, String message,
                                                      List<FieldError> details, String correlationId) {
-        return of(error, message, details, correlationId, 400, "Bad request");
+        return of(error, message, details, correlationId, 400, "Bad request", null);
     }
 
     public static PaymentErrorResponse of(String error, String message, List<FieldError> details,
                                           String correlationId, int status, String title) {
+        return of(error, message, details, correlationId, status, title, null);
+    }
+
+    public static PaymentErrorResponse of(String error, String message, List<FieldError> details,
+                                          String correlationId, int status, String title, String requiredHeader) {
         return new PaymentErrorResponse(
                 "https://api.payment-quality.local/problems/" + error.replace('_', '-'),
                 title,
@@ -37,7 +43,8 @@ public record PaymentErrorResponse(
                 correlationId,
                 error,
                 message,
-                details
+                details,
+                requiredHeader
         );
     }
 }

@@ -204,6 +204,18 @@ public class MerchantService {
         return MerchantMapper.toResponse(merchant);
     }
 
+    public MerchantResponse updateRiskFlag(UUID id, boolean riskFlagged) {
+        Merchant merchant = repository.findById(id)
+                .orElseThrow(() -> new MerchantNotFoundException(id.toString()));
+        merchant.updateRiskFlag(riskFlagged);
+        repository.saveAndFlush(merchant);
+        String action = riskFlagged ? "MERCHANT_RISK_FLAGGED" : "MERCHANT_RISK_FLAG_CLEARED";
+        log.info("merchant.risk.flag.updated merchantId={} riskFlagged={} correlationId={}",
+                id, riskFlagged, MDC.get("correlationId"));
+        publishSuccess(action, id, null);
+        return MerchantMapper.toResponse(merchant);
+    }
+
     private void publishSuccess(String action, UUID merchantId, String tenantReference) {
         eventPublisher.publishEvent(AuditableActionEventFactory.success(
                 action,

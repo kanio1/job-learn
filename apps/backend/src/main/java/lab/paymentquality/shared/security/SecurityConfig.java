@@ -74,8 +74,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders/*/capture").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_LIFECYCLE, Authorities.PLATFORM_PAYMENTS_LIFECYCLE)
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders/*/cancel").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_LIFECYCLE, Authorities.PLATFORM_PAYMENTS_LIFECYCLE)
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders/*/refund").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_LIFECYCLE, Authorities.PLATFORM_PAYMENTS_LIFECYCLE)
+                        .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders/*/evidence").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_LIFECYCLE, Authorities.PLATFORM_PAYMENTS_LIFECYCLE)
                         .requestMatchers(HttpMethod.PATCH, "/api/merchants/*/payment-orders/*").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_LIFECYCLE, Authorities.PLATFORM_PAYMENTS_LIFECYCLE)
                         .requestMatchers(HttpMethod.GET, "/api/merchants/*/payment-orders/*/history").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_LIFECYCLE, Authorities.PLATFORM_PAYMENTS_LIFECYCLE, Authorities.PLATFORM_PAYMENTS_AUDIT, Authorities.MERCHANT_PAYMENTS_READ, Authorities.PLATFORM_PAYMENTS_READ)
+                        .requestMatchers(HttpMethod.GET, "/api/merchants/*/payment-orders/*/evidence").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_LIFECYCLE, Authorities.PLATFORM_PAYMENTS_LIFECYCLE, Authorities.PLATFORM_PAYMENTS_AUDIT, Authorities.MERCHANT_PAYMENTS_READ, Authorities.PLATFORM_PAYMENTS_READ)
                         .requestMatchers(HttpMethod.GET, "/api/merchants/*/payment-orders/summary").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_READ, Authorities.PLATFORM_PAYMENTS_READ)
                         .requestMatchers(HttpMethod.HEAD, "/api/merchants/*/payment-orders/*").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_READ, Authorities.PLATFORM_PAYMENTS_READ)
                         .requestMatchers(HttpMethod.GET, "/api/merchants/*/payment-orders/*").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_READ, Authorities.PLATFORM_PAYMENTS_READ)
@@ -126,9 +128,14 @@ public class SecurityConfig {
         var config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:3000"));
         config.setAllowedMethods(List.of("GET", "HEAD", "POST", "PATCH", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key", "If-Match", "X-Correlation-ID"));
-        config.setExposedHeaders(List.of("ETag", "Cache-Control", "Vary", "X-Correlation-ID", "Location",
-                "Allow", "Accept-Patch"));
+        config.setAllowedHeaders(List.of(
+                "Authorization", "Content-Type",
+                "Idempotency-Key", "If-Match", "If-None-Match",
+                "X-Correlation-ID"));
+        config.setExposedHeaders(List.of(
+                "ETag", "Cache-Control", "Vary", "X-Correlation-ID",
+                "Location", "Allow", "Accept-Patch",
+                "Retry-After", "WWW-Authenticate", "Idempotency-Replayed", "Last-Modified"));
         config.setMaxAge(3600L);
         var source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", config);

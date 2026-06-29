@@ -25,6 +25,7 @@ const merchantResponseSchema = z.object({
   status: merchantStatusSchema,
   createdAt: z.string(),
   updatedAt: z.string(),
+  riskFlagged: z.boolean().default(false),
 })
 
 // Backend returns { merchants: [...] } — no pagination metadata.
@@ -101,5 +102,22 @@ export function useMerchantsApi() {
     })
   }
 
-  return { listMerchants, getMerchant, createMerchant, activateMerchant, suspendMerchant }
+  async function updateMerchantRiskFlag(
+    merchantId: string,
+    riskFlagged: boolean
+  ): Promise<ApiResponse<MerchantResponse>> {
+    return request(`/api/merchants/${merchantId}/risk-flag`, merchantResponseSchema, {
+      method: 'PATCH',
+      body: { riskFlagged },
+    })
+  }
+
+  return {
+    listMerchants,
+    getMerchant,
+    createMerchant,
+    activateMerchant,
+    suspendMerchant,
+    updateMerchantRiskFlag,
+  }
 }

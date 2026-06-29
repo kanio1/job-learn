@@ -67,7 +67,8 @@ class MerchantControllerTenantSecurityTest {
                         "Alpha Merchant",
                         "DRAFT",
                         java.time.Instant.parse("2026-01-01T00:00:00Z"),
-                        java.time.Instant.parse("2026-01-01T00:00:00Z")));
+                        java.time.Instant.parse("2026-01-01T00:00:00Z"),
+                        false));
 
         mockMvc.perform(get("/api/merchants/{id}", merchantId)
                         .header("Authorization", bearer(TestJwtSupport.tenantAdminToken())))

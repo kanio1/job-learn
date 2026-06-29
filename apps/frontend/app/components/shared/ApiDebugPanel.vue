@@ -39,9 +39,9 @@
                 <p class="text-xs font-medium text-gray-500 mb-1">Response Headers</p>
                 <HeaderKeyValuePanel :headers="maskedResponseHeaders" />
               </div>
-              <div v-if="response.body != null">
+              <div>
                 <p class="text-xs font-medium text-gray-500 mb-1">Response Body</p>
-                <RawJsonViewer :content="response.body" />
+                <RawJsonViewer :content="response.body ?? ''" />
               </div>
             </div>
             <p v-else class="text-sm text-gray-400 italic">No response recorded</p>

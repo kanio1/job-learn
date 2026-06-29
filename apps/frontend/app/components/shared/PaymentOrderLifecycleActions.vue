@@ -22,14 +22,24 @@
       </UButton>
     </span>
 
-    <span v-if="availableActions.includes('capture')" data-testid="action-lifecycle-capture">
+    <span v-if="availableActions.includes('capture')" data-testid="action-lifecycle-capture" class="flex items-center gap-1">
+      <UInput
+        v-model.number="captureAmount"
+        data-testid="capture-amount-input"
+        type="number"
+        size="sm"
+        placeholder="Minor units (empty = full)"
+        aria-label="Capture amount in minor units"
+        class="w-40"
+        :min="1"
+      />
       <UButton
         data-testid="lifecycle-capture"
         color="success"
         variant="soft"
         size="sm"
         icon="i-lucide-check-circle"
-        @click="triggerAction('capture')"
+        @click="triggerAction('capture', captureAmount ?? null)"
       >
         Capture
       </UButton>
@@ -48,14 +58,24 @@
       </UButton>
     </span>
 
-    <span v-if="availableActions.includes('refund')" data-testid="action-lifecycle-refund">
+    <span v-if="availableActions.includes('refund')" data-testid="action-lifecycle-refund" class="flex items-center gap-1">
+      <UInput
+        v-model.number="refundAmount"
+        data-testid="refund-amount-input"
+        type="number"
+        size="sm"
+        placeholder="Minor units (empty = full)"
+        aria-label="Refund amount in minor units"
+        class="w-40"
+        :min="1"
+      />
       <UButton
         data-testid="lifecycle-refund"
         color="error"
         variant="soft"
         size="sm"
         icon="i-lucide-rotate-ccw"
-        @click="triggerAction('refund')"
+        @click="triggerAction('refund', refundAmount ?? null)"
       >
         Refund
       </UButton>
@@ -89,12 +109,15 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'action-triggered': [action: string]
+  'action-triggered': [action: string, amountMinor: number | null]
 }>()
 
 const store = usePaymentOrdersStore()
 const { can } = useAuthorization()
 const canRunLifecycle = computed(() => props.canRunLifecycle ?? can.value.canRunLifecycle)
+
+const captureAmount = ref<number | null>(null)
+const refundAmount = ref<number | null>(null)
 
 const availableActions = computed<string[]>(() => {
   if (!canRunLifecycle.value) return []
@@ -104,7 +127,7 @@ const availableActions = computed<string[]>(() => {
   return store.getAvailableActions(status)
 })
 
-function triggerAction(action: string) {
-  emit('action-triggered', action)
+function triggerAction(action: string, amountMinor: number | null = null) {
+  emit('action-triggered', action, amountMinor)
 }
 </script>

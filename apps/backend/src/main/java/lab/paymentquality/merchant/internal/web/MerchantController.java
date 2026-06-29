@@ -91,6 +91,15 @@ public class MerchantController {
         return ResponseEntity.ok(response);
     }
 
+    @PatchMapping("/{id}/risk-flag")
+    @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_UPDATE_RISK_FLAG + "')")
+    public ResponseEntity<MerchantResponse> updateRiskFlag(@PathVariable String id,
+                                                           @RequestBody UpdateRiskFlagRequest request) {
+        UUID uuid = parseUUID(id);
+        var response = merchantService.updateRiskFlag(uuid, request.riskFlagged());
+        return ResponseEntity.ok(response);
+    }
+
     private UUID parseUUID(String id) {
         try {
             return UUID.fromString(id);

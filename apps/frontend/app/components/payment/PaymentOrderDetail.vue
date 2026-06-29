@@ -215,6 +215,8 @@ const displayHeaders = computed<Record<string, string>>(() => {
   if (!h) return {}
   const result: Record<string, string> = {}
   if (h.etag) result['ETag'] = h.etag
+  if (h.lastModified) result['Last-Modified'] = h.lastModified
+  if (h.idempotencyReplayed) result['Idempotency-Replayed'] = h.idempotencyReplayed
   if (h.vary) result['Vary'] = h.vary
   if (h.cacheControl) result['Cache-Control'] = h.cacheControl
   if (h.correlationId) result['X-Correlation-ID'] = h.correlationId

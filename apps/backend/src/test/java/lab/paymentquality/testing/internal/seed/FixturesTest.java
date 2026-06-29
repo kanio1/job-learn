@@ -24,6 +24,7 @@ class FixturesTest {
     private static final UUID MERCHANT_ALPHA_001_ID = UUID.fromString("00000000-0000-0000-0000-0000000000b1");
     private static final UUID MERCHANT_ALPHA_002_ID = UUID.fromString("00000000-0000-0000-0000-0000000000b2");
     private static final UUID MERCHANT_BETA_001_ID = UUID.fromString("00000000-0000-0000-0000-0000000000b3");
+    private static final UUID MERCHANT_SUSPENDED_DEMO_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
 
     // --- Tenant assertions ---
 
@@ -45,8 +46,18 @@ class FixturesTest {
     }
 
     @Test
-    void allTenantsAreActive() {
-        Fixtures.tenants().forEach(t -> assertThat(t.status()).isEqualTo("ACTIVE"));
+    void activeTenantsArePlatformAndAlpha() {
+        Fixtures.tenants().stream()
+                .filter(t -> !t.tenantReference().equals("PLACEHOLDER_TENANT_ID"))
+                .forEach(t -> assertThat(t.status()).isEqualTo("ACTIVE"));
+    }
+
+    @Test
+    void placeholderTenantIsSuspended() {
+        Fixtures.tenants().stream()
+                .filter(t -> t.tenantReference().equals("PLACEHOLDER_TENANT_ID"))
+                .findFirst()
+                .ifPresent(t -> assertThat(t.status()).isEqualTo("SUSPENDED"));
     }
 
     @Test
@@ -68,20 +79,24 @@ class FixturesTest {
     // --- Merchant assertions ---
 
     @Test
-    void merchantsContainsExactlyThreeWithExpectedUuids() {
+    void merchantsContainsExactlyFourWithExpectedUuids() {
         List<MerchantSeed> merchants = Fixtures.merchants();
 
-        assertThat(merchants).hasSize(3);
+        assertThat(merchants).hasSize(4);
         Set<UUID> ids = merchants.stream().map(MerchantSeed::merchantId).collect(Collectors.toSet());
-        assertThat(ids).containsExactlyInAnyOrder(MERCHANT_ALPHA_001_ID, MERCHANT_ALPHA_002_ID, MERCHANT_BETA_001_ID);
+        assertThat(ids).containsExactlyInAnyOrder(
+                MERCHANT_ALPHA_001_ID, MERCHANT_ALPHA_002_ID,
+                MERCHANT_BETA_001_ID, MERCHANT_SUSPENDED_DEMO_ID);
     }
 
     @Test
     void merchantReferencesAreUnique() {
         List<MerchantSeed> merchants = Fixtures.merchants();
         Set<String> refs = merchants.stream().map(MerchantSeed::merchantReference).collect(Collectors.toSet());
-        assertThat(refs).hasSize(3)
-                .containsExactlyInAnyOrder("MERCHANT_ALPHA_001", "MERCHANT_ALPHA_002", "MERCHANT_BETA_001");
+        assertThat(refs).hasSize(4)
+                .containsExactlyInAnyOrder(
+                        "MERCHANT_ALPHA_001", "MERCHANT_ALPHA_002",
+                        "MERCHANT_BETA_001", "SUSPENDED-DEMO-MERCHANT");
     }
 
     @Test

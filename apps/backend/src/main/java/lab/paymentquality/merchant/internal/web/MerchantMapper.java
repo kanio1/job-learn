@@ -16,7 +16,8 @@ public final class MerchantMapper {
                 merchant.getDisplayName(),
                 merchant.getStatus().name(),
                 merchant.getCreatedAt(),
-                merchant.getUpdatedAt());
+                merchant.getUpdatedAt(),
+                merchant.isRiskFlagged());
     }
 
     public static MerchantListResponse toListResponse(List<Merchant> merchants) {

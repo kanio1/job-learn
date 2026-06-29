@@ -16,6 +16,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 
 import java.time.format.DateTimeParseException;
@@ -55,6 +56,12 @@ public class PaymentExceptionHandler {
             InvalidClientOrderReferenceException.class, InvalidIdempotencyKeyException.class})
     public ResponseEntity<PaymentErrorResponse> handleValidation(RuntimeException ex, HttpServletRequest request) {
         return problem(HttpStatus.BAD_REQUEST, ERROR_VALIDATION, ex.getMessage(), headersForRequest(request));
+    }
+
+    @ExceptionHandler(PaymentEvidenceValidationException.class)
+    public ResponseEntity<PaymentErrorResponse> handleEvidenceValidation(PaymentEvidenceValidationException ex,
+                                                                         HttpServletRequest request) {
+        return problem(ex.status(), ex.error(), ex.getMessage(), headersForRequest(request));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -126,9 +133,13 @@ public class PaymentExceptionHandler {
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-    public ResponseEntity<PaymentErrorResponse> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex) {
+    public ResponseEntity<PaymentErrorResponse> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex,
+                                                                                HttpServletRequest request) {
+        String message = isEvidenceRequest(request)
+                ? "Content-Type must be multipart/form-data for evidence upload"
+                : MSG_UNSUPPORTED_MEDIA_TYPE;
         return problem(HttpStatus.UNSUPPORTED_MEDIA_TYPE, ERROR_UNSUPPORTED_MEDIA_TYPE,
-                MSG_UNSUPPORTED_MEDIA_TYPE, addAcceptPatchHeader());
+                message, headersForRequest(request));
     }
 
     @ExceptionHandler(MissingRequestHeaderException.class)
@@ -139,6 +150,13 @@ public class PaymentExceptionHandler {
                     headersForRequest(request));
         }
         return problem(HttpStatus.BAD_REQUEST, ERROR_MISSING_REQUIRED_HEADER, "Required header missing: " + ex.getHeaderName());
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<PaymentErrorResponse> handleMissingRequestPart(MissingServletRequestPartException ex,
+                                                                         HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, ERROR_VALIDATION,
+                "Required multipart file part is missing: " + ex.getRequestPartName(), headersForRequest(request));
     }
 
     @ExceptionHandler(InvalidStateTransitionException.class)
@@ -169,7 +187,8 @@ public class PaymentExceptionHandler {
 
     @ExceptionHandler(PaymentPreconditionRequiredException.class)
     public ResponseEntity<PaymentErrorResponse> handlePreconditionRequired(PaymentPreconditionRequiredException ex) {
-        return problem(HttpStatus.PRECONDITION_REQUIRED, ERROR_PRECONDITION_REQUIRED, ex.getMessage(), preconditionHeaders());
+        return problemWithRequiredHeader(HttpStatus.PRECONDITION_REQUIRED, ERROR_PRECONDITION_REQUIRED,
+                ex.getMessage(), "If-Match", preconditionHeaders());
     }
 
     @ExceptionHandler(MalformedPaymentEtagException.class)
@@ -234,6 +253,20 @@ public class PaymentExceptionHandler {
     private ResponseEntity<PaymentErrorResponse> problem(HttpStatus status, String error, String message,
                                                          List<PaymentErrorResponse.FieldError> details,
                                                          HttpHeaders headers) {
+        return problemWithRequiredHeader(status, error, message, details, null, headers);
+    }
+
+    private ResponseEntity<PaymentErrorResponse> problemWithRequiredHeader(HttpStatus status, String error,
+                                                                            String message, String requiredHeader,
+                                                                            HttpHeaders headers) {
+        return problemWithRequiredHeader(status, error, message, null, requiredHeader, headers);
+    }
+
+    private ResponseEntity<PaymentErrorResponse> problemWithRequiredHeader(HttpStatus status, String error,
+                                                                            String message,
+                                                                            List<PaymentErrorResponse.FieldError> details,
+                                                                            String requiredHeader,
+                                                                            HttpHeaders headers) {
         String correlationId = headers.getFirst(PaymentHttpHeaders.X_CORRELATION_ID);
         if (correlationId == null || correlationId.isBlank()) {
             correlationId = PaymentHttpHeaders.correlationId();
@@ -242,7 +275,8 @@ public class PaymentExceptionHandler {
         return ResponseEntity.status(status)
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
                 .headers(headers)
-                .body(problemBody(status, error, message, details, correlationId));
+                .body(PaymentErrorResponse.of(error, message, details,
+                        correlationId, status.value(), status.getReasonPhrase(), requiredHeader));
     }
 
     private PaymentErrorResponse problemBody(HttpStatus status, String error, String message,
@@ -284,6 +318,10 @@ public class PaymentExceptionHandler {
         return ("PATCH".equals(request.getMethod()) && uri.matches("/api/merchants/[^/]+/payment-orders/[^/]+/?"))
                 || ("POST".equals(request.getMethod())
                 && uri.matches("/api/merchants/[^/]+/payment-orders/[^/]+/(authorize|capture|cancel|refund)/?"));
+    }
+
+    private boolean isEvidenceRequest(HttpServletRequest request) {
+        return request.getRequestURI().matches("/api/merchants/[^/]+/payment-orders/[^/]+/evidence/?");
     }
 
     private HttpHeaders addAcceptPatchHeader() {

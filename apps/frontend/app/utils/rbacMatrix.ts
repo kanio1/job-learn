@@ -29,27 +29,35 @@ export const COMPOSITE_ROLES: readonly CompositeRole[] = [
 
 // Capability booleans derived from the RBAC access matrix.
 // Each field mirrors the corresponding Fine_Grained_Authority:
-//   canCreateMerchant       → platform:merchants:create
-//   canReadMerchants        → platform:merchants:read
-//   canUpdateMerchantStatus → platform:merchants:update-status
-//   canCreatePaymentOrder   → merchant:payments:create
-//   canReadMerchantPayments → merchant:payments:read
-//   canReadPlatformPayments → platform:payments:read
-//   canRunLifecycle         → merchant:payments:lifecycle | platform:payments:lifecycle
-//   canReadAudit            → platform:payments:audit
-//   canViewAuditLog         → platform:audit:read | tenant:audit:read
-//   canManageUsers          → platform:users:* | tenant:users:*
-//   canAssignRoles          → platform:users:assign-roles | tenant:users:assign-roles
+//   canCreateMerchant         → platform:merchants:create
+//   canReadMerchants          → platform:merchants:read
+//   canUpdateMerchantStatus   → platform:merchants:update-status
+//   canUpdateMerchantRiskFlag → platform:merchants:update-risk-flag
+//   canCreatePaymentOrder     → merchant:payments:create
+//   canReadMerchantPayments   → merchant:payments:read
+//   canReadPlatformPayments   → platform:payments:read
+//   canRunLifecycle           → merchant:payments:lifecycle | platform:payments:lifecycle
+//   canReadAudit              → platform:payments:audit
+//   canViewAuditLog           → platform:audit:read | tenant:audit:read
+//   canReadPaymentNotes       → platform:payments:notes:read
+//   canCreatePaymentNote      → platform:payments:notes:create
+//   canManageTenantSettings   → platform:tenant:settings:read + platform:tenant:settings:update
+//   canManageUsers            → platform:users:* | tenant:users:*
+//   canAssignRoles            → platform:users:assign-roles | tenant:users:assign-roles
 export interface Capability {
   canCreateMerchant: boolean
   canReadMerchants: boolean
   canUpdateMerchantStatus: boolean
+  canUpdateMerchantRiskFlag: boolean
   canCreatePaymentOrder: boolean
   canReadMerchantPayments: boolean
   canReadPlatformPayments: boolean
   canRunLifecycle: boolean
   canReadAudit: boolean
   canViewAuditLog: boolean
+  canReadPaymentNotes: boolean
+  canCreatePaymentNote: boolean
+  canManageTenantSettings: boolean
   canManageUsers: boolean
   canAssignRoles: boolean
 }
@@ -59,12 +67,16 @@ const DENY_ALL: Capability = {
   canCreateMerchant: false,
   canReadMerchants: false,
   canUpdateMerchantStatus: false,
+  canUpdateMerchantRiskFlag: false,
   canCreatePaymentOrder: false,
   canReadMerchantPayments: false,
   canReadPlatformPayments: false,
   canRunLifecycle: false,
   canReadAudit: false,
   canViewAuditLog: false,
+  canReadPaymentNotes: false,
+  canCreatePaymentNote: false,
+  canManageTenantSettings: false,
   canManageUsers: false,
   canAssignRoles: false,
 }
@@ -89,10 +101,14 @@ export const rbacMatrix: Record<CompositeRole, Capability> = {
     canCreateMerchant: true,
     canReadMerchants: true,
     canUpdateMerchantStatus: true,
+    canUpdateMerchantRiskFlag: true,
     canReadPlatformPayments: true,
     canRunLifecycle: true,
     canReadAudit: true,
     canViewAuditLog: true,
+    canReadPaymentNotes: true,
+    canCreatePaymentNote: true,
+    canManageTenantSettings: true,
     canManageUsers: true,
     canAssignRoles: true,
   },
@@ -121,6 +137,8 @@ export const rbacMatrix: Record<CompositeRole, Capability> = {
     canReadPlatformPayments: true,
     canReadAudit: true,
     canViewAuditLog: true,
+    canReadPaymentNotes: true,
+    canCreatePaymentNote: true,
   },
 
   READ_ONLY_USER: {

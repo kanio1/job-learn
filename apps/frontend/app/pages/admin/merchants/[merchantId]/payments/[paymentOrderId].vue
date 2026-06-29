@@ -29,11 +29,85 @@
         :problem="detailResponse?.problem"
       />
 
+      <UCard v-if="store.currentOrder" data-testid="payment-status-polling">
+        <template #header>
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="space-y-1">
+              <h3 class="text-base font-semibold">Payment Status</h3>
+              <div class="flex items-center gap-2">
+                <BusinessStatusBadge
+                  :status="store.currentOrder.status"
+                  type="payment"
+                  data-testid="payment-status-current"
+                />
+                <span
+                  v-if="statusPolling.isRefreshing.value"
+                  class="text-xs text-gray-500"
+                  data-testid="payment-status-refreshing"
+                >
+                  Refreshing...
+                </span>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <UCheckbox
+                :model-value="statusPolling.autoRefreshEnabled.value"
+                label="Auto refresh"
+                data-testid="payment-status-auto-refresh"
+                @update:model-value="statusPolling.setAutoRefresh(Boolean($event))"
+              />
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-refresh-cw"
+                :loading="statusPolling.isRefreshing.value"
+                :disabled="statusPolling.isRefreshing.value"
+                data-testid="payment-status-refresh"
+                @click="handleStatusRefreshClick"
+              >
+                Refresh status
+              </UButton>
+            </div>
+          </div>
+        </template>
+
+        <div class="space-y-2 text-sm">
+          <p class="text-gray-500" data-testid="payment-status-last-checked">
+            Last checked:
+            <span v-if="statusPolling.lastCheckedAt.value">
+              {{ new Date(statusPolling.lastCheckedAt.value).toLocaleString() }}
+            </span>
+            <span v-else>Not checked yet</span>
+          </p>
+          <UAlert
+            v-if="statusPolling.error.value"
+            color="error"
+            variant="subtle"
+            title="Status refresh failed"
+            :description="statusPolling.error.value"
+            data-testid="payment-status-error"
+          />
+        </div>
+      </UCard>
+
       <PaymentOrderLifecycleActions
         v-if="store.currentOrder"
         :payment-order-id="paymentOrderId"
         :merchant-id="merchantId"
         @action-triggered="openDrawer"
+      />
+
+      <EvidenceUpload
+        v-if="store.currentOrder"
+        :payment-order-id="paymentOrderId"
+        :merchant-id="merchantId"
+      />
+
+      <InternalNotes
+        v-if="store.currentOrder && can.canReadPaymentNotes"
+        :payment-order-id="paymentOrderId"
+        :merchant-id="merchantId"
       />
     </template>
 
@@ -163,7 +237,10 @@ const paymentOrderId = route.params.paymentOrderId as string
 
 const store = usePaymentOrdersStore()
 const { getOrder } = usePaymentOrdersApi()
+const { can } = useAuthorization()
 const toast = useToast()
+
+const statusPolling = usePaymentStatusPolling(refreshPaymentStatus)
 
 // ---------------------------------------------------------------------------
 // Page-level state
@@ -244,11 +321,11 @@ function validateDrawer(): boolean {
 // Drawer open/close
 // ---------------------------------------------------------------------------
 
-function openDrawer(action: string) {
+function openDrawer(action: string, amountMinor: number | null = null) {
   activeAction.value = action as typeof activeAction.value
   drawerIdempotencyKey.value = crypto.randomUUID()
   drawerIfMatch.value = store.versionMarker ?? ''
-  drawerAmountMinorRaw.value = null
+  drawerAmountMinorRaw.value = amountMinor
   drawerReason.value = ''
   drawerError.value = null
   drawerOpen.value = true
@@ -337,6 +414,30 @@ async function executeAction() {
   } finally {
     drawerSubmitting.value = false
   }
+}
+
+async function refreshPaymentStatus() {
+  const response = await getOrder(merchantId, paymentOrderId)
+  detailResponse.value = response
+
+  if (response.data) {
+    store.currentOrder = response.data
+    store.versionMarker = response.headers.etag || response.data.versionMarker || store.versionMarker
+    if (['CANCELLED', 'EXPIRED', 'REFUNDED'].includes(response.data.status)) {
+      statusPolling.stop()
+    }
+    return { status: response.data.status }
+  }
+
+  if (response.problem) {
+    throw new Error(response.problem.detail ?? response.problem.title ?? 'Status refresh failed.')
+  }
+
+  throw new Error('Status refresh returned no payment order data.')
+}
+
+function handleStatusRefreshClick() {
+  void statusPolling.refresh()
 }
 
 // ---------------------------------------------------------------------------

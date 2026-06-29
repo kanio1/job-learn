@@ -31,7 +31,7 @@ import static lab.paymentquality.testsupport.MerchantApiTestSupport.uniqueMercha
 @Testcontainers
 class MerchantSecurityTest extends PostgresContainerSupport {
 
-    private static final String LEGACY_TENANT_REFERENCE = "PLACEHOLDER_TENANT_ID";
+    private static final String LEGACY_TENANT_REFERENCE = "TENANT_ALPHA"; // PLACEHOLDER_TENANT_ID is SUSPENDED (V0.2)
 
     @Container
     static PostgreSQLContainer postgres = newPostgresContainer("merchant_security_test");
@@ -87,8 +87,13 @@ class MerchantSecurityTest extends PostgresContainerSupport {
         String updateOnly = TestJwtSupport.tokenWithRolesAndTenantId(
                 "update.only", List.of("merchants:update-status"), LEGACY_TENANT_REFERENCE);
 
-        var merchant = merchantService.create(uniqueMerchantReference("SEC"), "Security Merchant");
-        String id = merchant.getMerchantId().toString();
+        // Create merchant via API so it belongs to TENANT_ALPHA (same tenant as the tokens).
+        // Direct merchantService.create() uses PLACEHOLDER_TENANT_ID which is now SUSPENDED (V0.2).
+        String id = requestWithToken(port, createOnly).contentType(ContentType.JSON)
+                .body(createMerchantBody(uniqueMerchantReference("SEC"), "Security Merchant"))
+                .when().post("/api/merchants")
+                .then().statusCode(201)
+                .extract().path("merchantId");
 
         requestWithToken(port, readOnly).when().get("/api/merchants").then().statusCode(200);
         requestWithToken(port, readOnly).when().get("/api/merchants/{id}", id).then().statusCode(200);

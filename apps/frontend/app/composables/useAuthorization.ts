@@ -27,12 +27,16 @@ export function useAuthorization() {
       canCreateMerchant: false,
       canReadMerchants: false,
       canUpdateMerchantStatus: false,
+      canUpdateMerchantRiskFlag: false,
       canCreatePaymentOrder: false,
       canReadMerchantPayments: false,
       canReadPlatformPayments: false,
       canRunLifecycle: false,
       canReadAudit: false,
       canViewAuditLog: false,
+      canReadPaymentNotes: false,
+      canCreatePaymentNote: false,
+      canManageTenantSettings: false,
       canManageUsers: false,
       canAssignRoles: false,
     }
@@ -42,12 +46,16 @@ export function useAuthorization() {
       if (cap.canCreateMerchant) merged.canCreateMerchant = true
       if (cap.canReadMerchants) merged.canReadMerchants = true
       if (cap.canUpdateMerchantStatus) merged.canUpdateMerchantStatus = true
+      if (cap.canUpdateMerchantRiskFlag) merged.canUpdateMerchantRiskFlag = true
       if (cap.canCreatePaymentOrder) merged.canCreatePaymentOrder = true
       if (cap.canReadMerchantPayments) merged.canReadMerchantPayments = true
       if (cap.canReadPlatformPayments) merged.canReadPlatformPayments = true
       if (cap.canRunLifecycle) merged.canRunLifecycle = true
       if (cap.canReadAudit) merged.canReadAudit = true
       if (cap.canViewAuditLog) merged.canViewAuditLog = true
+      if (cap.canReadPaymentNotes) merged.canReadPaymentNotes = true
+      if (cap.canCreatePaymentNote) merged.canCreatePaymentNote = true
+      if (cap.canManageTenantSettings) merged.canManageTenantSettings = true
       if (cap.canManageUsers) merged.canManageUsers = true
       if (cap.canAssignRoles) merged.canAssignRoles = true
     }

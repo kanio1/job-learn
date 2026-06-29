@@ -26,6 +26,10 @@ function extractHeaders(headers: Headers | undefined): ApiHeaders {
     correlationId: headers.get('x-correlation-id') ?? undefined,
     allow: headers.get('allow') ?? undefined,
     acceptPatch: headers.get('accept-patch') ?? undefined,
+    retryAfter: headers.get('retry-after') ?? undefined,
+    wwwAuthenticate: headers.get('www-authenticate') ?? undefined,
+    idempotencyReplayed: headers.get('idempotency-replayed') ?? undefined,
+    lastModified: headers.get('last-modified') ?? undefined,
   }
 }
 

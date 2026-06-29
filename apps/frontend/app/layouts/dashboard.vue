@@ -13,6 +13,8 @@
       </template>
 
       <template #default="{ collapsed }">
+        <TenantContextBadge v-if="!collapsed" :tenant-id="tenantId" />
+
         <UDashboardSearchButton
           :collapsed="collapsed"
           label="Search..."
@@ -49,6 +51,8 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 
 const open = ref(false)
 const { can } = useAuthorization()
+const { user } = useUserSession()
+const tenantId = computed(() => (user.value as { tenantId?: string })?.tenantId)
 
 function closeSidebar() {
   open.value = false
@@ -99,6 +103,14 @@ const allLinks: (NavigationMenuItem & { testid: string; visible: ComputedRef<boo
     to: '/admin/audit',
     onSelect: closeSidebar,
     visible: computed(() => can.value.canViewAuditLog),
+  },
+  {
+    testid: 'nav-link-support',
+    label: 'Support',
+    icon: 'i-lucide-headset',
+    to: '/admin/support',
+    onSelect: closeSidebar,
+    visible: computed(() => can.value.canReadMerchants || can.value.canReadPlatformPayments),
   },
   {
     testid: 'nav-link-error-lab',

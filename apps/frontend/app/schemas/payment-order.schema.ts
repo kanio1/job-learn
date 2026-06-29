@@ -83,6 +83,19 @@ export const paymentStatusHistoryResponseSchema = z.object({
   content: z.array(statusHistoryEntrySchema),
 })
 
+export const paymentEvidenceSchema = z.object({
+  evidenceId: z.string().uuid(),
+  paymentOrderId: z.string().uuid(),
+  originalFilename: z.string(),
+  contentType: z.enum(['application/pdf', 'image/png', 'image/jpeg', 'text/plain', 'text/csv']),
+  sizeBytes: z.number().int().positive(),
+  uploadedAt: z.string(),
+})
+
+export const paymentEvidenceListResponseSchema = z.object({
+  content: z.array(paymentEvidenceSchema),
+})
+
 export const backendErrorSchema = z.object({
   error: z.string().optional(),
   message: z.string().optional(),
@@ -104,6 +117,8 @@ export type PaymentOrderListResponse = z.infer<typeof paymentOrderListResponseSc
 export type PaymentOrderSummaryResponse = z.infer<typeof paymentOrderSummaryResponseSchema>
 export type StatusHistoryEntry = z.infer<typeof statusHistoryEntrySchema>
 export type PaymentStatusHistoryResponse = z.infer<typeof paymentStatusHistoryResponseSchema>
+export type PaymentEvidence = z.infer<typeof paymentEvidenceSchema>
+export type PaymentEvidenceListResponse = z.infer<typeof paymentEvidenceListResponseSchema>
 export type BackendErrorResponse = z.infer<typeof backendErrorSchema>
 export type LifecycleErrorCategory = z.infer<typeof lifecycleErrorCategorySchema>
 

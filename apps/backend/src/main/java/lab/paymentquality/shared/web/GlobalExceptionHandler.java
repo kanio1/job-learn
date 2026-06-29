@@ -101,6 +101,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private Map<String, Object> problemBody(int status, String error, String title, String detail) {
+        return problemBodyWithRetry(status, error, title, detail, null, null);
+    }
+
+    // Phase 2: used for 429 responses when rate limiter is available
+    protected Map<String, Object> problemBodyWithRetry(int status, String error, String title, String detail,
+                                                        Boolean retryable, Integer retryAfterSeconds) {
         String correlationId = MDC.get("correlationId");
         if (correlationId == null || correlationId.isBlank()) {
             correlationId = UUID.randomUUID().toString();
@@ -113,6 +119,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         body.put("detail", detail);
         body.put("correlationId", correlationId);
         body.put("error", error);
+        if (retryable != null) {
+            body.put("retryable", retryable);
+        }
+        if (retryAfterSeconds != null) {
+            body.put("retryAfterSeconds", retryAfterSeconds);
+        }
         return body;
     }
 }

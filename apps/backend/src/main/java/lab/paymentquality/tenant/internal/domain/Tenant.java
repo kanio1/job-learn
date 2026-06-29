@@ -29,6 +29,18 @@ public class Tenant {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "contact_email", length = 320)
+    private String contactEmail;
+
+    @Column(name = "timezone", length = 64, nullable = false)
+    private String timezone = "UTC";
+
+    @Column(name = "webhook_base_url", length = 500)
+    private String webhookBaseUrl;
+
+    @Column(name = "settings_version", nullable = false)
+    private long settingsVersion = 0;
+
     protected Tenant() {}
 
     public static Tenant seeded(UUID tenantId, String tenantReference, String name,
@@ -50,10 +62,21 @@ public class Tenant {
         this.status = status;
     }
 
+    public void updateSettings(String contactEmail, String timezone, String webhookBaseUrl) {
+        this.contactEmail = contactEmail;
+        this.timezone = timezone != null ? timezone : "UTC";
+        this.webhookBaseUrl = webhookBaseUrl;
+        this.settingsVersion++;
+    }
+
     public UUID getTenantId() { return tenantId; }
     public String getTenantReference() { return tenantReference; }
     public String getName() { return name; }
     public TenantStatus getStatus() { return status; }
     public TenantType getTenantType() { return tenantType; }
     public Instant getCreatedAt() { return createdAt; }
+    public String getContactEmail() { return contactEmail; }
+    public String getTimezone() { return timezone; }
+    public String getWebhookBaseUrl() { return webhookBaseUrl; }
+    public long getSettingsVersion() { return settingsVersion; }
 }

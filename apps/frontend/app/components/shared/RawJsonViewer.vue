@@ -10,7 +10,10 @@
         </div>
       </template>
 
-      <pre class="overflow-auto text-xs font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-all">{{ displayContent }}</pre>
+      <p v-if="!props.content || !props.content.trim()" class="text-sm text-gray-400 italic">
+        No body
+      </p>
+      <pre v-else class="overflow-auto text-xs font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-all">{{ displayContent }}</pre>
     </UCard>
   </div>
 </template>

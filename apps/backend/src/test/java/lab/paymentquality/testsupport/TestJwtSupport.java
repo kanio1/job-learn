@@ -25,11 +25,13 @@ public final class TestJwtSupport {
     }
 
     public static String platformOperatorToken() {
+        // Uses TENANT_ALPHA — PLACEHOLDER_TENANT_ID is SUSPENDED (V0.2 migration)
+        // and TenantResolver rejects SUSPENDED non-platform tenants with 403.
         return tokenWithRolesAndTenantId("platform.operator", List.of(
                 "merchants:create",
                 "merchants:read",
                 "merchants:update-status"),
-                "PLACEHOLDER_TENANT_ID");
+                "TENANT_ALPHA");
     }
 
     public static String deniedToken() {
@@ -208,7 +210,18 @@ public final class TestJwtSupport {
     public static String platformAdminToken() {
         return tokenWithRolesAndTenantId("platform.admin",
                 List.of("merchants:create", "merchants:read", "merchants:update-status",
-                        "platform:payments:read", "platform:payments:lifecycle", "platform:payments:audit"),
+                        "merchants:update-risk-flag",
+                        "platform:payments:read", "platform:payments:lifecycle", "platform:payments:audit",
+                        "platform:payments:notes:read", "platform:payments:notes:create",
+                        "platform:tenant:settings:read", "platform:tenant:settings:update"),
+                "PLATFORM_TENANT");
+    }
+
+    public static String supportAgentToken() {
+        return tokenWithRolesAndTenantId("support.agent",
+                List.of("platform:payments:read", "platform:payments:audit",
+                        "platform:audit:read",
+                        "platform:payments:notes:read", "platform:payments:notes:create"),
                 "PLATFORM_TENANT");
     }
 
