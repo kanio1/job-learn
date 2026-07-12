@@ -6,6 +6,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 public final class AuditableActionEventFactory {
@@ -31,6 +32,23 @@ public final class AuditableActionEventFactory {
             String tenantReference,
             String actorSubject,
             String correlationId) {
+        return success(action, targetType, targetId, tenantReference, actorSubject, correlationId, null, null);
+    }
+
+    /**
+     * Variant carrying field-level before/after state for the audit diff
+     * drawer (F-D7). Pass null for either map when there is nothing
+     * meaningful to diff (e.g. creation has no beforeState).
+     */
+    public static AuditableActionOccurred success(
+            String action,
+            String targetType,
+            String targetId,
+            String tenantReference,
+            String actorSubject,
+            String correlationId,
+            Map<String, Object> beforeState,
+            Map<String, Object> afterState) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String resolvedSubject = valueOrFallback(actorSubject, subject(authentication));
         String actorDisplay = display(authentication, resolvedSubject);
@@ -46,7 +64,9 @@ public final class AuditableActionEventFactory {
                 targetId,
                 valueOrFallback(resolvedTenant, PLATFORM_TENANT_REFERENCE),
                 valueOrFallback(resolvedCorrelationId, UUID.randomUUID().toString()),
-                Outcome.SUCCESS);
+                Outcome.SUCCESS,
+                beforeState,
+                afterState);
     }
 
     private static String subject(Authentication authentication) {

@@ -7,11 +7,19 @@
  *   by the useAuthError composable after each API call.
  * - /login itself redirects authenticated users to /admin/merchants.
  * - /forbidden is accessible to authenticated users (it is the 403 surface).
+ * - /psp-redirect-simulator is a standalone mock of an external PSP checkout
+ *   page (F-D2) — a real PSP redirect target lives on a different domain
+ *   entirely, so it is intentionally outside this app's session realm.
  *
  * Feature: iam-roles-and-keycloak-login
  */
 export default defineNuxtRouteMiddleware(async (to) => {
   const session = useUserSession()
+
+  // Standalone PSP simulator — no session realm, same as a real external PSP page.
+  if (to.path === '/psp-redirect-simulator') {
+    return
+  }
 
   if (!session.ready.value) {
     await session.fetch()

@@ -207,7 +207,7 @@ class AuditControllerTest {
         return new AuditEventDetail(
                 summary.id(), summary.occurredAt(), summary.actorDisplay(), summary.action(),
                 summary.targetType(), summary.targetId(), summary.tenantId(),
-                summary.correlationId(), summary.outcome());
+                summary.correlationId(), summary.outcome(), null, null);
     }
 
     private static AuditExportEvent exportEvent() {

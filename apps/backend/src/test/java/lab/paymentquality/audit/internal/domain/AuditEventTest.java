@@ -5,6 +5,7 @@ import lab.paymentquality.shared.events.Outcome;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,5 +37,28 @@ class AuditEventTest {
         assertThat(event.getTenantId()).isEqualTo("TENANT_ALPHA");
         assertThat(event.getCorrelationId()).isEqualTo("correlation-17");
         assertThat(event.getOutcome()).isEqualTo(Outcome.SUCCESS);
+        assertThat(event.getBeforeState()).isNull();
+        assertThat(event.getAfterState()).isNull();
+    }
+
+    @Test
+    void fromEventCopiesBeforeAndAfterStateWhenPresent() {
+        AuditableActionOccurred source = new AuditableActionOccurred(
+                Instant.parse("2026-06-19T09:00:00Z"),
+                "actor-18",
+                "Audit Operator",
+                "MERCHANT_ACTIVATED",
+                "MERCHANT",
+                "merchant-18",
+                "TENANT_ALPHA",
+                "correlation-18",
+                Outcome.SUCCESS,
+                Map.of("status", "PENDING"),
+                Map.of("status", "ACTIVE"));
+
+        AuditEvent event = AuditEvent.fromEvent(source);
+
+        assertThat(event.getBeforeState()).containsExactly(Map.entry("status", "PENDING"));
+        assertThat(event.getAfterState()).containsExactly(Map.entry("status", "ACTIVE"));
     }
 }

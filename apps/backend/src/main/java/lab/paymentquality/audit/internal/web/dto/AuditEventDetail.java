@@ -4,6 +4,7 @@ import lab.paymentquality.audit.internal.domain.AuditEvent;
 import lab.paymentquality.shared.events.Outcome;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 public record AuditEventDetail(
@@ -15,7 +16,9 @@ public record AuditEventDetail(
         String targetId,
         String tenantId,
         String correlationId,
-        Outcome outcome
+        Outcome outcome,
+        Map<String, Object> beforeState,
+        Map<String, Object> afterState
 ) {
     public static AuditEventDetail from(AuditEvent event) {
         return new AuditEventDetail(
@@ -27,6 +30,8 @@ public record AuditEventDetail(
                 event.getTargetId(),
                 event.getTenantId(),
                 event.getCorrelationId(),
-                event.getOutcome());
+                event.getOutcome(),
+                event.getBeforeState(),
+                event.getAfterState());
     }
 }

@@ -19,6 +19,9 @@ public interface JpaPaymentOrderRepository extends JpaRepository<PaymentOrder, U
 
     Optional<PaymentOrder> findByPaymentOrderId(UUID paymentOrderId);
 
+    /** Overdue AUTHORIZED orders for the expiration sweep (F-D1). */
+    List<PaymentOrder> findAllByStatusAndExpiresAtBefore(PaymentStatus status, Instant instant);
+
     @Query("""
             SELECT COUNT(po) AS orderCount,
                    COALESCE(SUM(po.amountMinor), 0) AS totalAmountMinor

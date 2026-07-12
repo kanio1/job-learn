@@ -7,6 +7,12 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 2 : undefined,
   reporter: 'list',
+  // F-D5: visual regression tolerance — small pixel diffs (anti-aliasing,
+  // font hinting) are expected across machines/CI; only fail on real
+  // visual regressions (wrong color, missing element, layout shift).
+  expect: {
+    toHaveScreenshot: { maxDiffPixelRatio: 0.02 },
+  },
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000',
     trace: 'on-first-retry',

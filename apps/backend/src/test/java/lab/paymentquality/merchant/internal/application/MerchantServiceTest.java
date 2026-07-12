@@ -214,6 +214,43 @@ class MerchantServiceTest {
     }
 
     @Test
+    void activatePublishesAuditEventWithBeforeAfterStatusDiff() {
+        var id = UUID.randomUUID();
+        var merchant = Merchant.create(id, "MERCH-001", "Test");
+        when(repository.findById(id)).thenReturn(Optional.of(merchant));
+        when(repository.saveAndFlush(any(Merchant.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.activate(id);
+
+        var captor = org.mockito.ArgumentCaptor.forClass(
+                lab.paymentquality.shared.events.AuditableActionOccurred.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        var published = captor.getValue();
+        assertThat(published.action()).isEqualTo("MERCHANT_ACTIVATED");
+        assertThat(published.beforeState()).containsExactly(java.util.Map.entry("status", "DRAFT"));
+        assertThat(published.afterState()).containsExactly(java.util.Map.entry("status", "ACTIVE"));
+    }
+
+    @Test
+    void suspendPublishesAuditEventWithBeforeAfterStatusDiff() {
+        var id = UUID.randomUUID();
+        var merchant = Merchant.create(id, "MERCH-001", "Test");
+        merchant.activate();
+        when(repository.findById(id)).thenReturn(Optional.of(merchant));
+        when(repository.saveAndFlush(any(Merchant.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.suspend(id);
+
+        var captor = org.mockito.ArgumentCaptor.forClass(
+                lab.paymentquality.shared.events.AuditableActionOccurred.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        var published = captor.getValue();
+        assertThat(published.action()).isEqualTo("MERCHANT_SUSPENDED");
+        assertThat(published.beforeState()).containsExactly(java.util.Map.entry("status", "ACTIVE"));
+        assertThat(published.afterState()).containsExactly(java.util.Map.entry("status", "SUSPENDED"));
+    }
+
+    @Test
     void activateActiveMerchantThrows() {
         var id = UUID.randomUUID();
         var merchant = Merchant.create(id, "MERCH-001", "Test");

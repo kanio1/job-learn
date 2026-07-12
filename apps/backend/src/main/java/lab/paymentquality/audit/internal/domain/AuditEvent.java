@@ -8,8 +8,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lab.paymentquality.shared.events.AuditableActionOccurred;
 import lab.paymentquality.shared.events.Outcome;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -48,6 +51,14 @@ public class AuditEvent {
     @Column(name = "outcome", length = 20, nullable = false, updatable = false)
     private Outcome outcome;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "before_state", updatable = false)
+    private Map<String, Object> beforeState;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "after_state", updatable = false)
+    private Map<String, Object> afterState;
+
     protected AuditEvent() {
     }
 
@@ -63,6 +74,8 @@ public class AuditEvent {
         auditEvent.tenantId = event.tenantRef();
         auditEvent.correlationId = event.correlationId();
         auditEvent.outcome = event.outcome();
+        auditEvent.beforeState = event.beforeState();
+        auditEvent.afterState = event.afterState();
         return auditEvent;
     }
 
@@ -104,5 +117,13 @@ public class AuditEvent {
 
     public Outcome getOutcome() {
         return outcome;
+    }
+
+    public Map<String, Object> getBeforeState() {
+        return beforeState;
+    }
+
+    public Map<String, Object> getAfterState() {
+        return afterState;
     }
 }

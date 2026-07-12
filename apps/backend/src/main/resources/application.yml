@@ -43,6 +43,12 @@ app:
   testing:
     enabled: false
 
+payment:
+  expiration:
+    scheduler:
+      enabled: true
+      fixed-rate-ms: 60000
+
 logging:
   level:
     lab.paymentquality: DEBUG

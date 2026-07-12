@@ -17,6 +17,10 @@ const optionalFilterSchema = z.string()
 
 export const outcomeSchema = z.enum(['SUCCESS', 'DENIED', 'FAILED'])
 
+// Field-level before/after state for the audit diff drawer (F-D7). Only
+// present on the detail response (GET /api/audit/{id}), not the list view.
+const auditStateSchema = z.record(z.string(), z.unknown()).nullable().optional()
+
 export const auditEventSchema = z.object({
   id: z.string().uuid(),
   occurredAt: z.iso.datetime({ offset: true }),
@@ -27,6 +31,8 @@ export const auditEventSchema = z.object({
   tenantId: z.string(),
   correlationId: z.string().nullable(),
   outcome: outcomeSchema,
+  beforeState: auditStateSchema,
+  afterState: auditStateSchema,
 })
 
 export const auditListResponseSchema = z.object({

@@ -145,10 +145,18 @@ public class PaymentOrder {
         this.updatedAt = this.authorizedAt;
     }
 
+    /** Explicit AUTHORIZED → EXPIRED transition, shared by the capture() guard and the expiration sweep (F-D1). */
+    public void expire() {
+        if (!canTransitionTo(PaymentStatus.EXPIRED)) {
+            throw new InvalidStateTransitionException(status, PaymentStatus.EXPIRED);
+        }
+        this.status = PaymentStatus.EXPIRED;
+        this.updatedAt = Instant.now();
+    }
+
     public void capture(Long captureAmountMinor) {
         if (isAuthorizationExpired()) {
-            this.status = PaymentStatus.EXPIRED;
-            this.updatedAt = Instant.now();
+            expire();
             throw new AuthorizationExpiredException();
         }
         if (!canTransitionTo(PaymentStatus.CAPTURED)) {

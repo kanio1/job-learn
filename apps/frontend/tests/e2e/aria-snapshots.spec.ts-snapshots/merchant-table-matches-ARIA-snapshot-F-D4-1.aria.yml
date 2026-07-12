@@ -1,0 +1,29 @@
+- table:
+  - rowgroup:
+    - row "Reference Display Name Status Risk Created":
+      - columnheader "Reference"
+      - columnheader "Display Name"
+      - columnheader "Status"
+      - columnheader "Risk"
+      - columnheader "Created"
+      - columnheader
+    - row
+  - rowgroup:
+    - row /MERCH-ARIA-\d+ MERCH-ARIA-\d+ Display ACTIVE 1\/1\/\d+, 1:\d+:\d+ AM/:
+      - cell /MERCH-ARIA-\d+/
+      - cell /MERCH-ARIA-\d+ Display/:
+        - link /MERCH-ARIA-\d+ Display/:
+          - /url: /admin/merchants/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+      - cell "ACTIVE"
+      - cell
+      - cell /1\/1\/\d+, 1:\d+:\d+ AM/
+      - cell
+    - row /MERCH-ARIA-\d+ MERCH-ARIA-\d+ Display SUSPENDED 1\/1\/\d+, 1:\d+:\d+ AM/:
+      - cell /MERCH-ARIA-\d+/
+      - cell /MERCH-ARIA-\d+ Display/:
+        - link /MERCH-ARIA-\d+ Display/:
+          - /url: /admin/merchants/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+      - cell "SUSPENDED"
+      - cell
+      - cell /1\/1\/\d+, 1:\d+:\d+ AM/
+      - cell

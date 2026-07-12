@@ -35,6 +35,33 @@
                 <UBadge :color="outcomeColor" variant="subtle">{{ entry.outcome }}</UBadge>
               </dd>
             </div>
+
+            <div v-if="diffFields.length > 0" data-testid="audit-entry-diff" class="space-y-2 pb-2">
+              <dt class="font-medium text-muted">Change</dt>
+              <dd>
+                <table class="w-full text-xs">
+                  <thead>
+                    <tr class="text-left text-muted">
+                      <th class="font-medium">Field</th>
+                      <th class="font-medium">Before</th>
+                      <th class="font-medium">After</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="field in diffFields"
+                      :key="field.name"
+                      data-testid="audit-entry-diff-row"
+                      :data-field="field.name"
+                    >
+                      <td class="py-1 pr-2 font-mono text-highlighted">{{ field.name }}</td>
+                      <td class="py-1 pr-2 font-mono text-error" data-testid="audit-entry-diff-before">{{ field.before }}</td>
+                      <td class="py-1 font-mono text-success" data-testid="audit-entry-diff-after">{{ field.after }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </dd>
+            </div>
           </dl>
         </div>
       </div>
@@ -56,6 +83,29 @@ const outcomeColor = computed<'success' | 'warning' | 'error'>(() => {
   if (props.entry?.outcome === 'DENIED') return 'warning'
   return 'error'
 })
+
+/**
+ * F-D7 — field-level before/after diff. Only fields present in EITHER
+ * snapshot are shown; a field missing from one side renders as "—".
+ */
+const diffFields = computed<{ name: string, before: string, after: string }[]>(() => {
+  const before = props.entry?.beforeState
+  const after = props.entry?.afterState
+  if (!before && !after) return []
+
+  const fieldNames = new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})])
+  return [...fieldNames].sort().map(name => ({
+    name,
+    before: formatDiffValue(before?.[name]),
+    after: formatDiffValue(after?.[name]),
+  }))
+})
+
+function formatDiffValue(value: unknown): string {
+  if (value === undefined || value === null) return '—'
+  if (typeof value === 'string') return value
+  return JSON.stringify(value)
+}
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: 'full',

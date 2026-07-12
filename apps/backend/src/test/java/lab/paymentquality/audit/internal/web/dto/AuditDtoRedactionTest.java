@@ -13,9 +13,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AuditDtoRedactionTest {
 
-    private static final String[] ALLOWED_FIELDS = {
+    private static final String[] ALLOWED_SUMMARY_FIELDS = {
             "id", "occurredAt", "actorDisplay", "action", "targetType",
             "targetId", "tenantId", "correlationId", "outcome"
+    };
+
+    // Detail additionally exposes beforeState/afterState for the audit diff
+    // drawer (F-D7) — intentionally NOT on the list-view Summary, which stays
+    // list-weight only.
+    private static final String[] ALLOWED_DETAIL_FIELDS = {
+            "id", "occurredAt", "actorDisplay", "action", "targetType",
+            "targetId", "tenantId", "correlationId", "outcome", "beforeState", "afterState"
     };
 
     private static final String[] ALLOWED_EXPORT_FIELDS = {
@@ -24,9 +32,13 @@ class AuditDtoRedactionTest {
     };
 
     @Test
-    void summaryAndDetailExposeExactlyTheSafeFieldSet() {
-        assertThat(componentNames(AuditEventSummary.class)).containsExactly(ALLOWED_FIELDS);
-        assertThat(componentNames(AuditEventDetail.class)).containsExactly(ALLOWED_FIELDS);
+    void summaryExposesExactlyTheSafeFieldSet() {
+        assertThat(componentNames(AuditEventSummary.class)).containsExactly(ALLOWED_SUMMARY_FIELDS);
+    }
+
+    @Test
+    void detailExposesExactlyTheSafeFieldSetPlusDiffState() {
+        assertThat(componentNames(AuditEventDetail.class)).containsExactly(ALLOWED_DETAIL_FIELDS);
     }
 
     @Test

@@ -93,6 +93,35 @@
           </div>
         </UCard>
       </div>
+
+      <UCard>
+        <template #header>
+          <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-external-link" class="text-gray-400" />
+            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              PSP Redirect Simulator (F-D2)
+            </span>
+          </div>
+        </template>
+
+        <div class="flex flex-col gap-3">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Opens a standalone mock PSP checkout page in a new tab — demonstrates the
+            multi-tab redirect handoff pattern, not a real payment provider.
+          </p>
+          <UButton
+            data-testid="psp-redirect-trigger"
+            href="/psp-redirect-simulator"
+            target="_blank"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-external-link"
+            class="self-start"
+          >
+            Open PSP Redirect Simulator
+          </UButton>
+        </div>
+      </UCard>
     </div>
     </template>
   </UDashboardPanel>

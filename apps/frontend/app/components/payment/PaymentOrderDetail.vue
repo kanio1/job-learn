@@ -51,6 +51,10 @@
                 <dt class="text-gray-500">Expires At</dt>
                 <dd>{{ order.expiresAt ? new Date(order.expiresAt).toLocaleString() : '—' }}</dd>
               </div>
+              <div v-if="order.status === 'AUTHORIZED' && order.expiresAt" class="flex justify-between">
+                <dt class="text-gray-500">Authorization Window</dt>
+                <dd><ExpirationCountdown :expires-at="order.expiresAt" /></dd>
+              </div>
               <div class="flex justify-between">
                 <dt class="text-gray-500">Captured At</dt>
                 <dd>{{ order.capturedAt ? new Date(order.capturedAt).toLocaleString() : '—' }}</dd>

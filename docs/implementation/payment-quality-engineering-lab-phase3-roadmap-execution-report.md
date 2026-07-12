@@ -6,16 +6,22 @@ Phase 3A-1 (API-only foundation) is **complete and green**. Thirteen APIRequestC
 
 Phase 3A-2 (UI Network Foundation) is **complete and green**. Five new chromium UI tests were added across two new spec files, covering F-A3 (page.waitForResponse network assertions), F-D6 (console/pageerror guard, browser storage token guard), and F-B4 (DOM modal lifecycle). Total: 48 tests, all existing tests stable.
 
+Phase 3B-8 (F-C5 — Sequential route mock retry demo) is **complete and green**. This closes the one Phase 3B feature that phases 3B-1…3B-7 had skipped. One new chromium test was added exercising a 503→200 stateful `route.fulfill()` sequence and the retry idempotency invariant. A pre-existing baseline regression was found and documented (not fixed, out of scope) in `merchant-feedback.spec.ts`.
+
+Phase 3B-Closure-Audit is **complete**. Of the 4 capability gaps flagged by the roadmap's own coverage matrix, `page.waitForRequest()` was closed (1 new test in `error-lab-network.spec.ts`); conditional GET 304, idempotency replay (mutating POST), and header-only HEAD assertions remain blocked on the same root cause — no backend/Keycloak available to the Playwright run in this environment — and are documented as a single follow-up infra phase rather than re-attempted piecemeal.
+
+**Phase 3C is now complete** (3C-Prep, 3C-1 F-D4 ARIA snapshots, 3C-2 F-D5 visual regression, 3C-3 F-D3 command palette Ctrl+K, 3C-4 F-D2 PSP redirect simulator, 3C-5 F-D7 audit diff drawer, 3C-6 F-D1 payment expiration). All 16 Phase 3A/3B/3C roadmap features (F-A1…F-D7, minus the permanently-rejected/deferred items in §17) are now implemented and green. Total: 101 tests across 31 spec files, plus 58 backend unit tests added/touched across the F-C5/F-D7/F-D1 phases. Recommended next: a 3C Closure Audit consolidating the accumulated "Known Baseline Findings" into one cleanup phase (see end of Phase 3C-6 section).
+
 ---
 
 ## 2. Current Phase
 
 | Field | Value |
 |---|---|
-| Phase | 3A-2.5 — Nuxt Routing Stabilization Gate |
-| Batch | ROUTING_STABILIZATION |
-| Feature IDs | Infrastructure fix (no new F-xx) |
-| Date | 2026-06-29 |
+| Phase | 3C-6 — F-D1 Payment Expiration (Phase 3C complete) |
+| Batch | PHASE_3C_EXPERT_CAPABILITY |
+| Feature IDs | F-D1 |
+| Date | 2026-07-12 |
 | Branch | `001-project-foundation` |
 
 ---
@@ -1726,3 +1732,631 @@ Modified:
 ### Next Recommended Phase
 
 **3B Closure Audit** — Playwright/SDET Capability Coverage Update: review all Phase 3A/3B capabilities delivered, identify any gaps (e.g., `page.waitForRequest()`, conditional GET 304, idempotency replay assertion, header-only HEAD assertions), and close the Phase 3B coverage matrix. Then proceed to **3C Prep** — Expert Capability Design Gate.
+
+---
+
+## Phase 3B-8 — Sequential Route Mock Retry Demo
+
+### Feature IDs
+
+- F-C5
+
+### Reason for This Phase
+
+F-C5 ("Sequential route mock retry demo, 503→200") is listed in the Phase 3B roadmap (§15 of the roadmap doc) but was never given its own execution phase — 3B-1 through 3B-7 cover F-B3, F-B5, F-C2, F-C3, F-C6, F-C7, F-C4 only. This phase closes that gap before starting the 3B Closure Audit / 3C Prep sequence.
+
+### Context Restore Summary
+
+Restored from repo code + this report. Confirmed via `grep`/`git log` that no spec file demonstrating a stateful 503→200 retry sequence existed under the "F-C5" name. Found a close relative already in the suite: `tests/e2e/merchant-feedback.spec.ts` → `renders recoverable merchant list error state`, which already uses stateful `route.fulfill()` with an attempt counter (2× failure → success) and clicks a retry button. It uses a generic `500` rather than the semantically correct `503 Service Unavailable`, and is not framed/documented as the F-C5 lesson.
+
+### Discovery
+
+- No frontend code change needed — the existing `ErrorState.vue` component already renders a "Retry" button whenever an `onRetry` handler is supplied (`app/components/shared/ErrorState.vue`), and `app/pages/admin/merchants/index.vue` already wires `:on-retry="loadMerchants"`.
+- **Found and documented (not fixed) a pre-existing baseline regression**: `merchant-feedback.spec.ts` asserts on stale UI text/copy that no longer matches the current component tree:
+  - `getByText('Failed to load merchants. Please try again.')` never becomes visible, because `useApiClient.ts`'s error-fallback path (lines ~104-122) now always builds a non-null `problem` object for any JSON error body via `problemDetailsSchema.safeParse(errorData)` succeeding loosely (schema fields are optional, so a body like `{ error: 'server_error' }` parses successfully with `status`/`title`/`detail` left `undefined`). Since `problem` is truthy, `ErrorState.vue` always takes the `ProblemDetailsCard` branch (`v-if="problem"`), never the plain-message `UAlert` branch the test expects.
+  - `getByRole('button', { name: 'Retry loading merchants' })` no longer matches — `ErrorState.vue`'s button text is now the generic literal `"Retry"`, with no accessible-name override.
+  - Separately, `renders loading state while merchant list is pending` also fails: `page.locator('table')` is never found during the loading state — the loading UI is currently rendered as `LoadingState` (skeleton `alert "loading"` elements), not a `<table>`.
+  - These 2 failures pre-date this phase (reproduced on `HEAD` before any change in this phase) and are unrelated to F-C5. Logged under Known Baseline Failures below; not fixed here (orthogonal scope — would require deciding whether to fix the `useApiClient` fallback-problem heuristic or the loading-state markup, which affects many other specs, not just this one).
+  - **Also found and worked around**: the merchants page's initial mount can issue more than one `GET /api/merchants` before settling (SSR + client hydration), so a fixed "attempt N ⇒ 503, attempt N+1 ⇒ 200" counter races the actual click and produces a flaky pairing between `page.waitForResponse()` calls and UI actions. Solved by toggling the mock on an explicit `succeeding` boolean flag instead of an attempt index — deterministic regardless of how many requests the initial load makes.
+
+### Design
+
+- New dedicated spec (not a modification of `merchant-feedback.spec.ts`, to avoid touching/fixing unrelated baseline failures as a side effect): `tests/e2e/retry-demo.spec.ts`.
+- Mock returns `503` + `Retry-After: 1` while `succeeding === false`; test arms `succeeding = true` immediately before the manual retry click, then asserts the next response is `200`.
+- Assertions used: `page.waitForResponse()` status/header capture on the first (auto) failure, `getByTestId('problem-details-card')` visibility (current actual UI, not the stale plain-message text), `getByRole('button', { name: 'Retry' })` (current actual accessible name), and an idempotency-invariant loop asserting every captured request (auto or manual) was `GET` against the identical URL.
+
+### Test Files Changed
+
+| File | Type | Action |
+|---|---|---|
+| `apps/frontend/tests/e2e/retry-demo.spec.ts` | spec | Created (1 test: F-C5) |
+
+### System Files Changed
+
+None. No backend, frontend, or BFF changes — reused existing `ErrorState`/`ProblemDetailsCard` UI as-is.
+
+### Tests Added
+
+1 test in `tests/e2e/retry-demo.spec.ts`:
+1. `recovers from 503 Service Unavailable via manual retry (F-C5)` — stateful route mock, `Retry-After` header assertion, `ProblemDetailsCard` visible during failure, manual retry recovers to `200`, idempotency invariant over all captured requests.
+
+### Quality Gates Results
+
+| Gate | Result |
+|---|---|
+| `playwright test --project=chromium tests/e2e/retry-demo.spec.ts` | ✅ 2/2 (1 setup + 1 test), stable across 3 consecutive runs |
+| `playwright test --list` total | ✅ 83 tests across 25 files (was 82 before this phase — count includes this new spec plus prior baseline) |
+| `pnpm typecheck` | ✅ PASS |
+| `rg "waitForTimeout" tests/` | ✅ none |
+| `merchant-feedback.spec.ts` regression check | ❌ 2/3 pre-existing failures reproduced on `HEAD` before this phase's change — see Known Baseline Failures, not a regression introduced here |
+
+### Known Baseline Failures
+
+- `tests/e2e/merchant-feedback.spec.ts`:
+  - `renders loading state while merchant list is pending` — `page.locator('table')` never visible; loading UI is now skeleton `alert` elements, not a `<table>`.
+  - `renders recoverable merchant list error state` — asserts stale copy (`'Failed to load merchants. Please try again.'`) and stale button name (`'Retry loading merchants'`) that no longer match the current `ErrorState`/`useApiClient` implementation.
+  - Reproduced independently of this phase's changes (fails identically with `retry-demo.spec.ts` absent). Root cause is in shared code (`useApiClient.ts` fallback-problem heuristic, `LoadingState` markup) — fixing it is out of scope for F-C5 and would need its own phase since other specs may depend on the current behavior.
+
+### Deferred Items
+
+- Fixing `merchant-feedback.spec.ts` and its underlying `useApiClient.ts`/`ErrorState.vue` copy drift — flagged for a future dedicated phase, not part of Plan B's F-C5 scope.
+
+### What Was Intentionally Not Built
+
+- No change to `merchant-feedback.spec.ts` (would conflate an unrelated bug fix with this phase).
+- No new frontend component or copy — F-C5 is a test-only lesson, same precedent as F-B4.
+
+### Next Recommended Phase
+
+**3B Closure Audit** — proceed as originally recommended after 3B-7: review the Phase 3A/3B SDET capability coverage matrix (§13 of the roadmap doc) for gaps (`page.waitForRequest()`, conditional GET 304, idempotency replay assertion, header-only HEAD assertions), close what's missing, then **3C Prep — Expert Capability Design Gate**.
+
+---
+
+## Phase 3B-Closure-Audit
+
+### Reason for This Phase
+
+Recommended by the 3B-8 entry above (itself inherited from 3B-7's own "Next Recommended Phase"): review the 4 capability gaps the roadmap doc's §13 coverage matrix implicitly leaves open, close what's closable without new infra, and explicitly re-document what's still blocked so it isn't silently forgotten again the way F-C5 was.
+
+### Findings
+
+| Gap | Verdict | Detail |
+|---|---|---|
+| `page.waitForRequest()` | ✅ **Closed this phase** | Never used anywhere in the suite (`rg "waitForRequest" tests/` → 0 hits) before this phase. Added a dedicated test in `tests/e2e/ui/error-lab-network.spec.ts` (`page.waitForRequest captures the outgoing request before the response resolves`) — captures the outgoing POST to `trigger-429` before its response exists, asserts method/URL, and asserts the browser-issued request itself carries no `Authorization` header (proving the BFF-attaches-token-server-side pattern from the *request* side, complementing the existing response-side `expectNoAuthorizationInNetworkResponse` check). No live backend needed — `trigger-429` is a standalone BFF mock, same as the existing F-A3 tests in this file. |
+| Conditional GET 304 | ❌ **Still blocked, not closable this phase** | `trigger-304.get.ts` exists as a BFF route but requires an authenticated session **and** a running Spring backend to produce a real ETag → conditional GET → 304 round trip. Explicitly deferred in `tests/api/error-lab.api.spec.ts` (lines 229-241) and `tests/e2e/ui/error-lab-network.spec.ts` header comment since Phase 3A-1, "to be enabled once Phase 3A-4 is complete" — 3A-4 completed but nobody returned to wire this up. Verified in this sandbox: no backend/Keycloak containers running (`docker ps` empty, `curl localhost:8080` and `localhost:8081` both connection-refused) — same blocker as F-A4's seed/reset (`app.testing.enabled=false`, backend not started in Playwright `webServer`). Closing this needs an infra decision (start backend+Keycloak for the Playwright run), not a test-file change — out of scope for an audit phase. |
+| Idempotency replay assertion | ❌ **Still blocked, not closable this phase** | Same root cause as 304: `trigger-idempotency-replay.post.ts` needs auth session + running backend (two POST calls with the same `Idempotency-Key`, asserting the second replays the first's result rather than creating a duplicate). Deferred alongside 304 since Phase 3A-1, never returned to. Note: F-C5's `retry-demo.spec.ts` (this session) demonstrates a *related but distinct* invariant — safe retry of a **GET** (no side effects to replay) — it is not a substitute for asserting idempotent replay of a **mutating POST**, which is what this gap actually names. |
+| Header-only HEAD assertions | ❌ **Still blocked, not closable this phase (and not a quick add)** | Backend has `HEAD /api/merchants/{merchantId}/payment-orders/{paymentOrderId}` (`PaymentOrderController.java`), but: (1) the frontend never issues a HEAD request anywhere — no composable calls it — so there's no UI action to hang a Playwright test off; (2) the only existing HEAD test in the whole repo is `PaymentOrderReadContractRestKitTest` under `apps/backend/src/test/java/lab/paymentquality/restkit/`, a suite CLAUDE.md instructs to always skip, so it doesn't run in the normal suite either; (3) `page.route()` can't demonstrate this meaningfully without a real trigger — `page.request` (APIRequestContext) bypasses `page.route()` entirely, and adding a live HEAD call means live backend, same 304/idempotency-replay blocker. Closing this for real needs either the backend infra decision above, or a genuinely new BFF route + UI trigger (scope creep, not audit work) — flagged for a future phase, not attempted here. |
+
+### Test Files Changed
+
+| File | Type | Action |
+|---|---|---|
+| `apps/frontend/tests/e2e/ui/error-lab-network.spec.ts` | spec | Modified — added 1 test (`page.waitForRequest`), updated header comment |
+
+### Quality Gates Results
+
+| Gate | Result |
+|---|---|
+| `playwright test --project=chromium tests/e2e/ui/error-lab-network.spec.ts` | ✅ 5/5 (was 4/4 before this phase) |
+| `playwright test --list` total | ✅ 84 tests across 25 files (was 83 after 3B-8) |
+| `pnpm typecheck` | ✅ PASS |
+| `rg "waitForTimeout" tests/` | ✅ none |
+
+### Deferred Items (carried forward, unchanged by this audit)
+
+- Conditional GET 304 full-stack test
+- Idempotency replay (mutating POST) full-stack test
+- Header-only HEAD dedicated test
+- All three share one root blocker: **no backend/Keycloak available to the Playwright run in this environment.** This is the same blocker already on record for F-A4 (worker-aware data isolation seed/reset). A single infra fix (start backend + Keycloak in `webServer`, or add a dedicated `api-integration` Playwright project that assumes `docker compose up` was run first) would unblock all four at once. Recommending this as its own infra phase rather than re-attempting piecemeal per feature.
+
+### What Was Intentionally Not Built
+
+- No new BFF proxy route for HEAD (would be a new feature, not an audit finding).
+- No attempt to start backend/Keycloak containers as part of this audit (infra change, needs its own decision/phase, not silently bundled into an audit).
+
+### Next Recommended Phase
+
+**3C Prep — Expert Capability Design Gate**: inventory the 6 Phase 3C features (F-D1 Payment expiration, F-D2 PSP Redirect Simulator, F-D3 Command palette, F-D4 ARIA snapshot, F-D5 Visual regression, F-D7 Audit diff drawer — F-D6 already done in 3A-2), confirm none of them require the backend/Keycloak infra blocker above (they don't — all 6 are either pure frontend or use existing mocked patterns), and confirm execution order by effort (S → L → XL).
+
+---
+
+## Phase 3C-Prep — Expert Capability Design Gate
+
+### Feature IDs
+
+F-D1, F-D2, F-D3, F-D4, F-D5, F-D7 (F-D6 already delivered in 3A-2)
+
+### Purpose
+
+Design-only gate, no code. Inventory each Phase 3C feature against current repo state, correct the roadmap's original effort estimates where the codebase has moved on since the roadmap was written, and lock an execution order.
+
+### Findings per feature
+
+| Feature | Roadmap estimate | Revised finding | Revised effort |
+|---|---|---|---|
+| F-D4 ARIA snapshot testing | S | No existing ARIA snapshot usage anywhere (`toMatchAriaSnapshot` — 0 hits). Confirmed unclaimed. | S (unchanged) |
+| F-D5 Visual regression | S | No `toHaveScreenshot` usage or snapshot config in `playwright.config.ts` — this will be the *first* visual-regression setup in the repo (baseline generation + CI gate design), not just "add a test to an existing rig". | S–M (slightly larger than roadmap assumed — first-time infra) |
+| F-D3 Command palette (Ctrl+K) | L | **Already ~90% built.** The Nuxt Dashboard Template's `UDashboardSearch`/`UDashboardSearchButton` (`app/layouts/dashboard.vue`) is a real command palette (`UCommandPalette` inside `UModal`), already reachable from every `/admin/**` page, already covered by a click-triggered open/close test (`tests/e2e/ui/confirm-action-modal.spec.ts`, F-B4). What's actually missing per the roadmap's stated unlock is specifically the **keyboard-shortcut trigger** (`page.keyboard.press('Control+k')`) — the click path is tested, the shortcut path is not. | **S** (was L — component pre-exists, only the shortcut-triggered test is new) |
+| F-D2 PSP Redirect Simulator | L | No existing simulator page. Note: a `MockPspClient.java` already exists backend-side, but it's a synchronous stub used internally by `PaymentLifecycleService` for authorize/capture/refund — unrelated to a redirect UX flow. Confirmed still needs a new standalone unauthenticated frontend page + multi-tab test. | L (unchanged) |
+| F-D7 Audit diff drawer | L | `AuditEntryDrawer.vue` (read directly, no before/after UI) confirmed has no diff section. Backend audit module has no `before`/`after`/payload field anywhere (`grep` for before/after/payload in `audit/` → 0 hits) — the audit event entity does not currently capture state snapshots at all, only outcome/action/target metadata. This is **larger than the roadmap assumed**: needs a backend domain decision (what before/after state to capture, on which actions, migration for a JSONB column) before any frontend diff UI is possible. | **L, backend-heavy** (roadmap assumed data existed; it doesn't) |
+| F-D1 Payment expiration | XL | `expiresAt` **already exists** end-to-end as inert plumbing: DB column (`PaymentSeedService`), domain field, `PaymentOrderResponse`/`PaymentLifecycleResponse` DTOs, frontend schema (`payment-order.schema.ts`) and read-only display (`PaymentOrderDetail.vue` shows it or "—"). Nothing currently **sets** it on real (non-seeded) orders and nothing **enforces** it (no scheduled/lazy transition to `EXPIRED`). Remaining work: decide expiry-write point + enforcement mechanism (scheduled job vs. lazy-on-read), `ExpirationCountdown` UI, `page.clock` tests. Smaller than roadmap assumed on the data-model side, same size on the logic+UI+test side. | **L–XL** (data model already there; enforcement logic + UI + tests still substantial — keeping as the checkpoint item per the approved plan) |
+
+### Execution Order (revised)
+
+Original roadmap order was S → L → XL by roadmap-stated effort. Revised order, using corrected effort:
+
+1. **F-D4** ARIA snapshot (S)
+2. **F-D5** Visual regression (S–M, first-time infra)
+3. **F-D3** Command palette Ctrl+K (S — revised down from L)
+4. **F-D2** PSP Redirect Simulator (L)
+5. **F-D7** Audit diff drawer (L, backend-heavy — revised up in complexity)
+6. **F-D1** Payment expiration (L–XL) — checkpoint before starting, per the approved plan, since it's the only item needing a backend architecture decision (scheduled job vs. lazy expiry check) beyond what F-D7's backend work already requires.
+
+### Infra Confirmation
+
+None of the 6 features require the backend/Keycloak infra blocker identified in the 3B-Closure-Audit — F-D1 and F-D7 touch the backend, but through normal `./mvnw test` (WebMvcTest/unit level, no Testcontainers needed for schema-only additions) rather than requiring a live running backend for Playwright. F-D2, F-D3, F-D4, F-D5 are pure frontend/Playwright, fully mockable.
+
+### What Was Intentionally Not Built
+
+No code in this phase — design gate only, per the approved plan.
+
+### Next Recommended Phase
+
+**Phase 3C-1 — F-D4: ARIA snapshot testing.**
+
+---
+
+## Phase 3C-1 — F-D4: ARIA Snapshot Testing
+
+### Feature IDs
+
+F-D4
+
+### Reason for This Phase
+
+First Phase 3C feature. Adds `toMatchAriaSnapshot()` coverage on two existing pages named in the roadmap: the merchant table and the payment order create form. No system code change — read-only structural snapshots of pages that already exist, same precedent as F-B4.
+
+### Discovery
+
+- Merchant table page (`app/pages/admin/merchants/index.vue`) renders a real `<table>` (Nuxt UI `UTable`) — `getByRole('table')` resolves.
+- Payment create form (`app/pages/admin/merchants/[merchantId]/payments/new.vue` → `CreatePaymentOrderForm.vue`) already has `data-testid="create-payment-order-form"` — used to scope the snapshot to the form region rather than the whole page (avoids brittle whole-page snapshots).
+- **Found and worked around**: `toMatchAriaSnapshot()` asserts exact accessible names/text. The shared `merchant()` test-data factory in `merchant-support.ts` uses `randomUUID()` for `merchantId` and `new Date().toISOString()` for `createdAt`/`updatedAt` — both non-deterministic per run, which makes an ARIA snapshot generated from it fail on every subsequent run (different UUID in the row's link URL, different formatted timestamp in the "Created" cell). Solved by building the two test merchants inline with fixed IDs/timestamps instead of using `merchant()`, specifically for this spec. Verified stable across 3 consecutive runs after the fix.
+- **Found and worked around (separately)**: the shared `Merchant['status']` type/helper in `merchant-support.ts` allows `'DRAFT'`, but the real runtime schema (`useMerchantsApi.ts` → `z.enum(['PENDING', 'ACTIVE', 'SUSPENDED'])`) does not — `'DRAFT'` is a stale value from before a rename. Using it triggers a `Response Validation Error` (visible as a `ProblemDetailsCard`, not a table) instead of rendering merchants. Avoided by only using `'ACTIVE'`/`'SUSPENDED'` in this spec's fixtures. Not fixed in the shared helper (out of scope — likely the same root cause behind the "6 pre-existing failures" already logged against `merchant-create.spec.ts` in earlier phases; flagged for the same future cleanup phase as the `merchant-feedback.spec.ts` drift from 3B-8).
+
+### Test Files Changed
+
+| File | Type | Action |
+|---|---|---|
+| `apps/frontend/tests/e2e/aria-snapshots.spec.ts` | spec | Created (2 tests: F-D4) |
+| `apps/frontend/tests/e2e/aria-snapshots.spec.ts-snapshots/*.aria.yml` | snapshot | Created (2 baseline snapshots) |
+
+### System Files Changed
+
+None.
+
+### Tests Added
+
+2 tests in `tests/e2e/aria-snapshots.spec.ts`:
+1. `merchant table matches ARIA snapshot (F-D4)` — deterministic 2-row table, scoped to `getByRole('table')`.
+2. `payment order create form matches ARIA snapshot (F-D4)` — scoped to `getByTestId('create-payment-order-form')`.
+
+### Quality Gates Results
+
+| Gate | Result |
+|---|---|
+| `playwright test --project=chromium tests/e2e/aria-snapshots.spec.ts` | ✅ 3/3, stable across 3 consecutive runs |
+| `playwright test --list` total | ✅ 86 tests across 26 files (was 84 after 3B-Closure-Audit) |
+| `pnpm typecheck` | ✅ PASS |
+| `rg "waitForTimeout" tests/` | ✅ none |
+
+### Known Baseline Findings (not fixed, logged for later)
+
+- `merchant-support.ts`'s `Merchant['status']` type includes stale `'DRAFT'` (real schema: `PENDING`/`ACTIVE`/`SUSPENDED`) — likely root cause of previously-logged `merchant-create.spec.ts` pre-existing failures.
+
+### What Was Intentionally Not Built
+
+- No fix to `merchant-support.ts`'s stale `'DRAFT'` status value — shared by many other specs, fixing it is a separate cleanup phase, not bundled into F-D4.
+
+### Next Recommended Phase
+
+**Phase 3C-2 — F-D5: Visual regression for status badges.**
+
+---
+
+## Phase 3C-2 — F-D5: Visual Regression for Status Badges
+
+### Feature IDs
+
+F-D5
+
+### Reason for This Phase
+
+First `toHaveScreenshot()` coverage in this repo — no visual-regression infra or baselines existed before this phase. Targets the two badge components named in the roadmap: `BusinessStatusBadge` and `HttpStatusBadge`.
+
+### Discovery
+
+- **Corrected a wrong assumption from 3C-Prep**: the merchant *list* table (`MerchantTable.vue`) does **not** use `BusinessStatusBadge`/`MerchantStatusBadge` at all — it renders its own inline `UBadge` with raw uppercase status text (`row.original.status`) via a local `statusColor()` helper. `BusinessStatusBadge` is actually rendered on the merchant **detail** page (`app/pages/admin/merchants/[merchantId]/index.vue`), which has a ready-made `data-testid="merchant-status-badge"` and title-case labels ("Pending"/"Active"/"Suspended") via `STATUS_MAP` in `BusinessStatusBadge.vue`. Retargeted the test to the detail page after the list-table version failed on a text mismatch (`SUSPENDED` vs `Suspended`).
+- `HttpStatusBadge` is reachable via the already-mocked Error Lab 429 flow (`ProblemDetailsCard`'s Status field) — same navigation pattern as F-A3's tests, no new mocking needed.
+- Added `expect.toHaveScreenshot.maxDiffPixelRatio: 0.02` to `playwright.config.ts` — a small, standard tolerance for anti-aliasing/font-hinting noise across environments, without masking real visual regressions. This is the "CI visual gate" design the roadmap asked for.
+- Screenshots are scoped to individual badge locators (not full pages/full rows) — keeps baselines small and meaningful, avoids unrelated layout noise (timestamps, IDs) causing false failures.
+
+### Test Files Changed
+
+| File | Type | Action |
+|---|---|---|
+| `apps/frontend/tests/e2e/visual-regression.spec.ts` | spec | Created (4 tests: F-D5) |
+| `apps/frontend/tests/e2e/visual-regression.spec.ts-snapshots/*.png` | snapshot | Created (4 baseline PNGs) |
+| `apps/frontend/playwright.config.ts` | config | Added `expect.toHaveScreenshot.maxDiffPixelRatio: 0.02` |
+
+### System Files Changed
+
+None.
+
+### Tests Added
+
+4 tests in `tests/e2e/visual-regression.spec.ts`:
+1. `merchant status badge — Pending (warning)`
+2. `merchant status badge — Active (success)`
+3. `merchant status badge — Suspended (error)`
+4. `HTTP status badge — 429 Client Error`
+
+### Quality Gates Results
+
+| Gate | Result |
+|---|---|
+| `playwright test --project=chromium tests/e2e/visual-regression.spec.ts` | ✅ 5/5 (1 setup + 4 tests), stable across 3 consecutive runs |
+| `playwright test --project=chromium tests/e2e/aria-snapshots.spec.ts tests/e2e/ui/error-lab-network.spec.ts` (regression) | ✅ 7/7 |
+| `playwright test --list` total | ✅ 90 tests across 27 files (was 86 after 3C-1) |
+| `pnpm typecheck` | ✅ PASS |
+| `rg "waitForTimeout" tests/` | ✅ none |
+
+### Known Baseline Findings (not fixed, logged for later)
+
+- `MerchantTable.vue`'s status column bypasses the shared `BusinessStatusBadge`/`MerchantStatusBadge` component entirely, using its own inline `UBadge` + `statusColor()` with raw uppercase status text. Not a bug per se (still visually a status badge with correct colors), but it means the "unified status badge" component isn't actually unified across the merchant list and merchant detail screens — worth a future consolidation pass, not fixed here (UI behavior change, out of scope for a test-only phase).
+
+### What Was Intentionally Not Built
+
+- No consolidation of `MerchantTable.vue`'s inline badge onto `BusinessStatusBadge` (UI change, not a testing-phase concern).
+- No screenshots of `PaymentStatusBadge` (payment order statuses) — roadmap named only the two components above; payment status badges can be added in a follow-up if desired, same pattern.
+
+### Next Recommended Phase
+
+**Phase 3C-3 — F-D3: Command palette Ctrl+K** (moved ahead of F-D2/F-D7 per the revised 3C-Prep execution order — now S-effort since the component already exists).
+
+---
+
+## Phase 3C-3 — F-D3: Command Palette (Ctrl+K)
+
+### Feature IDs
+
+F-D3
+
+### Reason for This Phase
+
+Confirmed in 3C-Prep: the command palette (`UDashboardSearch`) already exists and its click-triggered open/close path is already tested (F-B4). This phase adds only what F-D3 actually names as new — the keyboard-shortcut trigger and keyboard-only navigation — no frontend code change needed.
+
+### Discovery
+
+- `page.keyboard.press('Control+k')` opens the same palette as the click path — confirmed working via the existing global shortcut wired by `UDashboardSearch`.
+- **Found and worked around a timing/focus subtlety**: typing into the palette narrows the visible list (confirmed via `toBeVisible()` on the filtered item), but does **not** by itself move the listbox's active/highlighted descendant onto the new top result. Pressing `Enter` immediately after typing selected a stale highlighted item (navigated to `/` — the very first item in the *original*, that is unfiltered, list — instead of the typed target). Fixed by explicitly pressing `ArrowDown` after typing and asserting `data-highlighted` on the target option before pressing `Enter`, matching how a real keyboard-only user would actually interact with a listbox (type to filter, arrow to move focus, Enter to select) rather than assuming type-then-Enter is equivalent to type-then-arrow-then-Enter.
+- "Error Lab" text appears in **two** palette groups ("Go to" nav link and an "Actions" entry) sharing the same `href`/`data-testid` — and the sidebar itself carries the identical testid behind the modal. All locators in the new tests are scoped to `getByRole('group', { name: 'Go to' })` to stay unambiguous (Playwright strict-mode caught both collisions during development).
+
+### Test Files Changed
+
+| File | Type | Action |
+|---|---|---|
+| `apps/frontend/tests/e2e/ui/command-palette.spec.ts` | spec | Created (3 tests: F-D3) |
+| `apps/frontend/tests/e2e/ui/command-palette.spec.ts-snapshots/*.aria.yml` | snapshot | Created (1 baseline) |
+
+### System Files Changed
+
+None — command palette is pre-existing (Nuxt Dashboard Template).
+
+### Tests Added
+
+3 tests in `tests/e2e/ui/command-palette.spec.ts`:
+1. `Ctrl+K opens the command palette` — keyboard shortcut open + Escape close.
+2. `Ctrl+K then typing and Enter navigates via keyboard only` — full keyboard-only flow: shortcut → type → arrow → Enter → URL assertion, zero mouse interaction.
+3. `open command palette matches ARIA snapshot` — structural snapshot of the open palette dialog (F-D4-style reuse of `toMatchAriaSnapshot()`).
+
+### Quality Gates Results
+
+| Gate | Result |
+|---|---|
+| `playwright test --project=chromium tests/e2e/ui/command-palette.spec.ts` | ✅ 4/4 (1 setup + 3 tests), stable across 3 consecutive runs |
+| `playwright test --project=chromium tests/e2e/ui/confirm-action-modal.spec.ts` (F-B4 regression — same underlying modal) | ✅ 3/3 |
+| `playwright test --list` total | ✅ 93 tests across 28 files (was 90 after 3C-2) |
+| `pnpm typecheck` | ✅ PASS |
+| `rg "waitForTimeout" tests/` | ✅ none |
+
+### What Was Intentionally Not Built
+
+- No new command-palette component or UI change — confirmed pre-existing, test-only phase.
+
+### Next Recommended Phase
+
+**Phase 3C-4 — F-D2: PSP Redirect Simulator** (revised order: L-effort features next, largest item F-D1 last as the approved-plan checkpoint).
+
+---
+
+## Phase 3C-4 — F-D2: PSP Redirect Simulator
+
+### Feature IDs
+
+F-D2
+
+### Reason for This Phase
+
+Confirmed in 3C-Prep: no PSP redirect/multi-tab simulator exists. `MockPspClient.java` (backend) is an unrelated synchronous stub used internally by `PaymentLifecycleService`, not a redirect UX flow. This phase builds the standalone simulator page and the multi-tab Playwright coverage the roadmap names.
+
+### Scope Guardrail Check
+
+CLAUDE.md's Scope Guardrails exclude "real PSP integration, PSP failure modeling" and card/PAN/3DS. This feature is a **UI-only, clearly-fake simulator** — no card fields, no PAN, no network call to any PSP, no backend change at all. It demonstrates the multi-tab *pattern* a redirect-based checkout uses, the same way Error Lab demonstrates HTTP status codes without a real misbehaving client. Consistent with the roadmap's own distinction: it separately **rejects** a "PSP iframe simulator" (§17, PAN/3DS realism concerns) while **approving** F-D2's new-tab redirect simulator — different feature, different risk profile.
+
+### Design
+
+- New page `app/pages/psp-redirect-simulator.vue`: standalone (`definePageMeta({ layout: false })`), shows "Approve"/"Decline" buttons, then an outcome message. No data fetching, no store, no API call.
+- New trigger: a "PSP Redirect Simulator (F-D2)" card on `app/pages/error-lab.vue` with a `target="_blank"` link (`data-testid="psp-redirect-trigger"`) — consistent with Error Lab's existing role as the protocol/pattern learning surface.
+- `app/middleware/auth.global.ts`: added an explicit bypass for `/psp-redirect-simulator`, alongside the existing `/login` bypass. Rationale: a *real* PSP redirect target lives on an entirely different domain, outside this app's session realm — gating the simulator behind our own login would misrepresent the real-world pattern it's teaching. This is the only system file touched.
+
+### Discovery
+
+- **Found and worked around a hydration-timing race**: the new page is a fresh dev-server route (first compile on demand). `pspPage.waitForLoadState()` (default `'load'`) resolves once the SSR-rendered HTML is present and visually "actionable" to Playwright, but *before* Vue hydration finishes attaching `@click` listeners in this specific cold-compile case — clicking "Approve"/"Decline" immediately after was a silent no-op (button visually present, handler not yet wired). Fixed by waiting for `'networkidle'` instead, which covers the dynamic chunk fetch. No `waitForTimeout` used (forbidden by project convention) — this is a real Playwright wait condition, not an arbitrary delay.
+- **Found and logged (not fixed) an unrelated pre-existing baseline failure** while running the full regression sweep: `tests/e2e/auth-deny.spec.ts` → `unauthenticated access starts Keycloak redirect and hides merchant data` expects `/login` to auto-redirect to the mocked `/auth/keycloak` route. The current `/login` page (`app/pages/login.vue`) requires an explicit click on a "Continue to Keycloak" button — no auto-redirect. Verified this is unrelated to this phase's middleware change: the added bypass only special-cases the literal path `/psp-redirect-simulator` and cannot affect `/admin/merchants` → `/login` control flow, which is untouched. Same class of finding as the `merchant-feedback.spec.ts` (3B-8) and `merchant-support.ts` `'DRAFT'` (3C-1) drifts — UI evolved, test wasn't updated. Logged for the same future cleanup phase.
+
+### Test Files Changed
+
+| File | Type | Action |
+|---|---|---|
+| `apps/frontend/tests/e2e/psp-redirect-simulator.spec.ts` | spec | Created (3 tests: F-D2) |
+
+### System Files Changed
+
+| File | Change |
+|---|---|
+| `apps/frontend/app/pages/psp-redirect-simulator.vue` | Created — standalone mock PSP page |
+| `apps/frontend/app/pages/error-lab.vue` | Added PSP Redirect Simulator trigger card |
+| `apps/frontend/app/middleware/auth.global.ts` | Added `/psp-redirect-simulator` bypass |
+
+### Tests Added
+
+3 tests in `tests/e2e/psp-redirect-simulator.spec.ts`:
+1. `opens PSP simulator in a new tab, approves, and returns (F-D2)` — `context.waitForEvent('page')`, multi-tab assertions (`context.pages()`), approve flow, explicit `pspPage.close()`.
+2. `declines in the PSP simulator tab` — decline flow.
+3. `PSP simulator is reachable without an authenticated session` — fresh `browser.newContext()` with no session mock at all, proving the auth bypass works.
+
+### Quality Gates Results
+
+| Gate | Result |
+|---|---|
+| `playwright test --project=chromium tests/e2e/psp-redirect-simulator.spec.ts` | ✅ 4/4 (1 setup + 3 tests), stable across 3 consecutive runs |
+| `playwright test --project=chromium tests/e2e/ui/error-lab-network.spec.ts tests/e2e/visual-regression.spec.ts` (regression — same Error Lab page + auth middleware) | ✅ 9/9 |
+| `playwright test --project=chromium tests/e2e/auth-deny.spec.ts` (regression — auth middleware) | ❌ 1/2 — pre-existing failure, confirmed unrelated to this phase's change (see Discovery) |
+| `playwright test --list` total | ✅ 96 tests across 29 files (was 93 after 3C-3) |
+| `pnpm typecheck` | ✅ PASS |
+| `rg "waitForTimeout" tests/` | ✅ none |
+
+### Known Baseline Findings (not fixed, logged for later)
+
+- `auth-deny.spec.ts`'s first test assumes `/login` auto-redirects to Keycloak; the current page requires an explicit button click. Same future cleanup phase as the other logged drifts.
+
+### What Was Intentionally Not Built
+
+- No real PSP call, no card/PAN fields, no 3DS — out of scope per CLAUDE.md.
+- No wiring into the actual payment lifecycle (authorize/capture buttons don't open this simulator) — the roadmap scopes F-D2 as a standalone pattern demo, not a lifecycle integration; wiring it into real payment flows would imply a PSP integration decision that's explicitly out of scope.
+
+### Next Recommended Phase
+
+**Phase 3C-5 — F-D7: Audit before/after diff drawer** (backend-heavy — needs a domain decision on what state to capture before any frontend work).
+
+---
+
+## Phase 3C-5 — F-D7: Audit Before/After Diff Drawer
+
+### Feature IDs
+
+F-D7
+
+### Reason for This Phase
+
+Confirmed in 3C-Prep: `AuditEntryDrawer.vue` has no diff UI, and the backend audit event has no before/after state capture at all — needed a domain decision before any frontend work, unlike the other Phase 3C features.
+
+### Domain Design
+
+- **Scope decision**: capture field-level diffs only for actions that already have a clear, cheap "before" snapshot available at the call site — merchant `activate`/`suspend` status transitions. Chosen because it's the smallest, most self-contained state-machine transition already audited (`MerchantService`), and keeps this phase bounded instead of retrofitting every audited action across merchant/payment/tenant/iam.
+- **Shape decision**: `Map<String, Object>` flat field snapshots (e.g. `{"status": "ACTIVE"}`), not a generic deep-object diff engine. Sufficient for the single-field transitions being captured now; a richer diff (nested objects, arrays) would be premature for the only two producers that exist.
+- **Backward compatibility decision**: `AuditableActionOccurred` gained `beforeState`/`afterState` as two new trailing record components, **plus an additional non-canonical constructor** replaying the original 9-arg signature with `null, null` — this kept all 7 existing call sites (2 production, 5 test) compiling unchanged, avoiding a large mechanical diff across unrelated code for a feature only 2 call sites actually use.
+
+### Discovery
+
+- No existing JSONB/`@JdbcTypeCode` usage anywhere in the codebase — this is genuinely new backend infrastructure. Verified Hibernate 7.2.12 (bundled with Spring Boot 4) supports `@JdbcTypeCode(SqlTypes.JSON)` → PostgreSQL `jsonb` natively, no extra dependency needed.
+- **Found and fixed a redaction-contract test that my change legitimately broke** (not a pre-existing drift — a direct, necessary consequence of this phase): `AuditDtoRedactionTest.summaryAndDetailExposeExactlyTheSafeFieldSet()` asserted `AuditEventSummary` and `AuditEventDetail` expose the **exact same** field set — intentional, since Detail now legitimately exposes 2 more fields (`beforeState`, `afterState`) than Summary (list view stays list-weight only). Split into two tests, one per DTO, with the corrected field lists.
+- One direct `new AuditEventDetail(...)` call site (`AuditControllerTest.detail()`) needed a 2-arg update (`null, null`) — `AuditEventDetail` is a small response-shape record, not the widely-used domain event, so no backward-compat constructor was added there; the single call site was just updated directly.
+- **Found and corrected a mischaracterization from Phase 3C-1**: 3C-1 logged `merchant-support.ts`'s `'DRAFT'` status value as "stale" (assuming the real schema was `PENDING`/`ACTIVE`/`SUSPENDED`). Building this phase's tests against the real backend confirmed the **opposite**: `MerchantStatus` (backend enum, `apps/backend/.../merchant/internal/domain/MerchantStatus.java`) is genuinely `DRAFT`/`ACTIVE`/`SUSPENDED` — `DRAFT` is correct. It's the **frontend** Zod schema (`useMerchantsApi.ts` → `z.enum(['PENDING', 'ACTIVE', 'SUSPENDED'])`) that's wrong and would reject a real (non-mocked) backend response for a freshly-created merchant. This is a more significant finding than originally logged — a real merchant list fetch against the live backend would currently fail frontend schema validation. Not fixed here (frontend schema/type change, out of scope for an audit-drawer phase) — re-logged with the corrected diagnosis for the future cleanup phase.
+
+### REST Contract
+
+No new endpoint — `GET /api/audit/{id}` response gains two optional fields:
+```
+GET /api/audit/{id} → 200 + { ...existing fields, beforeState: {...} | null, afterState: {...} | null }
+```
+
+### DB/Flyway Changes
+
+`audit/V11__add_audit_event_before_after_state.sql`:
+```sql
+ALTER TABLE audit_event
+    ADD COLUMN before_state JSONB,
+    ADD COLUMN after_state JSONB;
+```
+
+### Backend Changes
+
+- `shared/events/AuditableActionOccurred.java` — added `beforeState`/`afterState` (`Map<String, Object>`, nullable) + backward-compat 9-arg constructor.
+- `shared/events/AuditableActionEventFactory.java` — added a `success(...)` overload accepting before/after maps; existing overloads delegate with `null, null`.
+- `audit/internal/domain/AuditEvent.java` — added `beforeState`/`afterState` fields (`@JdbcTypeCode(SqlTypes.JSON)`), copied in `fromEvent()`, new getters.
+- `audit/internal/web/dto/AuditEventDetail.java` — added `beforeState`/`afterState` fields, updated `from()`.
+- `merchant/internal/application/MerchantService.java` — `activate`/`suspend` (both overloads) now capture `statusBefore` before mutating, and publish via a new `publishStatusChange(...)` helper instead of the field-less `publishSuccess(...)`.
+
+### Test Files Changed (backend)
+
+| File | Type | Action |
+|---|---|---|
+| `audit/internal/domain/AuditEventTest.java` | test | Added 1 test (`fromEventCopiesBeforeAndAfterStateWhenPresent`), added null-state assertions to the existing test |
+| `audit/internal/web/dto/AuditDtoRedactionTest.java` | test | Split 1 test into 2, added `ALLOWED_DETAIL_FIELDS` |
+| `audit/internal/web/AuditControllerTest.java` | test | Fixed 1 call site (`detail()` helper) |
+| `merchant/internal/application/MerchantServiceTest.java` | test | Added 2 tests (`activatePublishesAuditEventWithBeforeAfterStatusDiff`, `suspendPublishesAuditEventWithBeforeAfterStatusDiff`) |
+
+### Frontend/BFF Changes
+
+- `app/schemas/audit.schema.ts` — `auditEventSchema` gained optional `beforeState`/`afterState` (`z.record(z.string(), z.unknown()).nullable().optional()`).
+- `app/components/audit/AuditEntryDrawer.vue` — new `diffFields` computed property (merges before/after key sets, sorts, formats), new conditional "Change" table section (`data-testid="audit-entry-diff"`, per-row `audit-entry-diff-row`/`-before`/`-after`). Renders nothing when both states are absent.
+- No BFF change — `server/api/audit/[id].get.ts` already passes the backend response through untouched.
+
+### Tests Added (frontend)
+
+2 tests in `tests/e2e/audit-diff-drawer.spec.ts`:
+1. `opens the diff drawer and shows structured before/after fields (F-D7)` — asserts the specific field name/before/after values, not just presence.
+2. `events without before/after state render no diff section (F-D7)` — conditional-content negative case.
+
+### Quality Gates Results
+
+| Gate | Result |
+|---|---|
+| Backend compile + test-compile | ✅ PASS |
+| `MerchantServiceTest, AuditEventTest, AuditDtoRedactionTest, AuditableActionOccurredTest` | ✅ 32/32 |
+| `AuditControllerTest` (WebMvcTest regression) | ✅ 9/9 |
+| DB-dependent audit tests (`AuditEventPersistenceTest`, `JpaAuditEventRepositoryTest`, `AuditModuleTest`, `AuditSecurityMatrixIT`, `AuditEventListenerModuleTest`) | ⏭️ **Not run** — require `PostgresContainerSupport`/Testcontainers; no container runtime available in this sandbox (same blocker on record since the 3B-Closure-Audit). Migration SQL was reviewed but not exercised against a real Postgres instance in this session. |
+| `playwright test --project=chromium tests/e2e/audit-diff-drawer.spec.ts` | ✅ 3/3, stable across 3 consecutive runs |
+| `playwright test --project=chromium tests/e2e/audit-export.spec.ts` (regression) | ✅ 2/2 |
+| `playwright test --list` total | ✅ 98 tests across 30 files (was 96 after 3C-4) |
+| `pnpm typecheck` | ✅ PASS |
+| `rg "waitForTimeout" tests/` | ✅ none |
+
+### Known Baseline Findings (corrected/logged, not fixed)
+
+- **Correction to 3C-1's finding**: the frontend `useMerchantsApi.ts` status enum (`PENDING`/`ACTIVE`/`SUSPENDED`) is the one that's wrong, not `merchant-support.ts`'s `'DRAFT'` — the real backend `MerchantStatus` enum is `DRAFT`/`ACTIVE`/`SUSPENDED`. A real (non-mocked) freshly-created merchant would fail frontend schema validation today. Higher priority than originally logged; still not fixed here.
+
+### Deferred Items
+
+- Before/after diff is only wired for merchant activate/suspend. Extending to payment lifecycle transitions, risk-flag updates, or tenant settings would reuse the same `AuditableActionEventFactory` overload — straightforward follow-up, not done here (kept this phase bounded per the Domain Design scope decision).
+- Migration not verified against a real Postgres instance in this session (infra blocker, not a code gap).
+
+### What Was Intentionally Not Built
+
+- No generic/deep diff engine — flat field maps only, matching the one real use case.
+- No diff capture for payment/tenant/iam actions — explicitly scoped out this phase (see Domain Design).
+
+### Next Recommended Phase
+
+**Phase 3C-6 — F-D1: Payment expiration** (XL — checkpoint with the user before starting, per the approved plan, since it needs a backend architecture decision: scheduled job vs. lazy-on-read expiry).
+
+---
+
+## Phase 3C-6 — F-D1: Payment Expiration
+
+### Feature IDs
+
+F-D1
+
+### Reason for This Phase
+
+Last Phase 3C feature, XL effort — checkpointed with the user before starting per the approved plan. User chose **`@Scheduled` job** over lazy-on-read enforcement.
+
+### Discovery — this changed the shape of the whole phase
+
+Before designing anything, reading the actual `PaymentOrder` domain class turned up that **payment expiration already exists as a domain concept**, just never wired to a trigger:
+- `expiresAt` is already a real column, already set by `authorize()` (7-day authorization window: `authorizedAt.plus(7, DAYS)`), already in `PaymentOrderResponse`/`PaymentLifecycleResponse`, already displayed read-only on the frontend.
+- `PaymentStatus.EXPIRED` and `PaymentLifecycleAction.EXPIRE` already exist as enum values.
+- `AUTHORIZED → EXPIRED` is already a valid transition in `VALID_TRANSITIONS`.
+- `PaymentOrder.isAuthorizationExpired()` and an inline expiry check already existed **inside `capture()`**: attempting to capture an overdue-AUTHORIZED order already flips it to EXPIRED and throws `AuthorizationExpiredException` — a lazy, capture-triggered enforcement that was already live and completely untested (`rg` found zero existing tests referencing it).
+
+So this phase is **filling the one missing piece** (a trigger that doesn't require someone to attempt a capture) — not inventing a new domain concept from scratch, which is smaller and lower-risk than the roadmap's original XL estimate assumed. No new domain state needed at all.
+
+### Domain Design
+
+- Extracted the inline `capture()` expiry mutation into an explicit `PaymentOrder.expire()` method (guarded by `canTransitionTo`, throws `InvalidStateTransitionException` if called on a non-transitionable order) — now shared by both the lazy capture-path and the new scheduled sweep. Behavior-preserving refactor: `capture()` on an overdue order still throws `AuthorizationExpiredException` after flipping status, exactly as before.
+- New `PaymentExpirationService.expireOverdueAuthorizations()`: finds all `AUTHORIZED` orders with `expiresAt < now`, calls `expire()` on each, persists, records a `PaymentOrderStatusHistory` entry (`EXPIRE` action), and publishes an audit event with `beforeState={"status":"AUTHORIZED"}` / `afterState={"status":"EXPIRED"}` — reusing the exact F-D7 diff pattern.
+- New `PaymentExpirationScheduler` (`@Scheduled(fixedRateString = "${payment.expiration.scheduler.fixed-rate-ms:60000}")`) — a thin `@Component` that just calls the service. Kept separate from the service so the sweep logic is unit-testable without a Spring scheduling context.
+- `@EnableScheduling` added to `PaymentQualityApplication`.
+- Gated by `payment.expiration.scheduler.enabled` (`@ConditionalOnProperty`, default `true`, `matchIfMissing = true`) — same convention as `TestController`'s `app.testing.enabled` flag. **Disabled in `application-test.yml`** so integration test runs (whenever Docker is available to run them) stay deterministic; the sweep logic itself is tested directly against `PaymentExpirationService`, not by waiting for a scheduler tick.
+
+### DB/Flyway Changes
+
+None — `expires_at` already existed as a column.
+
+### Backend Changes
+
+| File | Change |
+|---|---|
+| `payment/internal/domain/PaymentOrder.java` | Extracted `expire()` method; `capture()` now calls it instead of inlining the mutation |
+| `payment/internal/infrastructure/JpaPaymentOrderRepository.java` | Added `findAllByStatusAndExpiresAtBefore(status, instant)` |
+| `payment/internal/application/PaymentExpirationService.java` | New — sweep logic + audit publish |
+| `payment/internal/application/PaymentExpirationScheduler.java` | New — `@Scheduled` trigger |
+| `PaymentQualityApplication.java` | Added `@EnableScheduling` |
+| `application.yml` | Added `payment.expiration.scheduler.{enabled,fixed-rate-ms}` |
+| `application-test.yml` | `payment.expiration.scheduler.enabled: false` |
+
+### Frontend Changes
+
+- `app/components/payment/ExpirationCountdown.vue` — new component, live `setInterval`-driven countdown; renders "Expires in Xh Ym"/"Xm Ys"/"Xs" while `expiresAt` is in the future, an "Authorization expired" badge once it isn't. Purely a display concern — documented in the component that it never itself flips server state; the sweep/lazy-check are authoritative.
+- `app/components/payment/PaymentOrderDetail.vue` — renders `ExpirationCountdown` in a new "Authorization Window" row, only when `order.status === 'AUTHORIZED' && order.expiresAt`.
+
+### Test Files Changed (backend)
+
+| File | Type | Action |
+|---|---|---|
+| `payment/internal/domain/PaymentOrderExpiryTest.java` | test | Created (4 tests) — first-ever coverage of `expire()`/`isAuthorizationExpired()`/the capture-expiry interaction |
+| `payment/internal/application/PaymentExpirationServiceTest.java` | test | Created (3 tests) — sweep logic, audit diff, multi-order independence |
+
+### Tests Added (frontend)
+
+3 tests in `tests/e2e/payment-expiration.spec.ts`:
+1. `shows a live countdown for an AUTHORIZED order and flips to expired at zero (F-D1)` — `page.clock.pauseAt()` (not `install()` — see Discovery below) + `fastForward('01:06')`, asserts exact remaining-time text then the expired badge.
+2. `does not render a countdown for a CREATED order` — conditional-content negative case.
+3. `does not render a countdown for an already-EXPIRED order` — conditional-content negative case.
+
+### Discovery — Playwright clock gotcha
+
+`page.clock.install({ time })` starts a **ticking** virtual clock — real wall-clock time spent on page load/hydration (several seconds in this dev environment) silently advances it before the first assertion runs, making an exact "Expires in 1m 5s" assertion flaky/wrong (observed "Expires in 55s" instead). Fixed by using `page.clock.pauseAt(time)` instead, which freezes the clock immediately; `fastForward()` then advances it deterministically only when the test explicitly asks.
+
+### Quality Gates Results
+
+| Gate | Result |
+|---|---|
+| Backend compile + test-compile | ✅ PASS |
+| `PaymentExpirationServiceTest, PaymentOrderExpiryTest` | ✅ 7/7 |
+| `MerchantServiceTest, AuditEventTest, AuditDtoRedactionTest, AuditableActionOccurredTest, AuditControllerTest, PaymentOrderServiceTest` (full-session backend regression) | ✅ 51/51 |
+| DB-dependent tests (`PaymentModuleTest`, RestAssured `rest/` suite, etc.) | ⏭️ **Not run** — same Testcontainers/no-container-runtime blocker on record since 3B-Closure-Audit |
+| `playwright test --project=chromium tests/e2e/payment-expiration.spec.ts` | ✅ 4/4, stable across 3 consecutive runs |
+| `playwright test --project=chromium tests/e2e/payment-order-read.spec.ts` (regression) | ✅ 2/2 |
+| `playwright test --list` total | ✅ 101 tests across 31 files (was 98 after 3C-5) |
+| `pnpm typecheck` | ✅ PASS |
+| `rg "waitForTimeout" tests/` | ✅ none |
+
+### Known Baseline Findings
+
+None new this phase.
+
+### Deferred Items
+
+- Migration-free this phase means nothing to verify against a real Postgres instance — but the scheduler's actual periodic firing (vs. just the extracted service logic) is still unverified against a live Spring context, since that needs the same Testcontainers/Docker infra blocked throughout this session.
+- No admin UI to trigger a manual sweep or view scheduler health — out of scope, not requested by the roadmap.
+
+### What Was Intentionally Not Built
+
+- No change to the 7-day authorization window default — reused as-is.
+- No expiry countdown/enforcement for any status other than AUTHORIZED (e.g. no "CREATED order expiry" concept) — the domain model only ever defined AUTHORIZED→EXPIRED; inventing a second expiry concept was out of scope.
+- No notification/webhook on expiry — explicitly out of scope per CLAUDE.md (no webhooks).
+
+### Full-Suite Regression Check (post Phase 3C)
+
+Ran the entire `chromium` project (all 82 pre-existing + this session's new specs, minus `restkit`/`paymentsupport` per project convention) once, unfiltered, to catch any cross-file interaction the per-phase targeted regressions could have missed:
+
+- **61 passed, 21 failed.**
+- **1 required a fix**: `command-palette.spec.ts`'s keyboard-navigation test (3C-3) passed 3/3 in isolated reruns during 3C-3 but failed under full-suite load — the `ArrowDown` → assert-`data-highlighted`-on-a-specific-option step was timing-sensitive (which of two identical "Error Lab" entries gets highlighted first isn't guaranteed). Fixed by asserting the list narrowed to exactly 2 options before selecting, then just pressing `ArrowDown`+`Enter` without asserting which specific option is highlighted — both options share the same destination, so the test only needs the end-to-end keyboard flow to land on `/error-lab`, not a specific DOM highlight state. Verified stable across 5 isolated reruns after the fix.
+- **The other 20 failures are pre-existing, not introduced by this session.** None are in files this session modified (`git status` cross-checked against the failing file list — zero overlap beyond the already-documented `merchant-feedback.spec.ts` and `auth-deny.spec.ts`). Spot-checked `merchant-lifecycle.spec.ts`: fails because the "Activate" button never renders — traces to the same root cause already logged in the 3C-4 Known Baseline Findings correction (`useMerchantsApi.ts`'s `PENDING`/`ACTIVE`/`SUSPENDED` enum rejects the backend's real `DRAFT` status via schema validation, so a freshly-created merchant's data never renders through). This one root cause plausibly explains most of `merchant-create.spec.ts` (6), `merchant-lifecycle.spec.ts` (3), `foundation.spec.ts` (1), and `payment-orders-panel.spec.ts` (2) failures. `payment-status-polling.spec.ts` (2) and `rbac/merchant-risk-flag.spec.ts` (2) were not individually root-caused this session. Not fixed here — confirmed out of scope for Phase 3C, logged as the single highest-priority item for the recommended cleanup phase below.
+
+### Next Recommended Phase
+
+**Phase 3C is now complete** (F-D1 through F-D7, F-D6 done earlier in 3A-2). Recommended next: a **3C Closure Audit** mirroring the 3B one — re-run `playwright test --list`, confirm the coverage matrix in the roadmap doc §13 is fully closed, and then a **dedicated baseline-cleanup phase** for the accumulated pre-existing failures, starting with the `useMerchantsApi.ts` status-enum mismatch (highest blast radius — plausibly ~12 of the 20 outstanding failures), then `merchant-feedback.spec.ts`'s stale copy/button-name assertions, then `auth-deny.spec.ts`'s stale auto-redirect assumption.

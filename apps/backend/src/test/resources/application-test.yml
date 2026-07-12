@@ -10,6 +10,13 @@ spring:
     locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit
     baseline-on-migrate: false
 
+payment:
+  expiration:
+    scheduler:
+      # Disabled in tests so integration test runs stay deterministic — the
+      # sweep logic is unit tested directly against PaymentExpirationService.
+      enabled: false
+
 logging:
   level:
     lab.paymentquality: DEBUG

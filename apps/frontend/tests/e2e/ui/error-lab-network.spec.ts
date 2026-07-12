@@ -4,6 +4,7 @@
  *
  * Playwright capabilities demonstrated:
  *   - page.waitForResponse()   — intercept a real BFF network response
+ *   - page.waitForRequest()    — intercept the outgoing browser request itself
  *   - response.status()        — assert HTTP status from the network layer
  *   - response.headers()       — assert response headers at the network layer
  *   - page.evaluate()          — check localStorage/sessionStorage
@@ -15,7 +16,11 @@
  * Backend: NOT required — trigger-429 is a standalone BFF mock (no backend call)
  *
  * Error Lab 304, trigger-401, trigger-428, idempotency-replay require auth session +
- * running backend. They are deferred to Phase 3A-4 when multi-role auth is ready.
+ * running backend (Spring Boot + Keycloak, neither started by the Playwright
+ * webServer config). Deferred since Phase 3A-1; still blocked as of the 3B
+ * Closure Audit for the same reason F-A4 seed/reset is blocked in CI — no
+ * infra orchestration change has been made to start the backend for Playwright
+ * runs. Re-evaluate once that infra decision is made, not part of this audit.
  */
 
 import { expect, test } from '@playwright/test'
@@ -72,6 +77,32 @@ test.describe('Error Lab — 429 network + UI (F-A3)', () => {
     const seconds = expectRetryAfterHeader(response)
     expect(seconds, 'Retry-After from trigger-429 is always 30').toBe(30)
     expectNoAuthorizationInNetworkResponse(response)
+  })
+
+  /**
+   * page.waitForRequest() captures the OUTGOING browser request, before any
+   * response exists. Complements the response-side check above: proves the
+   * BFF pattern end-to-end — the browser's own request never carries the
+   * Authorization header (the BFF attaches Bearer server-side, after the
+   * proxy hop), so a token can't leak in this direction either.
+   */
+  test('page.waitForRequest captures the outgoing request before the response resolves', async ({ page }) => {
+    await gotoErrorLabViaSidebar(page)
+    await expect(page.getByTestId('error-lab-trigger-429')).toBeVisible({ timeout: 15000 })
+
+    const requestPromise = page.waitForRequest(TRIGGER_429_URL)
+    await page.getByTestId('error-lab-trigger-429').click()
+    const request = await requestPromise
+
+    expect(request.method(), 'trigger-429 is invoked via POST').toBe('POST')
+    expect(request.url()).toContain('/api/error-lab/trigger-429')
+    const requestHeaders = request.headers()
+    expect(requestHeaders['authorization'], 'browser-issued request must never carry a bearer token').toBeUndefined()
+
+    // The request settles into a response — waitForRequest() resolves strictly
+    // before the network round-trip completes.
+    const response = await request.response()
+    expect(response?.status()).toBe(429)
   })
 
   /**

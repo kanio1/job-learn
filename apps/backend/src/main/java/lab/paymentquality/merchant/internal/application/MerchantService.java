@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -165,42 +166,48 @@ public class MerchantService {
     public MerchantResponse activate(UUID id) {
         Merchant merchant = repository.findById(id)
                 .orElseThrow(() -> new MerchantNotFoundException(id.toString()));
+        MerchantStatus statusBefore = merchant.getStatus();
         merchant.activate();
         repository.saveAndFlush(merchant);
         log.info("merchant.status.activate.succeeded merchantId={} status={} correlationId={}",
                 id, merchant.getStatus(), MDC.get("correlationId"));
-        publishSuccess("MERCHANT_ACTIVATED", id, null);
+        publishStatusChange("MERCHANT_ACTIVATED", id, null, statusBefore, merchant.getStatus());
         return MerchantMapper.toResponse(merchant);
     }
 
     public MerchantResponse activate(UUID id, TenantContext tenantContext) {
         Merchant merchant = findMerchantEnforcingTenantBoundary(id, tenantContext);
+        MerchantStatus statusBefore = merchant.getStatus();
         merchant.activate();
         repository.saveAndFlush(merchant);
         log.info("merchant.status.activate.succeeded merchantId={} status={} correlationId={}",
                 id, merchant.getStatus(), MDC.get("correlationId"));
-        publishSuccess("MERCHANT_ACTIVATED", id, tenantContext.tenantReference().value());
+        publishStatusChange("MERCHANT_ACTIVATED", id, tenantContext.tenantReference().value(),
+                statusBefore, merchant.getStatus());
         return MerchantMapper.toResponse(merchant);
     }
 
     public MerchantResponse suspend(UUID id) {
         Merchant merchant = repository.findById(id)
                 .orElseThrow(() -> new MerchantNotFoundException(id.toString()));
+        MerchantStatus statusBefore = merchant.getStatus();
         merchant.suspend();
         repository.saveAndFlush(merchant);
         log.info("merchant.status.suspend.succeeded merchantId={} status={} correlationId={}",
                 id, merchant.getStatus(), MDC.get("correlationId"));
-        publishSuccess("MERCHANT_SUSPENDED", id, null);
+        publishStatusChange("MERCHANT_SUSPENDED", id, null, statusBefore, merchant.getStatus());
         return MerchantMapper.toResponse(merchant);
     }
 
     public MerchantResponse suspend(UUID id, TenantContext tenantContext) {
         Merchant merchant = findMerchantEnforcingTenantBoundary(id, tenantContext);
+        MerchantStatus statusBefore = merchant.getStatus();
         merchant.suspend();
         repository.saveAndFlush(merchant);
         log.info("merchant.status.suspend.succeeded merchantId={} status={} correlationId={}",
                 id, merchant.getStatus(), MDC.get("correlationId"));
-        publishSuccess("MERCHANT_SUSPENDED", id, tenantContext.tenantReference().value());
+        publishStatusChange("MERCHANT_SUSPENDED", id, tenantContext.tenantReference().value(),
+                statusBefore, merchant.getStatus());
         return MerchantMapper.toResponse(merchant);
     }
 
@@ -222,6 +229,24 @@ public class MerchantService {
                 "MERCHANT",
                 merchantId.toString(),
                 tenantReference));
+    }
+
+    /** Status-transition variant — feeds the audit diff drawer (F-D7). */
+    private void publishStatusChange(
+            String action,
+            UUID merchantId,
+            String tenantReference,
+            MerchantStatus statusBefore,
+            MerchantStatus statusAfter) {
+        eventPublisher.publishEvent(AuditableActionEventFactory.success(
+                action,
+                "MERCHANT",
+                merchantId.toString(),
+                tenantReference,
+                null,
+                null,
+                Map.of("status", statusBefore.name()),
+                Map.of("status", statusAfter.name())));
     }
 
     private Merchant findMerchantEnforcingTenantBoundary(UUID id, TenantContext tenantContext) {

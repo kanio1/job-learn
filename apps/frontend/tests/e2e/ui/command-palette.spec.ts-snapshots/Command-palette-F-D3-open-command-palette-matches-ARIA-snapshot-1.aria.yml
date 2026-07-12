@@ -1,0 +1,16 @@
+- dialog "Search Payment Quality Lab":
+  - textbox "Search dashboard..."
+  - button "Close"
+  - listbox:
+    - group "Go to":
+      - text: ""
+      - option "Overview"
+      - option "Error Lab"
+    - group "Actions":
+      - text: ""
+      - option "Error Lab"
+    - group "Theme":
+      - text: ""
+      - option "System"
+      - option "Light"
+      - option "Dark"
