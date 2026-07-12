@@ -10,12 +10,18 @@ export interface Merchant {
   updatedAt: string
 }
 
-export async function mockAuthenticatedSession(page: Page, username = 'platform.operator') {
+// Default roles match the real Keycloak realm assignment for `platform.operator`
+// (see infra/keycloak/realms/payment-quality-realm.json — realmRoles includes
+// PLATFORM_ADMIN). Without this, useAuthorization()'s fail-closed empty-roles
+// default hides every capability-gated button (Create merchant, Activate,
+// Suspend, ...), which previously caused several e2e specs to hang waiting
+// for a button that could never render (TD-2A).
+export async function mockAuthenticatedSession(page: Page, username = 'platform.operator', roles: string[] = ['PLATFORM_ADMIN']) {
   await page.route('**/api/_auth/session', async route => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ loggedIn: true, user: { username } })
+      body: JSON.stringify({ loggedIn: true, user: { username, roles } })
     })
   })
 }

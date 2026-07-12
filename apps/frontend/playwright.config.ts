@@ -10,7 +10,21 @@ export default defineConfig({
   // F-D5: visual regression tolerance — small pixel diffs (anti-aliasing,
   // font hinting) are expected across machines/CI; only fail on real
   // visual regressions (wrong color, missing element, layout shift).
+  //
+  // TD-2A: the default 5000ms assertion timeout is too tight for this
+  // project's `nuxt dev` webServer. Measured first-render latency for a
+  // fresh `/admin/merchants*` navigation (session fetch -> middleware ->
+  // Suspense resolution -> component mount) is consistently ~4.1-4.6s in
+  // isolation, and regularly exceeds 5s under this machine's default
+  // worker parallelism (16 workers sharing one dev server). Several
+  // existing specs already work around this per-assertion (e.g.
+  // `ui/command-palette.spec.ts` uses an explicit 15000ms timeout on the
+  // same "Merchants" heading) rather than via shared config — this raises
+  // the default so every spec gets the same headroom without repeating
+  // the workaround per assertion. See status/technical-debt/current-baseline.md
+  // TD-2 / status/roadmaps/playwright-phase3-roadmap.md for the evidence.
   expect: {
+    timeout: 15_000,
     toHaveScreenshot: { maxDiffPixelRatio: 0.02 },
   },
   use: {

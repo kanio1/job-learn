@@ -13,7 +13,7 @@ test('unauthenticated access starts Keycloak redirect and hides merchant data', 
 })
 
 test('authenticated identity without merchant authority sees deterministic denial', async ({ page }) => {
-  await mockAuthenticatedSession(page, 'merchant.denied')
+  await mockAuthenticatedSession(page, 'merchant.denied', [])
   await page.route('**/api/merchants', async route => {
     await route.fulfill({
       status: 403,

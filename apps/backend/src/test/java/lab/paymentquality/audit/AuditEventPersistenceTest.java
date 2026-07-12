@@ -20,6 +20,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -70,6 +71,8 @@ class AuditEventPersistenceTest extends PostgresContainerSupport {
                     assertThat(found.getTenantId()).isEqualTo("TENANT_ALPHA");
                     assertThat(found.getCorrelationId()).isEqualTo("correlation-42");
                     assertThat(found.getOutcome()).isEqualTo(Outcome.SUCCESS);
+                    assertThat(found.getBeforeState()).isNull();
+                    assertThat(found.getAfterState()).isNull();
                 });
 
         assertThat(jdbcTemplate.queryForObject(
@@ -78,6 +81,41 @@ class AuditEventPersistenceTest extends PostgresContainerSupport {
         assertThat(Arrays.stream(AuditEvent.class.getDeclaredFields()).map(Field::getName))
                 .containsExactlyInAnyOrder(
                         "id", "occurredAt", "actorSubject", "actorDisplay", "action",
-                        "targetType", "targetId", "tenantId", "correlationId", "outcome");
+                        "targetType", "targetId", "tenantId", "correlationId", "outcome",
+                        "beforeState", "afterState");
+    }
+
+    @Test
+    void migrationAndJpaMappingRoundTripBeforeAndAfterStateAsJsonb() {
+        Instant occurredAt = Instant.parse("2026-06-19T08:20:00Z");
+        AuditableActionOccurred source = new AuditableActionOccurred(
+                occurredAt,
+                "subject-43",
+                "Platform Operator",
+                "MERCHANT_ACTIVATED",
+                "MERCHANT",
+                "merchant-43",
+                "TENANT_ALPHA",
+                "correlation-43",
+                Outcome.SUCCESS,
+                Map.of("status", "PENDING"),
+                Map.of("status", "ACTIVE"));
+
+        AuditEvent saved = repository.saveAndFlush(AuditEvent.fromEvent(source));
+
+        assertThat(repository.findById(saved.getId())).get()
+                .satisfies(found -> {
+                    assertThat(found.getBeforeState()).containsExactly(Map.entry("status", "PENDING"));
+                    assertThat(found.getAfterState()).containsExactly(Map.entry("status", "ACTIVE"));
+                });
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT data_type FROM information_schema.columns "
+                        + "WHERE table_name = 'audit_event' AND column_name = 'before_state'",
+                String.class)).isEqualTo("jsonb");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT data_type FROM information_schema.columns "
+                        + "WHERE table_name = 'audit_event' AND column_name = 'after_state'",
+                String.class)).isEqualTo("jsonb");
     }
 }
