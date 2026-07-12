@@ -15,7 +15,7 @@ import fc from 'fast-check'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import BusinessStatusBadge from './BusinessStatusBadge.vue'
 
-const MERCHANT_STATUSES = ['ACTIVE', 'PENDING', 'SUSPENDED'] as const
+const MERCHANT_STATUSES = ['ACTIVE', 'DRAFT', 'SUSPENDED'] as const
 const PAYMENT_STATUSES = [
   'CREATED',
   'AUTHORIZED',
@@ -104,5 +104,17 @@ describe('BusinessStatusBadge — Property 2: Status badges are distinguishable 
       }),
       { numRuns: 100 },
     )
+  })
+
+  /**
+   * TD-2B: the merchant lifecycle's pre-activation status is the canonical
+   * backend value `DRAFT` (see apps/backend MerchantStatus.java and Flyway
+   * V1__create_merchants.sql), not `PENDING`. The presentation label is
+   * separate from the contract value: `DRAFT` renders the friendlier label
+   * "Draft", matching the `ACTIVE` -> "Active" / `SUSPENDED` -> "Suspended"
+   * convention already used for the other two merchant statuses.
+   */
+  it('renders the "Draft" label for the canonical DRAFT merchant status', async () => {
+    expect(await renderBadgeText('DRAFT')).toBe('Draft')
   })
 })

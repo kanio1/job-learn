@@ -43,9 +43,25 @@ Investigated per `status/technical-debt/current-baseline.md` TD-2's own special-
 
 Result: the exact 8 originally-failing spec files went from 21 failed/61 passed → 11 failed/18 passed; the full 101-test suite went from 82 failed-count-basis (21 failed/61 passed of 82 executed) → 12 failed/70 passed (one of the 12, `payment-status-polling.spec.ts:52`, is confirmed flaky under full-suite contention only — passes reliably in isolation). Zero new failures introduced; frontend typecheck and all 532 unit tests remain green. Full evidence: `status/evidence/latest-validation.md` session 4, `status/technical-debt/current-baseline.md` TD-2A.
 
+## TD-2B closure (2026-07-12, Codex CLI)
+
+After an interrupted Claude Code CLI handoff, Codex verified and completed TD-2B. The backend wire contract is `DRAFT`, `ACTIVE`, `SUSPENDED`; frontend Zod, inferred application types, filters, action gating, badges, Playwright mocks, and visual snapshot now use the same values. `DRAFT` renders as `Draft`; `PENDING` is strictly rejected at the API boundary. Full Chromium improved from 70 passed / 12 failed to **72 passed / 10 failed**, with no new failure.
+
 ## Next work
 
-1. **TD-2B (7 tests, largest remaining cluster)**: merchant status contract mismatch — frontend uses `'PENDING'` in 7 production locations where the real backend (`MerchantStatus.java`) uses `'DRAFT'`. A real `DRAFT` merchant would currently fail the frontend's Zod validation entirely (`useMerchantsApi.ts`'s `merchantStatusSchema` doesn't include `'DRAFT'`). Requires a small production-code fix (rename the status *value* to `DRAFT` in 7 files) plus a **product/UX decision** on the *display label* (the test `merchant-create.spec.ts:20` expects the raw text "DRAFT" visible, suggesting the original intent may have been to show the technical value verbatim rather than a friendly "Pending" label) — see `status/technical-debt/current-baseline.md` TD-2B for the full file list and the open question. Do not guess at the UX call; confirm intent first.
-2. **TD-2C (3 tests)**: stale UI-copy assumptions in `merchant-feedback.spec.ts` (loading-state `<table>` vs. actual `LoadingState` component; error-state text) and `payment-orders-panel.spec.ts` ("No currency totals yet." empty-state text) — needs a direct read of the current components' actual copy, not yet done.
-3. **TD-2D (1 test)**: `auth-deny.spec.ts`'s unauthenticated-redirect test expects a mocked `<h1>Keycloak login</h1>` at `**/auth/keycloak`, but the real middleware (`app/middleware/auth.global.ts`) redirects unauthenticated visitors to `/login` (an in-app page), not directly to an external Keycloak page in this mocked-session test mode — needs the assertion rewritten against the real redirect target.
+## TD-2C closure (2026-07-12, Codex CLI)
+
+TD-2C is `DONE_VERIFIED`. The three stale expectations were replaced with state-transition and semantic contracts; `LoadingState` now has `role=status` and an accessible name, while `ErrorState` has `role=alert` and an accessible name. Affected specs are 6/6 green. Full Chromium improved from 72 passed / 10 failed to **76 passed / 6 failed**, with no snapshot change and no new failure.
+
+## Next work
+
+1. **TD-2E — align Create merchant action assertions with current accessible names.** Four failures in `merchant-create.spec.ts` expect exact name `Create`; the current form exposes `Create merchant`. This is the largest confirmed stable remaining cluster.
+2. **TD-2D — stale auth-deny redirect assumption.** `auth-deny.spec.ts:4` still expects the old Keycloak route rather than the current `/login` behavior.
+3. **TD-2F — product/lifecycle decision for `SUSPENDED -> ACTIVE`.** `merchant-lifecycle.spec.ts:39` conflicts with the backend state machine and must not be mechanically changed.
 4. The blocked conditional-GET-304 / idempotency-replay / header-only-HEAD Playwright coverage remains genuinely blocked on backend/Keycloak availability in this environment, not a code defect — re-attempt only once a live backend+Keycloak Playwright run is possible (`PLAYWRIGHT_USE_REAL_KEYCLOAK=true` per root `CLAUDE.md`).
+
+## TD-2E partial result (2026-07-12, Codex CLI) — Create merchant accessible-name alignment
+
+`CreateMerchantForm.vue` deliberately renders a submit `button` with visible text `Create` and enabled-state `aria-label="Create merchant"`; its intended accessible name is therefore `Create merchant`. Fresh pre-edit Chromium reproduction confirmed that four `merchant-create.spec.ts` tests all timed out before any business action because their exact semantic locator still expected `Create`. Updated only the six affected `getByRole('button', { name: 'Create', exact: true })` calls to exact `Create merchant`, preserving role-based selection, exactness, all validation/create assertions, and the TD-2B `DRAFT` contract. No production code, helper, state component, or visual snapshot changed.
+
+The correction made three of the four test titles pass. The fourth, `shows create validation and duplicate feedback`, now reaches a separately stale duplicate-error route fixture and fails because `{ error, message }` does not match the current Problem Details client contract; the UI correctly shows its generic safe fallback. TD-2E is therefore `PARTIAL`, not `DONE_VERIFIED`. Full Chromium moved from 76 passed / 6 failed to 78 passed / 4 failed: TD-2E-1 duplicate fixture, TD-2D, TD-2F, and historical polling contention remain. Next executable work is TD-2E-1 only.

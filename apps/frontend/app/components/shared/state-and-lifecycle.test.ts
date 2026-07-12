@@ -41,6 +41,8 @@ describe('LoadingState', () => {
   it('renders with data-testid="loading-state"', async () => {
     const wrapper = await mountSuspended(LoadingState)
     expect(wrapper.attributes('data-testid')).toBe('loading-state')
+    expect(wrapper.attributes('role')).toBe('status')
+    expect(wrapper.attributes('aria-label')).toBe('Loading content')
   })
 
   it('renders skeleton elements (loading indicator visible)', async () => {
@@ -137,6 +139,8 @@ describe('ErrorState', () => {
       global: { stubs: { ProblemDetailsCard: ProblemDetailsCardStub } },
     })
     expect(wrapper.find('[data-testid="error-state"]').exists()).toBe(true)
+    expect(wrapper.attributes('role')).toBe('alert')
+    expect(wrapper.attributes('aria-label')).toBe('Request failed')
   })
 
   it('renders a plain message when no problem prop is given', async () => {

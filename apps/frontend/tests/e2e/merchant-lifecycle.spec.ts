@@ -20,10 +20,10 @@ test('activates and suspends a merchant', async ({ page }) => {
 // resulting status is shown from the success response
 // ---------------------------------------------------------------------------
 
-test('activates a PENDING merchant via data-testid button and shows ACTIVE status', async ({ page }) => {
+test('activates a DRAFT merchant via data-testid button and shows ACTIVE status', async ({ page }) => {
   const reference = uniqueReference('ACT')
   await mockAuthenticatedSession(page)
-  await mockMerchantApi(page, [merchant(reference, 'PENDING')])
+  await mockMerchantApi(page, [merchant(reference, 'DRAFT')])
 
   await page.goto('/admin/merchants')
 

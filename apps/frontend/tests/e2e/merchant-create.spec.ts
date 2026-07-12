@@ -13,7 +13,7 @@ test('creates a merchant from the empty registry', async ({ page }) => {
   const reference = uniqueReference('CREATE')
   await page.getByLabel('Merchant reference').fill(reference)
   await page.getByLabel('Display name').fill('Created Merchant')
-  await page.getByRole('button', { name: 'Create', exact: true }).click()
+  await page.getByRole('button', { name: 'Create merchant', exact: true }).click()
 
   await expect(page.getByText('Merchant created', { exact: true })).toBeVisible()
   await expect(page.getByText(reference)).toBeVisible()
@@ -26,20 +26,20 @@ test('shows create validation and duplicate feedback', async ({ page }) => {
 
   await page.goto('/admin/merchants')
   await page.getByRole('button', { name: 'Create merchant' }).click()
-  await page.getByRole('button', { name: 'Create', exact: true }).click()
+  await page.getByRole('button', { name: 'Create merchant', exact: true }).click()
 
   await expect(page.getByText('Reference must be at least 3 characters')).toBeVisible()
 
   const reference = uniqueReference('DUP')
   await page.getByLabel('Merchant reference').fill(reference)
   await page.getByLabel('Display name').fill('Duplicate Merchant')
-  await page.getByRole('button', { name: 'Create', exact: true }).click()
+  await page.getByRole('button', { name: 'Create merchant', exact: true }).click()
   await expect(page.getByText('Merchant created', { exact: true })).toBeVisible()
 
   await page.getByRole('button', { name: 'Create merchant' }).click()
   await page.getByLabel('Merchant reference').fill(reference)
   await page.getByLabel('Display name').fill('Duplicate Merchant')
-  await page.getByRole('button', { name: 'Create', exact: true }).click()
+  await page.getByRole('button', { name: 'Create merchant', exact: true }).click()
 
   await expect(page.getByText('A merchant with this reference already exists')).toBeVisible()
 })
@@ -69,7 +69,7 @@ test('validation gating — empty form blocks submission and shows field message
   await page.getByRole('button', { name: 'Create merchant' }).click()
 
   // Both fields empty — click Create without filling anything
-  await page.getByRole('button', { name: 'Create', exact: true }).click()
+  await page.getByRole('button', { name: 'Create merchant', exact: true }).click()
 
   // Field-level validation messages must appear (Req 2.5, 10.2)
   await expect(page.getByText('Reference must be at least 3 characters')).toBeVisible()
@@ -99,7 +99,7 @@ test('validation gating — too-short reference is rejected with field message',
   // Fill a 2-char reference (below the 3-char minimum in the schema)
   await page.getByLabel('Merchant reference').fill('AB')
   await page.getByLabel('Display name').fill('Valid Name')
-  await page.getByRole('button', { name: 'Create', exact: true }).click()
+  await page.getByRole('button', { name: 'Create merchant', exact: true }).click()
 
   // Field message for the invalid field
   await expect(page.getByText('Reference must be at least 3 characters')).toBeVisible()
@@ -130,13 +130,13 @@ test('create-merchant-form data-testid is present and unique when form is open',
 
 // ---------------------------------------------------------------------------
 // Validates: Requirements 12.2 — activate-merchant-button data-testid is
-// present and unique when a PENDING/SUSPENDED merchant is rendered in the table
+// present and unique when a DRAFT/SUSPENDED merchant is rendered in the table
 // ---------------------------------------------------------------------------
 
-test('activate-merchant-button data-testid is present for a pending merchant', async ({ page }) => {
+test('activate-merchant-button data-testid is present for a draft merchant', async ({ page }) => {
   await mockAuthenticatedSession(page)
-  const ref = uniqueReference('PENDING')
-  await mockMerchantApi(page, [merchant(ref, 'PENDING')])
+  const ref = uniqueReference('DRAFT')
+  await mockMerchantApi(page, [merchant(ref, 'DRAFT')])
 
   await page.goto('/admin/merchants')
 

@@ -1,5 +1,10 @@
 <template>
-  <div data-testid="loading-state" class="space-y-3 p-4">
+  <div
+    data-testid="loading-state"
+    role="status"
+    :aria-label="message ?? 'Loading content'"
+    class="space-y-3 p-4"
+  >
     <USkeleton class="h-4 w-3/4" />
     <USkeleton class="h-4 w-1/2" />
     <USkeleton class="h-4 w-2/3" />

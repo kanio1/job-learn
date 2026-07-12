@@ -39,8 +39,10 @@ async function mockMerchantsListApi(page: import('@playwright/test').Page) {
 async function mockMerchantDetailApi(
   page: import('@playwright/test').Page,
   id: string,
-  // Schema: z.enum(['PENDING', 'ACTIVE', 'SUSPENDED']) — PENDING is not valid
-  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' = 'PENDING',
+  // Schema: z.enum(['DRAFT', 'ACTIVE', 'SUSPENDED']) — matches the real backend
+  // MerchantStatus.java enum (TD-2B; previously this mock and the schema both
+  // incorrectly used PENDING instead of DRAFT).
+  status: 'DRAFT' | 'ACTIVE' | 'SUSPENDED' = 'DRAFT',
 ) {
   await page.route(`**/api/merchants/${id}`, route => {
     if (route.request().method() === 'HEAD') {
@@ -106,18 +108,18 @@ test.describe('Merchant create button — canCreateMerchant gating (F-A2)', () =
 test.describe('Merchant status actions — canUpdateMerchantStatus gating (F-A2)', () => {
   /**
    * PLATFORM_ADMIN has canUpdateMerchantStatus=true.
-   * A PENDING merchant should show the Activate button inside the Status Actions card
+   * A DRAFT merchant should show the Activate button inside the Status Actions card
    * (v-if="can.canUpdateMerchantStatus" on the UCard wrapper).
    */
-  test('PLATFORM_ADMIN sees activate button on PENDING merchant detail', async ({ page }) => {
+  test('PLATFORM_ADMIN sees activate button on DRAFT merchant detail', async ({ page }) => {
     await mockRoleSession(page, 'PLATFORM_ADMIN')
-    await mockMerchantDetailApi(page, merchantId, 'PENDING')
+    await mockMerchantDetailApi(page, merchantId, 'DRAFT')
 
     await page.goto(`/admin/merchants/${merchantId}`)
     // Wait for merchant data to render — data-testid="merchant-name" is inside the info card
     await expect(page.getByTestId('merchant-name')).toBeVisible({ timeout: 15000 })
 
-    // Status Actions card is visible + merchant is PENDING → Activate button present
+    // Status Actions card is visible + merchant is DRAFT → Activate button present
     await expect(page.getByTestId('action-activate-merchant')).toBeVisible()
   })
 
@@ -126,9 +128,9 @@ test.describe('Merchant status actions — canUpdateMerchantStatus gating (F-A2)
    * The entire Status Actions UCard is removed from the DOM by v-if.
    * The Activate button is therefore never rendered regardless of merchant status.
    */
-  test('SUPPORT_AGENT does not see activate button on PENDING merchant detail', async ({ page }) => {
+  test('SUPPORT_AGENT does not see activate button on DRAFT merchant detail', async ({ page }) => {
     await mockRoleSession(page, 'SUPPORT_AGENT')
-    await mockMerchantDetailApi(page, merchantId, 'PENDING')
+    await mockMerchantDetailApi(page, merchantId, 'DRAFT')
 
     await page.goto(`/admin/merchants/${merchantId}`)
     // Wait for merchant data to render — proves page loaded before the negative assertion

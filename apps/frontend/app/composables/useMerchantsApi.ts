@@ -16,7 +16,7 @@ import { createMerchantSchema, type CreateMerchantForm } from '~/schemas/merchan
 // Inline response schemas (merchant API responses only)
 // ---------------------------------------------------------------------------
 
-const merchantStatusSchema = z.enum(['PENDING', 'ACTIVE', 'SUSPENDED'])
+export const merchantStatusSchema = z.enum(['DRAFT', 'ACTIVE', 'SUSPENDED'])
 
 const merchantResponseSchema = z.object({
   merchantId: z.string().uuid(),
@@ -29,7 +29,7 @@ const merchantResponseSchema = z.object({
 })
 
 // Backend returns { merchants: [...] } — no pagination metadata.
-const merchantListBackendSchema = z.object({
+export const merchantListBackendSchema = z.object({
   merchants: z.array(merchantResponseSchema),
 })
 

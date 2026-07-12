@@ -136,7 +136,7 @@
             <div class="mb-6">
               <p class="text-lg font-semibold text-highlighted">Create merchant</p>
               <p class="mt-1 text-sm text-muted">
-                Register a merchant in PENDING before activating it for payment-readiness testing.
+                Register a merchant in DRAFT before activating it for payment-readiness testing.
               </p>
             </div>
             <CreateMerchantForm
@@ -196,7 +196,7 @@ const statusFilter = ref('all')
 
 const statusItems = [
   { label: 'All', value: 'all' },
-  { label: 'Pending', value: 'PENDING' },
+  { label: 'Draft', value: 'DRAFT' },
   { label: 'Active', value: 'ACTIVE' },
   { label: 'Suspended', value: 'SUSPENDED' },
 ]

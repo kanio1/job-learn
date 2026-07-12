@@ -21,7 +21,7 @@
  * Merchant registry table.
  *
  * Row actions:
- * - PENDING merchants: Activate button (`data-testid="activate-merchant-button"`, Req 12.2)
+ * - DRAFT merchants: Activate button (`data-testid="activate-merchant-button"`, Req 12.2)
  * - ACTIVE merchants: New Payment + Suspend buttons
  * - SUSPENDED merchants: Activate button (`data-testid="activate-merchant-button"`, Req 2.6)
  *
@@ -31,19 +31,12 @@
 
 import { h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
+import type { MerchantResponse } from '~/composables/useMerchantsApi'
 
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 
-export interface Merchant {
-  merchantId: string
-  merchantReference: string
-  displayName: string
-  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED'
-  createdAt: string
-  updatedAt: string
-  riskFlagged: boolean
-}
+export type Merchant = MerchantResponse
 
 withDefaults(defineProps<{
   merchants: Merchant[]
@@ -63,7 +56,7 @@ const canCreatePaymentOrder = computed(() => can.value.canCreatePaymentOrder)
 
 function statusColor(status: string) {
   switch (status) {
-    case 'PENDING': return 'neutral' as const
+    case 'DRAFT': return 'neutral' as const
     case 'ACTIVE': return 'success' as const
     case 'SUSPENDED': return 'error' as const
     default: return 'neutral' as const
@@ -125,8 +118,8 @@ const columns: TableColumn<Merchant>[] = [
       const buttons: any[] = []
       const status = row.original.status
 
-      // Activate: available for PENDING and SUSPENDED merchants (Req 2.6)
-      if ((status === 'PENDING' || status === 'SUSPENDED') && canUpdateMerchantStatus.value) {
+      // Activate: available for DRAFT and SUSPENDED merchants (Req 2.6)
+      if ((status === 'DRAFT' || status === 'SUSPENDED') && canUpdateMerchantStatus.value) {
         buttons.push(
           h('span', { 'data-testid': 'action-activate-merchant' }, [
             h(UButton, {

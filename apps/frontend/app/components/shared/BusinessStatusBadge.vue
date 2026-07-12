@@ -24,7 +24,7 @@ interface BadgeConfig {
 
 const STATUS_MAP: Record<string, BadgeConfig> = {
   // Merchant statuses
-  PENDING: { label: 'Pending', color: 'warning' },
+  DRAFT: { label: 'Draft', color: 'warning' },
   ACTIVE: { label: 'Active', color: 'success' },
   SUSPENDED: { label: 'Suspended', color: 'error' },
   // Payment statuses

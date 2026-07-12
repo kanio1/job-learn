@@ -3,16 +3,30 @@ import { mockAuthenticatedSession } from './merchant-support'
 
 test('renders loading state while merchant list is pending', async ({ page }) => {
   await mockAuthenticatedSession(page)
+  let releaseResponse: () => void
+  const responseHeld = new Promise<void>((resolve) => {
+    releaseResponse = resolve
+  })
+
   await page.route('**/api/merchants', async route => {
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    await responseHeld
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ merchants: [] }) })
   })
 
-  await page.goto('/admin/merchants')
+  const merchantsRequest = page.waitForRequest(request =>
+    request.method() === 'GET' && new URL(request.url()).pathname === '/api/merchants'
+  )
+  const navigation = page.goto('/admin/merchants')
+  await merchantsRequest
 
-  // UTable loading state is visible (table present while fetching)
-  await expect(page.locator('table')).toBeVisible()
-  await expect(page.getByText('Registry is empty')).toBeVisible()
+  await expect(page.getByRole('status', { name: 'Loading merchants…' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Registry is empty' })).not.toBeVisible()
+
+  releaseResponse!()
+  await navigation
+
+  await expect(page.getByRole('status', { name: 'Loading merchants…' })).not.toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Registry is empty' })).toBeVisible()
 })
 
 test('renders recoverable merchant list error state', async ({ page }) => {
@@ -21,7 +35,16 @@ test('renders recoverable merchant list error state', async ({ page }) => {
   await page.route('**/api/merchants', async route => {
     attempts += 1
     if (attempts <= 2) {
-      await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'server_error' }) })
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/problem+json',
+        body: JSON.stringify({
+          type: 'https://example.test/problems/merchant-service-unavailable',
+          title: 'Merchant service unavailable',
+          status: 503,
+          detail: 'Merchant registry is temporarily unavailable.',
+        }),
+      })
       return
     }
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ merchants: [] }) })
@@ -29,7 +52,10 @@ test('renders recoverable merchant list error state', async ({ page }) => {
 
   await page.goto('/admin/merchants')
 
-  await expect(page.getByText('Failed to load merchants. Please try again.')).toBeVisible()
-  await page.getByRole('button', { name: 'Retry loading merchants' }).click()
-  await expect(page.getByText('No merchants have been registered yet')).toBeVisible()
+  await expect(page.getByRole('alert', { name: 'Request failed' })).toContainText('Merchant service unavailable')
+  await expect(page.getByText('Merchant registry is temporarily unavailable.')).toBeVisible()
+  await page.getByRole('button', { name: 'Retry' }).click()
+  await expect(page.getByRole('heading', { name: 'Registry is empty' })).toBeVisible()
+  await expect(page.getByRole('alert', { name: 'Request failed' })).not.toBeVisible()
+  expect(attempts).toBe(3)
 })

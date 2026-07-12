@@ -23,7 +23,7 @@ const visualMerchants: Merchant[] = [
     merchantId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
     merchantReference: 'MERCH-VISUAL-001',
     displayName: 'MERCH-VISUAL-001 Display',
-    status: 'PENDING',
+    status: 'DRAFT',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
   },
@@ -53,7 +53,7 @@ test.describe('BusinessStatusBadge visual regression (F-D5)', () => {
   // uppercase status text via a local statusColor() helper. The detail page
   // is the correct target for this component specifically.
   for (const [label, merchant] of [
-    ['Pending (warning)', visualMerchants[0]!],
+    ['Draft (warning)', visualMerchants[0]!],
     ['Active (success)', visualMerchants[1]!],
     ['Suspended (error)', visualMerchants[2]!],
   ] as const) {

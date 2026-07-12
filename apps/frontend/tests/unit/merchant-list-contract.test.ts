@@ -10,12 +10,12 @@
 
 import { z } from 'zod'
 import { describe, it, expect } from 'vitest'
+import { merchantListBackendSchema, merchantStatusSchema } from '~/composables/useMerchantsApi'
 
 // ---------------------------------------------------------------------------
-// Replicate the schemas from useMerchantsApi to test them in isolation
+// Import the production response boundary; keep only the local view-model
+// schema needed to test the adapter separately.
 // ---------------------------------------------------------------------------
-
-const merchantStatusSchema = z.enum(['PENDING', 'ACTIVE', 'SUSPENDED'])
 
 const merchantResponseSchema = z.object({
   merchantId: z.string().uuid(),
@@ -24,10 +24,6 @@ const merchantResponseSchema = z.object({
   status: merchantStatusSchema,
   createdAt: z.string(),
   updatedAt: z.string(),
-})
-
-const merchantListBackendSchema = z.object({
-  merchants: z.array(merchantResponseSchema),
 })
 
 function adapt(backend: z.infer<typeof merchantListBackendSchema>) {
@@ -49,7 +45,7 @@ const validMerchant = {
   merchantId: '550e8400-e29b-41d4-a716-446655440001',
   merchantReference: 'ACME-001',
   displayName: 'Acme Corp',
-  status: 'PENDING' as const,
+  status: 'DRAFT' as const,
   createdAt: '2025-01-01T00:00:00Z',
   updatedAt: '2025-01-01T00:00:00Z',
 }
@@ -95,6 +91,45 @@ describe('merchantListBackendSchema', () => {
   it('rejects a merchant item missing required fields', () => {
     const incomplete = { merchants: [{ merchantId: '00000000-0000-0000-0000-000000000001' }] }
     const result = merchantListBackendSchema.safeParse(incomplete)
+    expect(result.success).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// TD-2B: merchant status contract — DRAFT is canonical (matches the real
+// backend MerchantStatus.java enum and Flyway V1__create_merchants.sql CHECK
+// constraint), not the frontend's former (incorrect) PENDING value. A real
+// DRAFT merchant previously failed this schema entirely.
+// ---------------------------------------------------------------------------
+
+describe('merchantStatusSchema — canonical values', () => {
+  it.each(['DRAFT', 'ACTIVE', 'SUSPENDED'] as const)('accepts the canonical status %s', (status) => {
+    const result = merchantStatusSchema.safeParse(status)
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects the legacy PENDING value (no known backend caller still sends it)', () => {
+    const result = merchantStatusSchema.safeParse('PENDING')
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects an arbitrary unsupported status value', () => {
+    const result = merchantStatusSchema.safeParse('ARCHIVED')
+    expect(result.success).toBe(false)
+  })
+
+  it('a full merchant list response containing a real DRAFT merchant parses successfully', () => {
+    const result = merchantListBackendSchema.safeParse({ merchants: [validMerchant] })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.merchants[0]!.status).toBe('DRAFT')
+    }
+  })
+
+  it('a merchant list response containing a legacy PENDING status is rejected', () => {
+    const result = merchantListBackendSchema.safeParse({
+      merchants: [{ ...validMerchant, status: 'PENDING' }],
+    })
     expect(result.success).toBe(false)
   })
 })

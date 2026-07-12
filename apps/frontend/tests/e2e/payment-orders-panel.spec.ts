@@ -56,9 +56,12 @@ test('renders empty payment order state', async ({ page }) => {
 
   await page.goto(`/admin/merchants/${merchantId}/payments`)
 
-  await expect(page.getByText('No payment orders yet')).toBeVisible()
-  await expect(page.getByText('No currency totals yet.')).toBeVisible()
-  await expect(page.getByText('No status totals yet.')).toBeVisible()
+  await expect(page.getByTestId('payment-orders-empty-state')).toBeVisible()
+  await expect(page.getByText('This merchant has no payment orders yet.')).toBeVisible()
+  await expect(page.getByText('No currency data.')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Create payment order' })).toBeVisible()
+  await expect(page.getByTestId('error-state')).not.toBeVisible()
+  await expect(page.getByTestId('loading-state')).not.toBeVisible()
 })
 
 test('renders forbidden state without payment data', async ({ page }) => {

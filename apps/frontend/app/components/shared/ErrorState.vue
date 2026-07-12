@@ -1,5 +1,5 @@
 <template>
-  <div data-testid="error-state">
+  <div data-testid="error-state" role="alert" aria-label="Request failed">
     <!-- Problem details card when a structured problem response is available -->
     <div v-if="problem" class="space-y-3">
       <ProblemDetailsCard :problem="problem" />
