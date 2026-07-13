@@ -1,9 +1,25 @@
 ---
 name: index
-last_updated: 2026-07-12
+last_updated: 2026-07-13
 ---
 
 ## Session log
+
+- **Assurance Closure Wave 2A (2026-07-13):** **DONE_VERIFIED**. `QA-HARDEN-01` now has focused acceptance-level evidence for all **11/11** required hardening/polish requirements. Ten implementations were already correct; one confirmed presentation defect was fixed (`ProblemDetailsCard`'s `Field Errors` label now uses the same `w-28` alignment as every other term). Two initial test assumptions were corrected as `TEST_DESIGN_DEFECT`; neither caused a production change. Frontend validation is green: typecheck, **58 files / 594 unit tests**, and standard Chromium **82/82**. Optional deterministic-seed task 5.1 is now `DONE_VERIFIED`: `RealmAlignmentPropertyTest` exhaustively verifies the five actual per-role realm users against deterministic tenants/merchants in two independent runs; compile/test-compile and filtered verify are green (**Surefire 469 total / 464 passed / 5 skipped; Failsafe 46/46**). Required plan verification is now **296/296 (100.00%)**; optional verified/deviation coverage is **44/73**, with the remaining 29 optional tasks explicitly skipped and one separate conditional Stage 4 checkpoint deferred. `REST-ADVANCED` is designed for Wave 2B only; no Wave 2B implementation was started.
+
+- **Assurance Closure Wave 1 — validation-02 closure (2026-07-13):** **DONE_VERIFIED**. The one authorised current-source complete live command ran all five projects and passed **7/7** without retries, failures, flakes, or skips: real Keycloak setup for `platform.admin`/`merchant.manager`, same-route cross-role and foreign-tenant denial, two-worker allocation, BFF idempotency replay, and BFF conditional GET/304. Before that run, the multi-role focused project exposed one locator-only defect: generic `getByRole('alert')` also matched loading skeletons. It now filters for the actual permission-denial text and passed 3/3; no behaviour, authority, count, timeout, or retry was altered. Standard mocked Chromium also passed **82/82**. `PW-AUTH-01`/`F-A2`, `PW-DATA-01`/`F-A4`, `PW-IDEM-01`, and `PW-304-01` are **DONE_VERIFIED**; `PW-HEAD-01` remains **SUPERSEDED_BY_VERIFIED_SOLUTION**. Next executable queue: `QA-HARDEN-01`, then `SEED-PROP-01`, then `REST-ADVANCED`.
+
+- **Assurance Closure Wave 1 — final validation (2026-07-13):** **IMPLEMENTED_UNVERIFIED**. `ASSURANCE-CLOSURE-W1-VALIDATION-01` used its single newly authorised complete live command once: 7 discovered / 7 executed, 6 passed and 1 failed, with no retry. The sole failure was `live-multi-role`'s brittle absolute `101 order(s)` assertion racing a correct parallel idempotency creation in the same Alpha tenant; it was corrected to require a non-empty tenant-visible result and the exact project then passed 3/3. Focused auth, two-worker isolation, idempotency replay, and conditional GET/304 are green, but the package statuses remain unverified until a newly authorised complete live run proves the corrected source. A new controller dependency also required one `@WebMvcTest` mock; its exact test is 6/6 and the filtered backend verify exits 0. Next executable item: `ASSURANCE-CLOSURE-W1-VALIDATION-02`.
+
+- **Assurance Closure Wave 1 — live packages checkpoint (2026-07-13):** **PARTIAL_UNVERIFIED**. Real Keycloak `platform.admin`/`merchant.manager` setup projects are green with credentials supplied only from environment; the latter maps to `TENANT_ALPHA` and its real seeded `MERCHANT_ALPHA_001` natural reference. The backend now resolves that claim through a public merchant eligibility lookup, while preserving UUID claims and existing 403/404 behaviour. A dedicated live config and worker-owned retained-data fixture exist. Two permitted complete live runs uncovered and corrected PKCE hostname, natural-reference authorization, a first-page test assumption, and nanosecond-versus-microsecond replay precision; no third complete run may be used to turn those corrections into closure evidence. `PW-AUTH-01`, `PW-DATA-01`, `PW-IDEM-01`, and `PW-304-01` remain open. `PW-HEAD-01` is **SUPERSEDED_BY_VERIFIED_SOLUTION** by fresh `apps/api-tests` Failsafe `HttpMethodSemanticsContractSpec` HEAD evidence (72/72). Next executable item: `ASSURANCE-CLOSURE-W1-VALIDATION-01`, requiring an explicit new live-run allowance.
+
+- **Assurance Closure Wave 1 — VAL-API-01 (2026-07-13):** **DONE_VERIFIED**. A fresh `apps/api-tests` baseline found one contract drift: its standalone merchant DTO omitted the backend's current `riskFlagged` field. `VAL-API-01A` added only that field. Compile/test-compile are green; Surefire is 79/79 and Failsafe is 72/72 with zero failures, errors, or skips. Next package: natural merchant-reference ownership alignment required for real `merchant.manager` Playwright coverage.
+
+- **TD-4 identifier-reference closure (2026-07-13, Codex CLI):** **DONE_WITH_DEVIATION**. A complete inventory found that `ddbff980-460a-4eec-ae6b-f004d743fac8` is a four-way immutable Kiro metadata collision, not an alias with a legitimate owner. `status/index.md` now defines each spec slug/path as the sole canonical current identity; the shared UUID is prohibited for new status or implementation references. The collision remains only in read-only `.kiro/**`; no code or configuration changed. No executable task remains in the tracked queue.
+
+- **TD-3 documentation closure (2026-07-13, Codex CLI):** **DONE_VERIFIED**. Corrected six stale current headers under `docs/specs-analysis/**`, its summary table, and stale-header annotations in four status ledgers; the canonical status ledgers remain the current source of truth. Historical TD-2 test counts and package states are preserved only in dated session/commit evidence. The subsequent TD-4 record closes the formerly next package; `.kiro/**` and `.codex/**` remain unchanged.
+
+- **Continuation validation session (2026-07-13, Codex CLI, HEAD `95e35c9`):** Environment preflight confirmed localhost bind and Podman/Testcontainers access. Removed only the generated tracked `apps/backend/.jqwik-database` artifact. TD-2E-1 is **DONE_VERIFIED**: exact duplicate-feedback E2E, full merchant-create spec (6 Chromium tests), frontend typecheck/unit suite, and `MerchantRestAssuredTest` (5/5) all passed; the verified contract is `409 application/problem+json` with `type`, `title`, `status`, `detail`, `error`, and conditional `correlationId` (no `instance`). TD-2F is **DONE_VERIFIED**: domain transition tests 17/17 and lifecycle E2E passed; only `DRAFT -> ACTIVE` and `ACTIVE -> SUSPENDED` are supported. TD-2D is **DONE_VERIFIED**: the corrected assertion validates the decoded URL semantics (`/login`, `redirectTo=/admin/merchants`) plus visible login control and absent merchant data. TD-2G is **DONE_VERIFIED**: before correction 6/10 manual polling repetitions selected `/history` or `/evidence` due to a prefix predicate; exact GET/path matching made the repeat-each=10 run 20/20 green. TD-2 closure has two consecutive full Chromium runs green (82/82 each); the independent final frontend run is also 82/82. Backend compile/test-compile are green; filtered verify is BUILD SUCCESS (Surefire 445 total, 440 passed, 5 skipped; Failsafe 46/46). jqwik converter properties all report 100 checks. `.kiro/**` and `.codex/**` unchanged; no commit or push.
 
 - **Session 7 (2026-07-12, Codex CLI):** Worked `TD-2E` only. Preserved the inherited TD-2B/TD-2C source, tests, status records, and Draft visual snapshot. Fresh Playwright reproduction confirmed that four `merchant-create.spec.ts` tests stopped before form submission because they used exact `Create` locators, while the intentional submit button contract is role `button`, visible text `Create`, `aria-label`/accessible name `Create merchant`. Updated only six exact semantic locators to `getByRole('button', { name: 'Create merchant', exact: true })`; no production, helper, unit, or snapshot change. Three of the four tests now pass. The fourth exposed a separate, previously masked stale duplicate-error mock (`{ error, message }`) that does not satisfy the current Problem Details client contract, so it renders `Failed to create merchant. Please try again.` rather than the asserted duplicate message. TD-2E is **PARTIAL**, not complete. Fresh frontend typecheck and 46-file/546-test unit suite are green; Chromium is **78 passed / 4 failed** (82 executed). Next executable package: `TD-2E-1` — align the duplicate-merchant Playwright mock with the existing Problem Details error contract. `.kiro/**` and `.codex/**` unchanged.
 - **Session 6 (2026-07-12, Codex CLI):** Completed `TD-2C` only. Inherited and preserved all TD-2B source, tests, status records, and the Draft visual snapshot. Fresh reproduction confirmed three stale expectations: the merchant page correctly renders `LoadingState`, structured 503 responses correctly render `ProblemDetailsCard` with `Retry`, and an empty payment summary correctly renders `No currency data.` plus the payment-list empty state. Added minimal `role=status`/accessible loading name and `role=alert`/accessible error name, strengthened shared component unit assertions, and rewrote only `merchant-feedback.spec.ts` and `payment-orders-panel.spec.ts`. Validation: typecheck green; units 46 files / 546 tests green; Playwright discovery 101 tests / 31 files; affected specs 6/6 green; full Chromium **76 passed / 6 failed**. TD-2C is **DONE_VERIFIED**. The four stale `Create` accessible-name assertions are now `TD-2E = CONFIRMED, OPEN` and are the next executable package. `.kiro/**` and `.codex/**` unchanged.
@@ -21,9 +37,9 @@ See `status/README.md` for the full model explanation and update protocol before
 | Field | Value |
 |---|---|
 | Branch | `001-project-foundation` |
-| HEAD (session 4 start) | `c6de61f31e7cadc09331269f0f33e70573e4b889` (no new commits from sessions 2/3/4 — all changes are uncommitted working-tree edits) |
-| Last updated | 2026-07-12 |
-| Working tree | Pre-existing TD-1, TD-5, TD-2A, TD-2B, and TD-2C work preserved. Session 7 adds only TD-2E's six stale exact accessible-name locator corrections in `merchant-create.spec.ts` and status records. `.kiro/**` and `.codex/**` unchanged. |
+| HEAD | `95e35c97d74608bdc3d7925a4f6bb0b46c99a79b` (Wave 2A made no commit; its changes remain in the intentional dirty working tree) |
+| Last updated | 2026-07-13 |
+| Working tree | All inherited TD/Wave 1 changes are preserved. Wave 2A adds five focused frontend acceptance-test files, one focused backend property-test file, one minimal `ProblemDetailsCard` class correction, and directly related status evidence. `.kiro/**` and `.codex/**` unchanged. |
 
 ## Kiro coverage
 
@@ -42,27 +58,43 @@ See `status/README.md` for the full model explanation and update protocol before
 
 **Completeness-gate note:** the `deterministic-seed-and-test-isolation` drafting agent initially omitted leaf task `7` ("Final checkpoint") from its ledger — caught by this orchestrating session's own mechanical row-count cross-check against the pre-extracted task list, and added directly to `status/specs/deterministic-seed-and-test-isolation.md` with full evidence and an explicit `CONFLICTING_EVIDENCE` note (see that file and `status/technical-debt/current-baseline.md` TD-1). No other spec had an unmapped or duplicated row.
 
+## Canonical Kiro specification identifiers
+
+For current status and implementation references, the canonical identifier is the unique spec slug and its `.kiro/specs/{slug}/` path. The raw `.config.kiro` `specId` is historical planning metadata, not a current cross-spec key.
+
+| Canonical identifier / owner | Canonical source path | Historical `.config.kiro` `specId` | Current reference rule |
+|---|---|---|---|
+| `backend-authority-refactor` | `.kiro/specs/backend-authority-refactor/` | `7b3e1c2a-9f4d-4a61-8c52-2d6e0f1a4b88` | Use slug/path. |
+| `iam-roles-and-keycloak-login` | `.kiro/specs/iam-roles-and-keycloak-login/` | `ddbff980-460a-4eec-ae6b-f004d743fac8` | Use slug/path; never use the shared UUID to identify this spec. |
+| `payment-operations-dashboard` | `.kiro/specs/payment-operations-dashboard/` | `09e5bf86-8d3f-44cc-8bf6-948bef7b5d98` | Use slug/path. |
+| `tenant-model-and-isolation` | `.kiro/specs/tenant-model-and-isolation/` | `6fece955-0e29-47fa-9297-0738d73b54fd` | Use slug/path. |
+| `user-management` | `.kiro/specs/user-management/` | `ddbff980-460a-4eec-ae6b-f004d743fac8` | Use slug/path; never use the shared UUID to identify this spec. |
+| `audit-log-dashboard` | `.kiro/specs/audit-log-dashboard/` | `ddbff980-460a-4eec-ae6b-f004d743fac8` | Use slug/path; never use the shared UUID to identify this spec. |
+| `deterministic-seed-and-test-isolation` | `.kiro/specs/deterministic-seed-and-test-isolation/` | `ddbff980-460a-4eec-ae6b-f004d743fac8` | Use slug/path; never use the shared UUID to identify this spec. |
+
+**Historical collision:** `ddbff980-460a-4eec-ae6b-f004d743fac8` has no canonical owner: it occurs in four immutable Kiro configs with four different meanings. It is a legacy Kiro metadata collision, not an alias. Do not use it in new status entries or implementation references. The four canonical owners are the four distinct slug/path pairs listed above. The collision remains only because `.kiro/**` is read-only; current references are unambiguous by this registry.
+
 ## Execution summary
 
 | Spec | Overall status | Done verified | Done w/ deviation | Optional skipped | Not started / deferred | Next task |
 |---|---|---:|---:|---:|---:|---|
-| `backend-authority-refactor` | DONE_VERIFIED | 17 | 6 | 0 | 0 | NO_KIRO_TASK_REMAINING (optional cleanup: raise jqwik `tries` 30→100 on 4 property tests) |
+| `backend-authority-refactor` | DONE_VERIFIED | 23 | 0 | 0 | 0 | NO_KIRO_TASK_REMAINING |
 | `iam-roles-and-keycloak-login` | DONE_VERIFIED | 17 | 1 | 7 | 0 | NO_KIRO_TASK_REMAINING |
 | `payment-operations-dashboard` | COMPLETE_AND_KIRO_MARKED | 46 | 6 | 7 | 0 | NO_KIRO_TASK_REMAINING (closed 2026-06-18 per user decision) |
 | `tenant-model-and-isolation` | DONE_VERIFIED | 28 | 5 | 0 | 0 | NO_KIRO_TASK_REMAINING |
 | `user-management` | COMPLETE_WITH_OPTIONAL_GAPS | 39 | 0 | 7 | 0 | NO_KIRO_TASK_REMAINING (required work); optional gaps 6.1/6.8–6.13 remain skipped |
 | `audit-log-dashboard` | COMPLETE_WITH_OPTIONAL_GAPS | 38 | 3 | 5 | 0 | NO_KIRO_TASK_REMAINING (required); optional jqwik P1/P2/P4/P6 remain the largest optional coverage gap |
-| `deterministic-seed-and-test-isolation` | STAGE_1_DONE_LATER_STAGES_DEFERRED | 18 | 2 | 3 | 2 (1 not-started, 1 deferred — both Stage 3/4 gated on other specs) | NO_KIRO_TASK_REMAINING for currently-satisfiable prerequisites; Stage 3 (5.1) gated on confirming iam/user-management landed, Stage 4 (6.1) gated on Open Question 2 |
-| **Total (257 leaf tasks)** | — | **203** | **23** | **29** | **2** | — |
+| `deterministic-seed-and-test-isolation` | STAGES_1_2_3_DONE_STAGE_4_DEFERRED | 19 | 2 | 3 | 1 (conditional Stage 4 task 6.1 deferred on Open Question 2) | NO_CURRENTLY_EXECUTABLE_KIRO_TASK; optional Stage 3 task 5.1 is `DONE_VERIFIED`; Stage 4 remains conditional |
+| **Total (257 leaf tasks)** | — | **204** | **23** | **29** | **1** | — |
 
 All 7 specs have **no required, currently-executable Kiro task remaining**. Every spec's remaining open items are either explicitly optional (and accepted as skipped), or gated on a prerequisite/decision that has not yet been triggered by the user. This is a materially different picture from a naive reading of the raw `.kiro` checkboxes, where 5 of 7 specs show 0 checked boxes — see `status/README.md` for why the checkbox is not evidence either way.
 
 ## Active work
 
-- **Current problem:** `TD-2` remains **IN_PROGRESS**. `TD-2A`, `TD-2B`, and `TD-2C` are `DONE_VERIFIED`; `TD-2E` is **PARTIAL** after removing its stale accessible-name failures. Full Chromium is 78 passed / 4 failed.
-- **Current phase:** TD-2E confirmed the form's intended role/name contract as `button` / `Create merchant` (from `aria-label`, with visible text `Create`) and retained exact role locators. The TD-2B `DRAFT` contract and TD-2C state accessibility semantics are unchanged. Backend filtered `verify` is historical evidence only for this frontend-only session and was not rerun.
-- **Next task:** `TD-2E-1` — align the duplicate-merchant route mock in `merchant-create.spec.ts` with the existing Problem Details error contract, so its original duplicate-feedback business assertion can run. This is a newly exposed stable root cause; do not combine with TD-2D, TD-2F, or polling.
-- **Blockers:** TD-2F requires a product/lifecycle decision for `SUSPENDED -> ACTIVE`; TD-2D is independent. `payment-status-polling.spec.ts:52` failed again under the full 16-worker baseline and remains a historical contention-sensitive flake.
+- **Current problem:** Assurance Closure Wave 2A is closed. All 11 required hardening/polish items and optional deterministic realm-alignment task 5.1 have fresh focused evidence.
+- **Current phase:** `QA-HARDEN-01` and `SEED-PROP-01` are `DONE_VERIFIED`. Wave 1 remains `DONE_VERIFIED`; no auth storage, tenant/role, live-data, BFF idempotency, or BFF 304 behavior changed in Wave 2A.
+- **Next task:** `REST-ADVANCED` Wave 2B, beginning only after its per-capability stop gates are accepted. Recommended order: `REST-MULTIPART-01`, `REST-SSL-PROXY-01`, `REST-REDIRECT-01`, `REST-OPENAPI-DRIFT-01`.
+- **Blockers/gates:** redirects require a real business/training redirect target or an approved test-only server; TLS requires an approved ephemeral certificate/truststore strategy; OpenAPI drift requires a canonical specification/generation owner. None was implemented in Wave 2A.
 
 ## Validation baseline
 
@@ -72,26 +104,35 @@ Full detail: `status/evidence/latest-validation.md`. Summary:
 |---|---|---|
 | Backend `./mvnw compile` | GREEN | — |
 | Backend `./mvnw test-compile` | GREEN | — |
-| Backend `./mvnw -Dsurefire.excludes='**/restkit/**,**/paymentsupport/**' verify` — Surefire stage | **GREEN** | 463 tests, 0 failures, 5 skipped — TD-1 fixed session 2 |
-| Backend `./mvnw -Dsurefire.excludes='**/restkit/**,**/paymentsupport/**' verify` — Failsafe stage | **GREEN** (was RED) | 46 tests, 0 failures — TD-5 fixed session 3 |
-| Backend `./mvnw -Dsurefire.excludes='**/restkit/**,**/paymentsupport/**' verify` — overall | **BUILD SUCCESS** | First fully-green filtered backend baseline across sessions 1–4 |
-| Frontend `corepack pnpm typecheck` | GREEN | Re-run session 7 after TD-2E |
-| Frontend `corepack pnpm test:unit` | GREEN | 46 files / 546 tests, re-run session 7 |
-| Frontend `playwright test --list` | GREEN | 101 tests / 31 files (listing only), unchanged |
-| Frontend `playwright test --project=chromium` | **RED, improving** | 82 executed: **78 passed / 4 failed** after TD-2E (session 7): TD-2E-1 duplicate fixture (1), TD-2D (1), TD-2F (1), polling flake (1) |
-| PostgreSQL / Testcontainers | Available and used successfully across all 4 sessions | Podman-backed, no environment blockers |
+| Backend `./mvnw -Dsurefire.excludes='**/restkit/**,**/paymentsupport/**' verify` — Surefire stage | **GREEN** | 469 total, 464 passed, 0 failures, 0 errors, 5 skipped — Wave 2A final validation; includes the new 4-test realm-alignment class |
+| Backend `./mvnw -Dsurefire.excludes='**/restkit/**,**/paymentsupport/**' verify` — Failsafe stage | **GREEN** | 46 total, 46 passed, 0 failures, 0 errors, 0 skipped — Assurance Closure final validation |
+| Backend `./mvnw -Dsurefire.excludes='**/restkit/**,**/paymentsupport/**' verify` — overall | **BUILD SUCCESS** | Exit 0 after the live-assurance controller-slice correction |
+| Frontend `corepack pnpm typecheck` | GREEN | Wave 2A final validation |
+| Frontend `corepack pnpm test:unit` | GREEN | 58 files / 594 tests, Wave 2A final validation |
+| Frontend `playwright test --list --project=chromium` | GREEN | 101 discovered tests / 31 files; 82 belong to Chromium |
+| Frontend `playwright test --project=chromium` | **GREEN** | 82 passed / 0 failed in both closure runs and the independent final run |
+| PostgreSQL / Testcontainers | **GREEN** | Podman socket selected; focused REST 5/5 and filtered verify completed |
 | Keycloak | Not exercised via Playwright (mocked-session default mode); real-Keycloak backend IT `UserManagementKeycloakAdminIT` passes as part of the full Failsafe run (3/3, confirmed session 3) | — |
 | Known regressions carried forward | `merchant-feedback.spec.ts` — now understood as TD-2C (stale UI copy), not a mystery pre-existing regression | Reclassified, not new |
-| Known flaky test | `payment-status-polling.spec.ts:52` — passes reliably in isolation (3/3), occasionally times out only under full-101-test 16-worker contention even with the new 15000ms budget | Residual environmental flakiness, not a defect |
+| Known flaky test | `payment-status-polling.spec.ts:52` — synchronization defect corrected; repeat-each=10 and three full Chromium runs green | Closed as TD-2G |
 
 ## Post-Kiro roadmaps
 
 These are later work programs layered on top of (not part of) the seven Kiro specs above. See `status/roadmaps/*.md` for full detail:
 
 - `status/roadmaps/mvp-phase1-phase2.md` — HTTP contract hardening (conditional GET/304, idempotency replay, header forwarding), 30 tasks, complete and independently re-verified with 2 regressions found and fixed.
-- `status/roadmaps/system-hardening-and-frontend-polish.md` — 11 small UI/UX fixes across two review passes, complete.
+- `status/roadmaps/system-hardening-and-frontend-polish.md` — 11 small UI/UX fixes across two review passes, now independently `DONE_VERIFIED` 11/11 by Wave 2A focused acceptance tests.
 - `status/roadmaps/playwright-phase3-roadmap.md` — Playwright/SDET test-suite expansion (Phase 3A/3B/3C, feature IDs F-A1..F-D7), reported complete/green by its own execution report, but a fresh chromium run found 21 failures, contradicting that report's "all green" claim (TD-2). Updated session 4 with the TD-2A closure record (10 of 21 fixed) and the remaining TD-2B/C/D breakdown.
 - `status/roadmaps/audit-export-closure.md` — Formal closure record for two previously-unowned POST_KIRO_WORK features found living in the `audit` module (export index + `AuditExportEvent`/`Response`, and the before/after-state diff drawer "F-D7"). Decision: KEEP both (real UI/API usage, safe field scoping, dedicated tests). Resolves TD-1.
+
+## REST-ADVANCED Wave 2B design gate
+
+Wave 2A made no REST-ADVANCED production or test-framework change. The recommended Wave 2B order is based on present domain value and repository prerequisites:
+
+1. **REST-MULTIPART-01 — evidence upload contract.** Current implementation already has the real payment-order evidence upload endpoint and backend/frontend coverage, so the next value is standalone `apps/api-tests` construction and negative-contract support, not a new product endpoint. Acceptance should cover multipart construction, binary content type/filename, `201` plus `Location`, subsequent persistence/read proof, missing/empty/unsupported/oversized parts, unsafe filename, malformed boundary, and cross-merchant denial. Stop if supporting metadata would require inventing a new business contract. Expected files: focused `apps/api-tests` request helper/spec/DTO changes only unless a focused test confirms a production defect.
+2. **REST-SSL-PROXY-01 — forwarded headers first, real TLS separately.** Current backend uses `server.forward-headers-strategy: none` and current `Location` values are relative. First prove hostile `Host`/`X-Forwarded-*` input cannot rewrite contract output. A TLS phase requires an approved ephemeral self-signed certificate/truststore, no committed production key, explicit no-proxy behavior, certificate-failure proof, and CI feasibility. Stop before certificate material or proxy behavior that has no operational requirement.
+3. **REST-REDIRECT-01 — gated contract training.** No current backend business endpoint returns 3xx; the PSP simulator opens a new tab and Nuxt auth redirects are session-framework behavior. Do not invent a production endpoint. Proceed only with an approved test-only redirect server or a real redirecting flow, then cover follow on/off, exact `Location`, relative/absolute targets, 301/302/303 versus 307/308 method semantics, cross-origin authorization-header risk, and loop detection.
+4. **REST-OPENAPI-DRIFT-01 — ownership decision before tooling.** The repository has no canonical OpenAPI document, generation owner, or exposed `/v3/api-docs` contract. Stop until spec-first versus code-first ownership is decided. Then validate implemented paths/methods/statuses/headers/problem bodies/enums, detect breaking changes in CI, exclude internal endpoints, and define an explicit false-positive/allowlist policy. Do not add a second generator if a canonical mechanism is selected elsewhere.
 
 ## Completeness self-check (per audit brief §19)
 

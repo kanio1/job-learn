@@ -3,10 +3,20 @@ name: playwright-phase3-roadmap
 origin: POST_KIRO_WORK
 audited_branch: 001-project-foundation
 audited_commit: c6de61f31e7cadc09331269f0f33e70573e4b889
-last_updated: 2026-07-12
+last_updated: 2026-07-13
 ---
 
 # Roadmap: Playwright Phase 3A / 3B / 3C (SDET learning expansion)
+
+## Assurance Closure Wave 1 checkpoint
+
+- `VAL-API-01`: **DONE_VERIFIED** on 2026-07-13 — standalone Surefire 79/79 and live Failsafe 72/72 after the isolated `VAL-API-01A` DTO contract-drift correction.
+- `PW-AUTH-01` / `F-A2`: **DONE_VERIFIED** — real `PLATFORM_ADMIN` (`platform.admin`, `PLATFORM_TENANT`) and `MERCHANT_MANAGER` (`merchant.manager`, `TENANT_ALPHA`, `MERCHANT_ALPHA_001`) setup projects, same-route authorization, admin-control absence, token-storage guard, and foreign-tenant payment denial passed in the complete 7/7 live run.
+- `PW-DATA-01` / `F-A4`: **DONE_VERIFIED** — worker-scoped allocation uses `runId + workerIndex + test identity`; the complete live run's two-worker proof passed with zero collisions and no global reset. The safe cleanup strategy is deterministic retention in the session-owned ephemeral database because no worker-owned DELETE/reset API exists.
+- `PW-IDEM-01`: **DONE_VERIFIED** — complete live BFF proof verifies 201 initial creation, 200 replay, `Idempotency-Replayed` false/true, equal response semantics, direct GET persistence, and one matching filtered-list resource.
+- `PW-304-01`: **DONE_VERIFIED** — complete live BFF proof verifies 200 initial GET, `ETag`, forwarded `If-None-Match`, 304, empty body, `Cache-Control`, and `Vary: Authorization`.
+- `PW-HEAD-01`: **SUPERSEDED_BY_VERIFIED_SOLUTION** — fresh standalone `HttpMethodSemanticsContractSpec` Failsafe evidence verifies the same resource's 200/ETag/cache headers/empty body contract. There is no distinct BFF HEAD route or meaningful UI interaction to justify duplicate Playwright coverage.
+- Assurance Closure Wave 1 is **DONE_VERIFIED**. Next queue: `QA-HARDEN-01`, `SEED-PROP-01`, `REST-ADVANCED`; do not start it without a new user request.
 
 ```text
 ORIGIN: POST_KIRO_WORK
@@ -65,3 +75,20 @@ TD-2C is `DONE_VERIFIED`. The three stale expectations were replaced with state-
 `CreateMerchantForm.vue` deliberately renders a submit `button` with visible text `Create` and enabled-state `aria-label="Create merchant"`; its intended accessible name is therefore `Create merchant`. Fresh pre-edit Chromium reproduction confirmed that four `merchant-create.spec.ts` tests all timed out before any business action because their exact semantic locator still expected `Create`. Updated only the six affected `getByRole('button', { name: 'Create', exact: true })` calls to exact `Create merchant`, preserving role-based selection, exactness, all validation/create assertions, and the TD-2B `DRAFT` contract. No production code, helper, state component, or visual snapshot changed.
 
 The correction made three of the four test titles pass. The fourth, `shows create validation and duplicate feedback`, now reaches a separately stale duplicate-error route fixture and fails because `{ error, message }` does not match the current Problem Details client contract; the UI correctly shows its generic safe fallback. TD-2E is therefore `PARTIAL`, not `DONE_VERIFIED`. Full Chromium moved from 76 passed / 6 failed to 78 passed / 4 failed: TD-2E-1 duplicate fixture, TD-2D, TD-2F, and historical polling contention remain. Next executable work is TD-2E-1 only.
+
+## Session 8 (2026-07-13, HEAD `95e35c9`) — TD-2 implementation blocked before browser validation
+
+- **TD-2E-1:** Reclassified from `STALE_MOCK_CONTRACT` to a duplicate-error contract defect: the mock and backend handler both emitted legacy JSON, while the client consumes RFC 9457 Problem Details. The duplicate handler now returns `409 application/problem+json` with `type`, `title`, `status`, `detail`, and `error`; `backendApi` preserves backend Problem Details; the E2E mock mirrors the contract. `useApiClient` has a focused duplicate-detail test. Status: `IMPLEMENTED_UNVERIFIED` pending the exact E2E test, full merchant-create spec, and Chromium baseline.
+- **TD-2F:** `MerchantStatusTest` and `MerchantTest` prove `SUSPENDED` has no legal outgoing transition. Fixed frontend list/detail action gating to show activation only for `DRAFT`; changed the E2E case to assert no activate control for suspended merchants. Status: `IMPLEMENTED_UNVERIFIED` pending Playwright.
+- **TD-2D:** Confirmed middleware redirects unauthenticated visitors to `/login?redirectTo=...`; revised the test from an invalid mocked Keycloak-page expectation to the application-owned login contract and protected-data absence. Status: `IMPLEMENTED_UNVERIFIED` pending Playwright.
+- **TD-2G:** No code change. The required repeat-each investigation is `BLOCKED_ENVIRONMENT` because this sandbox denies localhost socket access before Nuxt starts. No sleep, retry, timeout, or worker workaround was added.
+- Frontend validation: `corepack pnpm typecheck` GREEN; `corepack pnpm test:unit` GREEN, 46 files / 550 tests. Playwright listing: 82 Chromium tests in 28 files. Chromium execution is blocked before test discovery by the socket policy.
+
+## Continuation validation closure (2026-07-13, HEAD `95e35c9`)
+
+- Environment is now socket-enabled: localhost binding and Podman/Testcontainers were verified.
+- **TD-2E-1 / TD-2E: DONE_VERIFIED.** Exact duplicate E2E, merchant-create (6 Chromium tests), frontend typecheck/unit suite, and `MerchantRestAssuredTest` (5/5) are green. Duplicate responses are `409 application/problem+json` with strict Problem Details parsing preserved.
+- **TD-2F: DONE_VERIFIED.** `MerchantStatusTest` plus `MerchantTest` are 17/17; UI exposes activation only from `DRAFT`; lifecycle E2E is green.
+- **TD-2D: DONE_VERIFIED.** Browser URL normalization made raw `%2F` matching stale; semantic `/login` plus `redirectTo=/admin/merchants`, visible login control, and absent merchant data are green.
+- **TD-2G: DONE_VERIFIED.** Measured 6/10 manual failures before correction because `includes(detailPath)` matched supporting `/history` and `/evidence` responses. Exact GET/path matching produced repeat-each=10 green (20 cases), with no sleep/retry/timeout change.
+- **TD-2: DONE_VERIFIED.** Full Chromium closure run 1 = 82/82, run 2 = 82/82; final independent Chromium = 82/82. No residual Phase 3 TD-2 failure remains.

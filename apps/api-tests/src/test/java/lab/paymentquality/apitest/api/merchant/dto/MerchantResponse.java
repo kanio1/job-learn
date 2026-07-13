@@ -10,7 +10,8 @@ import java.util.UUID;
  *
  * <p>Fields: {@code merchantId} (UUID), {@code merchantReference} (unique business key),
  * {@code displayName}, {@code status} (DRAFT | ACTIVE | SUSPENDED),
- * {@code createdAt}, {@code updatedAt} (ISO-8601 instant strings).
+ * {@code createdAt}, {@code updatedAt} (ISO-8601 instant strings), and
+ * {@code riskFlagged} (the current merchant risk marker).
  *
  * <p>Timestamps are typed as {@code String} rather than {@code java.time.Instant} because
  * {@code jackson-datatype-jsr310} is not on the test classpath (offline Maven constraint).
@@ -26,5 +27,6 @@ public record MerchantResponse(
         String displayName,
         String status,
         String createdAt,
-        String updatedAt) {
+        String updatedAt,
+        boolean riskFlagged) {
 }

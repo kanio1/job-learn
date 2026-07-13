@@ -112,6 +112,11 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
         createMerchant(reference, "Duplicate Merchant")
                 .then()
                 .statusCode(409)
+                .contentType("application/problem+json")
+                .body("type", equalTo("https://api.payment-quality.local/problems/duplicate-merchant-reference"))
+                .body("title", equalTo("Merchant already exists"))
+                .body("status", equalTo(409))
+                .body("detail", equalTo("A merchant with this reference already exists"))
                 .body("error", equalTo("duplicate_merchant_reference"));
 
         createMerchant("AB", "Short Reference")

@@ -1,6 +1,6 @@
 # Spec 03: Payment Operations Dashboard
 
-**Status:** 🔶 ~85% ukończony (opcjonalne testy property + cleanup + final checkpoint)  
+**Status:** ✅ COMPLETE_AND_KIRO_MARKED — current execution status: see `status/specs/payment-operations-dashboard.md`
 **Pliki źródłowe:** `.kiro/specs/payment-operations-dashboard/`  
 **Zależność od:** istniejący backend + Nuxt frontend
 

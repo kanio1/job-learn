@@ -149,7 +149,7 @@ class KeycloakRealmRoleConverterTest {
      *
      * <p><b>Validates: Requirements 2.2, 2.6</b>
      */
-    @Property(tries = 30)
+    @Property(tries = 100)
     @Label("Feature: backend-authority-refactor, Property 1: known-role mapping")
     @net.jqwik.api.Tag("backend-authority-refactor")
     void property1_known_roles_produce_exactly_their_documented_authorities(
@@ -215,7 +215,7 @@ class KeycloakRealmRoleConverterTest {
      *
      * <p><b>Validates: Requirements 2.7, 3.5</b>
      */
-    @Property(tries = 30)
+    @Property(tries = 100)
     @Label("Feature: backend-authority-refactor, Property 2: unknown-role handling")
     @net.jqwik.api.Tag("backend-authority-refactor")
     void property2_unknown_role_is_ignored_fail_closed(
@@ -348,7 +348,7 @@ class KeycloakRealmRoleConverterTest {
      *
      * <p><b>Validates: Requirements 2.4, 2.5</b>
      */
-    @Property(tries = 30)
+    @Property(tries = 100)
     @Label("Feature: backend-authority-refactor, Property 3: malformed claim yields empty")
     @net.jqwik.api.Tag("backend-authority-refactor")
     void property3_nonCollectionRolesValue_yieldsEmptyAuthorities(
@@ -367,7 +367,7 @@ class KeycloakRealmRoleConverterTest {
      *
      * <p><b>Validates: Requirements 2.4, 2.5</b>
      */
-    @Property(tries = 30)
+    @Property(tries = 100)
     @Label("Feature: backend-authority-refactor, Property 3: malformed claim yields empty")
     @net.jqwik.api.Tag("backend-authority-refactor")
     void property3_nonMapRealmAccessValue_yieldsEmptyAuthorities(

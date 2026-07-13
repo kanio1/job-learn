@@ -64,7 +64,7 @@
           </template>
           <div class="flex flex-wrap gap-2">
             <UButton
-              v-if="merchant.status !== 'ACTIVE'"
+              v-if="merchant.status === 'DRAFT'"
               data-testid="action-activate-merchant"
               color="success"
               variant="soft"

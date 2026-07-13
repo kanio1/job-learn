@@ -91,7 +91,10 @@ public class PaymentOrder {
         order.amountMinor = amountMinor;
         order.currency = currency;
         order.status = PaymentStatus.CREATED;
-        order.createdAt = Instant.now();
+        // PostgreSQL persists timestamptz at microsecond precision. Keep the
+        // first create response identical to a later idempotency replay that
+        // reads the same order back from persistence.
+        order.createdAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
         order.updatedAt = order.createdAt;
         return order;
     }

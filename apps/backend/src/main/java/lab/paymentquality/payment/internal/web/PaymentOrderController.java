@@ -9,6 +9,7 @@ import lab.paymentquality.payment.internal.application.PaymentOrderNoteService;
 import lab.paymentquality.payment.internal.application.PaymentOrderSummaryService;
 import lab.paymentquality.payment.internal.application.PaymentOrderService;
 import lab.paymentquality.payment.internal.application.PaymentLifecycleService;
+import lab.paymentquality.payment.internal.application.PaymentMerchantScopeVerifier;
 import lab.paymentquality.payment.internal.domain.*;
 import lab.paymentquality.shared.security.Authorities;
 import org.springframework.data.domain.Page;
@@ -40,19 +41,22 @@ public class PaymentOrderController {
     private final PaymentLifecycleService paymentLifecycleService;
     private final PaymentEvidenceService paymentEvidenceService;
     private final PaymentOrderNoteService paymentOrderNoteService;
+    private final PaymentMerchantScopeVerifier merchantScopeVerifier;
 
     public PaymentOrderController(PaymentOrderService paymentOrderService,
                                    PaymentOrderListService paymentOrderListService,
                                    PaymentOrderSummaryService paymentOrderSummaryService,
                                    PaymentLifecycleService paymentLifecycleService,
                                    PaymentEvidenceService paymentEvidenceService,
-                                   PaymentOrderNoteService paymentOrderNoteService) {
+                                   PaymentOrderNoteService paymentOrderNoteService,
+                                   PaymentMerchantScopeVerifier merchantScopeVerifier) {
         this.paymentOrderService = paymentOrderService;
         this.paymentOrderListService = paymentOrderListService;
         this.paymentOrderSummaryService = paymentOrderSummaryService;
         this.paymentLifecycleService = paymentLifecycleService;
         this.paymentEvidenceService = paymentEvidenceService;
         this.paymentOrderNoteService = paymentOrderNoteService;
+        this.merchantScopeVerifier = merchantScopeVerifier;
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -63,7 +67,7 @@ public class PaymentOrderController {
             @AuthenticationPrincipal Jwt jwt) {
 
         String merchantIdClaim = jwt.getClaimAsString("merchant_id");
-        if (merchantIdClaim == null || !merchantId.toString().equals(merchantIdClaim)) {
+        if (!merchantScopeVerifier.matches(merchantId, merchantIdClaim)) {
             throw new AccessDeniedException("Merchant scope mismatch");
         }
 
@@ -113,7 +117,7 @@ public class PaymentOrderController {
             order = paymentOrderService.findForPlatform(merchantId, paymentOrderId);
         } else {
             String jwtMerchantId = jwt.getClaimAsString("merchant_id");
-            if (jwtMerchantId == null || !merchantId.toString().equals(jwtMerchantId)) {
+            if (!merchantScopeVerifier.matches(merchantId, jwtMerchantId)) {
                 throw new PaymentOrderNotFoundException(paymentOrderId);
             }
             order = paymentOrderService.findForMerchant(merchantId, paymentOrderId);
@@ -220,7 +224,7 @@ public class PaymentOrderController {
 
         if (!isPlatformReader) {
             String jwtMerchantId = jwt.getClaimAsString("merchant_id");
-            if (jwtMerchantId == null || !merchantId.toString().equals(jwtMerchantId)) {
+            if (!merchantScopeVerifier.matches(merchantId, jwtMerchantId)) {
                 throw new AccessDeniedException("Merchant scope mismatch");
             }
         }
@@ -250,7 +254,7 @@ public class PaymentOrderController {
 
         if (!isPlatformReader) {
             String jwtMerchantId = jwt.getClaimAsString("merchant_id");
-            if (jwtMerchantId == null || !merchantId.toString().equals(jwtMerchantId)) {
+            if (!merchantScopeVerifier.matches(merchantId, jwtMerchantId)) {
                 throw new AccessDeniedException("Merchant scope mismatch");
             }
         }
@@ -281,7 +285,7 @@ public class PaymentOrderController {
 
         if (!isPlatformReader) {
             String jwtMerchantId = jwt.getClaimAsString("merchant_id");
-            if (jwtMerchantId == null || !merchantId.toString().equals(jwtMerchantId)) {
+            if (!merchantScopeVerifier.matches(merchantId, jwtMerchantId)) {
                 throw new AccessDeniedException("Merchant scope mismatch");
             }
         }
@@ -310,7 +314,7 @@ public class PaymentOrderController {
             return;
         }
         String merchantIdClaim = jwt.getClaimAsString("merchant_id");
-        if (merchantIdClaim == null || !merchantId.toString().equals(merchantIdClaim)) {
+        if (!merchantScopeVerifier.matches(merchantId, merchantIdClaim)) {
             throw new AccessDeniedException("Merchant scope mismatch");
         }
     }
@@ -324,7 +328,7 @@ public class PaymentOrderController {
             return paymentOrderService.findForPlatform(merchantId, paymentOrderId);
         }
         String jwtMerchantId = jwt.getClaimAsString("merchant_id");
-        if (jwtMerchantId == null || !merchantId.toString().equals(jwtMerchantId)) {
+        if (!merchantScopeVerifier.matches(merchantId, jwtMerchantId)) {
             throw new PaymentOrderNotFoundException(paymentOrderId);
         }
         return paymentOrderService.findForMerchant(merchantId, paymentOrderId);
@@ -464,7 +468,7 @@ public class PaymentOrderController {
 
         if (!isPlatformReader) {
             String jwtMerchantId = jwt.getClaimAsString("merchant_id");
-            if (jwtMerchantId == null || !merchantId.toString().equals(jwtMerchantId)) {
+            if (!merchantScopeVerifier.matches(merchantId, jwtMerchantId)) {
                 throw new AccessDeniedException("Merchant scope mismatch");
             }
         }

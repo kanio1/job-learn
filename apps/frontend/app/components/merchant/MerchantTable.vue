@@ -23,7 +23,7 @@
  * Row actions:
  * - DRAFT merchants: Activate button (`data-testid="activate-merchant-button"`, Req 12.2)
  * - ACTIVE merchants: New Payment + Suspend buttons
- * - SUSPENDED merchants: Activate button (`data-testid="activate-merchant-button"`, Req 2.6)
+ * - SUSPENDED merchants: no lifecycle action (terminal merchant state)
  *
  * Emits `activate` and `suspend` to let the parent page call useMerchantsApi and
  * show the resulting status (Req 2.6) or an error (Req 2.9).
@@ -118,8 +118,8 @@ const columns: TableColumn<Merchant>[] = [
       const buttons: any[] = []
       const status = row.original.status
 
-      // Activate: available for DRAFT and SUSPENDED merchants (Req 2.6)
-      if ((status === 'DRAFT' || status === 'SUSPENDED') && canUpdateMerchantStatus.value) {
+      // Activate: DRAFT → ACTIVE is the only supported activation transition.
+      if (status === 'DRAFT' && canUpdateMerchantStatus.value) {
         buttons.push(
           h('span', { 'data-testid': 'action-activate-merchant' }, [
             h(UButton, {

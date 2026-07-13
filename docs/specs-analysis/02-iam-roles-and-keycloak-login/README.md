@@ -1,6 +1,6 @@
 # Spec 02: IAM Roles and Keycloak Login
 
-**Status:** ⏳ Gotowy do implementacji  
+**Status:** ✅ DONE_VERIFIED — current execution status: see `status/specs/iam-roles-and-keycloak-login.md`
 **Pliki źródłowe:** `.kiro/specs/iam-roles-and-keycloak-login/`  
 **Zależność od:** `backend-authority-refactor` (✅ ukończony)
 

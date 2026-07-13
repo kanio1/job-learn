@@ -14,29 +14,27 @@ Implementation is done by the main Codex CLI session. Helper agents and skills a
 
 `.kiro/**` files are read-only during Codex implementation unless the user explicitly asks to maintain Kiro specs. Codex may read `.kiro/specs/**` for requirements, design, and task sequencing, but must not check or uncheck tasks, rewrite plans, or adjust Kiro task files during normal implementation. Track implementation status in `.codex/current-state.md`, not in `.kiro`.
 
-Recommended read order for the current tenant-model-and-isolation continuation:
+Recommended read order for current execution work:
 
 1. `AGENTS.md`
 2. `.codex/README.md`
 3. `.codex/current-state.md`
-4. `.codex/tenant-model-and-isolation.md`
-5. `.codex/review-checklist.md`
-6. `.codex/prompts/continue-tenant-wave-2.md`
-7. `.kiro/specs/tenant-model-and-isolation/requirements.md`
-8. `.kiro/specs/tenant-model-and-isolation/design.md`
-9. `.kiro/specs/tenant-model-and-isolation/tasks.md`
+4. `status/evidence/latest-validation.md`
+5. `status/roadmaps/playwright-phase3-roadmap.md`
+6. relevant current implementation and tests
 
 ## Current Phase
 
 The checked-out branch is in the Payment Orders / lifecycle / HTTP contract hardening phase. The codebase is beyond Phase 1 merchant-only assumptions.
 
-The active Codex continuation target on branch `018-rest-security-p1-error-auth-method-hardening` is `tenant-model-and-isolation`, starting from the Wave 2 checkpoint described in `.codex/current-state.md`.
+For assurance work, verify the actual branch with `git branch --show-current`; the current execution registry is `status/index.md`. Do not rely on the historical `018-rest-security-p1-error-auth-method-hardening` continuation reference.
 
 Implemented domain scope:
 
 - Merchant Registry: create, list, retrieve, activate, suspend.
 - Payment Orders: merchant-scoped create/read/list/summary.
 - Payment Lifecycle: authorize, capture, cancel, refund, metadata PATCH, status history, ETag/If-Match and idempotency hardening.
+- IAM, tenant isolation, user management, and audit log: implemented current domain capabilities.
 
 ## Active Non-Goals
 
@@ -53,7 +51,7 @@ Implemented domain scope:
 - Persistence: PostgreSQL 18, Flyway migrations, JPA with `ddl-auto: validate`.
 - Security: Spring Security JWT resource server, Keycloak realm roles mapped to `platform:*` and `merchant:*` authorities.
 - Tests: JUnit 6, AssertJ, Mockito, REST Assured 6, Testcontainers PostgreSQL, Spring Modulith tests.
-- Frontend: Nuxt 4 app directory, Nuxt UI, TypeScript 6, Pinia, Zod, `nuxt-auth-utils`, Playwright 1.60.
+- Frontend: Nuxt 4 app directory, Nuxt UI, TypeScript 6, Pinia, Zod, `nuxt-auth-utils`, Playwright 1.61.0.
 
 ## Backend Commands
 
@@ -85,9 +83,10 @@ corepack pnpm dev
 corepack pnpm typecheck
 corepack pnpm build
 corepack pnpm exec playwright test
+corepack pnpm exec playwright test --config playwright.live.config.ts
 ```
 
-Use `pnpm` directly only if it is already available in the shell.
+Use `pnpm` directly only if it is already available in the shell. The live config uses real Keycloak setup/storage states and must receive passwords only through environment variables; never track generated state files.
 
 ## Infrastructure Commands
 
@@ -151,7 +150,7 @@ Payment orders:
 - Keep REST contracts stable unless the spec requires a contract change.
 - Use Flyway for schema changes and keep JPA mappings consistent with migrations.
 - Do not add dependencies without explicit need and approval.
-- After Wave 2, run backend test validation from `apps/backend` while respecting the `restkit/` and `paymentsupport/` exclusions above, update `.codex/current-state.md`, then stop before Wave 3 unless the user asks to continue.
+- Follow `status/index.md` for the current execution queue. Do not begin the listed Wave 2 packages until the active assurance validation item is closed or the user explicitly reprioritises it.
 
 ## Frontend / UI/UX Work
 

@@ -2,6 +2,7 @@ package lab.paymentquality.payment.internal.web;
 
 import lab.paymentquality.payment.internal.application.PaymentEvidenceService;
 import lab.paymentquality.payment.internal.application.PaymentLifecycleService;
+import lab.paymentquality.payment.internal.application.PaymentMerchantScopeVerifier;
 import lab.paymentquality.payment.internal.application.PaymentOrderListService;
 import lab.paymentquality.payment.internal.application.PaymentOrderNoteService;
 import lab.paymentquality.payment.internal.application.PaymentOrderService;
@@ -60,6 +61,7 @@ class PaymentOrderNotesControllerTest {
     @MockitoBean PaymentLifecycleService paymentLifecycleService;
     @MockitoBean PaymentEvidenceService paymentEvidenceService;
     @MockitoBean PaymentOrderNoteService paymentOrderNoteService;
+    @MockitoBean PaymentMerchantScopeVerifier paymentMerchantScopeVerifier;
 
     private PaymentOrderNoteDto sampleNote() {
         return new PaymentOrderNoteDto(NOTE_ID, "Test note body", "platform.admin", Instant.now());

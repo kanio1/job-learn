@@ -1,25 +1,25 @@
 # Payment Quality Engineering Lab
 
-Phase 0 established the project foundation and running skeleton for a learning-oriented payment quality engineering lab. Phase 1 adds Merchant Registry and Activation for authenticated platform operators, the first real business domain capability before payment orders.
+Payment Quality Engineering Lab is a learning-oriented full-stack payment platform. The current scope has moved beyond the historical Phase 0/Phase 1 merchant-only foundation.
 
-## Phase 1 Scope
+## Current Scope
 
 In scope:
-- Merchant module under `apps/backend` with create, list, retrieve, activate, and suspend endpoints
+- Merchant registry with create, list, retrieve, activate, suspend, and tenant ownership
+- Payment orders with create/read/list/summary, lifecycle transitions, metadata/history, `ETag`/`If-Match`, idempotency, conditional GET, and HEAD contracts
+- IAM and local Keycloak roles, tenant isolation, user management, and audit-log capabilities
 - PostgreSQL 18 persistence with Flyway-owned merchant schema
 - Keycloak-backed local operator login and JWT resource-server authorization
-- Nuxt `/admin/merchants` dashboard route for merchant create/list/lifecycle actions
-- Unit, repository, REST Assured, security, Testcontainers integration, and Playwright coverage
+- Nuxt merchant/payment, user-management, and audit dashboard routes
+- Unit, repository, REST Assured, security, Testcontainers, mocked Chromium, and separate live-Keycloak Playwright assurance coverage
 - Tester-facing Phase 1 setup, auth, data, and test-design documentation
 
 Out of scope:
-- Payment order creation
 - `POST /payments`
 - Kafka
 - PSP integration or PSP mock flows
-- PSP integration, Kafka, refunds, settlement, reconciliation, KYC, Client Credentials Flow
+- PSP integration, Kafka, settlement, reconciliation, KYC, Client Credentials Flow
 - Complete merchant self-service, admin, risk, operations, or reconciliation dashboards
-- Payment persistence or payment domain entities
 
 ## Repository Map
 
@@ -72,7 +72,7 @@ Validated on 2026-05-18 before dependency scaffolding:
 - TypeScript: `6.0.3`
 - Pinia module: `@pinia/nuxt 0.11.3` with `pinia 3.0.4`
 - Zod: `4.4.3`
-- Playwright: `@playwright/test 1.60.0`
+- Playwright: `@playwright/test 1.61.0`
 - PostgreSQL image: `postgres:18`
 - Keycloak image: `keycloak/keycloak:26.6.1`
 
@@ -130,11 +130,12 @@ pnpm dev
 pnpm typecheck
 pnpm build
 corepack pnpm exec playwright test
+corepack pnpm exec playwright test --config playwright.live.config.ts
 ```
 
 If `pnpm` is not installed as a shell command, use Corepack: `corepack pnpm <command>`.
 
-The frontend dashboard route `/admin/merchants` supports the Phase 1 merchant registry journey.
+The standard Chromium suite uses mocked sessions. `playwright.live.config.ts` is a separate assurance project: it requires a running local backend/Keycloak and environment-supplied test-user passwords; runtime storage states are ignored and must never be committed.
 
 ## Infrastructure Commands
 
@@ -150,11 +151,13 @@ See `docs/setup/local-infra.md` for details.
 
 ## Baseline Verification
 
-- Backend: `apps/backend ./mvnw test`, `./mvnw verify`
-- Frontend: `apps/frontend corepack pnpm typecheck`, `corepack pnpm build`, `corepack pnpm exec playwright test`
+- Backend: `apps/backend ./mvnw test`, `./mvnw verify` (Codex broad validation excludes `restkit/**` and `paymentsupport/**` unless explicitly requested)
+- Standalone REST Assured: `apps/api-tests` baseline is Surefire 79/79 and Failsafe 72/72 (2026-07-13)
+- Frontend: `apps/frontend corepack pnpm typecheck`, `corepack pnpm test:unit`, `corepack pnpm exec playwright test`; standard Chromium closure baseline is 82/82 (2026-07-13)
+- Live assurance: run only with explicitly supplied local test credentials and the `playwright.live.config.ts` project; see `status/evidence/latest-validation.md` for its current validation state
 - Infrastructure: Docker Compose startup from `docs/setup/local-infra.md`
 - Documentation: follow the Tester Orientation Pack in `docs/setup/phase-0-tester-orientation-pack.md`
 
 ## Tester Focus
 
-Phase 1 testing focuses on merchant validation, lifecycle transitions, access control, persistence durability, module boundaries, frontend feedback states, and parallel-safe test data. It still does not test payment behavior because no payment behavior exists.
+Testing focuses on merchant/payment contracts, lifecycle transitions, IAM and tenant boundaries, audit/user-management flows, persistence effects, frontend feedback states, and parallel-safe test data.

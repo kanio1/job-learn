@@ -1,6 +1,6 @@
 # Spec 07: Deterministic Seed and Test Isolation
 
-**Status:** 🔲 Spec gotowa (requirements + design + tasks) — implementacja nierozpoczęta  
+**Status:** ✅ STAGES_1_2_3_DONE_STAGE_4_DEFERRED — optional realm-alignment task 5.1 is `DONE_VERIFIED`; current execution status: see `status/specs/deterministic-seed-and-test-isolation.md`
 **Pliki źródłowe:** `.kiro/specs/deterministic-seed-and-test-isolation/`  
 **Roadmap position:** SPEC #5 — **capstone** pierwszej piątki (Playwright/SDET roadmap §17)
 
@@ -43,7 +43,7 @@ across wszystkich poprzednich specs. **Backend/infra spec (nie frontend).**
 ## Fixtures Catalog (natural keys fixed, UUID finalizowane w design)
 
 **Tenants:** PLATFORM_TENANT (PLATFORM), TENANT_ALPHA (STANDARD), PLACEHOLDER_TENANT_ID (STANDARD)
-**Merchants:** MERCHANT_ALPHA_001/002 (TENANT_ALPHA), MERCHANT_BETA_001 (PLATFORM_TENANT)
+**Merchants:** MERCHANT_ALPHA_001/002 (TENANT_ALPHA), MERCHANT_BETA_001 (PLATFORM_TENANT), MERCHANT_SUSPENDED_DEMO (PLACEHOLDER_TENANT_ID)
 **Payment orders:** statusy CREATED/AUTHORIZED/CAPTURED/CANCELLED/REFUNDED + blok ekspansji dla paginacji
 
 Terminal-status seeding wstawia zamówienia bezpośrednio w docelowym statusie (świadomy bypass lifecycle; spójność gwarantowana przez curated fixtures + syntetyczny status-history entry).

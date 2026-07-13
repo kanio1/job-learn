@@ -74,4 +74,29 @@ class MerchantPaymentEligibilityAdapterTest {
 
         assertThat(result).isEmpty();
     }
+
+    @Test
+    void naturalReferenceIsNormalizedBeforeLookup() {
+        UUID merchantId = UUID.randomUUID();
+        Merchant merchant = Merchant.create(merchantId, "MERCH-ALPHA-001", "Alpha Merchant");
+        when(repository.findByNormalizedReference("MERCH-ALPHA-001")).thenReturn(Optional.of(merchant));
+
+        Optional<MerchantPaymentEligibility> result = adapter.findEligibilityByReference("  merch-alpha-001  ");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().merchantId()).isEqualTo(merchantId);
+        assertThat(result.get().normalizedReference()).isEqualTo("MERCH-ALPHA-001");
+    }
+
+    @Test
+    void realmCompatibleNaturalReferenceWithUnderscoresIsResolved() {
+        UUID merchantId = UUID.randomUUID();
+        Merchant merchant = Merchant.create(merchantId, "MERCHANT-ALPHA-001", "Alpha Merchant");
+        when(repository.findByNormalizedReference("MERCHANT_ALPHA_001")).thenReturn(Optional.of(merchant));
+
+        Optional<MerchantPaymentEligibility> result = adapter.findEligibilityByReference("merchant_alpha_001");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().merchantId()).isEqualTo(merchantId);
+    }
 }

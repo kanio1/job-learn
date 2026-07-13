@@ -6,7 +6,7 @@ kiro_design: .kiro/specs/iam-roles-and-keycloak-login/design.md
 kiro_tasks: .kiro/specs/iam-roles-and-keycloak-login/tasks.md
 audited_branch: 001-project-foundation
 audited_commit: fec8e1da46da18e3d141660c5bc0753de2ddabf2
-last_updated: 2026-07-12
+last_updated: 2026-07-13
 overall_status: DONE_VERIFIED (all 17 required leaf tasks implemented and verified in code; 8 optional test sub-tasks intentionally skipped per MVP policy, one with incidental equivalent coverage)
 kiro_task_coverage: 100%
 ---
@@ -80,7 +80,7 @@ Verified directly against code at HEAD (`fec8e1d`):
 - **ACCEPTABLE** — Tasks 9.2, 10.1, 10.2, 12.1, and 14 are implemented in code (verified directly against source in §2/§3) but their Kiro checkboxes were never ticked. This is a documented, previously-adjudicated hygiene gap (`.codex/status-hygiene-audit.md`, user decision 2026-06-18: `COMPLETE_AND_KIRO_MARKED`), not a functional gap.
 - **ACCEPTABLE** — Task 12.2's optional property test was never authored at its prescribed path/tag, but `HeaderKeyValuePanel.test.ts` (pre-existing, tagged `payment-operations-dashboard`) already provides functionally equivalent fast-check coverage of the exact same Authorization-masking property (Req 11.1/11.4).
 - **BY DESIGN, not a deviation** — Frontend action-gating (tasks 10.1/10.2) is explicitly a convenience layer only; the Backend_API remains the sole authoritative enforcement point for every protected operation (Req 9.4/9.5). No frontend gating logic in this spec substitutes for backend `@PreAuthorize`/`SecurityFilterChain` checks, none of which were touched by this spec.
-- **NEEDS_REVIEW (documentation only, out of scope to fix here)** — `docs/specs-analysis/02-iam-roles-and-keycloak-login/README.md` still shows `**Status:** ⏳ Gotowy do implementacji` ("ready for implementation"), which is stale: the spec is substantially complete and closed per the 2026-06-18 user decision recorded in `.codex/status-hygiene-audit.md`. Flagging only; not corrected in this session since only `status/specs/iam-roles-and-keycloak-login.md` may be written.
+- **RESOLVED (documentation, 2026-07-13)** — the current-status header in `docs/specs-analysis/02-iam-roles-and-keycloak-login/README.md` now points to this canonical ledger and reports `DONE_VERIFIED`.
 
 ## 6. Current test baseline
 

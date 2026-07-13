@@ -2,8 +2,8 @@
 name: system-hardening-and-frontend-polish
 origin: POST_KIRO_WORK
 audited_branch: 001-project-foundation
-audited_commit: fec8e1da46da18e3d141660c5bc0753de2ddabf2
-last_updated: 2026-07-12
+audited_commit: 95e35c97d74608bdc3d7925a4f6bb0b46c99a79b
+last_updated: 2026-07-13
 ---
 
 # Roadmap: System Hardening (Phase 2.5) + Frontend Polish
@@ -36,9 +36,23 @@ No backend changes in this pass — backend was already correct per the Phase 1/
 4. `IfMatchInput.vue`: no hint text explaining its purpose — added.
 5. `PaymentOrderLifecycleActions.vue`: capture/refund amount placeholder didn't mention "minor units" — fixed.
 
+## Assurance Closure Wave 2A verification (2026-07-13)
+
+All eleven roadmap items now have focused acceptance-level proof under stable IDs `QA-HARDEN-01.01` through `QA-HARDEN-01.11`, grouped into five packages:
+
+- `01A`: Error Lab 304 status/headers/no-body, RawJsonViewer empty state, ApiDebugPanel body-section retention.
+- `01B`: ProblemDetails label alignment and five Error Lab learning descriptions.
+- `01C`: Support Search Merchant-ID gating, exact request, typed result/status/date/link and state distinctions.
+- `01D`: Payment detail `Last-Modified`/`Idempotency-Replayed` presentation and deterministic merchant date formatting.
+- `01E`: If-Match label/hint relationship and capture/refund minor-unit guidance.
+
+Focused tests are `qa-harden-empty-body.test.ts`, `qa-harden-error-presentation.test.ts`, `admin/support/index.test.ts`, `qa-harden-detail-presentation.test.ts`, and `qa-harden-lifecycle-guidance.test.ts`. Ten implementations passed without production change. The alignment test found one confirmed residual defect: the `Field Errors` `dt` alone lacked `w-28`; a one-class correction in `ProblemDetailsCard.vue` closed it. Two red test-construction attempts were classified and corrected as `TEST_DESIGN_DEFECT` (Nitro auto-import mocking and Pinia initialization order), without changing correct production behavior.
+
+Final evidence: frontend typecheck GREEN; unit suite 58 files / 594 tests GREEN; standard Chromium 82/82 GREEN. Live Playwright was not run because no Wave-1 live assurance surface changed. See `status/evidence/latest-validation.md`.
+
 ## Status
 
-Both passes are self-reported COMPLETE with all quality gates green at the time (no regressions introduced; no dedicated new tests added since these were review/fix passes over existing surfaces). Not independently re-validated line-by-line in this session — the current fresh validation run (`status/evidence/latest-validation.md`) exercises the same frontend Vitest/typecheck suites and found them green, which is consistent with these fixes still being in place.
+`QA-HARDEN-01: DONE_VERIFIED` — 11/11 exact requirements have focused evidence and the relevant regression gates are green.
 
 ## Next work
 

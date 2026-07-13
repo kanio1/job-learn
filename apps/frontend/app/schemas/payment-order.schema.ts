@@ -3,6 +3,14 @@ import { z } from 'zod'
 export const paymentCurrencySchema = z.enum(['PLN', 'EUR', 'USD'])
 export const paymentStatusSchema = z.enum(['CREATED', 'AUTHORIZED', 'CAPTURED', 'CANCELLED', 'EXPIRED', 'REFUNDED'])
 
+// Java's UUID parser accepts the deterministic all-zero-variant identifiers
+// used by the seeded payment data. Zod's uuid() additionally enforces the
+// RFC-4122 variant, so use the backend's structural UUID contract here.
+const backendUuidSchema = z.string().regex(
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  'Expected UUID',
+)
+
 export const createPaymentOrderSchema = z.object({
   amountMinor: z.coerce.number()
     .int('Amount must be a whole number')
@@ -18,8 +26,8 @@ export const createPaymentOrderSchema = z.object({
 export type CreatePaymentOrderForm = z.infer<typeof createPaymentOrderSchema>
 
 export const paymentOrderResponseSchema = z.object({
-  paymentOrderId: z.string().uuid(),
-  merchantId: z.string().uuid(),
+  paymentOrderId: backendUuidSchema,
+  merchantId: backendUuidSchema,
   clientOrderReference: z.string(),
   amountMinor: z.number().int(),
   currency: paymentCurrencySchema,
@@ -64,8 +72,8 @@ export const paymentOrderSummaryResponseSchema = z.object({
 })
 
 export const statusHistoryEntrySchema = z.object({
-  statusHistoryId: z.string().uuid(),
-  paymentOrderId: z.string().uuid(),
+  statusHistoryId: backendUuidSchema,
+  paymentOrderId: backendUuidSchema,
   fromStatus: z.string().nullable(),
   toStatus: z.string(),
   action: z.string().nullable(),
@@ -84,8 +92,8 @@ export const paymentStatusHistoryResponseSchema = z.object({
 })
 
 export const paymentEvidenceSchema = z.object({
-  evidenceId: z.string().uuid(),
-  paymentOrderId: z.string().uuid(),
+  evidenceId: backendUuidSchema,
+  paymentOrderId: backendUuidSchema,
   originalFilename: z.string(),
   contentType: z.enum(['application/pdf', 'image/png', 'image/jpeg', 'text/plain', 'text/csv']),
   sizeBytes: z.number().int().positive(),

@@ -143,6 +143,32 @@ describe('Property 10: Displayed status equals proxied backend status', () => {
     )
   })
 
+  it('preserves a duplicate merchant Problem Details detail for the UI', async () => {
+    const duplicateProblem = {
+      type: 'https://api.payment-quality.local/problems/duplicate-merchant-reference',
+      title: 'Merchant already exists',
+      status: 409,
+      detail: 'A merchant with this reference already exists',
+      error: 'duplicate_merchant_reference',
+    }
+    vi.stubGlobal('$fetch', Object.assign(
+      () => {},
+      {
+        raw: vi.fn().mockRejectedValue(
+          makeErrorThrow(409, duplicateProblem, 'application/problem+json'),
+        ),
+      },
+    ))
+
+    const { request } = useApiClient()
+    const result = await request('/api/merchants', anySchema, { method: 'POST' })
+
+    expect(result.status).toBe(409)
+    expect(result.data).toBeNull()
+    expect(result.problem).toMatchObject(duplicateProblem)
+    expect(result.problem?.detail).toBe('A merchant with this reference already exists')
+  })
+
   it('full status range — ApiResponse.status equals proxied status across all backend codes', async () => {
     await fc.assert(
       fc.asyncProperty(

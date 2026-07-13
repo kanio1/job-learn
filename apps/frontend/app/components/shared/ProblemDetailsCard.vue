@@ -62,7 +62,7 @@
       </div>
 
       <div v-if="problem.details?.length" class="space-y-1">
-        <dt class="font-medium text-gray-500 dark:text-gray-400">Field Errors</dt>
+        <dt class="w-28 shrink-0 font-medium text-gray-500 dark:text-gray-400">Field Errors</dt>
         <ul data-testid="field-errors-list" class="space-y-1 pl-2">
           <li
             v-for="err in problem.details"

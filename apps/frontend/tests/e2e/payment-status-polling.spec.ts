@@ -75,9 +75,12 @@ test('manual refresh updates status through a repeated GET response', async ({ p
 
   await expect(page.getByTestId('payment-status-current')).toHaveText('Created')
 
-  const refreshResponse = page.waitForResponse(response =>
-    response.url().includes(detailPath) && response.status() === 200,
-  )
+  const refreshResponse = page.waitForResponse(response => {
+    const responseUrl = new URL(response.url())
+    return response.request().method() === 'GET'
+      && responseUrl.pathname === detailPath
+      && response.status() === 200
+  })
   await page.getByTestId('payment-status-refresh').click()
   const response = await refreshResponse
 

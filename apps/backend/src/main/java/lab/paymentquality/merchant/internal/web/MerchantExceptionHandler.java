@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestControllerAdvice(assignableTypes = MerchantController.class)
@@ -74,11 +75,13 @@ public class MerchantExceptionHandler {
     }
 
     @ExceptionHandler(DuplicateMerchantReferenceException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicate(DuplicateMerchantReferenceException e) {
+    public ResponseEntity<Map<String, Object>> handleDuplicate(DuplicateMerchantReferenceException e) {
         log.warn("merchant.create.failed.duplicate reference={} correlationId={}",
                 e.getConflictingReference(), MDC.get("correlationId"));
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ErrorResponse("duplicate_merchant_reference", e.getMessage()));
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(problem(HttpStatus.CONFLICT, "duplicate_merchant_reference", "Merchant already exists",
+                        "A merchant with this reference already exists"));
     }
 
     @ExceptionHandler(MerchantNotFoundException.class)
@@ -95,5 +98,19 @@ public class MerchantExceptionHandler {
                 e.getFrom(), e.getTo(), MDC.get("correlationId"));
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse("invalid_transition", e.getMessage()));
+    }
+
+    private Map<String, Object> problem(HttpStatus status, String error, String title, String detail) {
+        String correlationId = MDC.get("correlationId");
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("type", "https://api.payment-quality.local/problems/" + error.replace('_', '-'));
+        body.put("title", title);
+        body.put("status", status.value());
+        body.put("detail", detail);
+        if (correlationId != null && !correlationId.isBlank()) {
+            body.put("correlationId", correlationId);
+        }
+        body.put("error", error);
+        return body;
     }
 }

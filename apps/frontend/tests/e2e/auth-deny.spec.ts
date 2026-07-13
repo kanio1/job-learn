@@ -1,14 +1,13 @@
 import { expect, test } from '@playwright/test'
 import { mockAuthenticatedSession } from './merchant-support'
 
-test('unauthenticated access starts Keycloak redirect and hides merchant data', async ({ page }) => {
-  await page.route('**/auth/keycloak', async route => {
-    await route.fulfill({ status: 200, contentType: 'text/html', body: '<h1>Keycloak login</h1>' })
-  })
-
+test('unauthenticated access redirects to login and hides merchant data', async ({ page }) => {
   await page.goto('/admin/merchants')
 
-  await expect(page.getByRole('heading', { name: 'Keycloak login' })).toBeVisible()
+  await expect(page).toHaveURL(url =>
+    url.pathname === '/login' && url.searchParams.get('redirectTo') === '/admin/merchants',
+  )
+  await expect(page.getByTestId('login-control')).toBeVisible()
   await expect(page.getByText('Merchant registry')).toHaveCount(0)
 })
 

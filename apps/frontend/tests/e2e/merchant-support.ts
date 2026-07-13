@@ -74,7 +74,17 @@ export async function mockMerchantApi(page: Page, initial: Merchant[] = []) {
     const body = route.request().postDataJSON() as { merchantReference: string; displayName: string }
     const reference = body.merchantReference.trim().toUpperCase()
     if (merchants.some(merchant => merchant.merchantReference === reference)) {
-      await json(route, 409, { error: 'duplicate_merchant_reference', message: 'Duplicate merchant reference' })
+      await route.fulfill({
+        status: 409,
+        contentType: 'application/problem+json',
+        body: JSON.stringify({
+          type: 'https://api.payment-quality.local/problems/duplicate-merchant-reference',
+          title: 'Merchant already exists',
+          status: 409,
+          detail: 'A merchant with this reference already exists',
+          error: 'duplicate_merchant_reference',
+        }),
+      })
       return
     }
 

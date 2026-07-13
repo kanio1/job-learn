@@ -1,5 +1,5 @@
 import type { H3Event } from 'h3'
-import { createError, setHeader } from 'h3'
+import { createError, setHeader, setResponseStatus } from 'h3'
 
 export async function backendApi(
   event: H3Event,
@@ -53,11 +53,24 @@ export async function backendApi(
       headers
     })
     forwardBackendHeaders(event, response.headers)
+    setResponseStatus(event, response.status)
     return response._data
   } catch (error: any) {
     const statusCode = error?.statusCode || error?.response?.status
     if (error?.response?.headers) {
       forwardBackendHeaders(event, error.response.headers)
+    }
+
+    if (statusCode === 304) {
+      setResponseStatus(event, 304)
+      return undefined
+    }
+
+    const contentType = error?.response?.headers?.get?.('content-type') ?? ''
+    if (contentType.includes('application/problem+json') && error?.data) {
+      setResponseStatus(event, statusCode || 503)
+      setHeader(event, 'Content-Type', contentType)
+      return error.data
     }
 
     throw createError({

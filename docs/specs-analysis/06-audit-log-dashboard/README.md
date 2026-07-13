@@ -1,6 +1,6 @@
 # Spec 06: Audit Log Dashboard
 
-**Status:** 🔲 Spec gotowa (requirements + design + tasks) — implementacja nierozpoczęta  
+**Status:** ✅ COMPLETE_WITH_OPTIONAL_GAPS — current execution status: see `status/specs/audit-log-dashboard.md`
 **Pliki źródłowe:** `.kiro/specs/audit-log-dashboard/`  
 **Roadmap position:** SPEC #4 (Playwright/SDET roadmap §17)
 

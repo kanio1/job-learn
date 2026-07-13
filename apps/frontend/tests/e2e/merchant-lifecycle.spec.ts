@@ -36,18 +36,15 @@ test('activates a DRAFT merchant via data-testid button and shows ACTIVE status'
   await expect(page.getByText('ACTIVE')).toBeVisible()
 })
 
-test('activates a SUSPENDED merchant via data-testid button and shows ACTIVE status', async ({ page }) => {
+test('does not expose activation for a terminal SUSPENDED merchant', async ({ page }) => {
   const reference = uniqueReference('REACTIVATE')
   await mockAuthenticatedSession(page)
   await mockMerchantApi(page, [merchant(reference, 'SUSPENDED')])
 
   await page.goto('/admin/merchants')
 
-  const activateButton = page.getByTestId('activate-merchant-button')
-  await expect(activateButton).toBeVisible()
-  await activateButton.click()
-
-  await expect(page.getByText('ACTIVE')).toBeVisible()
+  await expect(page.getByTestId('activate-merchant-button')).toHaveCount(0)
+  await expect(page.getByText('SUSPENDED', { exact: true })).toBeVisible()
 })
 
 // ---------------------------------------------------------------------------

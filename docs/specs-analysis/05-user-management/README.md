@@ -1,6 +1,6 @@
 # Spec 05: User Management
 
-**Status:** 🔲 Spec gotowa (requirements + design + tasks) — implementacja nierozpoczęta  
+**Status:** ✅ COMPLETE_WITH_OPTIONAL_GAPS — current execution status: see `status/specs/user-management.md`
 **Pliki źródłowe:** `.kiro/specs/user-management/`  
 **Roadmap position:** SPEC #3 (Playwright/SDET roadmap §17)
 

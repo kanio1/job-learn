@@ -42,9 +42,9 @@ Pliki źródłowe spec (requirements.md, design.md, tasks.md) pozostają w:
 | # | Spec | Status | Opis |
 |---|---|---|---|
 | 1 | `backend-authority-refactor` | ✅ Ukończony | Typed authority catalog, explicit converter allowlist, azp validator |
-| 2 | `iam-roles-and-keycloak-login` | ⏳ Gotowy do implementacji | Composite roles Keycloak, OIDC login, role-aware dashboard |
+| 2 | `iam-roles-and-keycloak-login` | ✅ DONE_VERIFIED | Composite roles Keycloak, OIDC login, role-aware dashboard |
 | 3 | `payment-operations-dashboard` | 🔶 ~85% (opcjonalne testy + cleanup) | Dashboard operacyjny, HTTP learning panels |
-| 4 | `tenant-model-and-isolation` | 🔲 Spec gotowa, implementacja nierozpoczęta | Tenant module, Flyway FK, enforcement, PBT P1–P6 |
-| 5 | `user-management` | 🔲 Spec gotowa (req+design+tasks), implementacja nierozpoczęta | Keycloak Admin API façade, moduł `iam`, RBAC users, PBT P1–P6 |
-| 6 | `audit-log-dashboard` | 🔲 Spec gotowa (req+design+tasks), implementacja nierozpoczęta | Spring Modulith events, moduł `audit`, Flyway audit_event, PBT P1–P6 |
-| 7 | `deterministic-seed-and-test-isolation` | 🔲 Spec gotowa (req+design+tasks), implementacja nierozpoczęta | Profile-gated seeder, moduł `testing`, feature-flagged reset, PBT P1–P6 |
+| 4 | `tenant-model-and-isolation` | ✅ DONE_VERIFIED (documented deviations) | Tenant module, Flyway FK, enforcement, PBT P1–P6 |
+| 5 | `user-management` | ✅ COMPLETE_WITH_OPTIONAL_GAPS | Keycloak Admin API façade, moduł `iam`, RBAC users, PBT P1–P6 |
+| 6 | `audit-log-dashboard` | ✅ COMPLETE_WITH_OPTIONAL_GAPS | Spring Modulith events, moduł `audit`, Flyway audit_event, PBT P1–P6 |
+| 7 | `deterministic-seed-and-test-isolation` | ✅ STAGE_1_DONE_LATER_STAGES_DEFERRED | Profile-gated seeder, moduł `testing`, feature-flagged reset, PBT P1–P6 |

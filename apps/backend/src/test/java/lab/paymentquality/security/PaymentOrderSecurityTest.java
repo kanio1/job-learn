@@ -145,6 +145,47 @@ class PaymentOrderSecurityTest extends PostgresContainerSupport {
     }
 
     @Test
+    void merchantNaturalReferenceClaimCanCreateOnlyForItsResolvedMerchant() {
+        String merchantReference = MerchantApiTestSupport.uniqueMerchantReference("CLAIM");
+        String merchantId = MerchantApiTestSupport.operatorRequest(port)
+                .contentType(ContentType.JSON)
+                .body(MerchantApiTestSupport.createMerchantBody(merchantReference, "Claim-scoped Merchant"))
+                .when()
+                .post("/api/merchants")
+                .then()
+                .statusCode(201)
+                .extract().path("merchantId");
+
+        MerchantApiTestSupport.operatorRequest(port)
+                .when()
+                .post("/api/merchants/{merchantId}/activate", merchantId)
+                .then()
+                .statusCode(200);
+
+        String naturalReferenceToken = TestJwtSupport.merchantPaymentCreatorToken(merchantReference);
+        MerchantApiTestSupport.requestWithToken(port, naturalReferenceToken)
+                .contentType(ContentType.JSON)
+                .header("Idempotency-Key", PaymentApiTestSupport.uniqueIdempotencyKey("natural-ref"))
+                .body(PaymentApiTestSupport.createPaymentOrderBody(1000, "PLN", "PAY-NATURAL-REF"))
+                .when()
+                .post("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(201);
+
+        String foreignReferenceToken = TestJwtSupport.merchantPaymentCreatorToken(
+                MerchantApiTestSupport.uniqueMerchantReference("FOREIGN"));
+        MerchantApiTestSupport.requestWithToken(port, foreignReferenceToken)
+                .contentType(ContentType.JSON)
+                .header("Idempotency-Key", PaymentApiTestSupport.uniqueIdempotencyKey("foreign-ref"))
+                .body(PaymentApiTestSupport.createPaymentOrderBody(1000, "PLN", "PAY-FOREIGN-REF"))
+                .when()
+                .post("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(403)
+                .body("error", equalTo("forbidden"));
+    }
+
+    @Test
     void operateOnlyGets403ForCreateAndRead() {
         String merchantId = PaymentApiTestSupport.createActiveMerchant(port,
                 MerchantApiTestSupport.operatorRequest(port));

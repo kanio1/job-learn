@@ -1,6 +1,6 @@
 # Spec 04: Tenant Model and Isolation
 
-**Status:** 🔲 Spec gotowa — implementacja nierozpoczęta  
+**Status:** ✅ DONE_VERIFIED (documented deviations) — current execution status: see `status/specs/tenant-model-and-isolation.md`
 **Pliki źródłowe:** `.kiro/specs/tenant-model-and-isolation/`  
 **Zależność od:** `iam-roles-and-keycloak-login` (introduces `tenant_id` claim)
 

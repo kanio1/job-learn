@@ -6,7 +6,7 @@ kiro_design: .kiro/specs/tenant-model-and-isolation/design.md
 kiro_tasks: .kiro/specs/tenant-model-and-isolation/tasks.md
 audited_branch: 001-project-foundation
 audited_commit: fec8e1da46da18e3d141660c5bc0753de2ddabf2
-last_updated: 2026-07-12
+last_updated: 2026-07-13
 overall_status: DONE_VERIFIED (with documented deviations; optional Wave 6 narrowed in scope)
 kiro_task_coverage: 100%
 ---
@@ -87,7 +87,7 @@ STATUS_LEAF_TASK_COUNT = 33. KIRO_LEAF_TASK_COUNT = 33. Match confirmed, no dupl
 | `JpaMerchantRepository.findAllByTenantIdOrderByCreatedAtDescMerchantIdAsc` uses `Pageable` instead of the design snippet's `PageRequest` | ACCEPTABLE | Functionally equivalent; `.codex/tenant-model-and-isolation.md` explicitly allowed this substitution "to stay consistent with the existing method style." |
 | Wave 6 property tests P1, P4, P5 implemented at mocked service/resolver level rather than full REST/DB level | NEEDS_REVIEW | Wave 6 is optional overall, so this does not block spec completion, but P4 in particular ("Transitive Payment Order Isolation") does not touch payment orders at all — it re-tests merchant-service boundary logic under a different property label. This is explicitly self-documented in `.codex/current-state.md` ("Skipped or narrowed properties... because the project has jqwik but no Spring/jqwik integration dependency"), so it is a disclosed, not silent, deviation — but the property names still overstate what is actually covered. |
 | jqwik test tagging uses `@Label("Feature: ..., Property N: ...")` plus a single class-level `@Tag("tenant-model-and-isolation")`, rather than the design's per-test `@Tag("Feature: ...") @Tag("Property N")` | ACCEPTABLE | Cosmetic; `@Label` conveys the same intent for human readability, though it cannot be used for JUnit tag-based test filtering the way two separate `@Tag`s could. No functional impact observed. |
-| `docs/specs-analysis/04-tenant-model-and-isolation/README.md` status line reads "🔲 Spec gotowa — implementacja nierozpoczęta" (spec ready — implementation not started) | **STALE / MISLEADING** | This is flatly contradicted by the evidence in this ledger: all 7 waves (0–6) are implemented and covered by tests dated 2026-06-17, with matching code confirmed present in the working tree as of this audit (2026-07-12, commit fec8e1d). This document should be corrected or removed from active reference; it is not a reliable source of current status and should not be used to judge whether tenant-model-and-isolation work is outstanding. |
+| Former stale header in `docs/specs-analysis/04-tenant-model-and-isolation/README.md` | **RESOLVED (2026-07-13)** | The header now reports `DONE_VERIFIED (documented deviations)` and points to this canonical ledger. |
 
 ## 6. Current test baseline
 
