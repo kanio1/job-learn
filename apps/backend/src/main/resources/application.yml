@@ -12,7 +12,7 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
-    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit
+    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit,classpath:db/migration/checkoutlab
     baseline-on-migrate: false
   modulith:
     events:
@@ -41,6 +41,8 @@ payment-quality:
 
 app:
   testing:
+    enabled: false
+  checkout-lab:
     enabled: false
 
 payment:
