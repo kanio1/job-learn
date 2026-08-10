@@ -1,0 +1,247 @@
+![Abstract illustration of one long serial test run replaced by six parallel runs finishing far earlier](https://argos-ci.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fmain.44i28n510b_-t.jpg&w=3840&q=75)
+
+Playwright is an incredible tool for writing E2E tests on CI, but setup time can drag down your productivity. Imagine cutting that time in half! In this article, we'll dive into game-changing techniques to double the speed of your Playwright tests, including Docker, caching, and parallel execution. Let's supercharge your CI pipeline!
+
+## Use Playwright Docker image
+
+The quickest way to run tests on CI is by using the [official Playwright Docker image](https://playwright.dev/docs/docker). This image comes with all browsers and their dependencies pre-installed, saving you precious time on setup.
+
+Here's how to run a step directly in a Docker container with GitHub Actions:
+
+```
+# .github/workflows/playwright-tests.yml
+name: Playwright tests
+
+jobs:
+  playwright-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Other steps...
+
+      - name: Run Playwright tests
+        uses: docker://mcr.microsoft.com/playwright:v1.44.0-jammy
+        with:
+          args: npm exec -- playwright test
+```
+
+### Fix Firefox permissions issue
+
+For Firefox, you might encounter a permission error. To fix this, run tests with `HOME=/root`:
+
+```
+- name: Run Playwright tests
+  uses: docker://mcr.microsoft.com/playwright:v1.44.0-jammy
+  with:
+    # Fix for Firefox, HOME=/root is required to avoid permission issues
+    # https://github.com/microsoft/playwright/issues/6500
+    args: env HOME=/root npm exec -- playwright test
+```
+
+### Communicating with service containers
+
+When running jobs in a container, GitHub uses Docker's networks to connect service containers. This means you can't use `127.0.0.1` or `localhost` to access these services. Instead, use the service's name defined in your workflow. For example, replace `localhost` with the name of your service.
+
+Here's an example of how to connect to a PostgreSQL database:
+
+```
+# .github/workflows/playwright-tests.yml
+name: Playwright tests
+
+jobs:
+  playwright-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:13-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+
+    steps:
+      # Other steps...
+
+      - name: Run Playwright tests
+        uses: docker://mcr.microsoft.com/playwright:v1.44.0-jammy
+        with:
+          args: npm exec -- playwright test
+        env:
+          DATABASE_URL: postgresql://postgres@postgres/test
+```
+
+Containers are isolated from the GitHub Actions worker. If your server needs to access multiple services, achieving communication in a Docker container can be challenging. In such cases, run Playwright directly on the GitHub Action runner.
+
+Checkout [Argos Playwright setup](https://github.com/argos-ci/argos/blob/c13be4fae223b135c810dd89409ce2b0edfb2e70/.github/workflows/ci.yml#L178-L187) for a real example.
+
+## Optimize Playwright installation
+
+Running tests in Playwright requires installing browsers and their dependencies. Playwright provides two commands for this:
+
+- `playwright install [browsers...]`: Installs specified browsers (Chromium, Firefox, etc.).
+- `playwright install-deps [browsers...]` Installs necessary libraries.
+
+### Install only specific browsers
+
+To speed up installation, install only the browsers you need. For example, to install only Chromium:
+
+```
+# .github/workflows/playwright-tests.yml
+name: Playwright tests
+
+jobs:
+  playwright-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Other steps...
+
+      - name: Install Playwright dependencies
+        run: npm exec -- playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        run: npm exec -- playwright test
+```
+
+### Cache browsers installation
+
+Caching dependencies is tricky since they are system-installed, but browsers are installed in `~/.cache/ms-playwright`, making them cacheable.
+
+Create a composite action to set up Playwright and cache browsers:
+
+```
+# .github/actions/setup-playwright/action.yml
+name: Setup Playwright
+description: Install Playwright and dependencies
+runs:
+  using: "composite"
+  steps:
+    # Run npm ci and get Playwright version
+    - name: 🏗 Prepare Playwright env
+      shell: bash
+      run: |
+        PLAYWRIGHT_VERSION=$(npm ls --json @playwright/test | jq --raw-output '.dependencies["@playwright/test"].version')
+        echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
+
+    # Cache browser binaries, cache key is based on Playwright version and OS
+    - name: 🧰 Cache Playwright browser binaries
+      uses: actions/cache@v4
+      id: playwright-cache
+      with:
+        path: "~/.cache/ms-playwright"
+        key: "${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}"
+        restore-keys: |
+          ${{ runner.os }}-playwright-
+
+    # Install browser binaries & OS dependencies if cache missed
+    - name: 🏗 Install Playwright browser binaries & OS dependencies
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        npm exec -- playwright install --with-deps chromium
+
+    # Install only the OS dependencies if cache hit
+    - name: 🏗 Install Playwright OS dependencies
+      if: steps.playwright-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: |
+        npm exec -- playwright install-deps chromium
+```
+
+Update your workflow to use the composite action:
+
+```
+# .github/workflows/playwright-tests.yml
+name: Playwright tests
+
+jobs:
+  playwright-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Other steps...
+
+      - name: Setup Playwright
+        uses: ./.github/actions/setup-playwright
+
+      - name: Run Playwright tests
+        run: npm exec -- playwright test
+```
+
+## Run tests in parallel
+
+By default, tests in a spec are not run in parallel, which can slow down the overall test execution time. To optimize, enable parallel test execution by setting `fullyParallel: true` in your Playwright configuration.
+
+### Enabling full parallelism
+
+Add the following to your Playwright configuration file:
+
+```
+// playwright.config.ts
+import { defineConfig } from "@playwright/test";
+
+export default defineConfig({
+  fullyParallel: true,
+  // Other configurations...
+});
+```
+
+### Controlling parallel mode by spec
+
+You can control the parallel execution mode for individual test suites using `test.describe.configure`. This allows for more granular control over which tests should run in parallel:
+
+```
+// example.spec.ts
+import { expect, test } from "@playwright/test";
+
+test.describe.configure({ mode: "parallel" });
+
+test.describe("My test suite", () => {
+  test("Test 1", async ({ page }) => {
+    // Test implementation...
+  });
+
+  test("Test 2", async ({ page }) => {
+    // Test implementation...
+  });
+});
+```
+
+For more details on parallel test execution, refer to the [Playwright documentation](https://playwright.dev/docs/test-parallel).
+
+If you want to know every tricks about Playwright, I recommend the courses from [Bondar Academy](https://www.bondaracademy.com/) especially the [Master test automation with Playwright course](https://www.bondaracademy.com/course/sdet-with-playwright) that includes the setup of Argos.
+
+## Conclusion
+
+Setting up Playwright can be time-consuming on CI, especially if you shard your tests. By using these techniques, you can save significant setup time, enhancing your team's productivity. Enabling parallel test execution can further speed up your tests, making your CI pipelines even more efficient.
+
+For an even more streamlined experience, consider integrating [Argos with Playwright](https://argos-ci.com/docs/quickstart/playwright-quickstart). Argos provides powerful visual testing capabilities that complement your E2E tests perfectly. Learn how to get started with Argos and Playwright by checking out our [quickstart guide](https://argos-ci.com/docs/quickstart/playwright-quickstart). Enhance your testing workflow and catch visual regressions effortlessly!
+
+### Read also
+
+[![Abstract illustration of a deployment branching into a preview panel that feeds a visual comparison](https://argos-ci.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fmain.379dta6i0pal1.jpg&w=3840&q=75)\\
+\\
+Guides\\
+\\
+**How to Integrate Argos Visual Testing with Vercel Preview** \\
+\\
+![Greg Bergé](https://argos-ci.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fgreg.2he0tam7a4dwu.jpg&w=1080&q=75)Apr 1, 2024](https://argos-ci.com/blog/run-argos-on-vercel-preview) [![Abstract illustration of three browser windows side by side with the rightmost one highlighted](https://argos-ci.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fmain.0mgsdybp1z13k.jpg&w=3840&q=75)\\
+\\
+Guides\\
+\\
+**Percy vs Chromatic vs Argos: 2026 Visual Testing Comparison** \\
+\\
+![Jeremy Sfez](https://argos-ci.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fjeremy.1o90laqvb3s4l.jpg&w=1080&q=75)Jul 16, 2026](https://argos-ci.com/blog/percy-vs-chromatic-vs-argos) [![Abstract illustration of two identical layouts where one element has shifted out of place and is highlighted](https://argos-ci.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fmain.446k6pupl_0mq.jpg&w=3840&q=75)\\
+\\
+Guides\\
+\\
+**The Importance of Visual Testing in Ensuring UI Quality** \\
+\\
+![Jeremy Sfez](https://argos-ci.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fjeremy.1o90laqvb3s4l.jpg&w=1080&q=75)Dec 12, 2022](https://argos-ci.com/blog/visual-testing)
+
+## Superchargeyour product quality
+
+See every change your team and your agents make. Review with confidence, and merge faster.
+
+[Sign up](https://app.argos-ci.com/signup) [Request demo](https://cal.com/gregberge)

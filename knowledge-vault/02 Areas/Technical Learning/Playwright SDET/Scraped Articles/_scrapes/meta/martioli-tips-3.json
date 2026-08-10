@@ -1,0 +1,9 @@
+{
+  "url": "https://blog.martioli.com/playwright-tips-and-tricks-3/",
+  "sourceURL": "https://blog.martioli.com/playwright-tips-and-tricks-3/",
+  "title": "Playwright tips and tricks #3",
+  "author": "Adrian Maciuc",
+  "article:published_time": "2024-04-04T16:14:54.000Z",
+  "publishedTime": "2024-04-04T16:14:54.000Z",
+  "description": "Get more details about your test during test run. How to use Playwright to test multiple browser windows. Promise.all in Playwright"
+}

@@ -1,0 +1,163 @@
+Title: Parallel Testing with Playwright: How to Avoid Collisions and Failures (en)
+
+URL Source: https://medium.com/@juanpromanzio/parallel-testing-with-playwright-how-to-avoid-collisions-and-failures-dc89651fc92e
+
+Published Time: 2025-02-24T16:54:26Z
+
+Markdown Content:
+[![Image 1: Juan Promanzio](https://miro.medium.com/v2/resize:fill:32:32/1*NrK_otLAQ-XqXnGtrg-69g.jpeg)](https://medium.com/@juanpromanzio?source=post_page---byline--dc89651fc92e---------------------------------------)
+
+4 min read
+
+Feb 24, 2025
+
+Before we begin, let me provide some context. Currently, I’m working on a project with over 500 UI tests written in Playwright and TypeScript. As part of a continuous improvement initiative, we started developing a pipeline to run all tests after each PR is merged into the Staging environment.
+
+The pipeline development was quite straightforward thanks to the use of GitHub Actions, as most of the workflows were reusable. However, the real challenge arose with parallelization: many tests began failing due to collisions, as they were trying to interact with the same components or sections at the same time, even though they had been running in parallel previously.
+
+After a long day of work, I managed to find some resources and apply strategies that allowed me to resolve these issues without the need to serialize the tests. Below, I will share some practical solutions to optimize parallel execution and avoid collisions in Playwright.
+
+The following tips are listed from the most to the least costly in terms of execution time within the pipeline.
+
+### **Retries**
+
+Playwright offers a retry option that allows you to define how many times a test should be re-executed in case of failure. This is the most costly option in terms of time, as it involves restarting the test execution from scratch.
+
+test_suite:
+
+ - --grep “@tag” --workers=2 --retries=3
+The retried tests will be marked as flaky in the final report, showing the errors encountered in each attempt. It’s recommended to minimize the presence of tests in this state, as they can significantly increase the pipeline execution time.
+
+## Get Juan Promanzio’s stories in your inbox
+
+Join Medium for free to get updates from this writer.
+
+Remember me for faster sign in
+
+**_Report example_**
+
+┌───────────────┬───────────────────────┐
+
+│ ├ Tests │ 22 │
+
+│ │ ├ Passed │ 18 (81.8%) │
+
+│ │ ├ Flaky │ 2 (9.1%) │
+
+│ │ ├ Skipped │ 2 (9.1%) │
+
+│ │ └ Failed │ 0 (0.0%) │
+
+│ ├ Steps │ 1212 │
+
+│ ├ Suites │ 22 │
+
+│ │ ├ Projects │ 2 │
+
+│ │ ├ Files │ 22 │
+
+│ │ ├ Describes │ 0 │
+
+│ │ └ Shards │ 0 │
+
+│ ├ Retries │ 3 │
+
+│ ├ Errors │ 6 │
+
+│ ├ Logs │ 33 │
+
+│ ├ Attachments │ 8 │
+
+│ ├ Playwright │ v1.35.1 │
+
+│ ├ Date │ X/XX/XXXX, X:XX:XX. │
+
+│ └ Duration │ Xm XXs │
+
+└───────────────┴───────────────────────┘
+
+### **Serialization with**`describe.serial`
+
+In Playwright, it is possible to run a specific set of tests sequentially using `describe.serial`. This ensures that the tests within that group do not run in parallel, avoiding potential collisions. Below is an example:
+
+import test, { expect } from '@playwright/test';
+test.describe.serial('Serialized tests', async () => {
+
+ test('Test 1', async () => {
+
+ expect(true).toBe(true);
+
+ });
+
+ test('Test 2', async () => {
+
+ expect(true).toBe(true);
+
+ });
+
+ test('Test 3', async () => {
+
+ expect(true).toBe(true);
+
+ });
+
+});
+
+This option is less costly than retries, as it simply ensures that certain tests run sequentially instead of restarting them from scratch. It can be applied by identifying the tests that cause conflicts and grouping them within a `describe.serial`, ensuring controlled execution without collisions.
+
+### **Expect.polling: Retries in Assertions**
+
+With `expect.polling`, it is possible to retry an assertion until the expected condition is met. This is useful in situations where a value may take time to update, such as waiting for an HTTP request to return a status 200 or for a table to display a specific number of results.
+
+await test.step('Expect row count should be 10', async () => {
+
+ await expect
+
+ .poll(
+
+ async () => {
+
+ return await page.locator('GetRowAriaRowIndex');
+
+ },
+
+ {
+
+ timeout: 10000,
+
+ intervals: [500],
+
+ },
+
+ )
+
+ .toContain('10');
+
+ });
+`Timeout` defines the maximum time to wait for the assertion to pass, while `interval` sets the time between each retry.
+
+Additionally, Playwright offers `expect.toPass`, an alternative that allows retrying entire blocks of code rather than just individual assertions. This is useful when multiple conditions need to be validated within a single attempt.
+
+### **WaitFor: Conditional Wait in Playwright**
+
+The waitFor arguments are very useful when we need to wait for specific locators. One of the areas where they helped me achieve stability in the tests was with loading animations. These are elements that, after a certain amount of time, should no longer be present in the DOM. To handle this, we can use the `detached` option, which waits until an element is removed from the DOM.
+
+Below is an example of the code:
+
+await test.step('Set pagination to 25', async () => {
+await page.locator('paginator-ddl').click();
+
+await page.locator('paginator-opt-25').click();
+
+await page.locator('load-icon').waitFor({ state: 'detached' });
+
+});
+
+### **Conclusion**
+
+Optimizing parallel test execution in Playwright is crucial for maintaining the stability and efficiency of CI/CD pipelines. Throughout this article, we’ve explored various strategies to avoid collisions and improve performance, such as using retries, serializing test blocks with `describe.serial`, and applying retries in assertions with `expect.polling`. Additionally, techniques like waits and the `detached` option to handle loading animations have proven essential to ensure our tests run reliably, even in dynamic environments.
+
+By applying these practices, it’s possible to mitigate parallelization issues without sacrificing test speed or reliability. However, it is important to carefully evaluate which strategies to use based on the needs of each project, as some options may come with a higher time cost.
+
+With these tips and tools, you can significantly improve the stability and efficiency of your Playwright tests, ensuring a smoother and more robust continuous integration process.
+

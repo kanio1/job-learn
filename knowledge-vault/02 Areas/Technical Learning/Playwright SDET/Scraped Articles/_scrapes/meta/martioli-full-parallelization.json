@@ -1,0 +1,9 @@
+{
+  "url": "https://blog.martioli.com/full-parallelization-with-playwright/",
+  "sourceURL": "https://blog.martioli.com/full-parallelization-with-playwright/",
+  "title": "Full parallelization in Playwright",
+  "author": "Adrian Maciuc",
+  "article:published_time": "2024-03-29T19:17:17.000Z",
+  "publishedTime": "2024-03-29T19:17:17.000Z",
+  "description": "How many workers should we setup in our config? How many shards should we use in our CI?"
+}
