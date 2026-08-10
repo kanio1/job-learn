@@ -7,7 +7,7 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
-    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit
+    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit,classpath:db/migration/checkoutlab
     baseline-on-migrate: false
 
 payment:
@@ -16,6 +16,15 @@ payment:
       # Disabled in tests so integration test runs stay deterministic — the
       # sweep logic is unit tested directly against PaymentExpirationService.
       enabled: false
+
+app:
+  checkout-lab:
+    enabled: false
+    oauth-client-id: checkout-lab-merchant
+    oauth-client-secret: ${CHECKOUT_LAB_OAUTH_SECRET:test-oauth-secret}
+    hmac-secret: ${CHECKOUT_LAB_HMAC_SECRET:test-hmac-secret}
+    signature-tolerance-seconds: 300
+    hosted-checkout-base-url: http://localhost:3000
 
 logging:
   level:

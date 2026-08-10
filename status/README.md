@@ -83,7 +83,7 @@ It must never be used to replace or obscure an unfinished Kiro task — see `sta
 
 - `status/index.md` — repository snapshot, Kiro coverage table (must read 100%), execution summary, active work, validation baseline, post-Kiro roadmap pointers.
 - `status/specs/*.md` — one file per `.kiro/specs/*` directory; complete leaf-task ledger with independent, evidence-based execution status per task.
-- `status/roadmaps/*.md` — later work programs (`POST_KIRO_WORK`) that are not direct Kiro tasks.
+- `status/roadmaps/*.md` (and subfolders such as `checkout-protocol-lab/`) — later work programs (`POST_KIRO_WORK`) that are not direct Kiro tasks.
 - `status/technical-debt/current-baseline.md` — only confirmed, evidence-backed problems (red tests, contract drift, stale docs) — not general improvement ideas.
 - `status/evidence/latest-validation.md` — the most recent full validation run: commands, results, what wasn't run and why.
 

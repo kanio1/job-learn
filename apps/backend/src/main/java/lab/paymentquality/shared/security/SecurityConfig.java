@@ -2,6 +2,7 @@ package lab.paymentquality.shared.security;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -53,6 +54,22 @@ public class SecurityConfig {
                 .securityMatcher(new OrRequestMatcher(
                         PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/test/reset"),
                         PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/test/seed")))
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
+    @ConditionalOnProperty(name = "app.checkout-lab.enabled", havingValue = "true")
+    public SecurityFilterChain checkoutLabPublicPassThroughFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher(new OrRequestMatcher(
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/checkout-lab/oauth/token"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/checkout-lab/notify"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/checkout-lab/sessions"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/api/checkout-lab/sessions/*")))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());

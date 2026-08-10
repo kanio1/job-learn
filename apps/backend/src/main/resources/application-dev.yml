@@ -5,3 +5,12 @@ payment-quality:
       realm: ${KEYCLOAK_ADMIN_REALM:payment-quality}
       client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:payment-quality-admin}
       client-secret: ${PAYMENT_QUALITY_KEYCLOAK_ADMIN_CLIENT_SECRET:dev-admin-client-secret}
+
+app:
+  checkout-lab:
+    enabled: ${CHECKOUT_LAB_ENABLED:false}
+    oauth-client-id: checkout-lab-merchant
+    oauth-client-secret: ${CHECKOUT_LAB_OAUTH_SECRET:change-me}
+    hmac-secret: ${CHECKOUT_LAB_HMAC_SECRET:change-me-too}
+    signature-tolerance-seconds: 300
+    hosted-checkout-base-url: ${CHECKOUT_LAB_HOSTED_CHECKOUT_BASE_URL:http://localhost:3000}

@@ -1,0 +1,13 @@
+---
+description: Avoid sandbox escalation prompts for local Maven Wrapper test runs
+alwaysApply: true
+---
+
+# Maven / Shell approvals
+
+When running backend tests in this repo:
+
+1. Prefer Shell `working_directory`: `/home/suso/job-learn/apps/backend`
+2. Prefer command form starting with `./mvnw` (not `cd ... && ./mvnw ...`)
+3. Do **not** set `required_permissions: ["all"]` or `full_network` on the first attempt
+4. Only escalate permissions after a real sandbox failure, and only if the failure message indicates sandbox/network/docker limits

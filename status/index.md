@@ -1,9 +1,11 @@
 ---
 name: index
-last_updated: 2026-07-13
+last_updated: 2026-08-09
 ---
 
 ## Session log
+
+- **Checkout Protocol Lab backlog design (2026-08-09):** **DESIGNED_NOT_STARTED**. Created `status/roadmaps/checkout-protocol-lab/` with requirements, Postgres/Keycloak/Security infra decisions, learning map, task board (`CPL-T01`…), and detailed epics E0–E7 (stories, AC, snippets, connections). No application code changed. Intended training surface for redirect+notify; proposed path to satisfy Wave 2B `REST-REDIRECT-01` stop gate when implementation is explicitly requested.
 
 - **Assurance Closure Wave 2A (2026-07-13):** **DONE_VERIFIED**. `QA-HARDEN-01` now has focused acceptance-level evidence for all **11/11** required hardening/polish requirements. Ten implementations were already correct; one confirmed presentation defect was fixed (`ProblemDetailsCard`'s `Field Errors` label now uses the same `w-28` alignment as every other term). Two initial test assumptions were corrected as `TEST_DESIGN_DEFECT`; neither caused a production change. Frontend validation is green: typecheck, **58 files / 594 unit tests**, and standard Chromium **82/82**. Optional deterministic-seed task 5.1 is now `DONE_VERIFIED`: `RealmAlignmentPropertyTest` exhaustively verifies the five actual per-role realm users against deterministic tenants/merchants in two independent runs; compile/test-compile and filtered verify are green (**Surefire 469 total / 464 passed / 5 skipped; Failsafe 46/46**). Required plan verification is now **296/296 (100.00%)**; optional verified/deviation coverage is **44/73**, with the remaining 29 optional tasks explicitly skipped and one separate conditional Stage 4 checkpoint deferred. `REST-ADVANCED` is designed for Wave 2B only; no Wave 2B implementation was started.
 
@@ -95,6 +97,7 @@ All 7 specs have **no required, currently-executable Kiro task remaining**. Ever
 - **Current phase:** `QA-HARDEN-01` and `SEED-PROP-01` are `DONE_VERIFIED`. Wave 1 remains `DONE_VERIFIED`; no auth storage, tenant/role, live-data, BFF idempotency, or BFF 304 behavior changed in Wave 2A.
 - **Next task:** `REST-ADVANCED` Wave 2B, beginning only after its per-capability stop gates are accepted. Recommended order: `REST-MULTIPART-01`, `REST-SSL-PROXY-01`, `REST-REDIRECT-01`, `REST-OPENAPI-DRIFT-01`.
 - **Blockers/gates:** redirects require a real business/training redirect target or an approved test-only server; TLS requires an approved ephemeral certificate/truststore strategy; OpenAPI drift requires a canonical specification/generation owner. None was implemented in Wave 2A.
+- **Designed (not started):** Checkout Protocol Lab (CPL v2) — full epic/story/task backlog at `status/roadmaps/checkout-protocol-lab/`. Intended as the approved test-only redirect+notify lab that can close `REST-REDIRECT-01`. **No implementation until explicitly requested.** Keycloak realm: no MVP changes; PostgreSQL: new Flyway module `checkoutlab` required.
 
 ## Validation baseline
 
@@ -124,6 +127,7 @@ These are later work programs layered on top of (not part of) the seven Kiro spe
 - `status/roadmaps/system-hardening-and-frontend-polish.md` — 11 small UI/UX fixes across two review passes, now independently `DONE_VERIFIED` 11/11 by Wave 2A focused acceptance tests.
 - `status/roadmaps/playwright-phase3-roadmap.md` — Playwright/SDET test-suite expansion (Phase 3A/3B/3C, feature IDs F-A1..F-D7), reported complete/green by its own execution report, but a fresh chromium run found 21 failures, contradicting that report's "all green" claim (TD-2). Updated session 4 with the TD-2A closure record (10 of 21 fixed) and the remaining TD-2B/C/D breakdown.
 - `status/roadmaps/audit-export-closure.md` — Formal closure record for two previously-unowned POST_KIRO_WORK features found living in the `audit` module (export index + `AuditExportEvent`/`Response`, and the before/after-state diff drawer "F-D7"). Decision: KEEP both (real UI/API usage, safe field scoping, dedicated tests). Resolves TD-1.
+- `status/roadmaps/checkout-protocol-lab/` — **DESIGNED_NOT_STARTED** (2026-08-09). Educational Checkout Protocol Lab (redirect 302, signed notify, Postgres inbox, no Kafka). Epics E0–E7, task board `CPL-T01`…, learning map (HTTP/REST/SQL/Keycloak/PW), infra notes for Postgres vs Keycloak. Candidate closure path for `REST-REDIRECT-01`.
 
 ## REST-ADVANCED Wave 2B design gate
 
