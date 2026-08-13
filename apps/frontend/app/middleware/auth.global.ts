@@ -21,6 +21,21 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return
   }
 
+  const mirrorLabEnabled = useRuntimeConfig().public.mirrorLabEnabled === true
+  const mirrorLabPrefixes = [
+    '/admin/mirror-lab',
+    '/admin/session-lab',
+    '/admin/visual-lab',
+    '/admin/network-lab',
+    '/consent/mirror-lab',
+  ]
+  if (!mirrorLabEnabled && mirrorLabPrefixes.some(prefix => to.path === prefix || to.path.startsWith(`${prefix}/`))) {
+    throw createError({ statusCode: 404, statusMessage: 'Not Found' })
+  }
+  if (!mirrorLabEnabled && to.path === '/admin/checkout-lab/widget') {
+    throw createError({ statusCode: 404, statusMessage: 'Not Found' })
+  }
+
   if (!session.ready.value) {
     await session.fetch()
   }

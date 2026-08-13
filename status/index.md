@@ -1,9 +1,13 @@
 ---
 name: index
-last_updated: 2026-08-09
+last_updated: 2026-08-13
 ---
 
 ## Session log
+
+- **PayU / bank mirror labs implementation (2026-08-13):** **IMPLEMENTED**. Waves T01–T29: Nuxt `NUXT_PUBLIC_MIRROR_LAB_ENABLED` hub (`/admin/mirror-lab`), Session/Visual/Network labs + idle overlay, Nitro CSRF/devices/503/HAR/CORS; checkoutlab GET-with-body 403, `?lang=` Location, refund HMAC notify, hosted expiry testid, same-origin widget, `trusted_merchant`; new modulith module `mirrorlab` + Flyway V15 (disputes, evidence, maker-checker, consent, statements PDF/CSV, step-up header). Realm JSON untouched; `payment_orders` untouched. Targeted Surefire green (Modulith, CPL GET/create/oauth/refund, Mirror Lab RA/IT). Mocked Playwright visual/network/hub green with new goldens. Live POM specs added but not claimed `DONE_VERIFIED` (need Keycloak+dev stack). `REST-MULTIPART-01` remains open.
+
+- **PayU / bank mirror labs design (2026-08-13):** **DESIGNED_NOT_STARTED**. Created `status/roadmaps/browser-session-visual-network-lab/` (requirements, Keycloak/BFF cookie infra, learning map, task board `MRL-T01`…`T29`, epics E0–E6) and test maps in `docs/testing/payu-bank-mirror-labs/`. Educational mirrors for browser session/cookies/`storageState`, visual comparison, network interception, CPL PayU extensions, and bank-like desktop flows. No application code changed. Implementation requires an explicit wave request. `REST-MULTIPART-01` remains open; E5-S3 (disputes evidence) is a candidate closer.
 
 - **Checkout Protocol Lab backlog design (2026-08-09):** **DESIGNED_NOT_STARTED**. Created `status/roadmaps/checkout-protocol-lab/` with requirements, Postgres/Keycloak/Security infra decisions, learning map, task board (`CPL-T01`…), and detailed epics E0–E7 (stories, AC, snippets, connections). No application code changed. Intended training surface for redirect+notify; proposed path to satisfy Wave 2B `REST-REDIRECT-01` stop gate when implementation is explicitly requested.
 
@@ -95,7 +99,7 @@ All 7 specs have **no required, currently-executable Kiro task remaining**. Ever
 
 - **Current problem:** Checkout Protocol Lab is implemented on `checkout-protocol-lab-foundation` as the approved test-only redirect+notify lab.
 - **Current phase:** `REST-REDIRECT-01` is **DONE_VERIFIED** by CPL (`POST /api/checkout-lab/sessions` → 302 Location, hosted checkout, HMAC notify). Remaining REST-ADVANCED: `REST-MULTIPART-01`, `REST-SSL-PROXY-01`, `REST-OPENAPI-DRIFT-01`.
-- **Next task:** remaining REST-ADVANCED capabilities after their stop gates, or CPL learning journeys.
+- **Next task:** remaining REST-ADVANCED capabilities after their stop gates, CPL learning journeys, or Mirror Labs (`MRL-T01`) when explicitly requested.
 - **Blockers/gates:** TLS requires an approved ephemeral certificate/truststore strategy; OpenAPI drift requires a canonical specification/generation owner. Redirects no longer block — CPL is the training redirect server.
 - **Checkout Protocol Lab:** implemented. Keycloak realm unchanged. PostgreSQL module `checkoutlab` (V12+V13). Dashboard hub `/admin/checkout-lab`, hosted `/psp/checkout/{id}`, return `/checkout-lab/return`.
 
@@ -128,6 +132,7 @@ These are later work programs layered on top of (not part of) the seven Kiro spe
 - `status/roadmaps/playwright-phase3-roadmap.md` — Playwright/SDET test-suite expansion (Phase 3A/3B/3C, feature IDs F-A1..F-D7), reported complete/green by its own execution report, but a fresh chromium run found 21 failures, contradicting that report's "all green" claim (TD-2). Updated session 4 with the TD-2A closure record (10 of 21 fixed) and the remaining TD-2B/C/D breakdown.
 - `status/roadmaps/audit-export-closure.md` — Formal closure record for two previously-unowned POST_KIRO_WORK features found living in the `audit` module (export index + `AuditExportEvent`/`Response`, and the before/after-state diff drawer "F-D7"). Decision: KEEP both (real UI/API usage, safe field scoping, dedicated tests). Resolves TD-1.
 - `status/roadmaps/checkout-protocol-lab/` — **IMPLEMENTED** (2026-08-13) on `checkout-protocol-lab-foundation`. Educational Checkout Protocol Lab (redirect 302, signed notify, Postgres inbox, no Kafka). Closes `REST-REDIRECT-01`.
+- `status/roadmaps/browser-session-visual-network-lab/` — **IMPLEMENTED** (2026-08-13). Mirror labs in `apps/**`. `REST-MULTIPART-01` still open (no `apps/api-tests` payment-evidence construction suite).
 
 ## REST-ADVANCED Wave 2B design gate
 

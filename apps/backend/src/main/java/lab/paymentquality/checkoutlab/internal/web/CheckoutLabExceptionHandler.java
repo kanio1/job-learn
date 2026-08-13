@@ -1,6 +1,7 @@
 package lab.paymentquality.checkoutlab.internal.web;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lab.paymentquality.checkoutlab.internal.application.CheckoutRefundNotAllowedException;
 import lab.paymentquality.checkoutlab.internal.application.CheckoutIdempotencyConflictException;
 import lab.paymentquality.checkoutlab.internal.application.CheckoutLabTransientException;
 import lab.paymentquality.checkoutlab.internal.application.CheckoutLinkExpiredException;
@@ -83,6 +84,13 @@ class CheckoutLabExceptionHandler {
             CheckoutIdempotencyConflictException ex,
             HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "idempotency_conflict", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(CheckoutRefundNotAllowedException.class)
+    ResponseEntity<CheckoutLabErrorResponse> handleRefundNotAllowed(
+            CheckoutRefundNotAllowedException ex,
+            HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "refund_not_allowed", ex.getMessage(), request);
     }
 
     @ExceptionHandler(CheckoutLinkExpiredException.class)

@@ -113,4 +113,32 @@ class CheckoutLabOAuthTokenRestAssuredTest extends PostgresContainerSupport {
         assertThatThrownBy(() -> jwtDecoder.decode(accessToken))
                 .isInstanceOf(JwtException.class);
     }
+
+    @Test
+    void trustedMerchantWithExtCustomerIdReturnsToken() {
+        given().port(port)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                .formParam("grant_type", "trusted_merchant")
+                .formParam("client_id", CLIENT_ID)
+                .formParam("client_secret", CLIENT_SECRET)
+                .formParam("email", "payer@example.com")
+                .formParam("extCustomerId", "cust-1")
+                .when().post("/api/checkout-lab/oauth/token")
+                .then()
+                .statusCode(200)
+                .body("token_type", equalTo("Bearer"));
+    }
+
+    @Test
+    void trustedMerchantWithoutExtCustomerIdReturns401() {
+        given().port(port)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                .formParam("grant_type", "trusted_merchant")
+                .formParam("client_id", CLIENT_ID)
+                .formParam("client_secret", CLIENT_SECRET)
+                .formParam("email", "payer@example.com")
+                .when().post("/api/checkout-lab/oauth/token")
+                .then()
+                .statusCode(401);
+    }
 }

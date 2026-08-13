@@ -38,6 +38,7 @@
         <UCard v-for="event in events" :key="event.eventId" class="space-y-2">
           <div class="flex gap-2 items-center flex-wrap">
             <UBadge data-testid="inspector-process-status">{{ event.processStatus }}</UBadge>
+            <UBadge data-testid="inspector-event-type" color="neutral" variant="subtle">{{ event.eventType }}</UBadge>
             <UBadge v-if="event.ackStatus" color="neutral" variant="subtle">ACK {{ event.ackStatus }}</UBadge>
             <span class="font-mono text-xs">{{ event.eventId }}</span>
             <span class="text-xs text-muted">attempts={{ event.attempts }}</span>

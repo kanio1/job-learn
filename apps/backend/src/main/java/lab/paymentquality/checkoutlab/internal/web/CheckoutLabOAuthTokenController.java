@@ -33,8 +33,11 @@ class CheckoutLabOAuthTokenController {
             @RequestHeader(value = "Content-Type", required = false) String contentType,
             @RequestParam(name = "grant_type", required = false) String grantType,
             @RequestParam(name = "client_id", required = false) String clientId,
-            @RequestParam(name = "client_secret", required = false) String clientSecret) {
-        return oauthTokenService.authenticateForToken(contentType, grantType, clientId, clientSecret)
+            @RequestParam(name = "client_secret", required = false) String clientSecret,
+            @RequestParam(name = "email", required = false) String email,
+            @RequestParam(name = "extCustomerId", required = false) String extCustomerId) {
+        return oauthTokenService.authenticateForToken(
+                        contentType, grantType, clientId, clientSecret, email, extCustomerId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }

@@ -111,10 +111,25 @@ public class CheckoutLabSessionService {
         notifier.emit(session, outcome, eventType);
     }
 
+    @Transactional
+    public CheckoutSession refund(UUID sessionId) {
+        CheckoutSession session = getSession(sessionId);
+        if (session.getStatus() == CheckoutSessionStatus.REFUNDED) {
+            throw new CheckoutRefundNotAllowedException(sessionId);
+        }
+        if (session.getStatus() != CheckoutSessionStatus.COMPLETED) {
+            throw new CheckoutRefundNotAllowedException(sessionId);
+        }
+        Instant now = clock.instant();
+        session.applyStatus(CheckoutSessionStatus.REFUNDED, now);
+        emitAfterCommit(session, CheckoutSessionStatus.REFUNDED, "checkout.session.refunded");
+        return session;
+    }
+
     private CreatedCheckoutSession persistNew(CreateCheckoutSessionCommand command, String correlationId, String idempotencyHash) {
         UUID sessionId = UUID.randomUUID();
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
-        String redirectUri = buildRedirectUri(sessionId);
+        String redirectUri = buildRedirectUri(sessionId, command.language());
         Instant validityUntil = now.plusSeconds(command.validitySeconds());
         CheckoutLabScenario scenario = command.scenario() == null
                 ? CheckoutLabScenario.HAPPY_COMPLETED
@@ -186,8 +201,16 @@ public class CheckoutLabSessionService {
         }
     }
 
-    private String buildRedirectUri(UUID sessionId) {
-        return properties.hostedCheckoutBaseUrl() + "/psp/checkout/" + sessionId;
+    private String buildRedirectUri(UUID sessionId, String language) {
+        String base = properties.hostedCheckoutBaseUrl() + "/psp/checkout/" + sessionId;
+        if (language == null || language.isBlank()) {
+            return base;
+        }
+        String normalized = language.trim().toLowerCase(Locale.ROOT);
+        if (!normalized.equals("pl") && !normalized.equals("en")) {
+            return base;
+        }
+        return base + "?lang=" + normalized;
     }
 
     private static String sha256(String value) {

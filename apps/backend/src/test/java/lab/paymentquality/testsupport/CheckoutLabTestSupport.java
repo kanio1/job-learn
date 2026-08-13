@@ -59,7 +59,9 @@ public final class CheckoutLabTestSupport {
     }
 
     public static String sessionIdFromLocation(String location) {
-        return location.substring(location.lastIndexOf('/') + 1);
+        int query = location.indexOf('?');
+        String path = query >= 0 ? location.substring(0, query) : location;
+        return path.substring(path.lastIndexOf('/') + 1);
     }
 
     public static String obtainSimulateToken(int port, String sessionId) {

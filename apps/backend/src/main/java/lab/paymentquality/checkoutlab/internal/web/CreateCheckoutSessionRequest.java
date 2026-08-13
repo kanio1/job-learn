@@ -13,6 +13,7 @@ public record CreateCheckoutSessionRequest(
         @NotBlank @JsonProperty("currency") String currency,
         @NotBlank @JsonProperty("continueUrl") String continueUrl,
         @NotBlank @JsonProperty("notifyUrl") String notifyUrl,
-        @NotNull @Min(1) @JsonProperty("validitySeconds") Long validitySeconds
+        @NotNull @Min(1) @JsonProperty("validitySeconds") Long validitySeconds,
+        @JsonProperty("language") String language
 ) {
 }

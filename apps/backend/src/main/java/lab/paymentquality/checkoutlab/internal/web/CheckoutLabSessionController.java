@@ -56,7 +56,8 @@ class CheckoutLabSessionController {
                 request.notifyUrl(),
                 request.validitySeconds(),
                 idempotencyKey,
-                lab.paymentquality.checkoutlab.internal.application.CheckoutLabScenario.fromHeader(forceScenario));
+                lab.paymentquality.checkoutlab.internal.application.CheckoutLabScenario.fromHeader(forceScenario),
+                request.language());
         CheckoutLabSessionService.CreatedCheckoutSession created =
                 sessionService.createSession(command, resolvedCorrelationId);
 
@@ -102,6 +103,11 @@ class CheckoutLabSessionController {
     ResponseEntity<CheckoutSessionResponse> getSession(@PathVariable UUID sessionId) {
         CheckoutSessionResponse body = CheckoutSessionMapper.toResponse(sessionService.getSession(sessionId));
         return ResponseEntity.ok(body);
+    }
+
+    @PostMapping("/sessions/{sessionId}/refund")
+    ResponseEntity<CheckoutSessionResponse> refund(@PathVariable UUID sessionId) {
+        return ResponseEntity.ok(CheckoutSessionMapper.toResponse(sessionService.refund(sessionId)));
     }
 
     private String resolveCorrelationId(String correlationId) {

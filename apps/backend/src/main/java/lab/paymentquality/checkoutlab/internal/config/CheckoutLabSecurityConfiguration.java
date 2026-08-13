@@ -35,4 +35,21 @@ class CheckoutLabSecurityConfiguration {
         registration.setName("checkoutLabBearerAuthenticationFilter");
         return registration;
     }
+
+    @Bean
+    FilterRegistrationBean<CheckoutLabGetWithBodyRejectFilter> checkoutLabGetWithBodyFilterRegistration() {
+        FilterRegistrationBean<CheckoutLabGetWithBodyRejectFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new CheckoutLabGetWithBodyRejectFilter());
+        registration.addUrlPatterns(
+                "/api/checkout-lab/sessions",
+                "/api/checkout-lab/sessions/*",
+                "/api/checkout-lab/bookings",
+                "/api/checkout-lab/bookings/*",
+                "/api/checkout-lab/anomalies",
+                "/api/checkout-lab/health",
+                "/api/checkout-lab/hosted/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 15);
+        registration.setName("checkoutLabGetWithBodyRejectFilter");
+        return registration;
+    }
 }

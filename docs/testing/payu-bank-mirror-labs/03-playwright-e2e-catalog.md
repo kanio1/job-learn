@@ -1,0 +1,340 @@
+# 03 — Katalog Playwright E2E (UI)
+
+Warstwa: Chromium. **mocked** = `tests/e2e` + `page.route` dozwolony. **POM** = `tests-pom`, zero fulfill.  
+Pokrycie: `existing-pw` | `existing-pom` | `designed`.
+
+Selektor bazowy: `data-testid`. Idle overlay: `session-lab-idle-lock` / `session-lab-idle-unlock`.  
+SSR: `/error-lab` tylko przez sidebar po SPA `/admin/*`.  
+Hosted: `/psp/checkout/{id}` ma `layout: false` — **nie** dashboard overlay.
+
+---
+
+## A. Hub, flaga, nawigacja
+
+### PW-MRL-E2E-001 — Hub mirror-lab z kartami trzech światów
+
+| | |
+|---|---|
+| Pokrycie | existing-pw (`mirror-lab.spec.ts`) |
+| Prio | P0 |
+| Auth | Keycloak mock |
+| Kroki | `/admin/merchants` → `nav-link-mirror-lab` |
+| Asercje | tekst „Three identity worlds”; `mirror-lab-card-session` visible |
+
+### PW-MRL-E2E-002 — Hub → Session / Visual / Network / Bank
+
+| | |
+|---|---|
+| Pokrycie | existing-pw (nawigacja w beforeEach visual/network) + existing-pom bank |
+| Prio | P0 |
+| Asercje | URL-e `/admin/session-lab`, `/admin/visual-lab`, `/admin/network-lab`, `/admin/mirror-lab/bank` |
+
+### PW-MRL-E2E-003 — Flaga FE off: nav ukryty, deep link 404
+
+| | |
+|---|---|
+| Pokrycie | designed · GAP-T01 |
+| Prio | P0 |
+| Preconditions | osobny project `NUXT_PUBLIC_MIRROR_LAB_ENABLED=false` |
+| Asercje | `nav-link-mirror-lab` count 0; `/admin/mirror-lab` i `/admin/checkout-lab/widget` nie ładują labu (middleware) |
+
+### PW-MRL-E2E-004 — Widget ukryty gdy flaga off; widoczny gdy on
+
+| | |
+|---|---|
+| Pokrycie | designed (hub pokazuje `checkout-lab-open-widget` gdy flag on — POM `mirror-lab.spec.ts` widzi `widget-session-id`) |
+| Prio | P1 |
+| Kroki | hub CPL → Widget iframe |
+| Asercje | `widget-session-id` visible gdy flag on |
+
+### PW-MRL-E2E-005 — Unauth `/admin/mirror-lab` → login
+
+| | |
+|---|---|
+| Pokrycie | existing-pom analog (`session-guest` na session-lab / merchants) |
+| Prio | P0 |
+| Designed | to samo dla `/admin/mirror-lab` i `/admin/mirror-lab/bank` |
+
+---
+
+## B. Session Lab
+
+### PW-MRL-E2E-010 — Cookie policy: nuxt-session HttpOnly
+
+| | |
+|---|---|
+| Pokrycie | existing-pom |
+| Suite | POM |
+| Kroki | login → `/admin/session-lab` |
+| Asercje | `session-lab-cookie-policy` zawiera `nuxt-session` i `httpOnly`; `context.cookies()` HttpOnly true |
+| FR | S01 · P0 |
+
+### PW-MRL-E2E-011 — document.cookie nie zawiera nuxt-session
+
+| | |
+|---|---|
+| Pokrycie | existing-pom (`session-lab-js-cookies` empty/HttpOnly) |
+| FR | S01 · P0 |
+
+### PW-MRL-E2E-012 — Brak JWT w Web Storage po login
+
+| | |
+|---|---|
+| Pokrycie | existing-pom `expectNoTokenInBrowserStorage` |
+| FR | S08 · P0 |
+
+### PW-MRL-E2E-020 — Idle lock po clock.fastForward(121_000)
+
+| | |
+|---|---|
+| Pokrycie | existing-pom |
+| Suite | POM |
+| Kroki | `clock.install` → session-lab → `fastForward(121_000)` |
+| Asercje | `session-lab-idle-lock` visible |
+| FR | S03 · P0 |
+
+### PW-MRL-E2E-021 — Unlock wylogowuje na `/login`
+
+| | |
+|---|---|
+| Pokrycie | existing-pom |
+| Kroki | po lock click `session-lab-idle-unlock` |
+| Asercje | URL `/login` (nie `/admin/merchants`) |
+| FR | S03/S04 · P0 |
+| Uwaga review | Unlock **musi** `session.clear()`; sam `to="/login"` zostawia sesję |
+
+### PW-MRL-E2E-022 — Po Unlock `/admin/merchants` nadal login
+
+| | |
+|---|---|
+| Pokrycie | designed · GAP-T02 |
+| Prio | P0 |
+| Kroki | Unlock → `goto /admin/merchants` |
+| Asercje | nadal `/login`; brak danych merchant |
+
+### PW-MRL-E2E-023 — Idle overlay na innym `/admin/**` (np. merchants)
+
+| | |
+|---|---|
+| Pokrycie | designed |
+| Prio | P1 |
+| Uwaga | overlay jest w `dashboard.vue` — planowo globalny |
+| Kroki | clock na `/admin/merchants` |
+| Asercje | ten sam `session-lab-idle-lock` |
+
+### PW-MRL-E2E-024 — Hosted checkout **bez** idle overlay
+
+| | |
+|---|---|
+| Pokrycie | existing-pw (`checkout-lab.spec.ts` hosted `session-lab-idle-lock` count 0) |
+| Suite | mocked guest context |
+| FR | S02/S03 · P0 |
+
+### PW-MRL-E2E-025 — BVA idle: TTL-1s brak lock
+
+| | |
+|---|---|
+| Pokrycie | designed · BVA-MRL-010 |
+| Kroki | `fastForward(119_000)` |
+| Asercje | overlay count 0; po `+2000` visible |
+
+### PW-MRL-E2E-030 — Dwa contexty, revoke device
+
+| | |
+|---|---|
+| Pokrycie | existing-pom (click revoke; brak asercji 401 na drugim) |
+| Designed | drugi context traci device / lista krótsza |
+| FR | S05 · P1 |
+
+### PW-MRL-E2E-040 — CSRF demo bez tokenu → 403 `csrf_failed`
+
+| | |
+|---|---|
+| Pokrycie | existing-pom `waitForResponse` POST csrf-demo |
+| Asercje | status 403; body.error `csrf_failed` |
+| FR | S06 · P1 |
+
+### PW-MRL-E2E-041 — CSRF demo z tokenem z GET csrf → 200
+
+| | |
+|---|---|
+| Pokrycie | designed |
+| Kroki | GET csrf (ustawia cookie) → POST z `X-Csrf-Token` |
+| Asercje | 200 `{ status: ok }` |
+
+### PW-MRL-E2E-042 — Cookie `mrl-csrf` widoczne w `document.cookie` (lekcja non-HttpOnly)
+
+| | |
+|---|---|
+| Pokrycie | designed |
+| Kontrast | `nuxt-session` niewidoczne |
+
+---
+
+## C. Visual Lab
+
+Kafelki: `visual-tile-merchant-badge`, `visual-tile-payment-badge`, `visual-tile-problem-details`, `visual-tile-hosted-cta`, `visual-tile-idle-lock`, `visual-tile-dark`, `visual-tile-expired`.  
+Mask: `tests/e2e/visual-lab-mask.css`. Próg 0.02.
+
+### PW-MRL-E2E-100 — Wejście Visual Lab z huba
+
+| Pokrycie | existing-pw | Prio | P0 |
+
+### PW-MRL-E2E-110–116 — Screenshot każdego kafelka
+
+| Pokrycie | existing-pw (`visual-lab.spec.ts` loop) | FR-V02 | P0 |
+
+### PW-MRL-E2E-120 — Full page + stylePath mask
+
+| Pokrycie | designed · FR-V04 | Prio | P1 |
+
+### PW-MRL-E2E-130 — Dark tile
+
+| Pokrycie | existing-pw (`visual-tile-dark`) | FR-V03 | P1 |
+
+### PW-MRL-E2E-140 — Break visual tagged expected fail
+
+| Pokrycie | existing-pw `@visual-negative` | FR-V05 | P1 |
+| Uwaga | nie w default CI (`grepInvert`) |
+
+### PW-MRL-E2E-190 — Anti-case: nie screenshotować list UUID
+
+| Pokrycie | docs-only · FR-V06 |
+
+---
+
+## D. Network Lab UI
+
+### PW-MRL-E2E-200 — Live 503 then 200 (POM, zero fulfill)
+
+| | |
+|---|---|
+| Pokrycie | existing-pom |
+| Kroki | dwa click `network-lab-trigger-503`; `waitForResponse` |
+| Asercje | 503 potem 200 |
+| FR | N01 · P0 |
+
+### PW-MRL-E2E-201 — Mocked stateful 503→200
+
+| Pokrycie | existing-pw | FR-N01 · P0 |
+
+### PW-MRL-E2E-202 — Trzeci trigger po TTL 10s znowu 503 (izolacja)
+
+| Pokrycie | designed · GAP-T08 | Prio | P1 |
+| Suite | POM | clock lub real wait **tylko** jeśli mierzysz TTL Nitro (lepiej RA/unit na mapie) |
+
+### PW-MRL-E2E-210 — Abort slow → ErrorState / nie `"status":"ok"`
+
+| Pokrycie | existing-pw | FR-N02 · P0 |
+
+### PW-MRL-E2E-211 — `context.setOffline(true)`
+
+| Pokrycie | designed | Suite | POM | P1 |
+
+### PW-MRL-E2E-220 — Lie body `success` w UI
+
+| Pokrycie | existing-pw (UI contains success) |
+| Designed | oracle fulfillment **nie** CONFIRMED (CPL analog) |
+| FR | N03 · P0 |
+
+### PW-MRL-E2E-230 — HAR replay bez Cookie/Authorization w fixture
+
+| Pokrycie | existing-pw | FR-N05 · P1 |
+
+---
+
+## E. PayU mirrors UI (delta vs katalog CPL)
+
+Pełne booking/hosted/return: [checkout-protocol-lab/03](../checkout-protocol-lab/03-playwright-e2e-catalog.md). Tu tylko Wave 3.
+
+### PW-MRL-E2E-300 — Hosted `lang=pl` copy
+
+| Pokrycie | designed | `psp-hosted-lang` zawiera Polski | FR-P02 · P1 |
+
+### PW-MRL-E2E-310 — Expired link testid
+
+| Pokrycie | existing-pom (`psp-link-expired` scenariusz EXPIRED_LINK) | FR-P04 · P1 |
+
+### PW-MRL-E2E-320 — Widget iframe Approve (`frameLocator`)
+
+| | |
+|---|---|
+| Pokrycie | existing-pw |
+| Kroki | `/admin/checkout-lab/widget` → fill session id → Load → `frameLocator('[data-testid=checkout-lab-widget-frame]')` → `psp-approve` |
+| Asercje | `psp-outcome` w ramce |
+| FR | P05 · P1 |
+
+### PW-MRL-E2E-321 — Widget same-origin (POM live)
+
+| Pokrycie | existing-pom tylko visible input; designed: live session + approve w iframe | P2 |
+
+### PW-MRL-E2E-330 — Grant contrast panel trzy kolumny
+
+| Pokrycie | designed (karta `checkout-lab-grant-contrast` na hubie gdy flag on) | FR-P06 · P1 |
+
+---
+
+## F. Bank-like UI
+
+Merchant lab: `00000000-0000-0000-0000-0000000000b1`.  
+Approve: `UInput` `approval-id` — fill native `input`, nie `innerText` / `page.evaluate(fetch)`.
+
+### PW-MRL-E2E-400 — Step-up: submit ≥ 10000 → challenge z kwotą
+
+| Pokrycie | designed | `step-up-challenge` pokazuje amount + merchantId | FR-B01/B06 · P2 |
+
+### PW-MRL-E2E-401 — Step-up confirm → 200 accepted
+
+| Pokrycie | designed | header `X-Lab-Step-Up: confirmed` na BFF | P2 |
+
+### PW-MRL-E2E-402 — Amount 9999 bez challenge
+
+| Pokrycie | designed · BVA | P2 |
+
+### PW-MRL-E2E-410 — Statement CSV download filename
+
+| Pokrycie | existing-pom + existing-pw mocked | `waitForEvent('download')` | FR-B02 · P2 |
+
+### PW-MRL-E2E-411 — Statement PDF magic bytes (mocked fulfill)
+
+| Pokrycie | existing-pw | bytes `[0..4] == %PDF-` | P0 review |
+
+### PW-MRL-E2E-412 — Statement PDF magic bytes (żywy BFF)
+
+| Pokrycie | designed · GAP-T04 | Suite | POM | P1 |
+
+### PW-MRL-E2E-420 — Dispute open + `setInputFiles` evidence txt
+
+| Pokrycie | designed | `dispute-id` nonempty; upload zamyka spór | FR-B03 · P2 |
+
+### PW-MRL-E2E-421 — Evidence exe → 415 w UI
+
+| Pokrycie | designed | P2 |
+
+### PW-MRL-E2E-430 — Maker nie self-approve; checker Approve z wklejonym id
+
+| | |
+|---|---|
+| Pokrycie | existing-pom `mirror-lab-rbac.spec.ts` |
+| Kroki | manager Create → inputValue id → Approve 403; admin fill id → Approve 200 |
+| Zakaz | `page.evaluate` + raw `fetch` |
+| FR | B04 · P2 |
+
+### PW-MRL-E2E-431 — Checker ponowne Approve → 409 w `approval-result`
+
+| Pokrycie | designed (RA ma 409; UI nie) | P2 |
+
+### PW-MRL-E2E-440 — Consent grant → TPP via **header** → revoke
+
+| Pokrycie | designed · GAP-T09 | `/consent/mirror-lab`; `X-Lab-Consent-Token` | FR-B05 · P2 |
+
+### PW-MRL-E2E-441 — Revoke → TPP 403 w UI
+
+| Pokrycie | designed | P2 |
+
+---
+
+## G. Learner
+
+Puste / skip: `tests-pom-learner/specs/{session-guest,visual-lab,network-lab}.spec.ts`.  
+Copy-from-reference: nie importować page objects z `tests-pom`.

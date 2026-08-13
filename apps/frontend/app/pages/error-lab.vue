@@ -148,6 +148,32 @@
           </UButton>
         </div>
       </UCard>
+
+      <UCard v-if="mirrorLabEnabled">
+        <template #header>
+          <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-scan-eye" class="text-gray-400" />
+            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              Mirror Labs
+            </span>
+          </div>
+        </template>
+        <div class="flex flex-col gap-3">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Session cookies, visual comparison, and network interception — educational mirrors, not a bank or PayU.
+          </p>
+          <UButton
+            data-testid="mirror-lab-from-error-lab"
+            to="/admin/mirror-lab"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-arrow-right"
+            class="self-start"
+          >
+            Open Mirror Lab
+          </UButton>
+        </div>
+      </UCard>
     </div>
     </template>
   </UDashboardPanel>
@@ -170,6 +196,7 @@
 definePageMeta({ layout: 'dashboard' })
 
 const checkoutLabEnabled = computed(() => useRuntimeConfig().public.checkoutLabEnabled === true)
+const mirrorLabEnabled = computed(() => useRuntimeConfig().public.mirrorLabEnabled === true)
 
 import { z } from 'zod'
 import type { ProblemDetails } from '~/types/api'

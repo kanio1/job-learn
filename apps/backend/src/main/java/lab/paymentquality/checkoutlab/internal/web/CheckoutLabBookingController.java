@@ -34,7 +34,8 @@ class CheckoutLabBookingController {
             @NotBlank String currency,
             String continueUrl,
             String notifyUrl,
-            Long validitySeconds
+            Long validitySeconds,
+            String language
     ) {
     }
 
@@ -68,7 +69,8 @@ class CheckoutLabBookingController {
                 request.notifyUrl() == null ? "http://localhost:8080/api/checkout-lab/notify" : request.notifyUrl(),
                 request.validitySeconds() == null ? 900L : request.validitySeconds(),
                 null,
-                CheckoutLabScenario.fromHeader(forceScenario));
+                CheckoutLabScenario.fromHeader(forceScenario),
+                request.language());
         return ResponseEntity.ok(bookingService.createOnline(command, resolved));
     }
 

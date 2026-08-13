@@ -10,9 +10,13 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
   flyway:
     enabled: true
-    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit,classpath:db/migration/checkoutlab
+    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit,classpath:db/migration/checkoutlab,classpath:db/migration/mirrorlab
     baseline-on-migrate: false
   modulith:
     events:
@@ -44,6 +48,9 @@ app:
     enabled: false
   checkout-lab:
     enabled: false
+  mirror-lab:
+    enabled: false
+    step-up-threshold-minor: 10000
 
 payment:
   expiration:

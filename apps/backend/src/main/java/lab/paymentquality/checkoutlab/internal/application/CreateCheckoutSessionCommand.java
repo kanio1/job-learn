@@ -8,6 +8,7 @@ public record CreateCheckoutSessionCommand(
         String notifyUrl,
         long validitySeconds,
         String idempotencyKey,
-        CheckoutLabScenario scenario
+        CheckoutLabScenario scenario,
+        String language
 ) {
 }

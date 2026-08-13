@@ -3,10 +3,11 @@
     <UCard class="w-full max-w-md">
       <template #header>
         <span class="text-sm font-semibold text-gray-500">Hosted checkout (lab PSP)</span>
+        <p data-testid="psp-hosted-lang" class="text-xs text-muted">{{ langCopy }}</p>
       </template>
       <LoadingState v-if="loading" message="Loading session…" />
       <ErrorState v-else-if="problem" :problem="problem" />
-      <div v-else-if="expired" class="space-y-3">
+      <div v-else-if="expired" class="space-y-3" data-testid="psp-link-expired">
         <UAlert color="error" title="Payment link expired" description="Approve is blocked. Clock-based expiry, not a sleep." />
       </div>
       <div v-else-if="session" class="space-y-4">
@@ -46,6 +47,8 @@ definePageMeta({ layout: false })
 
 const route = useRoute()
 const sessionId = computed(() => String(route.params.sessionId || ''))
+const lang = computed(() => String(route.query.lang || 'en').toLowerCase())
+const langCopy = computed(() => (lang.value === 'pl' ? 'Język: Polski' : 'Language: English'))
 const { getHostedSession, simulate } = useCheckoutLabApi()
 const loading = ref(true)
 const session = ref<HostedCheckoutSession | null>(null)
