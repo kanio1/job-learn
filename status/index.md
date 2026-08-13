@@ -93,11 +93,11 @@ All 7 specs have **no required, currently-executable Kiro task remaining**. Ever
 
 ## Active work
 
-- **Current problem:** Assurance Closure Wave 2A is closed. All 11 required hardening/polish items and optional deterministic realm-alignment task 5.1 have fresh focused evidence.
-- **Current phase:** `QA-HARDEN-01` and `SEED-PROP-01` are `DONE_VERIFIED`. Wave 1 remains `DONE_VERIFIED`; no auth storage, tenant/role, live-data, BFF idempotency, or BFF 304 behavior changed in Wave 2A.
-- **Next task:** `REST-ADVANCED` Wave 2B, beginning only after its per-capability stop gates are accepted. Recommended order: `REST-MULTIPART-01`, `REST-SSL-PROXY-01`, `REST-REDIRECT-01`, `REST-OPENAPI-DRIFT-01`.
-- **Blockers/gates:** redirects require a real business/training redirect target or an approved test-only server; TLS requires an approved ephemeral certificate/truststore strategy; OpenAPI drift requires a canonical specification/generation owner. None was implemented in Wave 2A.
-- **Designed (not started):** Checkout Protocol Lab (CPL v2) — full epic/story/task backlog at `status/roadmaps/checkout-protocol-lab/`. Intended as the approved test-only redirect+notify lab that can close `REST-REDIRECT-01`. **No implementation until explicitly requested.** Keycloak realm: no MVP changes; PostgreSQL: new Flyway module `checkoutlab` required.
+- **Current problem:** Checkout Protocol Lab is implemented on `checkout-protocol-lab-foundation` as the approved test-only redirect+notify lab.
+- **Current phase:** `REST-REDIRECT-01` is **DONE_VERIFIED** by CPL (`POST /api/checkout-lab/sessions` → 302 Location, hosted checkout, HMAC notify). Remaining REST-ADVANCED: `REST-MULTIPART-01`, `REST-SSL-PROXY-01`, `REST-OPENAPI-DRIFT-01`.
+- **Next task:** remaining REST-ADVANCED capabilities after their stop gates, or CPL learning journeys.
+- **Blockers/gates:** TLS requires an approved ephemeral certificate/truststore strategy; OpenAPI drift requires a canonical specification/generation owner. Redirects no longer block — CPL is the training redirect server.
+- **Checkout Protocol Lab:** implemented. Keycloak realm unchanged. PostgreSQL module `checkoutlab` (V12+V13). Dashboard hub `/admin/checkout-lab`, hosted `/psp/checkout/{id}`, return `/checkout-lab/return`.
 
 ## Validation baseline
 
@@ -127,7 +127,7 @@ These are later work programs layered on top of (not part of) the seven Kiro spe
 - `status/roadmaps/system-hardening-and-frontend-polish.md` — 11 small UI/UX fixes across two review passes, now independently `DONE_VERIFIED` 11/11 by Wave 2A focused acceptance tests.
 - `status/roadmaps/playwright-phase3-roadmap.md` — Playwright/SDET test-suite expansion (Phase 3A/3B/3C, feature IDs F-A1..F-D7), reported complete/green by its own execution report, but a fresh chromium run found 21 failures, contradicting that report's "all green" claim (TD-2). Updated session 4 with the TD-2A closure record (10 of 21 fixed) and the remaining TD-2B/C/D breakdown.
 - `status/roadmaps/audit-export-closure.md` — Formal closure record for two previously-unowned POST_KIRO_WORK features found living in the `audit` module (export index + `AuditExportEvent`/`Response`, and the before/after-state diff drawer "F-D7"). Decision: KEEP both (real UI/API usage, safe field scoping, dedicated tests). Resolves TD-1.
-- `status/roadmaps/checkout-protocol-lab/` — **DESIGNED_NOT_STARTED** (2026-08-09). Educational Checkout Protocol Lab (redirect 302, signed notify, Postgres inbox, no Kafka). Epics E0–E7, task board `CPL-T01`…, learning map (HTTP/REST/SQL/Keycloak/PW), infra notes for Postgres vs Keycloak. Candidate closure path for `REST-REDIRECT-01`.
+- `status/roadmaps/checkout-protocol-lab/` — **IMPLEMENTED** (2026-08-13) on `checkout-protocol-lab-foundation`. Educational Checkout Protocol Lab (redirect 302, signed notify, Postgres inbox, no Kafka). Closes `REST-REDIRECT-01`.
 
 ## REST-ADVANCED Wave 2B design gate
 
@@ -135,7 +135,7 @@ Wave 2A made no REST-ADVANCED production or test-framework change. The recommend
 
 1. **REST-MULTIPART-01 — evidence upload contract.** Current implementation already has the real payment-order evidence upload endpoint and backend/frontend coverage, so the next value is standalone `apps/api-tests` construction and negative-contract support, not a new product endpoint. Acceptance should cover multipart construction, binary content type/filename, `201` plus `Location`, subsequent persistence/read proof, missing/empty/unsupported/oversized parts, unsafe filename, malformed boundary, and cross-merchant denial. Stop if supporting metadata would require inventing a new business contract. Expected files: focused `apps/api-tests` request helper/spec/DTO changes only unless a focused test confirms a production defect.
 2. **REST-SSL-PROXY-01 — forwarded headers first, real TLS separately.** Current backend uses `server.forward-headers-strategy: none` and current `Location` values are relative. First prove hostile `Host`/`X-Forwarded-*` input cannot rewrite contract output. A TLS phase requires an approved ephemeral self-signed certificate/truststore, no committed production key, explicit no-proxy behavior, certificate-failure proof, and CI feasibility. Stop before certificate material or proxy behavior that has no operational requirement.
-3. **REST-REDIRECT-01 — gated contract training.** No current backend business endpoint returns 3xx; the PSP simulator opens a new tab and Nuxt auth redirects are session-framework behavior. Do not invent a production endpoint. Proceed only with an approved test-only redirect server or a real redirecting flow, then cover follow on/off, exact `Location`, relative/absolute targets, 301/302/303 versus 307/308 method semantics, cross-origin authorization-header risk, and loop detection.
+3. **REST-REDIRECT-01 — DONE_VERIFIED by Checkout Protocol Lab.** `POST /api/checkout-lab/sessions` returns **302** + `Location` (RA `redirects().follow(false)`). Hosted checkout is the test-only redirect target. No production payment 3xx was invented. Evidence: `CheckoutLabCreateSessionRestAssuredTest`, `CheckoutLabProtocolRestAssuredTest`, Playwright `checkout-lab.spec.ts`.
 4. **REST-OPENAPI-DRIFT-01 — ownership decision before tooling.** The repository has no canonical OpenAPI document, generation owner, or exposed `/v3/api-docs` contract. Stop until spec-first versus code-first ownership is decided. Then validate implemented paths/methods/statuses/headers/problem bodies/enums, detect breaking changes in CI, exclude internal endpoints, and define an explicit false-positive/allowlist policy. Do not add a second generator if a canonical mechanism is selected elsewhere.
 
 ## Completeness self-check (per audit brief §19)

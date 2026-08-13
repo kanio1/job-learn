@@ -13,10 +13,16 @@ import lab.paymentquality.checkoutlab.internal.infrastructure.JpaCheckoutSession
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.time.Clock;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HexFormat;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -31,16 +37,23 @@ public class CheckoutLabSessionService {
     private final CheckoutLabProperties properties;
     private final JpaCheckoutSessionRepository sessionRepository;
     private final JpaCheckoutFulfillmentRepository fulfillmentRepository;
-    private final Clock clock;
+    private final CheckoutLabClock clock;
+    private final CheckoutLabScenarioService scenarioService;
+    private final CheckoutLabNotifier notifier;
 
     public CheckoutLabSessionService(
             CheckoutLabProperties properties,
             JpaCheckoutSessionRepository sessionRepository,
-            JpaCheckoutFulfillmentRepository fulfillmentRepository) {
+            JpaCheckoutFulfillmentRepository fulfillmentRepository,
+            CheckoutLabClock clock,
+            CheckoutLabScenarioService scenarioService,
+            CheckoutLabNotifier notifier) {
         this.properties = properties;
         this.sessionRepository = sessionRepository;
         this.fulfillmentRepository = fulfillmentRepository;
-        this.clock = Clock.systemUTC();
+        this.clock = clock;
+        this.scenarioService = scenarioService;
+        this.notifier = notifier;
     }
 
     @Transactional
@@ -48,10 +61,67 @@ public class CheckoutLabSessionService {
         validateAmount(command.amountMinor());
         validateCurrency(command.currency());
 
+        String fingerprint = fingerprint(command);
+        if (command.idempotencyKey() != null && !command.idempotencyKey().isBlank()) {
+            String keyHash = sha256(command.idempotencyKey());
+            return sessionRepository.findByIdempotencyKeyHash(keyHash)
+                    .map(existing -> replayOrConflict(existing, fingerprint, keyHash))
+                    .orElseGet(() -> persistNew(command, correlationId, keyHash));
+        }
+        return persistNew(command, correlationId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public CheckoutSession getSession(UUID sessionId) {
+        return sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new CheckoutSessionNotFoundException(sessionId));
+    }
+
+    @Transactional(noRollbackFor = CheckoutLinkExpiredException.class)
+    public CheckoutSession simulate(UUID sessionId, CheckoutSessionStatus outcome) {
+        CheckoutSession session = getSession(sessionId);
+        Instant now = clock.instant();
+        if (session.isExpired(now) || scenarioService.scenarioFor(sessionId) == CheckoutLabScenario.EXPIRED_LINK) {
+            session.applyStatus(CheckoutSessionStatus.EXPIRED, now);
+            fulfillmentRepository.findBySessionId(sessionId).ifPresent(fulfillment -> fulfillment.expire(now));
+            throw new CheckoutLinkExpiredException(sessionId);
+        }
+        if (session.getStatus() != CheckoutSessionStatus.CREATED && session.getStatus() != CheckoutSessionStatus.PENDING) {
+            return session;
+        }
+        session.applyStatus(outcome, now);
+        if (outcome == CheckoutSessionStatus.COMPLETED) {
+            emitAfterCommit(session, outcome, "checkout.session.completed");
+        } else if (outcome == CheckoutSessionStatus.CANCELED) {
+            emitAfterCommit(session, outcome, "checkout.session.canceled");
+        }
+        return session;
+    }
+
+    private void emitAfterCommit(CheckoutSession session, CheckoutSessionStatus outcome, String eventType) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notifier.emit(session, outcome, eventType);
+                }
+            });
+            return;
+        }
+        notifier.emit(session, outcome, eventType);
+    }
+
+    private CreatedCheckoutSession persistNew(CreateCheckoutSessionCommand command, String correlationId, String idempotencyHash) {
         UUID sessionId = UUID.randomUUID();
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         String redirectUri = buildRedirectUri(sessionId);
         Instant validityUntil = now.plusSeconds(command.validitySeconds());
+        CheckoutLabScenario scenario = command.scenario() == null
+                ? CheckoutLabScenario.HAPPY_COMPLETED
+                : command.scenario();
+        if (scenario == CheckoutLabScenario.EXPIRED_LINK) {
+            validityUntil = now.minusSeconds(1);
+        }
 
         CheckoutSession session = CheckoutSession.newSession(
                 sessionId,
@@ -66,7 +136,11 @@ public class CheckoutLabSessionService {
                 correlationId,
                 now,
                 now);
+        if (idempotencyHash != null) {
+            session.assignIdempotencyKeyHash(idempotencyHash);
+        }
         sessionRepository.save(session);
+        scenarioService.assign(sessionId, scenario);
 
         CheckoutFulfillment fulfillment = CheckoutFulfillment.newFulfillment(
                 UUID.randomUUID(),
@@ -76,13 +150,28 @@ public class CheckoutLabSessionService {
                 now);
         fulfillmentRepository.save(fulfillment);
 
-        return new CreatedCheckoutSession(sessionId, redirectUri, CheckoutSessionStatus.CREATED);
+        return new CreatedCheckoutSession(sessionId, redirectUri, CheckoutSessionStatus.CREATED, false);
     }
 
-    @Transactional(readOnly = true)
-    public CheckoutSession getSession(UUID sessionId) {
-        return sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new CheckoutSessionNotFoundException(sessionId));
+    private CreatedCheckoutSession replayOrConflict(CheckoutSession existing, String fingerprint, String hash) {
+        if (!fingerprint.equals(fingerprintFromSession(existing))) {
+            throw new CheckoutIdempotencyConflictException();
+        }
+        return new CreatedCheckoutSession(
+                existing.getSessionId(),
+                existing.getRedirectUri(),
+                existing.getStatus(),
+                true);
+    }
+
+    private String fingerprint(CreateCheckoutSessionCommand command) {
+        return command.extOrderId() + "|" + command.amountMinor() + "|" + command.currency()
+                + "|" + command.continueUrl() + "|" + command.notifyUrl();
+    }
+
+    private String fingerprintFromSession(CheckoutSession session) {
+        return session.getExtOrderId() + "|" + session.getAmountMinor() + "|" + session.getCurrency()
+                + "|" + session.getContinueUrl() + "|" + session.getNotifyUrl();
     }
 
     private void validateAmount(long amountMinor) {
@@ -101,9 +190,19 @@ public class CheckoutLabSessionService {
         return properties.hostedCheckoutBaseUrl() + "/psp/checkout/" + sessionId;
     }
 
+    private static String sha256(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest).toLowerCase(Locale.ROOT);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
     public record CreatedCheckoutSession(
             UUID sessionId,
             String redirectUri,
-            CheckoutSessionStatus status) {
+            CheckoutSessionStatus status,
+            boolean replayed) {
     }
 }

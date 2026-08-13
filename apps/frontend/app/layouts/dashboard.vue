@@ -52,6 +52,7 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 const open = ref(false)
 const { can } = useAuthorization()
 const { user } = useUserSession()
+const checkoutLabEnabled = computed(() => useRuntimeConfig().public.checkoutLabEnabled === true)
 const tenantId = computed(() => (user.value as { tenantId?: string })?.tenantId)
 
 function closeSidebar() {
@@ -120,6 +121,14 @@ const allLinks: (NavigationMenuItem & { testid: string; visible: ComputedRef<boo
     onSelect: closeSidebar,
     // Error Lab is always visible — it is a learning surface, not a role-gated screen
     visible: computed(() => true),
+  },
+  {
+    testid: 'nav-link-checkout-lab',
+    label: 'Checkout Lab',
+    icon: 'i-lucide-credit-card',
+    to: '/admin/checkout-lab',
+    onSelect: closeSidebar,
+    visible: computed(() => checkoutLabEnabled.value),
   },
 ]
 
@@ -199,6 +208,31 @@ const searchGroups = computed<any[]>(() => [
         icon: 'i-lucide-flask-conical',
         to: '/error-lab',
       },
+      ...(checkoutLabEnabled.value
+        ? [
+            {
+              id: 'checkout-lab',
+              label: 'Checkout Lab',
+              icon: 'i-lucide-credit-card',
+              to: '/admin/checkout-lab',
+              'data-testid': 'search-link-checkout-lab',
+            },
+            {
+              id: 'checkout-lab-booking',
+              label: 'Booking Lab',
+              icon: 'i-lucide-calendar',
+              to: '/admin/checkout-lab/booking',
+              'data-testid': 'search-link-checkout-lab-booking',
+            },
+            {
+              id: 'checkout-lab-inspector',
+              label: 'Event Inspector',
+              icon: 'i-lucide-search',
+              to: '/admin/checkout-lab/inspector',
+              'data-testid': 'search-link-checkout-lab-inspector',
+            },
+          ]
+        : []),
     ],
   },
 ])

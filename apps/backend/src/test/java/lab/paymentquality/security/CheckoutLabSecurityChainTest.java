@@ -20,8 +20,8 @@ import static org.hamcrest.Matchers.startsWith;
 
 /**
  * Verifies checkout-lab public pass-through SecurityFilterChain when
- * app.checkout-lab.enabled=true. Handlers are absent in CPL-T04 — 404 proves
- * JWT is not required; 401 would mean the main resource-server chain blocked the request.
+ * app.checkout-lab.enabled=true. Notify is HMAC-authenticated (400 without
+ * Lab-Signature), never Keycloak JWT (401).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
@@ -59,13 +59,14 @@ class CheckoutLabSecurityChainTest extends PostgresContainerSupport {
     }
 
     @Test
-    void postNotifyWithoutAuthReturns404NotJwtUnauthorized() {
+    void postNotifyWithoutAuthReturns400FromHmacNotJwtUnauthorized() {
         RestAssured.given().port(port)
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .body("{\"eventId\":\"evt-1\"}")
                 .when().post("/api/checkout-lab/notify")
                 .then()
-                .statusCode(404);
+                .statusCode(400)
+                .contentType("application/problem+json");
     }
 
     @Test
@@ -93,6 +94,17 @@ class CheckoutLabSecurityChainTest extends PostgresContainerSupport {
                 .when().post("/api/checkout-lab/sessions")
                 .then()
                 .statusCode(401);
+    }
+
+    @Test
+    void optionsCheckoutLabSessionsDoesNotRequireLabBearer() {
+        RestAssured.given().port(port)
+                .header("Origin", "http://localhost:3000")
+                .header("Access-Control-Request-Method", "POST")
+                .header("Access-Control-Request-Headers", "Authorization")
+                .when().options("/api/checkout-lab/sessions")
+                .then()
+                .statusCode(200);
     }
 
     @Test

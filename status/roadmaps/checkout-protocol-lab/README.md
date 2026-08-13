@@ -1,10 +1,10 @@
 ---
 name: checkout-protocol-lab
 origin: POST_KIRO_WORK
-status: DESIGNED_NOT_STARTED
-branch: 001-project-foundation
-related_gate: REST-REDIRECT-01 (Wave 2B — approved test-only redirect / notify lab)
-last_updated: 2026-08-09
+status: IMPLEMENTED
+branch: checkout-protocol-lab-foundation
+related_gate: REST-REDIRECT-01 (Wave 2B — closed by CPL as approved test-only redirect / notify lab)
+last_updated: 2026-08-13
 ---
 
 # Checkout Protocol Lab (CPL v2) — backlog wykonawczy
@@ -33,7 +33,7 @@ To jest **nowe miejsce** na wymagania, epiki, stories, taski i mapę nauki dla e
 
 ## Status
 
-`DESIGNED_NOT_STARTED` — dokumentacja projektowa. **Nie implementować** bez jawnego zlecenia użytkownika (jeden work package naraz).
+`IMPLEMENTED` on `checkout-protocol-lab-foundation`. Wave A (T01–T07) plus T07b auth split, E2–E7 protocol, Booking/Inspector UI, and REST-REDIRECT-01 closure.
 
 ## Granice (MUST)
 

@@ -50,6 +50,9 @@ public class CheckoutEvent {
     @Column(name = "last_error")
     private String lastError;
 
+    @Column(name = "ack_status")
+    private Integer ackStatus;
+
     protected CheckoutEvent() {
     }
 
@@ -93,21 +96,74 @@ public class CheckoutEvent {
         return lastError;
     }
 
+    public Integer getAckStatus() {
+        return ackStatus;
+    }
+
+    public void markProcessing() {
+        this.processStatus = CheckoutEventProcessStatus.PROCESSING;
+        this.attempts = this.attempts + 1;
+    }
+
+    public void markDone() {
+        this.processStatus = CheckoutEventProcessStatus.DONE;
+    }
+
+    public void markFailed(String error) {
+        this.processStatus = CheckoutEventProcessStatus.FAILED;
+        this.lastError = error;
+    }
+
+    public void markDuplicate() {
+        this.processStatus = CheckoutEventProcessStatus.DUPLICATE;
+    }
+
+    public void assignAckStatus(int status) {
+        this.ackStatus = status;
+    }
+
     void assignForPersistence(
             UUID id,
             String eventId,
             UUID sessionId,
             String eventType,
             Map<String, Object> payload,
+            String signatureHeader,
             Instant receivedAt,
-            CheckoutEventProcessStatus processStatus) {
+            CheckoutEventProcessStatus processStatus,
+            Integer ackStatus) {
         this.id = id;
         this.eventId = eventId;
         this.sessionId = sessionId;
         this.eventType = eventType;
         this.payload = payload;
+        this.signatureHeader = signatureHeader;
         this.receivedAt = receivedAt;
         this.processStatus = processStatus;
         this.attempts = 0;
+        this.ackStatus = ackStatus;
+    }
+
+    public static CheckoutEvent received(
+            UUID id,
+            String eventId,
+            UUID sessionId,
+            String eventType,
+            Map<String, Object> payload,
+            String signatureHeader,
+            Instant receivedAt,
+            int ackStatus) {
+        CheckoutEvent event = new CheckoutEvent();
+        event.assignForPersistence(
+                id,
+                eventId,
+                sessionId,
+                eventType,
+                payload,
+                signatureHeader,
+                receivedAt,
+                CheckoutEventProcessStatus.RECEIVED,
+                ackStatus);
+        return event;
     }
 }

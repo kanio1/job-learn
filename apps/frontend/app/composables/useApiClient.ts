@@ -30,6 +30,8 @@ function extractHeaders(headers: Headers | undefined): ApiHeaders {
     wwwAuthenticate: headers.get('www-authenticate') ?? undefined,
     idempotencyReplayed: headers.get('idempotency-replayed') ?? undefined,
     lastModified: headers.get('last-modified') ?? undefined,
+    labSignature: headers.get('lab-signature') ?? undefined,
+    labEventId: headers.get('lab-event-id') ?? undefined,
   }
 }
 
@@ -54,6 +56,7 @@ export function useApiClient() {
       body?: unknown
       headers?: Record<string, string>
       query?: Record<string, unknown>
+      redirect?: RequestRedirect
     }
   ): Promise<ApiResponse<T>> {
     try {
@@ -62,6 +65,7 @@ export function useApiClient() {
         body: opts?.body as any,
         headers: opts?.headers,
         query: opts?.query,
+        redirect: opts?.redirect,
       })
 
       const status = response.status
