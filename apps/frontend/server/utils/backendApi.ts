@@ -85,6 +85,7 @@ function forwardBackendHeaders(event: H3Event, headers: Headers) {
   for (const name of [
     'ETag', 'Cache-Control', 'Vary', 'X-Correlation-ID', 'Location', 'Accept-Patch', 'Allow',
     'Retry-After', 'WWW-Authenticate', 'Idempotency-Replayed', 'Last-Modified',
+    'Lab-Signature', 'Lab-Event-Id',
   ]) {
     const value = headers.get(name) || headers.get(name.toLowerCase())
     if (value) {

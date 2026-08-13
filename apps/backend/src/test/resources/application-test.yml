@@ -25,6 +25,10 @@ app:
     hmac-secret: ${CHECKOUT_LAB_HMAC_SECRET:test-hmac-secret}
     signature-tolerance-seconds: 300
     hosted-checkout-base-url: http://localhost:3000
+    worker-delay-ms: 3600000
+    reconcile-delay-ms: 3600000
+    worker-enabled: false
+    reconcile-enabled: false
 
 logging:
   level:

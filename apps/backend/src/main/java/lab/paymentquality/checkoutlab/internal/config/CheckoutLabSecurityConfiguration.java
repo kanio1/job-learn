@@ -22,7 +22,15 @@ class CheckoutLabSecurityConfiguration {
             CheckoutLabBearerAuthenticationFilter filter) {
         FilterRegistrationBean<CheckoutLabBearerAuthenticationFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(filter);
-        registration.addUrlPatterns("/api/checkout-lab/sessions", "/api/checkout-lab/sessions/*");
+        registration.addUrlPatterns(
+                "/api/checkout-lab/sessions",
+                "/api/checkout-lab/sessions/*",
+                "/api/checkout-lab/bookings",
+                "/api/checkout-lab/bookings/*",
+                "/api/checkout-lab/anomalies",
+                "/api/checkout-lab/reset",
+                "/api/checkout-lab/clock",
+                "/api/checkout-lab/reconcile");
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 20);
         registration.setName("checkoutLabBearerAuthenticationFilter");
         return registration;

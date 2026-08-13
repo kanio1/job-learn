@@ -122,6 +122,32 @@
           </UButton>
         </div>
       </UCard>
+
+      <UCard v-if="checkoutLabEnabled">
+        <template #header>
+          <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-credit-card" class="text-gray-400" />
+            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              Checkout Protocol Lab
+            </span>
+          </div>
+        </template>
+        <div class="flex flex-col gap-3">
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Redirect + signed notify + inbox. Booking uses the dashboard Keycloak session; hosted checkout does not.
+          </p>
+          <UButton
+            data-testid="checkout-lab-from-error-lab"
+            to="/admin/checkout-lab"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-arrow-right"
+            class="self-start"
+          >
+            Open Checkout Lab
+          </UButton>
+        </div>
+      </UCard>
     </div>
     </template>
   </UDashboardPanel>
@@ -142,6 +168,8 @@
  */
 
 definePageMeta({ layout: 'dashboard' })
+
+const checkoutLabEnabled = computed(() => useRuntimeConfig().public.checkoutLabEnabled === true)
 
 import { z } from 'zod'
 import type { ProblemDetails } from '~/types/api'

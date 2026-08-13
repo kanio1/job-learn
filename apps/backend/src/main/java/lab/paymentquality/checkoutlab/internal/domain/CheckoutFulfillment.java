@@ -18,7 +18,7 @@ public class CheckoutFulfillment {
     @Column(name = "fulfillment_id", nullable = false, updatable = false)
     private UUID fulfillmentId;
 
-    @Column(name = "session_id", nullable = false, updatable = false)
+    @Column(name = "session_id", updatable = false)
     private UUID sessionId;
 
     @Enumerated(EnumType.STRING)
@@ -66,6 +66,23 @@ public class CheckoutFulfillment {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public void confirm(String sourceEventId, Instant now) {
+        this.status = CheckoutFulfillmentStatus.CONFIRMED;
+        this.sourceEventId = sourceEventId;
+        this.confirmedAt = now;
+        this.updatedAt = now;
+    }
+
+    public void cancel(Instant now) {
+        this.status = CheckoutFulfillmentStatus.CANCELLED;
+        this.updatedAt = now;
+    }
+
+    public void expire(Instant now) {
+        this.status = CheckoutFulfillmentStatus.EXPIRED;
+        this.updatedAt = now;
     }
 
     void assignForPersistence(

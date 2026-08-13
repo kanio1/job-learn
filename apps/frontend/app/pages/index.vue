@@ -13,6 +13,17 @@
           >
             Error Lab
           </UButton>
+          <UButton
+            v-if="checkoutLabEnabled"
+            to="/admin/checkout-lab"
+            icon="i-lucide-credit-card"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            data-testid="overview-checkout-lab"
+          >
+            Checkout Lab
+          </UButton>
         </template>
       </UDashboardNavbar>
     </template>
@@ -152,6 +163,7 @@ import { h, resolveComponent } from 'vue'
 const { listMerchants } = useMerchantsApi()
 const { getOrderSummary, listOrders } = usePaymentOrdersApi()
 const { can } = useAuthorization()
+const checkoutLabEnabled = computed(() => useRuntimeConfig().public.checkoutLabEnabled === true)
 
 const canReadMerchants = computed(() => can.value.canReadMerchants)
 const canReadPaymentOrders = computed(() => can.value.canReadMerchantPayments || can.value.canReadPlatformPayments)

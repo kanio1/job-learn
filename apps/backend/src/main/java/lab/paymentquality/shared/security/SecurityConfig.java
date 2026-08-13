@@ -61,7 +61,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(2)
+    @Order(3)
     @ConditionalOnProperty(name = "app.checkout-lab.enabled", havingValue = "true")
     public SecurityFilterChain checkoutLabPublicPassThroughFilterChain(HttpSecurity http) throws Exception {
         http
@@ -69,19 +69,28 @@ public class SecurityConfig {
                         PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/checkout-lab/oauth/token"),
                         PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/checkout-lab/notify"),
                         PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/checkout-lab/sessions"),
-                        PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/api/checkout-lab/sessions/*")))
+                        PathPatternRequestMatcher.pathPattern("/api/checkout-lab/sessions/**"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/api/checkout-lab/health"),
+                        PathPatternRequestMatcher.pathPattern("/api/checkout-lab/hosted/**"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/checkout-lab/bookings"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/api/checkout-lab/bookings/*"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/api/checkout-lab/anomalies"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/checkout-lab/reset"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/checkout-lab/clock"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/checkout-lab/reconcile")))
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(labCorsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
     }
 
     @Bean
-    @Order(3)
+    @Order(4)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(labCorsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/status").permitAll()
@@ -142,17 +151,23 @@ public class SecurityConfig {
     @Bean
     @Profile({"dev", "test"})
     public CorsConfigurationSource corsConfigurationSource() {
+        return labCorsConfigurationSource();
+    }
+
+    private static CorsConfigurationSource labCorsConfigurationSource() {
         var config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:3000"));
         config.setAllowedMethods(List.of("GET", "HEAD", "POST", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of(
                 "Authorization", "Content-Type",
                 "Idempotency-Key", "If-Match", "If-None-Match",
-                "X-Correlation-ID"));
+                "X-Correlation-ID",
+                "Lab-Signature", "Lab-Event-Id", "Lab-Force-Scenario", "Lab-Simulate-Token"));
         config.setExposedHeaders(List.of(
                 "ETag", "Cache-Control", "Vary", "X-Correlation-ID",
                 "Location", "Allow", "Accept-Patch",
-                "Retry-After", "WWW-Authenticate", "Idempotency-Replayed", "Last-Modified"));
+                "Retry-After", "WWW-Authenticate", "Idempotency-Replayed", "Last-Modified",
+                "Lab-Signature", "Lab-Event-Id"));
         config.setMaxAge(3600L);
         var source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", config);

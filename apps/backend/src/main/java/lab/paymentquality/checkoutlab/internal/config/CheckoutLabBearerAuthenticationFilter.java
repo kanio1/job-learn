@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lab.paymentquality.checkoutlab.internal.application.CheckoutLabAccessTokenService;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,6 +21,11 @@ class CheckoutLabBearerAuthenticationFilter extends OncePerRequestFilter {
 
     CheckoutLabBearerAuthenticationFilter(CheckoutLabAccessTokenService accessTokenService) {
         this.accessTokenService = accessTokenService;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return HttpMethod.OPTIONS.matches(request.getMethod());
     }
 
     @Override

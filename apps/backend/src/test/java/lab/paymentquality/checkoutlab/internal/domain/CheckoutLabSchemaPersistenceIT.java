@@ -99,8 +99,10 @@ class CheckoutLabSchemaPersistenceIT extends PostgresContainerSupport {
                 sessionId,
                 "payment.completed",
                 Map.of("sessionId", sessionId.toString(), "status", "COMPLETED"),
+                "t=0,v1=test",
                 now,
-                CheckoutEventProcessStatus.RECEIVED);
+                CheckoutEventProcessStatus.RECEIVED,
+                202);
         eventRepository.saveAndFlush(event);
 
         assertThat(sessionRepository.findById(sessionId)).get()

@@ -3,7 +3,6 @@ package lab.paymentquality.checkoutlab;
 import io.restassured.RestAssured;
 import lab.paymentquality.testsupport.PostgresContainerSupport;
 import lab.paymentquality.testsupport.TestJwtConfiguration;
-import lab.paymentquality.testsupport.TestJwtSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -48,7 +47,6 @@ class CheckoutLabEndpointsEnabledIT extends PostgresContainerSupport {
     @Test
     void getHealthReturns200WithStatusUp() {
         RestAssured.given().port(port)
-                .header("Authorization", "Bearer " + TestJwtSupport.platformUserAdminToken())
                 .when().get("/api/checkout-lab/health")
                 .then()
                 .statusCode(200)

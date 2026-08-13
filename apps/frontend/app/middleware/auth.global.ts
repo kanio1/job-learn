@@ -17,7 +17,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const session = useUserSession()
 
   // Standalone PSP simulator — no session realm, same as a real external PSP page.
-  if (to.path === '/psp-redirect-simulator') {
+  if (to.path === '/psp-redirect-simulator' || to.path.startsWith('/psp/checkout/') || to.path === '/checkout-lab/return') {
     return
   }
 

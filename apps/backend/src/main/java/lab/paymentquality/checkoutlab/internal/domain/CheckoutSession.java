@@ -119,6 +119,19 @@ public class CheckoutSession {
         return version;
     }
 
+    public boolean isExpired(Instant now) {
+        return validityUntil != null && !now.isBefore(validityUntil);
+    }
+
+    public void applyStatus(CheckoutSessionStatus nextStatus, Instant now) {
+        this.status = nextStatus;
+        this.updatedAt = now;
+    }
+
+    public void assignIdempotencyKeyHash(String hash) {
+        this.idempotencyKeyHash = hash;
+    }
+
     void assignForPersistence(
             UUID sessionId,
             String extOrderId,

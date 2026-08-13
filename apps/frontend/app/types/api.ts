@@ -39,6 +39,8 @@ export interface ApiHeaders {
   idempotencyReplayed?: string
   /** Last-Modified date of the resource (Phase 2). */
   lastModified?: string
+  labSignature?: string
+  labEventId?: string
 }
 
 /**

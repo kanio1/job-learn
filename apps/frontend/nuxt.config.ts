@@ -23,11 +23,14 @@ export default defineNuxtConfig({
         redirectURL: process.env.NUXT_OAUTH_OIDC_REDIRECT_URL || 'http://localhost:3000/auth/keycloak'
       }
     },
+    checkoutLabOAuthClientId: process.env.CHECKOUT_LAB_OAUTH_CLIENT_ID || 'checkout-lab-merchant',
+    checkoutLabOAuthSecret: process.env.CHECKOUT_LAB_OAUTH_SECRET || 'change-me',
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8080',
       keycloakUrl: process.env.NUXT_PUBLIC_KEYCLOAK_URL || 'http://localhost:8081',
       keycloakRealm: process.env.NUXT_PUBLIC_KEYCLOAK_REALM || 'payment-quality',
-      keycloakClientId: process.env.NUXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'payment-quality-dashboard'
+      keycloakClientId: process.env.NUXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'payment-quality-dashboard',
+      checkoutLabEnabled: process.env.NUXT_PUBLIC_CHECKOUT_LAB_ENABLED !== 'false',
     }
   }
 })

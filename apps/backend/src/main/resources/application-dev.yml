@@ -8,7 +8,7 @@ payment-quality:
 
 app:
   checkout-lab:
-    enabled: ${CHECKOUT_LAB_ENABLED:false}
+    enabled: ${CHECKOUT_LAB_ENABLED:true}
     oauth-client-id: checkout-lab-merchant
     oauth-client-secret: ${CHECKOUT_LAB_OAUTH_SECRET:change-me}
     hmac-secret: ${CHECKOUT_LAB_HMAC_SECRET:change-me-too}

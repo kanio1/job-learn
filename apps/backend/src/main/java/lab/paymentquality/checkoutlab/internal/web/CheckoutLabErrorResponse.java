@@ -7,6 +7,7 @@ public record CheckoutLabErrorResponse(
         String title,
         int status,
         String detail,
+        String instance,
         String code,
         String correlationId,
         String error,
@@ -23,12 +24,14 @@ public record CheckoutLabErrorResponse(
             List<FieldError> details,
             String correlationId,
             int status,
-            String title) {
+            String title,
+            String instance) {
         return new CheckoutLabErrorResponse(
                 "https://api.payment-quality.local/problems/" + error.replace('_', '-'),
                 title,
                 status,
                 message,
+                instance,
                 error.toUpperCase(),
                 correlationId,
                 error,

@@ -1,6 +1,13 @@
 package lab.paymentquality.checkoutlab.internal.web;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lab.paymentquality.checkoutlab.internal.application.CheckoutIdempotencyConflictException;
+import lab.paymentquality.checkoutlab.internal.application.CheckoutLabTransientException;
+import lab.paymentquality.checkoutlab.internal.application.CheckoutLinkExpiredException;
+import lab.paymentquality.checkoutlab.internal.application.InvalidCheckoutSignatureException;
+import lab.paymentquality.checkoutlab.internal.application.InvalidCheckoutSimulateTokenException;
+import lab.paymentquality.checkoutlab.internal.application.MissingCheckoutSimulateTokenException;
+import lab.paymentquality.checkoutlab.internal.application.UnknownCheckoutScenarioException;
 import lab.paymentquality.checkoutlab.internal.domain.CheckoutSessionNotFoundException;
 import lab.paymentquality.checkoutlab.internal.domain.InvalidCheckoutAmountException;
 import lab.paymentquality.checkoutlab.internal.domain.InvalidCheckoutCurrencyException;
@@ -19,7 +26,12 @@ import java.util.UUID;
 
 @RestControllerAdvice(assignableTypes = {
         CheckoutLabSessionController.class,
-        CheckoutLabOAuthTokenController.class
+        CheckoutLabOAuthTokenController.class,
+        CheckoutLabNotifyController.class,
+        CheckoutLabHostedController.class,
+        CheckoutLabBookingController.class,
+        CheckoutLabOpsController.class,
+        CheckoutLabHealthController.class
 })
 class CheckoutLabExceptionHandler {
 
@@ -30,12 +42,59 @@ class CheckoutLabExceptionHandler {
     ResponseEntity<CheckoutLabErrorResponse> handleNotFound(
             CheckoutSessionNotFoundException ex,
             HttpServletRequest request) {
-        return problem(HttpStatus.NOT_FOUND, ERROR_NOT_FOUND, ex.getMessage(), headersForRequest(request));
+        return problem(HttpStatus.NOT_FOUND, ERROR_NOT_FOUND, ex.getMessage(), request);
     }
 
     @ExceptionHandler({InvalidCheckoutAmountException.class, InvalidCheckoutCurrencyException.class})
     ResponseEntity<CheckoutLabErrorResponse> handleDomainValidation(RuntimeException ex, HttpServletRequest request) {
-        return problem(HttpStatus.BAD_REQUEST, ERROR_VALIDATION, ex.getMessage(), headersForRequest(request));
+        return problem(HttpStatus.BAD_REQUEST, ERROR_VALIDATION, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidCheckoutSignatureException.class)
+    ResponseEntity<CheckoutLabErrorResponse> handleBadSignature(
+            InvalidCheckoutSignatureException ex,
+            HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, "invalid_signature", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(MissingCheckoutSimulateTokenException.class)
+    ResponseEntity<CheckoutLabErrorResponse> handleMissingSimulateToken(
+            MissingCheckoutSimulateTokenException ex,
+            HttpServletRequest request) {
+        return problem(HttpStatus.FORBIDDEN, "missing_simulate_token", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidCheckoutSimulateTokenException.class)
+    ResponseEntity<CheckoutLabErrorResponse> handleInvalidSimulateToken(
+            InvalidCheckoutSimulateTokenException ex,
+            HttpServletRequest request) {
+        return problem(HttpStatus.FORBIDDEN, "invalid_simulate_token", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(CheckoutLabTransientException.class)
+    ResponseEntity<CheckoutLabErrorResponse> handleTransient(
+            CheckoutLabTransientException ex,
+            HttpServletRequest request) {
+        return problem(HttpStatus.SERVICE_UNAVAILABLE, "transient_error", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(CheckoutIdempotencyConflictException.class)
+    ResponseEntity<CheckoutLabErrorResponse> handleIdempotency(
+            CheckoutIdempotencyConflictException ex,
+            HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "idempotency_conflict", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(CheckoutLinkExpiredException.class)
+    ResponseEntity<CheckoutLabErrorResponse> handleExpired(
+            CheckoutLinkExpiredException ex,
+            HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "expired_link", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler({UnknownCheckoutScenarioException.class, IllegalArgumentException.class})
+    ResponseEntity<CheckoutLabErrorResponse> handleUnknownScenario(RuntimeException ex, HttpServletRequest request) {
+        return problem(HttpStatus.BAD_REQUEST, ERROR_VALIDATION, ex.getMessage(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -52,7 +111,7 @@ class CheckoutLabExceptionHandler {
                 ERROR_VALIDATION,
                 "Request validation failed",
                 details,
-                headersForRequest(request));
+                request);
     }
 
     @ExceptionHandler(BindException.class)
@@ -67,15 +126,15 @@ class CheckoutLabExceptionHandler {
                 ERROR_VALIDATION,
                 "Request validation failed",
                 details,
-                headersForRequest(request));
+                request);
     }
 
     private ResponseEntity<CheckoutLabErrorResponse> problem(
             HttpStatus status,
             String error,
             String message,
-            HttpHeaders headers) {
-        return problem(status, error, message, null, headers);
+            HttpServletRequest request) {
+        return problem(status, error, message, null, request);
     }
 
     private ResponseEntity<CheckoutLabErrorResponse> problem(
@@ -83,7 +142,8 @@ class CheckoutLabExceptionHandler {
             String error,
             String message,
             List<CheckoutLabErrorResponse.FieldError> details,
-            HttpHeaders headers) {
+            HttpServletRequest request) {
+        HttpHeaders headers = headersForRequest(request);
         String correlationId = resolveCorrelationId(headers);
         return ResponseEntity.status(status)
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
@@ -94,7 +154,8 @@ class CheckoutLabExceptionHandler {
                         details,
                         correlationId,
                         status.value(),
-                        status.getReasonPhrase()));
+                        status.getReasonPhrase(),
+                        request.getRequestURI()));
     }
 
     private HttpHeaders headersForRequest(HttpServletRequest request) {

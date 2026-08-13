@@ -26,15 +26,27 @@ import java.util.UUID;
 class CheckoutLabSessionController {
 
     private final CheckoutLabSessionService sessionService;
+    private final lab.paymentquality.checkoutlab.internal.infrastructure.JpaCheckoutEventRepository eventRepository;
+    private final lab.paymentquality.checkoutlab.internal.infrastructure.JpaCheckoutFulfillmentRepository fulfillmentRepository;
+    private final lab.paymentquality.checkoutlab.internal.application.CheckoutLabDeliveryLog deliveryLog;
 
-    CheckoutLabSessionController(CheckoutLabSessionService sessionService) {
+    CheckoutLabSessionController(
+            CheckoutLabSessionService sessionService,
+            lab.paymentquality.checkoutlab.internal.infrastructure.JpaCheckoutEventRepository eventRepository,
+            lab.paymentquality.checkoutlab.internal.infrastructure.JpaCheckoutFulfillmentRepository fulfillmentRepository,
+            lab.paymentquality.checkoutlab.internal.application.CheckoutLabDeliveryLog deliveryLog) {
         this.sessionService = sessionService;
+        this.eventRepository = eventRepository;
+        this.fulfillmentRepository = fulfillmentRepository;
+        this.deliveryLog = deliveryLog;
     }
 
     @PostMapping("/sessions")
     ResponseEntity<CreateCheckoutSessionResponse> createSession(
             @Valid @RequestBody CreateCheckoutSessionRequest request,
-            @RequestHeader(value = "X-Correlation-ID", required = false) String correlationId) {
+            @RequestHeader(value = "X-Correlation-ID", required = false) String correlationId,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @RequestHeader(value = "Lab-Force-Scenario", required = false) String forceScenario) {
         String resolvedCorrelationId = resolveCorrelationId(correlationId);
         CreateCheckoutSessionCommand command = new CreateCheckoutSessionCommand(
                 request.extOrderId(),
@@ -42,7 +54,9 @@ class CheckoutLabSessionController {
                 request.currency(),
                 request.continueUrl(),
                 request.notifyUrl(),
-                request.validitySeconds());
+                request.validitySeconds(),
+                idempotencyKey,
+                lab.paymentquality.checkoutlab.internal.application.CheckoutLabScenario.fromHeader(forceScenario));
         CheckoutLabSessionService.CreatedCheckoutSession created =
                 sessionService.createSession(command, resolvedCorrelationId);
 
@@ -51,10 +65,37 @@ class CheckoutLabSessionController {
                 created.redirectUri(),
                 created.status());
 
-        return ResponseEntity.status(HttpStatus.FOUND)
+        var response = ResponseEntity.status(HttpStatus.FOUND)
                 .header(HttpHeaders.LOCATION, created.redirectUri())
-                .header("X-Correlation-ID", resolvedCorrelationId)
-                .body(body);
+                .header("X-Correlation-ID", resolvedCorrelationId);
+        if (created.replayed()) {
+            response.header("Idempotency-Replayed", "true");
+        }
+        return response.body(body);
+    }
+
+    @GetMapping("/sessions/{sessionId}/events")
+    ResponseEntity<java.util.List<CheckoutEventResponse>> listEvents(@PathVariable UUID sessionId) {
+        sessionService.getSession(sessionId);
+        return ResponseEntity.ok(eventRepository.findBySessionIdOrderByReceivedAtAsc(sessionId).stream()
+                .map(CheckoutEventResponse::from)
+                .toList());
+    }
+
+    @GetMapping("/sessions/{sessionId}/deliveries")
+    ResponseEntity<java.util.List<CheckoutEventResponse.DeliveryResponse>> deliveries(@PathVariable UUID sessionId) {
+        sessionService.getSession(sessionId);
+        return ResponseEntity.ok(deliveryLog.forSession(sessionId).stream()
+                .map(CheckoutEventResponse.DeliveryResponse::from)
+                .toList());
+    }
+
+    @GetMapping("/sessions/{sessionId}/fulfillment")
+    ResponseEntity<FulfillmentResponse> fulfillment(@PathVariable UUID sessionId) {
+        sessionService.getSession(sessionId);
+        return fulfillmentRepository.findBySessionId(sessionId)
+                .map(found -> ResponseEntity.ok(FulfillmentResponse.from(found)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/sessions/{sessionId}")
