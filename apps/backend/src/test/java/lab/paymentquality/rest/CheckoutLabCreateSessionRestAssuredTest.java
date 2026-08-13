@@ -81,7 +81,7 @@ class CheckoutLabCreateSessionRestAssuredTest extends PostgresContainerSupport {
                 .header("Location");
 
         assertThat(location).isNotBlank();
-        String sessionId = location.substring(location.lastIndexOf('/') + 1);
+        String sessionId = CheckoutLabTestSupport.sessionIdFromLocation(location);
 
         Integer sessionCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM checkout_session WHERE session_id = ?::uuid AND ext_order_id = ?",
@@ -153,5 +153,31 @@ class CheckoutLabCreateSessionRestAssuredTest extends PostgresContainerSupport {
                 .header("X-Correlation-ID", equalTo("corr-t06-invalid-currency"))
                 .contentType("application/problem+json")
                 .body("error", equalTo("validation"));
+    }
+
+    @Test
+    void createSessionWithLanguagePutsLangOnLocation() {
+        String labToken = CheckoutLabTestSupport.obtainLabAccessToken(port);
+        given()
+                .port(port)
+                .redirects().follow(false)
+                .header("Authorization", "Bearer " + labToken)
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .body("""
+                        {
+                          "extOrderId": "BOOK-LANG",
+                          "amountMinor": 1999,
+                          "currency": "PLN",
+                          "continueUrl": "http://localhost:3000/checkout-lab/return",
+                          "notifyUrl": "http://localhost:8080/api/checkout-lab/notify",
+                          "validitySeconds": 900,
+                          "language": "pl"
+                        }
+                        """)
+                .when()
+                .post("/api/checkout-lab/sessions")
+                .then()
+                .statusCode(302)
+                .header("Location", org.hamcrest.Matchers.containsString("?lang=pl"));
     }
 }

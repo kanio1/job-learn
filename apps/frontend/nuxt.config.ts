@@ -31,6 +31,8 @@ export default defineNuxtConfig({
       keycloakRealm: process.env.NUXT_PUBLIC_KEYCLOAK_REALM || 'payment-quality',
       keycloakClientId: process.env.NUXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'payment-quality-dashboard',
       checkoutLabEnabled: process.env.NUXT_PUBLIC_CHECKOUT_LAB_ENABLED !== 'false',
+      mirrorLabEnabled: process.env.NUXT_PUBLIC_MIRROR_LAB_ENABLED !== 'false',
+      mirrorLabIdleSeconds: Number(process.env.NUXT_PUBLIC_MIRROR_LAB_IDLE_SECONDS || 120),
     }
   }
 })

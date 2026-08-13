@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const checkoutSessionStatusSchema = z.enum(['CREATED', 'PENDING', 'COMPLETED', 'CANCELED', 'EXPIRED'])
+const checkoutSessionStatusSchema = z.enum(['CREATED', 'PENDING', 'COMPLETED', 'CANCELED', 'EXPIRED', 'REFUNDED'])
 const fulfillmentStatusSchema = z.enum(['AWAITING_PAYMENT', 'CONFIRMED', 'CANCELLED', 'EXPIRED'])
 const bookingModeSchema = z.enum(['ONLINE', 'CASH'])
 const checkoutEventProcessStatusSchema = z.enum(['RECEIVED', 'PROCESSING', 'DONE', 'FAILED', 'DUPLICATE'])

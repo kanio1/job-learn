@@ -14,3 +14,6 @@ app:
     hmac-secret: ${CHECKOUT_LAB_HMAC_SECRET:change-me-too}
     signature-tolerance-seconds: 300
     hosted-checkout-base-url: ${CHECKOUT_LAB_HOSTED_CHECKOUT_BASE_URL:http://localhost:3000}
+  mirror-lab:
+    enabled: ${MIRROR_LAB_ENABLED:true}
+    step-up-threshold-minor: 10000

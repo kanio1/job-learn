@@ -55,7 +55,7 @@ class CheckoutLabGetSessionRestAssuredTest extends PostgresContainerSupport {
         String labToken = CheckoutLabTestSupport.obtainLabAccessToken(port);
         String correlationId = "corr-t07-get-session";
         String location = createSession(labToken, correlationId);
-        String sessionId = location.substring(location.lastIndexOf('/') + 1);
+        String sessionId = CheckoutLabTestSupport.sessionIdFromLocation(location);
 
         given()
                 .port(port)
@@ -82,7 +82,7 @@ class CheckoutLabGetSessionRestAssuredTest extends PostgresContainerSupport {
     void getSessionIsIdempotentAndDoesNotCreateExtraRows() {
         String labToken = CheckoutLabTestSupport.obtainLabAccessToken(port);
         String location = createSession(labToken, "corr-t07-idempotent");
-        String sessionId = location.substring(location.lastIndexOf('/') + 1);
+        String sessionId = CheckoutLabTestSupport.sessionIdFromLocation(location);
 
         Integer sessionsBefore = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM checkout_session", Integer.class);
@@ -143,6 +143,26 @@ class CheckoutLabGetSessionRestAssuredTest extends PostgresContainerSupport {
                 .get("/api/checkout-lab/sessions/" + sessionId)
                 .then()
                 .statusCode(401);
+    }
+
+    @Test
+    void getSessionWithBodyReturns403GetWithBody() throws Exception {
+        String labToken = CheckoutLabTestSupport.obtainLabAccessToken(port);
+        String location = createSession(labToken, "corr-t18-get-body");
+        String sessionId = CheckoutLabTestSupport.sessionIdFromLocation(location);
+
+        java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create("http://localhost:" + port + "/api/checkout-lab/sessions/" + sessionId))
+                .header("Authorization", "Bearer " + labToken)
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .method("GET", java.net.http.HttpRequest.BodyPublishers.ofString("{}"))
+                .build();
+        java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode()).isEqualTo(403);
+        assertThat(response.body()).contains("get_with_body");
+        assertThat(response.headers().firstValue("Content-Type").orElse("")).contains("application/problem+json");
     }
 
     private String createSession(String labToken, String correlationId) {

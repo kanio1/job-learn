@@ -28,6 +28,9 @@ pnpm-debug.log*
 playwright-report/
 test-results/
 **/tests/.auth/
+**/tests-pom/.auth/
+**/tests-pom-learner/.auth/
+**/tests/e2e/recordings/*.har
 
 # IDEs
 .idea/

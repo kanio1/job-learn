@@ -43,7 +43,23 @@
           <UButton to="/admin/checkout-lab/inspector" variant="outline" icon="i-lucide-search" data-testid="checkout-lab-open-inspector">
             Inspector
           </UButton>
+          <UButton
+            v-if="mirrorLabEnabled"
+            to="/admin/checkout-lab/widget"
+            variant="outline"
+            icon="i-lucide-app-window"
+            data-testid="checkout-lab-open-widget"
+          >
+            Widget iframe
+          </UButton>
         </div>
+
+        <UCard v-if="mirrorLabEnabled" data-testid="checkout-lab-grant-contrast">
+          <h2 class="font-semibold mb-2">OAuth grant contrast</h2>
+          <p class="text-sm text-muted">
+            client_credentials is machine-to-machine. trusted_merchant still uses form-urlencoded and requires extCustomerId (and email). JSON token posts stay 401, not 415.
+          </p>
+        </UCard>
 
         <UAlert
           color="warning"
@@ -58,4 +74,6 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'dashboard' })
+
+const mirrorLabEnabled = computed(() => useRuntimeConfig().public.mirrorLabEnabled === true)
 </script>

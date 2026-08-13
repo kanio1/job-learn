@@ -57,6 +57,7 @@ export default defineConfig({
     {
       name: 'chromium',
       testMatch: /e2e\/.*\.spec\.ts/,
+      grepInvert: /@visual-negative/,
       dependencies: ['auth-setup'],
       use: {
         ...devices['Desktop Chrome'],

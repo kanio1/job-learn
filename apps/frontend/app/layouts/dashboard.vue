@@ -43,6 +43,7 @@
     />
 
     <slot />
+    <SessionLabIdleLock />
   </UDashboardGroup>
 </template>
 
@@ -53,6 +54,7 @@ const open = ref(false)
 const { can } = useAuthorization()
 const { user } = useUserSession()
 const checkoutLabEnabled = computed(() => useRuntimeConfig().public.checkoutLabEnabled === true)
+const mirrorLabEnabled = computed(() => useRuntimeConfig().public.mirrorLabEnabled === true)
 const tenantId = computed(() => (user.value as { tenantId?: string })?.tenantId)
 
 function closeSidebar() {
@@ -129,6 +131,14 @@ const allLinks: (NavigationMenuItem & { testid: string; visible: ComputedRef<boo
     to: '/admin/checkout-lab',
     onSelect: closeSidebar,
     visible: computed(() => checkoutLabEnabled.value),
+  },
+  {
+    testid: 'nav-link-mirror-lab',
+    label: 'Mirror Lab',
+    icon: 'i-lucide-scan-eye',
+    to: '/admin/mirror-lab',
+    onSelect: closeSidebar,
+    visible: computed(() => mirrorLabEnabled.value),
   },
 ]
 
@@ -230,6 +240,17 @@ const searchGroups = computed<any[]>(() => [
               icon: 'i-lucide-search',
               to: '/admin/checkout-lab/inspector',
               'data-testid': 'search-link-checkout-lab-inspector',
+            },
+          ]
+        : []),
+      ...(mirrorLabEnabled.value
+        ? [
+            {
+              id: 'mirror-lab',
+              label: 'Mirror Lab',
+              icon: 'i-lucide-scan-eye',
+              to: '/admin/mirror-lab',
+              'data-testid': 'search-link-mirror-lab',
             },
           ]
         : []),

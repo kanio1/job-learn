@@ -95,6 +95,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/status").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/mirror-lab/tpp/**").permitAll()
+                        .requestMatchers("/api/mirror-lab/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders").hasAuthority(Authorities.MERCHANT_PAYMENTS_CREATE)
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders/*/authorize").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_LIFECYCLE, Authorities.PLATFORM_PAYMENTS_LIFECYCLE)
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders/*/capture").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_LIFECYCLE, Authorities.PLATFORM_PAYMENTS_LIFECYCLE)

@@ -7,6 +7,7 @@ import {
   deliverySchema,
   fulfillmentSchema,
   hostedCheckoutSessionSchema,
+  checkoutSessionSchema,
   type BookingResult,
 } from '~/schemas/checkout-lab.schema'
 
@@ -66,6 +67,13 @@ export function useCheckoutLabApi() {
     return request(`/api/checkout-lab/bookings/${bookingId}`, fulfillmentSchema)
   }
 
+  function refundSession(sessionId: string) {
+    return request(`/api/checkout-lab/sessions/${sessionId}/refund`, checkoutSessionSchema, {
+      method: 'POST',
+      body: {},
+    })
+  }
+
   return {
     createSession,
     createBooking,
@@ -76,6 +84,7 @@ export function useCheckoutLabApi() {
     listDeliveries,
     listAnomalies,
     getBooking,
+    refundSession,
   }
 }
 

@@ -29,6 +29,12 @@
           <UFormField label="Mode" name="mode">
             <USelect v-model="form.mode" :items="['ONLINE', 'CASH']" data-testid="checkout-booking-mode" />
           </UFormField>
+          <UFormField label="Language" name="language">
+            <USelect v-model="form.language" :items="['en', 'pl']" data-testid="checkout-booking-language" />
+          </UFormField>
+          <UFormField label="Lab scenario" name="scenario">
+            <USelect v-model="form.scenario" :items="['HAPPY_COMPLETED', 'EXPIRED_LINK']" data-testid="checkout-booking-scenario" />
+          </UFormField>
           <UButton type="submit" data-testid="checkout-booking-submit" :loading="loading">
             Create booking
           </UButton>
@@ -80,6 +86,8 @@ const form = reactive({
   amountMinor: 1999,
   currency: 'PLN' as 'PLN' | 'EUR' | 'USD',
   mode: 'ONLINE' as 'ONLINE' | 'CASH',
+  language: 'en' as 'en' | 'pl',
+  scenario: 'HAPPY_COMPLETED' as 'HAPPY_COMPLETED' | 'EXPIRED_LINK',
 })
 
 const loading = ref(false)
@@ -103,9 +111,12 @@ async function submit() {
     extOrderId: form.extOrderId,
     amountMinor: form.amountMinor,
     currency: form.currency,
+    language: form.language,
     continueUrl: `${window.location.origin}/checkout-lab/return?status=success`,
     notifyUrl: `${useRuntimeConfig().public.apiBaseUrl}/api/checkout-lab/notify`,
     validitySeconds: 900,
+  }, {
+    'Lab-Force-Scenario': form.scenario,
   })
   debugResponse.value = {
     status: response.status,

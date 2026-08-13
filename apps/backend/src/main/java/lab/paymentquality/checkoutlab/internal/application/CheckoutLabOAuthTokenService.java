@@ -16,6 +16,7 @@ import java.util.Optional;
 public class CheckoutLabOAuthTokenService {
 
     private static final String CLIENT_CREDENTIALS = "client_credentials";
+    private static final String TRUSTED_MERCHANT = "trusted_merchant";
 
     private final CheckoutLabProperties properties;
     private final CheckoutLabAccessTokenService accessTokenService;
@@ -31,9 +32,11 @@ public class CheckoutLabOAuthTokenService {
             String contentType,
             String grantType,
             String clientId,
-            String clientSecret) {
+            String clientSecret,
+            String email,
+            String extCustomerId) {
         if (!acceptsContentType(contentType)
-                || !isAuthorizedClientCredentialsRequest(grantType, clientId, clientSecret)) {
+                || !isAuthorizedRequest(grantType, clientId, clientSecret, email, extCustomerId)) {
             return Optional.empty();
         }
         return Optional.of(issueToken());
@@ -46,14 +49,28 @@ public class CheckoutLabOAuthTokenService {
         return contentType.toLowerCase(Locale.ROOT).startsWith(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
     }
 
+    boolean isAuthorizedRequest(
+            String grantType,
+            String clientId,
+            String clientSecret,
+            String email,
+            String extCustomerId) {
+        if (!constantTimeEquals(clientId, properties.oauthClientId())
+                || !constantTimeEquals(clientSecret, properties.oauthClientSecret())) {
+            return false;
+        }
+        if (CLIENT_CREDENTIALS.equals(grantType)) {
+            return true;
+        }
+        if (TRUSTED_MERCHANT.equals(grantType)) {
+            return email != null && !email.isBlank() && extCustomerId != null && !extCustomerId.isBlank();
+        }
+        return false;
+    }
+
     boolean isAuthorizedClientCredentialsRequest(String grantType, String clientId, String clientSecret) {
-        if (!CLIENT_CREDENTIALS.equals(grantType)) {
-            return false;
-        }
-        if (!constantTimeEquals(clientId, properties.oauthClientId())) {
-            return false;
-        }
-        return constantTimeEquals(clientSecret, properties.oauthClientSecret());
+        return isAuthorizedRequest(grantType, clientId, clientSecret, "n/a", "n/a")
+                && CLIENT_CREDENTIALS.equals(grantType);
     }
 
     CheckoutLabOAuthTokenResponse issueToken() {
