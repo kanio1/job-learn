@@ -18,7 +18,7 @@ Wave A uczy **trzech oracles**: UI, HTTP (BFF vs Spring), SQL (tylko JDBC w RA).
 ## 2. Piramida
 
 ```text
-        PW-E2E live POM TLS (PKCE HTTPS :8443)
+        PW-E2E live POM TLS (PKCE HTTPS :8443 hybrid albo `--full`)
            PW-E2E live POM HTTP (filtry vs API, RLS dual Keycloak, ConfirmModal)
               PW-E2E mocked + FE flag-off :3010
                  REST Assured (date/amount, BOLA 404, compare 2×403, JDBC, Location, issuer, CORS)
@@ -27,7 +27,7 @@ Wave A uczy **trzech oracles**: UI, HTTP (BFF vs Spring), SQL (tylko JDBC w RA).
                           Stack smoke (dev-stack.sh)
 ```
 
-Wave B (stos, TLS, TC): [09-wave-b-stack-tls-catalog.md](09-wave-b-stack-tls-catalog.md). RA-032/033 są **existing-ra**, nie designed.
+Wave B (stos, TLS, TC): [09](09-wave-b-stack-tls-catalog.md). Wave 3 UC/TC: [wave-3-compose-tls-pom](../wave-3-compose-tls-pom/). RA-032/033 są **existing-ra**.
 
 **Zasada:** Playwright nie łączy się z Postgres. SQL oracle = `RlsLabRestAssuredTest` JDBC. UI oracle = widoczność wiersza + URL. API oracle = `BffClient` na `:3000`.
 

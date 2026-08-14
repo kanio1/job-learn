@@ -12,7 +12,7 @@ export default defineNuxtConfig({
     '/admin/**': { ssr: false }
   },
   typescript: {
-    typeCheck: true
+    typeCheck: process.env.NUXT_TYPECHECK !== 'false'
   },
   runtimeConfig: {
     oauth: {
@@ -25,6 +25,7 @@ export default defineNuxtConfig({
     },
     checkoutLabOAuthClientId: process.env.CHECKOUT_LAB_OAUTH_CLIENT_ID || 'checkout-lab-merchant',
     checkoutLabOAuthSecret: process.env.CHECKOUT_LAB_OAUTH_SECRET || 'change-me',
+    keycloakInternalBaseUrl: process.env.KEYCLOAK_INTERNAL_BASE_URL || '',
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:8080',
       keycloakUrl: process.env.NUXT_PUBLIC_KEYCLOAK_URL || 'http://localhost:8081',
@@ -34,6 +35,11 @@ export default defineNuxtConfig({
       mirrorLabEnabled: process.env.NUXT_PUBLIC_MIRROR_LAB_ENABLED !== 'false',
       mirrorLabIdleSeconds: Number(process.env.NUXT_PUBLIC_MIRROR_LAB_IDLE_SECONDS || 120),
       rlsLabEnabled: process.env.NUXT_PUBLIC_RLS_LAB_ENABLED !== 'false',
-    }
+    },
+    session: {
+      cookie: {
+        secure: process.env.NUXT_SESSION_COOKIE_SECURE === 'true',
+      },
+    },
   }
 })

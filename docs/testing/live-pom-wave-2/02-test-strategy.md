@@ -20,7 +20,7 @@ Wave 2 uczy **czterech oracles**: UI, HTTP (BFF `:3000`), cookie/storage, **nie*
 ## 2. Piramida
 
 ```text
-        PW-E2E live POM (guest, logout, CASH, decline, IDOR, palette ARIA)
+        PW-E2E live POM HTTP + TLS (`--tls` / `--full`, Wave 3)
            PW request BFF (409, GET persist, listNotes, dual storageState)
               REST Assured / IT (kontrakt Spring, flagi) — istniejące, nie Wave 2
                  Unit Vue / Zod — poza tą mapą

@@ -42,13 +42,14 @@ Pokrycie: `existing-*` | `designed` | `docs-only`.
 
 | Wymaganie | ID | Pokrycie |
 |---|---|---|
-| FR-TLS-LAB | E2E-050/051, STK-004/006/007, RA-030–033, UC-054, SEC-005 | existing-setup + existing-pom TLS + existing-ra |
-| REST-SSL-PROXY-01 cz. 1 | RA-030, RA-031 | existing-ra (031 = Caddy-shaped headers w Spring) |
+| FR-TLS-LAB | E2E-050–056, STK-004/006/007/010, RA-030–034, UC-054, SEC-001/005 | existing-setup + existing-pom TLS (`--tls` / `--full`) + existing-ra |
+| REST-SSL-PROXY-01 cz. 1 | RA-030, RA-031 | existing-ra (Surefire Caddy-shaped) + existing-setup live Caddy |
 | Stack HTTP + seed | STK-001/002 | existing-setup |
 | FE flag-off | E2E-006 | existing-pw |
-| Cert trust vs insecure | STK-007, EG-055 | existing-setup + POM TLS config |
+| FE on + Spring RLS off | E2E-060 | existing-pom skip (`PLAYWRIGHT_RLS_SPRING_OFF=1`) |
+| Cert trust vs insecure | STK-007, EG-055 | existing-setup cert oracle; POM `PLAYWRIGHT_TLS_INSECURE` ≠ CA |
 | FR-QUERY | EG-043, EG-054 | docs-only (CPL GET-body) |
 | FR-SF7-VER | — | docs-only |
 | FR-RETRY | — | docs-only |
 
-Pełna mapa warstw Wave B: [09-wave-b-stack-tls-catalog.md](09-wave-b-stack-tls-catalog.md).
+Pełna mapa warstw Wave B: [09-wave-b-stack-tls-catalog.md](09-wave-b-stack-tls-catalog.md). Wave 3 UC/TC: [wave-3-compose-tls-pom](../wave-3-compose-tls-pom/).

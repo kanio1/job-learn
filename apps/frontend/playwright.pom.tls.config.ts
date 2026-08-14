@@ -32,6 +32,7 @@ function applyMkcertCaForNode(): void {
 applyMkcertCaForNode()
 
 const tlsInsecure = process.env.PLAYWRIGHT_TLS_INSECURE === '1'
+const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === '1'
 
 /**
  * Live POM against the TLS overlay (Caddy + mkcert).
@@ -67,6 +68,17 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
+  ...(skipWebServer
+    ? {}
+    : {
+        webServer: {
+          command: 'NUXT_TYPECHECK=false corepack pnpm dev --host 0.0.0.0 --port 3000',
+          url: process.env.PLAYWRIGHT_BASE_URL || 'https://app.payment-quality.local:8443',
+          reuseExistingServer: true,
+          ignoreHTTPSErrors: tlsInsecure,
+          timeout: 120_000,
+        },
+      }),
   projects: [
     {
       name: 'setup-platform-admin',
@@ -97,11 +109,4 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    // Fallback only. Prefer scripts/dev-stack.sh --tls (already bound 0.0.0.0 for Caddy).
-    command: 'corepack pnpm dev --host 0.0.0.0 --port 3000',
-    url: 'http://127.0.0.1:3000',
-    reuseExistingServer: true,
-    timeout: 120_000,
-  },
 })

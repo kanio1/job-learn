@@ -30,17 +30,20 @@ Warstwa: Nuxt `:3000` z ciasteczkiem sesji. **Nie** nowy suite REST Assured. Czy
 
 | | |
 |---|---|
-| Pokrycie | designed (obserwowane: `MissingTenantReferenceException`) |
+| Pokrycie | existing-pom `admin-bff.spec.ts` (obserwowane: `MissingTenantReferenceException`) |
 | Prio | P0 |
+| Method / path | `POST /api/merchants` body bez `tenantReference` (JSON `null`) |
 | Status | 400 problem+json |
-| Uczy | Wyjaśnia, czemu Wave 2 nie robi UI POST jako admin. |
+| Uczy | Wyjaśnia, czemu Wave 2 nie robi UI POST jako admin (GAP-W2-01). |
 
 ### PW-W2-API-004 — GET nieistniejący merchant 404
 
 | | |
 |---|---|
-| Pokrycie | designed PW / `existing-ra` list/get |
+| Pokrycie | existing-pom `admin-bff.spec.ts` · `GET unknown merchant is 404` |
 | Prio | P1 |
+| Method / path | `GET /api/merchants/00000000-0000-0000-0000-000000000000` |
+| Status | 404 |
 
 ---
 
@@ -58,8 +61,9 @@ Warstwa: Nuxt `:3000` z ciasteczkiem sesji. **Nie** nowy suite REST Assured. Czy
 
 | | |
 |---|---|
-| Pokrycie | designed (omijane: `internal-notes` używa `BffClient` managera; E2E-100 pokazuje deny Beta, nie create 403) |
+| Pokrycie | existing-pom `admin-bff.spec.ts` · `platform admin POST payment-order is 403` |
 | Prio | P1 |
+| Status | 403 (brak `merchant:payments:create`) |
 
 ### PW-W2-API-012 — POST notes 201 i GET list zawiera body
 
@@ -80,14 +84,14 @@ Warstwa: Nuxt `:3000` z ciasteczkiem sesji. **Nie** nowy suite REST Assured. Czy
 
 ## C. Error Lab (żywy backend)
 
-Nie wołać `trigger-429` (BFF mock).
+Nie wołać `trigger-429` (BFF mock). Oracle HTTP = `page.request.fetch` oprócz canary 401 (UI click). 400/409/412/428/304 = `chromium-manager`.
 
-### PW-W2-API-020 — GET/POST trigger-400 → 400 problem+json
+### PW-W2-API-020 — POST trigger-400 → 400 problem+json
 
 | | |
 |---|---|
-| Pokrycie | existing-pom `waitForResponse` `/api/error-lab/trigger-400` |
-| Asercje | status 400; `expectNoAuthorizationInNetworkResponse` |
+| Pokrycie | existing-pom `error-lab-manager.spec.ts` (`page.request`) |
+| Asercje | status **400**; `application/problem+json`; `status` w JSON; `expectNoAuthorizationInNetworkResponse` |
 
 ### PW-W2-API-021 — trigger-401 → 401
 
@@ -101,12 +105,13 @@ Nie wołać `trigger-429` (BFF mock).
 |---|---|
 | Pokrycie | existing-pom W2-12 |
 
-### PW-W2-API-023 — trigger 403 / 404 / 428
+### PW-W2-API-023 — trigger 403 / 404 / 406 / 409 / 415 / 428 / 304
 
 | | |
 |---|---|
-| Pokrycie | designed |
+| Pokrycie | existing-pom `error-lab.spec.ts` (403/404/406/415) + `error-lab-manager.spec.ts` (409/428/304) |
 | Prio | P1 |
+| Warstwa | `page.request` + cookies storageState; canary 401 = UI click |
 
 ---
 
@@ -128,7 +133,7 @@ Wzorzec już w `payments-*.spec.ts` (manager). Wave 2 nie dodaje nowych asercji 
 |---|---|
 | Pokrycie | existing-pom `payments-lifecycle.spec.ts` · E2E-092/093; Error Lab E2E-082 |
 | Prio | P0 |
-| HTTP | GET ETag → POST authorize/capture; stale `"stale-etag"` → 412, status CREATED |
+| HTTP | GET ETag → POST authorize/capture; stale `"v99"` → 412, status CREATED |
 
 ### PW-W2-API-032 — Replay ten sam klucz → 200; mismatch 409
 

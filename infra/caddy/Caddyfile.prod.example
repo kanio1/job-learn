@@ -1,0 +1,59 @@
+# Production Caddyfile (public DNS). Not used by local compose.
+#
+# Caddy Automatic HTTPS (Let's Encrypt / ZeroSSL) requires a hostname that
+# qualifies for publicly-trusted certificates: not `.local`, `.localhost`,
+# `.internal`, or an IP. A/AAAA must point at this host; ports 80 and 443
+# must be reachable. See https://caddyserver.com/docs/automatic-https
+#
+# Usage sketch (replace hostnames and email):
+#   docker compose ... -f compose.yml -f compose.app.yml up -d
+#   mount this file as /etc/caddy/Caddyfile and persist /data for certs.
+#
+# Do not copy mkcert files into production. Leave `tls` unset so Caddy
+# manages certificates. Set CADDY_ACME_EMAIL.
+
+{
+	email {$CADDY_ACME_EMAIL}
+	admin off
+}
+
+import snippets/security.caddy
+
+(hsts_prod) {
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+}
+
+app.example.com {
+	import security_headers
+	import app_frame_deny
+	import hsts_prod
+	import compression
+	import body_limit
+	log
+	handle /__oidc* {
+		respond 404
+	}
+	handle {
+		reverse_proxy payment-quality-frontend:3000
+	}
+}
+
+api.example.com {
+	import security_headers
+	import app_frame_deny
+	import hsts_prod
+	import compression
+	import body_limit
+	log
+	reverse_proxy payment-quality-backend:8080
+}
+
+auth.example.com {
+	import security_headers
+	import auth_frame
+	import hsts_prod
+	import compression
+	import body_limit
+	log
+	reverse_proxy payment-quality-keycloak:8080
+}

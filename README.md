@@ -78,6 +78,8 @@ Validated on 2026-05-18 before dependency scaffolding:
 
 ## Local Environment
 
+Day-to-day Podman stack, Playwright POM, and Caddy/HTTPS: [docs/setup/run-stack-and-pom.md](docs/setup/run-stack-and-pom.md).
+
 The concrete local service environment example is `infra/compose/.env.example`.
 
 Application-level non-secret variables:

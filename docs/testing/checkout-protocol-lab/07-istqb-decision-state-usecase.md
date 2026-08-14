@@ -199,8 +199,8 @@ TC: PW-E2E-060–062; live POM ładuje inspector po approve (E2E-060).
 
 ### UC-08 Unauth vs public — P0
 
-Dashboard bez sesji → login (`session-guest` merchants/session-lab). Deep-link `/admin/checkout-lab`: designed. Hosted/return bez sesji → 200 UI.  
-TC: PW-E2E-007 partial; 020, 045.
+Dashboard bez sesji → login (`session-guest` merchants/session-lab **oraz** `/admin/checkout-lab` E2E-003). Hosted/return bez sesji → 200 UI.  
+TC: PW-E2E-007 existing-pom; 020, 045.
 
 ### UC-09 Reconcile mismatch — P1
 

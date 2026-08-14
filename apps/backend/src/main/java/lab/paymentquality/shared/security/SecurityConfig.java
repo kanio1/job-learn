@@ -121,6 +121,14 @@ public class SecurityConfig {
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                        .authenticationEntryPoint((request, response, authException) ->
+                                ProblemSecurityResponses.unauthorized(response))
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) ->
+                                ProblemSecurityResponses.unauthorized(response))
+                        .accessDeniedHandler((request, response, denied) ->
+                                ProblemSecurityResponses.forbidden(response))
                 );
         return http.build();
     }

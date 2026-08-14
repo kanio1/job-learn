@@ -76,7 +76,7 @@ Unknown scenario: PW-API-029 P1.
 | CORS Lab-Signature | PW-API-450 | existing-ra | — |
 | CORS Lab-Simulate-Token | PW-API-451 | designed | P1 |
 | Public hosted/return | PW-E2E-020, 045 | 020 existing | P1 045 |
-| Unauth dashboard | PW-E2E-007 | designed | P0 |
+| Unauth dashboard | PW-E2E-007 | existing-pom Wave 3 E2E-003 | P0 |
 
 ---
 

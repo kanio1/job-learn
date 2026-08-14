@@ -32,8 +32,8 @@ Wave 2 nie dodaje domeny płatniczej. Dodaje **sposób testowania** żywego dash
 | FR-W2-11 | CASH booking → CONFIRMED, bez hosted | Done (`chooseMode('CASH')`) |
 | FR-W2-12 | Hosted Decline → fulfillment `CANCELLED` | Done (oracle fulfillment, nie query-only) |
 | FR-W2-13 | Manager: brak nav Support; deep-link Beta → problem, brak tabeli | Done |
-| FR-W2-14 | Error Lab 400 / 401 / 412 z żywego backendu | Done (429 = BFF mock, **poza** suite) |
-| FR-W2-15 | Admin JWT **nie** tworzy payment order | Done (precondition notes = `BffClient` managera) |
+| FR-W2-14 | Error Lab 400 / 401 / 412 **oraz** 403/404/406/409/415/428/304 z żywego BFF | Done (admin vs manager; canary UI 401; 429 = BFF mock, **poza** suite) |
+| FR-W2-15 | Admin JWT **nie** tworzy payment order | Done (`admin-bff.spec.ts` 403) |
 | FR-W2-16 | Payment create + Idempotency-Key + replay 200/409 | Done (`payments-create.spec.ts`) |
 | FR-W2-17 | Authorize/capture If-Match; stale 412 zostaje CREATED | Done |
 | FR-W2-18 | Cancel ConfirmModal submit vs dismiss | Done |
@@ -58,4 +58,6 @@ Wave 2 nie dodaje domeny płatniczej. Dodaje **sposób testowania** żywego dash
 4. Risk jako atrybut merchantu (nie seed Alpha).
 5. Checkout: CASH vs ONLINE vs Decline vs lie-return (oracle fulfillment).
 6. Support IDOR: ukryty nav **i** deep-link.
-7. Problem+json z Error Lab (kontrakt UI, nie mock 429).
+7. Problem+json z Error Lab (kontrakt BFF; canary UI 401; nie mock 429).
+8. Gość: Users / payments / Error Lab / Checkout Lab → `redirectTo`; guest API 401; login wraca na Users.
+9. Admin Support Beta vs manager IDOR; manager bez formularza notatek.

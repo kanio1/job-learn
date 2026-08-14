@@ -1,0 +1,75 @@
+# Full HTTP stack: Spring + Nuxt containers, no Caddy.
+# Usage: scripts/dev-stack.sh --app
+#   docker compose --env-file infra/compose/.env \
+#     -f infra/compose/compose.yml -f infra/compose/compose.app.http.yml up -d
+#
+# Browser origin: http://127.0.0.1:3000
+# Keycloak issuer: http://localhost:8081 (compose.yml KC_HOSTNAME)
+# JWT JWKS: compose-network HTTP (Spring does not hairpin localhost:8081 from the container)
+
+services:
+  payment-quality-backend:
+    build:
+      context: ../../apps/backend
+    image: localhost/payment-quality-backend:dev
+    container_name: payment-quality-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: dev,seed
+      DB_URL: jdbc:postgresql://payment-quality-postgres:5432/${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:${KEYCLOAK_PORT:-8081}/realms/payment-quality
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://payment-quality-keycloak:8080/realms/payment-quality/protocol/openid-connect/certs
+      KEYCLOAK_ADMIN_BASE_URL: http://payment-quality-keycloak:8080
+      PAYMENT_QUALITY_KEYCLOAK_ADMIN_CLIENT_SECRET: ${PAYMENT_QUALITY_KEYCLOAK_ADMIN_CLIENT_SECRET}
+      CHECKOUT_LAB_OAUTH_SECRET: ${CHECKOUT_LAB_OAUTH_SECRET:-change-me}
+      CHECKOUT_LAB_HMAC_SECRET: ${CHECKOUT_LAB_HMAC_SECRET:-change-me-too}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8080/api/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    depends_on:
+      payment-quality-postgres:
+        condition: service_healthy
+      payment-quality-keycloak:
+        condition: service_started
+
+  payment-quality-frontend:
+    build:
+      context: ../../apps/frontend
+    image: localhost/payment-quality-frontend:dev
+    container_name: payment-quality-frontend
+    environment:
+      NUXT_PUBLIC_API_BASE_URL: http://payment-quality-backend:8080
+      NUXT_OAUTH_OIDC_OPENID_CONFIG: http://127.0.0.1:3000/__oidc/openid-configuration
+      NUXT_OAUTH_OIDC_REDIRECT_URL: http://127.0.0.1:3000/auth/keycloak
+      NUXT_PUBLIC_KEYCLOAK_URL: http://localhost:${KEYCLOAK_PORT:-8081}
+      KEYCLOAK_INTERNAL_BASE_URL: http://payment-quality-keycloak:8080
+      NUXT_KEYCLOAK_INTERNAL_BASE_URL: http://payment-quality-keycloak:8080
+      NUXT_SESSION_COOKIE_SECURE: "false"
+      NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD}
+      HOST: 0.0.0.0
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then((r)=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    depends_on:
+      payment-quality-backend:
+        condition: service_healthy
+      payment-quality-keycloak:
+        condition: service_started

@@ -8,6 +8,8 @@
  * Requires: BE-MVP-001 (If-None-Match support) and BFF-MVP-002 (forward If-None-Match).
  * Requirements: 6.1, Error Lab MVP
  */
+import { labUnavailableBody, merchantIdForLabTrigger } from '../../utils/errorLabBackend'
+
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const backendUrl = (config.public.apiBaseUrl as string) || 'http://localhost:8080'
@@ -25,15 +27,17 @@ export default defineEventHandler(async (event) => {
 
   async function callBackend(
     path: string,
-    opts: { method?: string; headers?: Record<string, string> }
-  ): Promise<{ status: number; headers: Headers; data: unknown }> {
+    opts: { method?: string, headers?: Record<string, string>, body?: unknown } = {},
+  ): Promise<{ status: number, headers: Headers, data: unknown }> {
     try {
       const res = await $fetch.raw(`${backendUrl}${path}`, {
-        method: (opts.method ?? 'GET') as any,
+        method: (opts.method ?? 'GET') as 'GET' | 'POST',
         headers: opts.headers,
+        body: opts.body as Record<string, unknown> | undefined,
       })
       return { status: res.status, headers: res.headers, data: res._data }
-    } catch (err: any) {
+    }
+    catch (err: any) {
       return {
         status: err?.response?.status ?? err?.statusCode ?? 503,
         headers: err?.response?.headers ?? new Headers(),
@@ -42,40 +46,26 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Step 1: Find a merchant with payment orders
-  let merchantId: string | null = null
-  let paymentOrderId: string | null = null
-
   const merchantsResult = await callBackend('/api/merchants', { headers: authHeaders() })
-  if (merchantsResult.status === 200 && merchantsResult.data) {
-    const data = merchantsResult.data as any
-    const merchants: any[] = Array.isArray(data) ? data : (data?.content ?? data?.merchants ?? [])
-    const active = merchants.find((m: any) => m.status === 'ACTIVE') ?? merchants[0]
-    merchantId = active?.id ?? active?.merchantId ?? null
+  const merchantId = merchantIdForLabTrigger(merchantsResult.data)
+
+  let paymentOrderId: string | null = null
+  const ordersResult = await callBackend(`/api/merchants/${merchantId}/payment-orders`, {
+    headers: authHeaders(),
+  })
+  if (ordersResult.status === 200 && ordersResult.data) {
+    const data = ordersResult.data as { content?: unknown[], orders?: unknown[] }
+    const orders: unknown[] = Array.isArray(ordersResult.data)
+      ? ordersResult.data
+      : (data.content ?? data.orders ?? [])
+    const first = orders[0] as { id?: string, paymentOrderId?: string } | undefined
+    paymentOrderId = first?.id ?? first?.paymentOrderId ?? null
   }
 
-  if (merchantId) {
-    const ordersResult = await callBackend(`/api/merchants/${merchantId}/payment-orders`, {
-      headers: authHeaders(),
-    })
-    if (ordersResult.status === 200 && ordersResult.data) {
-      const data = ordersResult.data as any
-      const orders: any[] = Array.isArray(data) ? data : (data?.content ?? data?.orders ?? [])
-      const first = orders[0]
-      paymentOrderId = first?.id ?? first?.paymentOrderId ?? null
-    }
-  }
-
-  if (!merchantId || !paymentOrderId) {
+  if (!paymentOrderId) {
     setResponseStatus(event, 503)
     setHeader(event, 'Content-Type', 'application/problem+json')
-    return {
-      type: 'https://api.payment-quality.local/problems/lab-unavailable',
-      title: 'No payment orders found',
-      status: 503,
-      detail: 'The 304 trigger requires at least one payment order. Seed data may be missing.',
-      error: 'lab_unavailable',
-    }
+    return labUnavailableBody('No payment order is available for the 304 trigger; seed Alpha first.')
   }
 
   // Step 2: GET to capture ETag

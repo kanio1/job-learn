@@ -69,7 +69,7 @@ test('stale If-Match on authorize shows 412 problem+json in the drawer', async (
   await app.paymentDetail.gotoOrder(merchantAlphaId, paymentOrderId)
   await app.paymentDetail.expectLoaded()
   await app.paymentDetail.openLifecycle('authorize')
-  await app.paymentDetail.fillIfMatch('"stale-etag"')
+  await app.paymentDetail.fillIfMatch('"v99"')
 
   const authorizeResponse = page.waitForResponse(response =>
     response.request().method() === 'POST'
@@ -85,7 +85,7 @@ test('stale If-Match on authorize shows 412 problem+json in the drawer', async (
   const apiStale = await api.authorizePayment(
     merchantAlphaId,
     paymentOrderId,
-    '"stale-etag"',
+    '"v99"',
     uniqueIdempotencyKey(testInfo, 'API412'),
   )
   expect(apiStale.status).toBe(412)
@@ -104,6 +104,20 @@ test('cancel from CREATED uses ConfirmModal', async ({ app, api }, testInfo) => 
   await app.paymentDetail.expectLoaded()
   await app.paymentDetail.cancel()
   await expect(app.paymentDetail.statusInDetail('Cancelled')).toBeVisible()
+})
+
+test('merchant manager does not see the internal notes form', async ({ app, api }, testInfo) => {
+  const reference = uniqueOrderReference(testInfo, 'NONOTE')
+  const created = await api.createPaymentOrder(
+    merchantAlphaId,
+    { amountMinor: 700, currency: 'PLN', clientOrderReference: reference },
+    uniqueIdempotencyKey(testInfo, 'NONOTE'),
+  )
+  expect(created.status).toBe(201)
+
+  await app.paymentDetail.gotoOrder(merchantAlphaId, created.body.paymentOrderId!)
+  await app.paymentDetail.expectLoaded()
+  await expect(app.page.getByTestId('payment-note-body')).toHaveCount(0)
 })
 
 test('list filters by date, status, and client reference in the query string', async ({ app, api }, testInfo) => {

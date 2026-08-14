@@ -1,43 +1,46 @@
 /**
- * Error Lab — 403 Forbidden trigger.
- *
- * Calls the merchants endpoint with an intentionally invalid/fake token.
- * The backend validates the token and returns 403 because the token lacks
- * the required authority (or is rejected by the security layer).
- *
- * Security: uses a fabricated placeholder token — the real user token is NOT used.
- * Requirements: 6.1, 6.5
+ * Error Lab — 403 Forbidden.
+ * Uses the real session token and an operation the caller is not allowed to perform
+ * (create payment order). Invalid JWT is 401, not 403.
+ * Fail-closed: 2xx on create means this actor can create → 503 lab_unavailable.
  */
+import { forwardLabBackendError, labUnavailableBody } from '../../utils/errorLabBackend'
+
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const backendUrl = (config.public.apiBaseUrl as string) || 'http://localhost:8080'
+  const session = await getUserSession(event)
+  const accessToken = session?.secure?.accessToken as string | undefined
+  const merchantId = '00000000-0000-0000-0000-0000000000b1'
 
-  // Intentionally invalid token to provoke 403 from the security layer
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'Authorization': 'Bearer error-lab-invalid-token-triggers-403',
+    'Idempotency-Key': `error-lab-403-${Date.now()}`,
+  }
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`
   }
 
   try {
-    const response = await $fetch.raw(`${backendUrl}/api/merchants`, {
-      method: 'GET',
-      headers,
-    })
-    for (const name of ['ETag', 'Cache-Control', 'Vary', 'X-Correlation-ID', 'Content-Type']) {
-      const val = response.headers.get(name)
-      if (val) setHeader(event, name, val)
-    }
-    return response._data
-  } catch (error: any) {
-    const statusCode: number = error?.response?.status ?? error?.statusCode ?? 503
-    const errorData = error?.response?._data ?? error?.data
-    if (error?.response?.headers) {
-      for (const name of ['ETag', 'Cache-Control', 'Vary', 'X-Correlation-ID', 'Content-Type']) {
-        const val = error.response.headers.get(name)
-        if (val) setHeader(event, name, val)
-      }
-    }
-    setResponseStatus(event, statusCode)
-    return errorData
+    await $fetch.raw(
+      `${backendUrl}/api/merchants/${merchantId}/payment-orders`,
+      {
+        method: 'POST',
+        headers,
+        body: {
+          amountMinor: 500,
+          currency: 'PLN',
+          clientOrderReference: `error-lab-403-${Date.now()}`,
+        },
+      },
+    )
+    setResponseStatus(event, 503)
+    setHeader(event, 'Content-Type', 'application/problem+json')
+    return labUnavailableBody(
+      'This session can create payment orders; 403 requires an actor without merchant:payments:create.',
+    )
+  }
+  catch (error: any) {
+    return forwardLabBackendError(event, error)
   }
 })

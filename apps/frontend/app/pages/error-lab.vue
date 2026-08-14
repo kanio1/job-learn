@@ -198,7 +198,6 @@ definePageMeta({ layout: 'dashboard' })
 const checkoutLabEnabled = computed(() => useRuntimeConfig().public.checkoutLabEnabled === true)
 const mirrorLabEnabled = computed(() => useRuntimeConfig().public.mirrorLabEnabled === true)
 
-import { z } from 'zod'
 import type { ProblemDetails } from '~/types/api'
 import { problemDetailsSchema } from '~/schemas/problem-details.schema'
 
@@ -252,7 +251,7 @@ const scenarios: ScenarioConfig[] = [
     proxyMethod: 'POST',
     requestLabel: {
       method: 'POST',
-      path: '/api/merchants/error-lab-merchant/payment-orders',
+      path: '/api/merchants/{session-merchant}/payment-orders',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ••••••••',
@@ -281,12 +280,12 @@ const scenarios: ScenarioConfig[] = [
     status: 403,
     title: 'Forbidden',
     description:
-      'Submit a request with an invalid/insufficient token. The backend returns 403 — the token is present but lacks the required authority.',
+      'Create a payment order with the real session token. Platform admin lacks merchant:payments:create, so Spring returns 403 (not a fake JWT — that is 401).',
     proxyPath: '/api/error-lab/trigger-403',
     proxyMethod: 'GET',
     requestLabel: {
-      method: 'GET',
-      path: '/api/merchants',
+      method: 'POST',
+      path: '/api/merchants/{alpha}/payment-orders',
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ••••••••',
@@ -362,7 +361,7 @@ const scenarios: ScenarioConfig[] = [
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ••••••••',
-        'If-Match': '"stale-etag-version-0"',
+        'If-Match': '"v99"',
         'Idempotency-Key': '(generated)',
       },
     },
@@ -451,8 +450,22 @@ const scenarios: ScenarioConfig[] = [
 ]
 
 // ----- Transport -----
+// Native fetch so Playwright waitForResponse sees the call (typed $fetch can hang
+// on generated route types) and 4xx still return a body.
 
-const { request } = useApiClient()
+const HEADER_MAP: Array<[string, string]> = [
+  ['etag', 'ETag'],
+  ['cache-control', 'Cache-Control'],
+  ['vary', 'Vary'],
+  ['x-correlation-id', 'X-Correlation-ID'],
+  ['location', 'Location'],
+  ['allow', 'Allow'],
+  ['accept-patch', 'Accept-Patch'],
+  ['retry-after', 'Retry-After'],
+  ['www-authenticate', 'WWW-Authenticate'],
+  ['idempotency-replayed', 'Idempotency-Replayed'],
+  ['last-modified', 'Last-Modified'],
+]
 
 async function triggerScenario(scenario: ScenarioConfig) {
   const state = scenario.state
@@ -461,42 +474,34 @@ async function triggerScenario(scenario: ScenarioConfig) {
   state.errorMessage.value = null
 
   try {
-    const response = await request(
-      scenario.proxyPath,
-      z.unknown(),
-      {
-        method: scenario.proxyMethod,
-      }
-    )
-
-    // Build response headers record from the ApiHeaders shape
+    const res = await fetch(scenario.proxyPath, {
+      method: scenario.proxyMethod,
+      credentials: 'same-origin',
+    })
+    const raw = await res.text()
     const responseHeaders: Record<string, string> = {}
-    const h = response.headers
-    if (h.etag) responseHeaders['ETag'] = h.etag
-    if (h.cacheControl) responseHeaders['Cache-Control'] = h.cacheControl
-    if (h.vary) responseHeaders['Vary'] = h.vary
-    if (h.correlationId) responseHeaders['X-Correlation-ID'] = h.correlationId
-    if (h.location) responseHeaders['Location'] = h.location
-    if (h.allow) responseHeaders['Allow'] = h.allow
-    if (h.acceptPatch) responseHeaders['Accept-Patch'] = h.acceptPatch
-    if (h.retryAfter) responseHeaders['Retry-After'] = h.retryAfter
-    if (h.wwwAuthenticate) responseHeaders['WWW-Authenticate'] = h.wwwAuthenticate
-    if (h.idempotencyReplayed) responseHeaders['Idempotency-Replayed'] = h.idempotencyReplayed
-    if (h.lastModified) responseHeaders['Last-Modified'] = h.lastModified
+    for (const [from, to] of HEADER_MAP) {
+      const val = res.headers.get(from)
+      if (val) {
+        responseHeaders[to] = val
+      }
+    }
 
-    // Parse problem details from raw body if not already populated
-    let problem = response.problem
-    if (!problem && response.raw) {
+    let problem: ProblemDetails | null = null
+    if (raw) {
       try {
-        const parsed = problemDetailsSchema.safeParse(JSON.parse(response.raw))
-        if (parsed.success) problem = parsed.data
-      } catch {
-        // raw body is not JSON — ignore
+        const parsed = problemDetailsSchema.safeParse(JSON.parse(raw))
+        if (parsed.success) {
+          problem = parsed.data
+        }
+      }
+      catch {
+        // raw body is not JSON
       }
     }
 
     state.result.value = {
-      status: response.status,
+      status: res.status,
       responseHeaders,
       problem,
       requestInfo: {
@@ -505,17 +510,17 @@ async function triggerScenario(scenario: ScenarioConfig) {
         headers: scenario.requestLabel.headers,
       },
       responseInfo: {
-        status: response.status,
+        status: res.status,
         headers: responseHeaders,
-        body: response.raw,
+        body: raw,
       },
     }
-  } catch (err: unknown) {
-    // useApiClient catches errors internally and returns them as ApiResponse,
-    // so this branch only fires on truly unexpected failures (e.g. network error)
+  }
+  catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'An unexpected error occurred'
     state.errorMessage.value = message
-  } finally {
+  }
+  finally {
     state.isLoading.value = false
   }
 }

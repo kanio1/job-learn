@@ -76,7 +76,7 @@ Legenda kolumn TC: Priorytet P0–P2; Auth = Keycloak mock / public / none.
 
 | | |
 |---|---|
-| Pokrycie | existing-pom analog `session-guest.spec.ts` (merchants + session-lab). Deep-link `/admin/checkout-lab` bez sesji: **designed** |
+| Pokrycie | existing-pom `session-guest.spec.ts` (E2E-003: `/admin/checkout-lab` + merchants/session-lab) |
 | Asercje | URL `/login`; **nie** hub |
 | Uwaga | storageState chromium ma platform-operator — użyj `browser.newContext()` bez stanu + bez mocka |
 

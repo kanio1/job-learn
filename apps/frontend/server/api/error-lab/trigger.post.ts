@@ -214,7 +214,7 @@ export default defineEventHandler(async (event) => {
         {
           method: 'POST',
           headers: authHeaders({
-            'If-Match': '"stale-etag-0"',
+            'If-Match': '"v99"',
             'Idempotency-Key': `error-lab-412-${Date.now()}`,
           }),
           body: {},

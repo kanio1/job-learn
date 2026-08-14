@@ -1,23 +1,15 @@
 /**
- * Error Lab — 409 Conflict (Idempotency) trigger.
- *
- * Sends the same Idempotency-Key twice with different payloads.
- * The backend detects the key/payload mismatch and returns 409.
- *
- * Strategy: first call uses a fresh key with payload A; second call (which is
- * what the browser receives) uses the same key with payload B → 409 conflict.
- *
- * Requirements: 6.1, 6.5
+ * Error Lab — 409 Conflict (Idempotency).
+ * Same Idempotency-Key, different bodies, against a merchant from the session list.
  */
-
-// Module-level store so the same key is reused across calls to this route handler.
-// The key is refreshed each time the first call succeeds (or errors non-409).
 let storedIdempotencyKey: string | null = null
+let storedMerchantId: string | null = null
+
+import { labUnavailableBody, merchantIdForLabTrigger } from '../../utils/errorLabBackend'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const backendUrl = (config.public.apiBaseUrl as string) || 'http://localhost:8080'
-
   const session = await getUserSession(event)
   const accessToken = session?.secure?.accessToken as string | undefined
 
@@ -31,16 +23,17 @@ export default defineEventHandler(async (event) => {
 
   async function callBackend(
     path: string,
-    opts: { method?: string; headers?: Record<string, string>; body?: unknown }
-  ): Promise<{ status: number; headers: Headers; data: unknown }> {
+    opts: { method?: string, headers?: Record<string, string>, body?: unknown },
+  ): Promise<{ status: number, headers: Headers, data: unknown }> {
     try {
       const res = await $fetch.raw(`${backendUrl}${path}`, {
-        method: (opts.method ?? 'POST') as any,
+        method: (opts.method ?? 'POST') as 'GET' | 'POST',
         headers: opts.headers,
-        body: opts.body as any,
+        body: opts.body as Record<string, unknown>,
       })
       return { status: res.status, headers: res.headers, data: res._data }
-    } catch (err: any) {
+    }
+    catch (err: any) {
       return {
         status: err?.response?.status ?? err?.statusCode ?? 503,
         headers: err?.response?.headers ?? new Headers(),
@@ -49,45 +42,53 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const merchantId = 'error-lab-merchant-409'
+  const merchantsResult = await callBackend('/api/merchants', {
+    method: 'GET',
+    headers: authHeaders(),
+  })
+  const merchantId = merchantIdForLabTrigger(merchantsResult.data)
 
-  // If we don't have a stored key, generate one and make the FIRST call (payload A)
-  if (!storedIdempotencyKey) {
+  if (!storedIdempotencyKey || storedMerchantId !== merchantId) {
     const newKey = `error-lab-409-${Date.now()}`
-    await callBackend(`/api/merchants/${merchantId}/payment-orders`, {
+    const first = await callBackend(`/api/merchants/${merchantId}/payment-orders`, {
       method: 'POST',
       headers: authHeaders({ 'Idempotency-Key': newKey }),
       body: {
         amountMinor: 1000,
         currency: 'PLN',
-        clientOrderReference: 'error-lab-conflict-a',
+        clientOrderReference: `error-lab-conflict-a-${Date.now()}`,
       },
     })
+    if (first.status !== 201 && first.status !== 200) {
+      setResponseStatus(event, 503)
+      setHeader(event, 'Content-Type', 'application/problem+json')
+      return labUnavailableBody('First idempotent create failed for the 409 trigger.')
+    }
     storedIdempotencyKey = newKey
+    storedMerchantId = merchantId
   }
 
-  // Second call: same Idempotency-Key but different payload → 409
   const result = await callBackend(`/api/merchants/${merchantId}/payment-orders`, {
     method: 'POST',
     headers: authHeaders({ 'Idempotency-Key': storedIdempotencyKey }),
     body: {
       amountMinor: 2000,
       currency: 'EUR',
-      clientOrderReference: 'error-lab-conflict-b',
+      clientOrderReference: `error-lab-conflict-b-${Date.now()}`,
     },
   })
 
-  // If we got 409, clear the stored key so next trigger generates a new pair
   if (result.status === 409) {
     storedIdempotencyKey = null
+    storedMerchantId = null
   }
 
-  // Forward headers (excluding Authorization)
   for (const name of ['ETag', 'Cache-Control', 'Vary', 'X-Correlation-ID', 'Content-Type']) {
     const val = result.headers.get(name)
-    if (val) setHeader(event, name, val)
+    if (val) {
+      setHeader(event, name, val)
+    }
   }
-
   setResponseStatus(event, result.status)
   return result.data
 })

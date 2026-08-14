@@ -22,6 +22,7 @@ mkcert -cert-file cert.pem -key-file key.pem \
   auth.payment-quality.local \
   localhost \
   127.0.0.1
+cp "$(mkcert -CAROOT)/rootCA.pem" "$TLS_DIR/rootCA.pem"
 
 cat <<'EOF'
 Wrote infra/tls/cert.pem and infra/tls/key.pem (gitignored).

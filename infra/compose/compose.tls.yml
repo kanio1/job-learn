@@ -11,11 +11,11 @@ services:
       - --import-realm
       - --http-enabled=true
       - --hostname=https://auth.payment-quality.local:${CADDY_HTTPS_PORT:-8443}
-      - --hostname-strict=false
+      - --hostname-backchannel-dynamic=true
       - --proxy-headers=xforwarded
     environment:
       KC_HOSTNAME: https://auth.payment-quality.local:${CADDY_HTTPS_PORT:-8443}
-      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
 
@@ -26,6 +26,7 @@ services:
       - "${CADDY_HTTPS_PORT:-8443}:443"
     volumes:
       - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro,Z
+      - ../caddy/snippets:/etc/caddy/snippets:ro,Z
       - ../tls:/certs:ro,Z
     extra_hosts:
       - "host.docker.internal:host-gateway"

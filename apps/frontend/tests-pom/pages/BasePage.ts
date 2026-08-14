@@ -18,8 +18,8 @@ export abstract class BasePage {
    * instead of $fetch typed routes to avoid generating the overlay in the first place.
    */
   protected async assertNoDevErrorOverlay(): Promise<void> {
-    const overlayCount = await this.page.locator('vite-plugin-checker-error-overlay').count()
-    if (overlayCount > 0) {
+    const overlay = this.page.locator('vite-plugin-checker-error-overlay')
+    if (await overlay.count() > 0) {
       throw new Error(
         'vite-plugin-checker-error-overlay is present. Fix the typecheck error; do not dismiss the overlay from POM.',
       )

@@ -1,0 +1,83 @@
+# Full HTTPS stack: Caddy proxies to Spring + Nuxt containers (not host.docker.internal).
+# Usage: scripts/dev-stack.sh --full
+#   docker compose --env-file infra/compose/.env \
+#     -f infra/compose/compose.yml -f infra/compose/compose.tls.yml -f infra/compose/compose.app.yml up -d
+
+services:
+  payment-quality-backend:
+    build:
+      context: ../../apps/backend
+    image: localhost/payment-quality-backend:dev
+    container_name: payment-quality-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: dev,tls-lab,seed
+      DB_URL: jdbc:postgresql://payment-quality-postgres:5432/${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      TLS_LAB_KEYCLOAK_ISSUER: https://auth.payment-quality.local:${CADDY_HTTPS_PORT:-8443}/realms/payment-quality
+      TLS_LAB_KEYCLOAK_JWKS: http://payment-quality-keycloak:8080/realms/payment-quality/protocol/openid-connect/certs
+      KEYCLOAK_ADMIN_BASE_URL: http://payment-quality-keycloak:8080
+      PAYMENT_QUALITY_KEYCLOAK_ADMIN_CLIENT_SECRET: ${PAYMENT_QUALITY_KEYCLOAK_ADMIN_CLIENT_SECRET}
+      CHECKOUT_LAB_OAUTH_SECRET: ${CHECKOUT_LAB_OAUTH_SECRET:-change-me}
+      CHECKOUT_LAB_HMAC_SECRET: ${CHECKOUT_LAB_HMAC_SECRET:-change-me-too}
+      CHECKOUT_LAB_HOSTED_CHECKOUT_BASE_URL: https://app.payment-quality.local:${CADDY_HTTPS_PORT:-8443}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8080/api/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    depends_on:
+      payment-quality-postgres:
+        condition: service_healthy
+      payment-quality-keycloak:
+        condition: service_started
+
+  payment-quality-frontend:
+    build:
+      context: ../../apps/frontend
+    image: localhost/payment-quality-frontend:dev
+    container_name: payment-quality-frontend
+    environment:
+      NUXT_PUBLIC_API_BASE_URL: http://payment-quality-backend:8080
+      NUXT_OAUTH_OIDC_OPENID_CONFIG: http://127.0.0.1:3000/__oidc/openid-configuration
+      NUXT_OAUTH_OIDC_REDIRECT_URL: https://app.payment-quality.local:${CADDY_HTTPS_PORT:-8443}/auth/keycloak
+      NUXT_PUBLIC_KEYCLOAK_URL: https://auth.payment-quality.local:${CADDY_HTTPS_PORT:-8443}
+      KEYCLOAK_INTERNAL_BASE_URL: http://payment-quality-keycloak:8080
+      NUXT_KEYCLOAK_INTERNAL_BASE_URL: http://payment-quality-keycloak:8080
+      NUXT_SESSION_COOKIE_SECURE: "true"
+      NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD}
+      HOST: 0.0.0.0
+      PORT: "3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then((r)=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    depends_on:
+      payment-quality-backend:
+        condition: service_healthy
+      payment-quality-keycloak:
+        condition: service_started
+
+  payment-quality-caddy:
+    volumes:
+      - ../caddy/Caddyfile.full:/etc/caddy/Caddyfile:ro,Z
+      - ../caddy/snippets:/etc/caddy/snippets:ro,Z
+      - ../tls:/certs:ro,Z
+    depends_on:
+      payment-quality-keycloak:
+        condition: service_started
+      payment-quality-backend:
+        condition: service_healthy
+      payment-quality-frontend:
+        condition: service_healthy

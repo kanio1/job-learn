@@ -1,0 +1,43 @@
+# Prod-like local HTTPS: Caddy → Spring/Nuxt/Keycloak containers.
+# Same CA story as Caddyfile (mkcert). Swap this file for Caddyfile.prod.example
+# on a public DNS name to use Automatic HTTPS / ACME.
+
+import snippets/security.caddy
+
+app.payment-quality.local {
+	tls /certs/cert.pem /certs/key.pem
+	import security_headers
+	import app_frame_deny
+	import hsts_lab
+	import compression
+	import body_limit
+	log
+	handle /__oidc* {
+		respond 404
+	}
+	handle {
+		reverse_proxy payment-quality-frontend:3000
+	}
+}
+
+api.payment-quality.local {
+	tls /certs/cert.pem /certs/key.pem
+	import security_headers
+	import app_frame_deny
+	import hsts_lab
+	import compression
+	import body_limit
+	log
+	reverse_proxy payment-quality-backend:8080
+}
+
+auth.payment-quality.local {
+	tls /certs/cert.pem /certs/key.pem
+	import security_headers
+	import auth_frame
+	import hsts_lab
+	import compression
+	import body_limit
+	log
+	reverse_proxy payment-quality-keycloak:8080
+}

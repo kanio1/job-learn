@@ -17,6 +17,7 @@ Analog: [docs/testing/payu-bank-mirror-labs/](../payu-bank-mirror-labs/), [docs/
 7. DT / ST / UC / pairwise / error guessing → **07**.
 8. FR → TC → **08**.
 9. Wave B stos / TLS / proxy / live POM warstwy → **09**.
+10. Wave 3 compose HTTPS + TLS depth + Live POM P1: [wave-3-compose-tls-pom](../wave-3-compose-tls-pom/) (UC-W3-*, indeks ID).
 
 ## Indeks
 
@@ -36,7 +37,7 @@ Analog: [docs/testing/payu-bank-mirror-labs/](../payu-bank-mirror-labs/), [docs/
 
 ```text
 Learner POM          tests-pom-learner          — poza Wave A
-Live POM TLS         playwright.pom.tls.config.ts — HTTPS :8443, wąski zestaw
+Live POM TLS         playwright.pom.tls.config.ts — HTTPS :8443 hybrid **albo** `--full`
 Live POM             tests-pom, zero fulfill    — Keycloak, filtry, RLS dual role
 Mocked Chromium      tests/e2e + page.route     — paginacja, hub RLS, amount URL
 FE flag-off          playwright.rls-flag-off.config.ts — Nuxt :3010

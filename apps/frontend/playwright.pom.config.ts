@@ -40,7 +40,7 @@ export default defineConfig({
     },
     {
       name: 'chromium-admin',
-      testMatch: /specs\/(merchants|users|audit|tenant-settings|error-lab|checkout-lab|session|session-lab|network-lab|mirror-lab|command-palette|internal-notes|merchant-risk)\.spec\.ts/,
+      testMatch: /specs\/(merchants|users|audit|tenant-settings|error-lab|checkout-lab|session|session-lab|network-lab|mirror-lab|command-palette|internal-notes|merchant-risk|support-admin|admin-bff)\.spec\.ts/,
       dependencies: ['setup-platform-admin'],
       use: {
         ...devices['Desktop Chrome'],
@@ -49,7 +49,7 @@ export default defineConfig({
     },
     {
       name: 'chromium-manager',
-      testMatch: /specs\/(payments-.*|support)\.spec\.ts/,
+      testMatch: /specs\/(payments-.*|support|error-lab-manager)\.spec\.ts/,
       dependencies: ['setup-merchant-manager'],
       use: {
         ...devices['Desktop Chrome'],
@@ -64,7 +64,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'corepack pnpm dev --host 127.0.0.1 --port 3000',
+    command: 'NUXT_TYPECHECK=false corepack pnpm dev --host 127.0.0.1 --port 3000',
     url: 'http://localhost:3000',
     reuseExistingServer: true,
     timeout: 120_000,

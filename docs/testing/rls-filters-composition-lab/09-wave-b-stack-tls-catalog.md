@@ -144,11 +144,11 @@ Canonical TLS lab: `https://app.payment-quality.local:8443` (`CADDY_HTTPS_PORT`,
 | Asercje | `Origin: http://localhost:3000`, `https://app.payment-quality.local:8443`, `https://app.payment-quality.local` → 200 + ACAO; `https://evil.example` → **403** (Spring Security Invalid CORS request, nie 200 bez ACAO) |
 | Uczy | HTTPS **obok** HTTP, nie zamiast (regresja testów HTTP). |
 
-### RA-RFC-034 — Vary / Cache-Control za proxy — **designed**
+### RA-RFC-034 — Vary / Cache-Control za proxy — **existing-setup**
 
 | | |
 |---|---|
-| Pokrycie | designed |
+| Pokrycie | existing-setup `scripts/tls-lab-location-oracle.sh` |
 | Prio | P2 |
 | Asercje | GET payment-order przez Caddy nadal `Vary: Authorization`, `Cache-Control` jak na `:8080` |
 
@@ -202,44 +202,47 @@ Hasła: `PLAYWRIGHT_PLATFORM_ADMIN_PASSWORD`, `PLAYWRIGHT_MERCHANT_MANAGER_PASSW
 | Asercje | create 201; Apply min/max; URL `minAmount`; reference widoczna |
 | Uczy | BFF cookie na origin TLS; APIRequestContext musi rozwiązać hostname (preload DNS / `--host-resolver-rules`). |
 
-### PW-RFC-E2E-052 — lifecycle + If-Match na HTTPS — **designed**
+### PW-RFC-E2E-052 — lifecycle + If-Match na HTTPS — **existing-pom**
 
 | | |
 |---|---|
-| Pokrycie | designed (HTTP: `payments-lifecycle.spec.ts`) |
+| Pokrycie | existing-pom `tls-lab.spec.ts` (HTTP: `payments-lifecycle.spec.ts`) |
 | Prio | P1 |
-| Asercje | authorize 200; stale If-Match 412; status CREATED po 412 |
+| Spec | `tls-lab.spec.ts` · `merchant manager authorizes then captures over the TLS origin` |
+| Kroki | create 201 → drawer authorize z If-Match `"v99"` → 412, GET CREATED → reload → authorize + capture |
+| Asercje | 412 nie 400; potem Authorized / Captured; `https:` |
 
-### PW-RFC-E2E-053 — ConfirmModal dismiss na HTTPS — **designed**
+### PW-RFC-E2E-053 — ConfirmModal dismiss na HTTPS — **existing-pom**
 
 | | |
 |---|---|
-| Pokrycie | designed |
+| Pokrycie | existing-pom `tls-lab.spec.ts` |
 | Prio | P1 |
-| Asercje | jak E2E-032: `confirm-action-dismiss`; heading Confirm znika; GET `CREATED` |
+| Spec | `tls-lab.spec.ts` · `merchant manager dismissing ConfirmModal does not cancel over TLS` |
+| Asercje | `confirm-action-dismiss`; heading Confirm znika; brak POST `/cancel`; GET `CREATED` |
 
-### PW-RFC-E2E-054 — dual-role RLS na HTTPS — **designed**
+### PW-RFC-E2E-054 — dual-role RLS na HTTPS — **existing-pom**
 
 | | |
 |---|---|
-| Pokrycie | designed (HTTP: E2E-002/004) |
+| Pokrycie | existing-pom `tls-lab.spec.ts` (HTTP: E2E-002/004) |
 | Prio | P1 |
 | Asercje | admin: `restrictedWithoutTenantGuc=0`, unprotected>0 |
 
-### PW-RFC-E2E-055 — brak JWT w Web Storage na HTTPS — **designed**
+### PW-RFC-E2E-055 — brak JWT w Web Storage na HTTPS — **existing-pom**
 
 | | |
 |---|---|
-| Pokrycie | designed (helper już w POM HTTP) |
+| Pokrycie | existing-pom `tls-lab.spec.ts` (`expectNoTokenInBrowserStorage`) |
 | Prio | P0 |
 | Asercje | `expectNoTokenInBrowserStorage` po loginie TLS |
 | Uczy | Sesja sealed cookie; access token w secure partition. |
 
-### PW-RFC-E2E-056 — cookie Secure na origin TLS — **designed**
+### PW-RFC-E2E-056 — cookie Secure na origin TLS — **existing-pom**
 
 | | |
 |---|---|
-| Pokrycie | designed |
+| Pokrycie | existing-pom `tls-lab.spec.ts` (`NUXT_SESSION_COOKIE_SECURE`) |
 | Prio | P2 |
 | Asercje | session cookie z `https://app…:8443` ma `Secure` (porównaj HTTP lab bez Secure) |
 
@@ -253,12 +256,13 @@ Hasła: `PLAYWRIGHT_PLATFORM_ADMIN_PASSWORD`, `PLAYWRIGHT_MERCHANT_MANAGER_PASSW
 | Prio | P1 |
 | Asercje | `nav-link-rls-lab` 0; strona bez table; BFF `/api/rls-lab/items` **404** |
 
-### PW-RFC-E2E-060 — FE on + Spring RLS off — **designed**
+### PW-RFC-E2E-060 — FE on + Spring RLS off — **existing-pom**
 
 | | |
 |---|---|
-| Pokrycie | designed |
+| Pokrycie | existing-pom `playwright.pom.rls-spring-off.config.ts` (`PLAYWRIGHT_RLS_SPRING_OFF=1`) |
 | Prio | P1 |
+| Skip | bez env — nie failuje default HTTP POM; **nie** na `--full` |
 | Asercje | UI hub ładuje się; BFF/Spring item list **404** (brak controllera) |
 | Uczy | Flaga UI ≠ flaga Spring. Zmierz raz na stosie, nie zgaduj statusu BFF. |
 
@@ -275,7 +279,7 @@ Hasła: `PLAYWRIGHT_PLATFORM_ADMIN_PASSWORD`, `PLAYWRIGHT_MERCHANT_MANAGER_PASSW
 
 ## D. Business / use case (`UC-RFC-05x`)
 
-Język domeny. Warstwa wykonania: live POM HTTP (existing) lub TLS (część existing / designed).
+Język domeny. Warstwa wykonania: live POM HTTP (existing) lub TLS (existing-pom Wave 3; E2E-061 zostaje designed P2).
 
 ### UC-RFC-050 — Alpha widzi tylko swoje dane
 
@@ -295,12 +299,12 @@ Pokrycie: existing-pom E2E-023.
 ### UC-RFC-053 — Anulowanie wymaga potwierdzenia
 
 Dismiss ≠ cancel. Locator: `confirm-action-dismiss` (copy „Go back”). Brak POST `/cancel`; status `CREATED`.  
-Pokrycie: existing-pom E2E-032. Drawer „Cancel” ≠ modal dismiss.
+Pokrycie: existing-pom E2E-032 HTTP; E2E-053 HTTPS.
 
 ### UC-RFC-054 — Operator pracuje na HTTPS origin
 
-Po PKCE użytkownik jest na `https://app…:8443`; token nie w `localStorage`.  
-Pokrycie: existing-pom E2E-050 + designed E2E-055.
+Po PKCE użytkownik jest na `https://app…:8443`; token nie w `localStorage`; cookie `Secure` (E2E-056). Hybrid `--tls` albo `--full`.  
+Pokrycie: existing-pom E2E-050–056. Mapka UC: [wave-3](../wave-3-compose-tls-pom/) UC-W3-08.
 
 ### UC-RFC-055 — Natural merchant claim
 
@@ -328,7 +332,7 @@ Pokrycie: existing-pom E2E-004/005 + existing-ra RA-014/018/019.
 | HTTP | on | off | — | UI hub; API 404 |
 | HTTP | on | on | — | `iss` localhost JWT działa; tls-lab issuer odrzuca |
 
-Pokrycie: existing-ra RA-030/031/032/033 (wiersz 1 issuer); POM TLS (wiersz 2); E2E-060/061 designed.
+Pokrycie: existing-ra RA-030/031/032/033 (wiersz 1 issuer); POM TLS (wiersz 2); E2E-060 existing-pom; E2E-061 designed P2.
 
 ### ST-RFC-050 — PKCE callback
 
@@ -369,7 +373,7 @@ Zielone 4/4 TLS POM z `ignoreHTTPSErrors` nie znaczy „przeglądarka ufa mkcert
 
 | ID | Przypadek | Pokrycie | Prio |
 |---|---|---|---|
-| SEC-RFC-001 | Redirect URI spoza realm odrzucony przez Keycloak | designed | P1 |
+| SEC-RFC-001 | Redirect URI spoza realm odrzucony przez Keycloak | existing-pom `tls-lab.spec.ts` | P1 |
 | SEC-RFC-002 | HTTP localhost redirect nadal w realm (regresja) | existing-setup + existing-pom HTTP | P0 |
 | SEC-RFC-003 | Nie ufać `X-Forwarded-*` | existing-ra RA-030/031 | P0 |
 | SEC-RFC-004 | Nie testować „RLS na payment_orders” — nie ma go | docs-only / zakaz | — |
@@ -382,18 +386,37 @@ Zielone 4/4 TLS POM z `ignoreHTTPSErrors` nie znaczy „przeglądarka ufa mkcert
 - `REST-MULTIPART-01` (`apps/api-tests` evidence).
 - `REST-OPENAPI-DRIFT-01`.
 - RLS na `merchants` / `payment_orders`.
-- Kafka, PSP, konteneryzacja Spring/Nuxt.
+- Kafka, PSP. Konteneryzacja Spring/Nuxt = Wave 3 `--full` (nie zastępuje HTTP DX).
 - Uprzywilejowane :443 bez sysctl.
 
 ---
 
 ## H. Rekomendowana kolejność pozostałych **designed**
 
-1. Live Caddy vs `:8080` Location/ETag (RA-RFC-031 **live**, poza Surefire).
-2. PW-RFC-E2E-052 / 053 / 054 na `playwright.pom.tls.config.ts`.
-3. PW-RFC-E2E-060 skład flag.
-4. `mkcert -install` bez `PLAYWRIGHT_TLS_INSECURE` jako osobny cert oracle (STK-007 / EG-055).
+Wave 3 zamknęło RA-RFC-031 live, E2E-052–056, E2E-060, STK-007, SEC-RFC-001. Zostaje:
+
+1. PW-RFC-E2E-061 FE off + Spring on (P2).
+2. `REST-MULTIPART-01` / `REST-OPENAPI-DRIFT-01` (poza Wave 3).
 
 RA-RFC-032 (issuer) i RA-RFC-033 (CORS) są **existing-ra**.
 
 Nie blokować HTTP POM na TLS: HTTP stack jest obowiązkowy, HTTPS jest labem lokalnym.
+
+---
+
+## I. Wave 3 (TLS depth + `--full`)
+
+Mapa: [wave-3-compose-tls-pom](../wave-3-compose-tls-pom/README.md). Hybrid `--tls` zostaje. `--full` = Caddy → serwisy compose; OIDC split front HTTPS / back HTTP (nie hairpin `extra_hosts`).
+
+| ID | Pokrycie Wave 3 |
+|---|---|
+| RA-RFC-031 live | `scripts/tls-lab-location-oracle.sh` (Caddy vs host `:8080` albo `docker exec`) |
+| RA-RFC-034 | ten sam skrypt (Vary / Cache-Control) |
+| PW-RFC-E2E-052…055 | `tls-lab.spec.ts` |
+| PW-RFC-E2E-056 | `nuxt-session` `Secure` gdy `NUXT_SESSION_COOKIE_SECURE=true` |
+| PW-RFC-E2E-060 | `playwright.pom.rls-spring-off.config.ts` |
+| STK-RFC-007 | `scripts/tls-lab-cert-oracle.sh` |
+| SEC-RFC-001 | `tls-lab.spec.ts` (Keycloak `invalid redirect_uri`) |
+| STK-RFC-010 | `scripts/dev-stack.sh --full` |
+
+Kafka / MULTIPART / OpenAPI / RLS na tabelach produkcyjnych — nadal poza.

@@ -9,13 +9,13 @@ UC = [07](07-istqb-decision-state-usecase.md). Spec = konkretny `test('…')` w 
 |---|---|---|---|
 | FR-W2-01 unauth merchants | E2E-001, UC-01 | existing-pom `session-guest` | P0 |
 | FR-W2-01 unauth session-lab | E2E-002 | existing-pom | P0 |
-| Unauth inne `/admin` | E2E-003 | designed | P1 |
+| Unauth inne `/admin` | E2E-003 | existing-pom `session-guest` | P1 |
 | FR-W2-02 logout | E2E-010, UC-02 | existing-pom `session.spec` | P0 |
 | FR-W2-03 HttpOnly / no JWT | E2E-011, SEC-001–003 | existing-pom | P0 |
 | Idle 121s Unlock → login | E2E-012, EP-013, UC-16 | existing-pom `session-lab` | P0 |
 | Ponowny `/admin` po idle unlock | MRL E2E-022, EP-014 | designed | P1 |
-| Redirect po login | SEC-011 | designed | P1 |
-| Guest API 401 | SEC-030 | designed | P1 |
+| Redirect po login | SEC-011 | existing-pom `session-guest` | P1 |
+| Guest API 401 | SEC-030 | existing-pom `session-guest` | P1 |
 
 ## Merchants
 
@@ -26,8 +26,9 @@ UC = [07](07-istqb-decision-state-usecase.md). Spec = konkretny `test('…')` w 
 | FR-W2-05 409 w UI | E2E-025 | designed | P1 |
 | FR-W2-06 Zod empty | E2E-023, BVA-020 | existing-pom | P0 |
 | FR-W2-07 lifecycle | E2E-021, ST-01 | existing-pom | P0 |
-| UI create + tenant | E2E-024, API-003 | blocked GAP-W2-01 | P1 |
-| GET 404 | API-004 | designed / existing-ra | P1 |
+| UI create + tenant | E2E-024 | blocked GAP-W2-01 | P1 |
+| POST without tenant | API-003 | existing-pom `admin-bff` | P1 |
+| GET 404 | API-004 | existing-pom `admin-bff` | P1 |
 
 ## UX / a11y
 
@@ -43,8 +44,8 @@ UC = [07](07-istqb-decision-state-usecase.md). Spec = konkretny `test('…')` w 
 |---|---|---|---|
 | FR-W2-09 notes | E2E-040, UC-04 | existing-pom 201\|403 | P0 |
 | FR-W2-15 manager create order | API-010, UC-08 | existing-pom | P0 |
-| Admin create order 403 | API-011 | designed | P1 |
-| Manager notes hidden | E2E-041 | designed | P1 |
+| Admin create order 403 | API-011 | existing-pom `admin-bff` | P1 |
+| Manager notes hidden | E2E-041 | existing-pom `payments-lifecycle` | P1 |
 | FR-W2-10 risk | E2E-050, UC-12 | existing-pom 200\|403 | P1 |
 | Alpha vs Beta vs Users | E2E-100, UC-11 | existing-pom `auth-rbac` | P0 |
 
@@ -79,9 +80,9 @@ UC = [07](07-istqb-decision-state-usecase.md). Spec = konkretny `test('…')` w 
 | Wymaganie | ID | Pokrycie | Prio |
 |---|---|---|---|
 | FR-W2-13 IDOR | E2E-070, UC-06 | existing-pom | P0 |
-| Admin Support Beta | E2E-071 | designed | P1 |
+| Admin Support Beta | E2E-071 | existing-pom `support-admin` | P1 |
 | FR-W2-14 400/401/412 | E2E-080…082, UC-07 | existing-pom | P0 |
-| 403/404/406/409/415/428/304 | E2E-083 | designed (UI trigger jest) | P1 |
+| 403/404/406/409/415/428/304 | E2E-083 | existing-pom `error-lab` | P1 |
 | 429 | EP-043 | docs-only mock | — |
 | CSRF fail | E2E-121, UC-16 | existing-pom | P0 |
 | 503 retry live | E2E-123 | existing-pom | P0 |
@@ -104,12 +105,12 @@ UC = [07](07-istqb-decision-state-usecase.md). Spec = konkretny `test('…')` w 
 
 | Obszar | existing-pom | Zostaje designed |
 |---|---|---|
-| Guest / logout / cookie / idle unlock | tak | guest inne path; `/admin` po idle; guest API 401 |
+| Guest / logout / cookie / idle unlock | tak | `/admin` po idle (MRL) |
 | Merchant persist / 409 API / Zod / ST | tak | UI 409; UI+tenant |
 | Palette ARIA Error Lab | tak | inne cele; ARIA login |
-| Notes / risk | 201\|403 | manager notes hidden; realm roles |
-| Payments idempotency / ETag / cancel | tak | admin POST order 403 |
+| Notes / risk | 201\|403 | realm roles (E2E-041 existing) |
+| Payments idempotency / ETag / cancel | tak | — |
 | CASH / decline / lie / expired hosted | tak | PAY_NO_RETURN (CPL) |
-| Support IDOR | tak | admin Support happy |
-| Error Lab 400/401/412 | tak | pozostałe triggery UI |
+| Support IDOR | tak | — |
+| Error Lab 400/401/412 + remaining BFF | tak | 429 mock |
 | CSRF fail / 503 / RLS / TLS | tak | CSRF happy |

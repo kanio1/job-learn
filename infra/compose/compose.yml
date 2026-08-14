@@ -19,10 +19,22 @@ services:
   payment-quality-keycloak:
     image: quay.io/keycloak/keycloak:26.6.1
     container_name: payment-quality-keycloak
-    command: ["start-dev", "--import-realm"]
+    # Production `start` + HTTP listener. Public issuer is the host-published URL so
+    # browsers on :3000 can complete OIDC. Back-channel (token/JWKS) follows the
+    # request host when apps call Keycloak on the compose network.
+    # https://www.keycloak.org/server/hostname
+    command:
+      - start
+      - --import-realm
+      - --http-enabled=true
+      - --hostname=http://localhost:${KEYCLOAK_PORT:-8081}
+      - --hostname-backchannel-dynamic=true
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME: http://localhost:${KEYCLOAK_PORT:-8081}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
     ports:
       - "${KEYCLOAK_PORT}:8080"
     volumes:

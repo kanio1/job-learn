@@ -55,15 +55,16 @@
           :problem="searchProblem"
         />
 
-        <UCard v-else-if="results.length > 0">
+        <UCard v-else-if="results.length > 0" data-testid="support-search-results">
           <template #header>
             <span class="text-sm font-semibold">Results ({{ results.length }})</span>
           </template>
-          <UTable
-            :data="results"
-            :columns="columns"
-            aria-label="Support search results"
-          />
+          <div role="table" aria-label="Support search results">
+            <UTable
+              :data="results"
+              :columns="columns"
+            />
+          </div>
         </UCard>
 
         <UCard v-else-if="searched && results.length === 0">

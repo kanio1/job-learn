@@ -62,10 +62,10 @@ Playwright `webServer` = Nuxt `--host 127.0.0.1`. Browser `baseURL` = `http://lo
 | `existing-pom` | Jest w `tests-pom` (Wave 2 lub wcześniejszy live spec) |
 | `existing-pw` | Jest w `tests/e2e` (mocked) — tylko odniesienie, nie cel tej mapy |
 | `existing-ra` | REST Assured — oracle kontraktu, nie implementować drugi raz w PW |
-| `designed` | Odblokowany przez Wave 2, **nie implementować** z samej tej mapy |
+| `designed` | Nadal brak specu (P2 palette/ARIA, UI 409, MRL idle re-goto, CSRF happy) |
 | `blocked` | Zależny od luki produktowej / realm (np. UI `tenantReference`, fine-grained notes/risk) |
 
-Priorytet **dalszych** testów (designed): **P0** sesja/IDOR/persistence, **P1** Error Lab 403/404/428 + ARIA, **P2** pairwise UX / learner copy.
+Wave 3 zamknęło P1 gość (003/SEC-011/030), Error Lab 083 (exact status; canary 401), admin Support 071 (tabela), API-003/004/011, notes 041. HTTPS: [wave-3-compose-tls-pom](../wave-3-compose-tls-pom/). Pozostałe designed: **P2** pairwise UX / ARIA login, UI 409 (blocked GAP-W2-01).
 
 ---
 
@@ -85,4 +85,4 @@ Projekty: `chromium-guest` (puste `storageState`, **nie** destructure `api`), `c
 - Testcontainers / JDBC z Node; Kafka; prawdziwy PSP; PAN/3DS.
 - Zmiana realm Keycloak jako „naprawa” testu (403 notes/risk = drift, nie fail-soft bez asercji).
 - Katalogi CPL / Mirror / RLS — linkować, nie kopiować setek TC.
-- Implementacja `designed` z tej mapy.
+- Implementacja pozostałych P2 (`E2E-031/032`, CSRF happy). Wave 3 zamyka P1 gość / Error Lab / IDOR — [wave-3-compose-tls-pom](../wave-3-compose-tls-pom/).

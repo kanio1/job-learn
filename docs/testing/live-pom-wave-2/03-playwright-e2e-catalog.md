@@ -30,8 +30,11 @@ Każdy wiersz **existing-pom** = jeden konkretny `test('…')`. `designed` = nad
 
 | | |
 |---|---|
-| Pokrycie | designed |
+| Pokrycie | existing-pom |
+| Spec | `session-guest.spec.ts` · `unauthenticated admin and lab paths land on login with redirectTo` |
 | Prio | P1 |
+| Kroki | `goto` `/admin/users`, `/admin/merchants/{alpha}/payments`, `/error-lab`, `/admin/checkout-lab` |
+| Asercje | URL `/login?redirectTo=` **równe** ścieżce; `LoginPage.expectLoaded()`. Nie `/psp/checkout` (hosted bez sesji). |
 
 ### PW-W2-E2E-010 — Logout → login → ponowny admin zablokowany
 
@@ -168,8 +171,11 @@ Każdy wiersz **existing-pom** = jeden konkretny `test('…')`. `designed` = nad
 
 | | |
 |---|---|
-| Pokrycie | designed |
+| Pokrycie | existing-pom |
+| Spec | `payments-lifecycle.spec.ts` · `merchant manager does not see the internal notes form` |
 | Prio | P1 |
+| Kroki | manager POST order Alpha → detail |
+| Asercje | `payment-note-body` count 0 (capability notes tylko platform) |
 
 ### PW-W2-E2E-050 — Risk toggle + badge na unikalnym merchancie
 
@@ -257,41 +263,49 @@ Pełny CPL: [../checkout-protocol-lab/03-playwright-e2e-catalog.md](../checkout-
 
 | | |
 |---|---|
-| Pokrycie | designed |
+| Pokrycie | existing-pom |
+| Spec | `support-admin.spec.ts` · `platform admin support search on Beta returns results` · `@security` |
+| Project | `chromium-admin` (`testMatch` zawiera `support-admin`) |
 | Prio | P1 |
+| Kroki | `support.goto` → `search(merchantBetaId)` |
+| Asercje | `error-state` count 0; tabela `Support search results` (`expectResults()`). `No results` = fail (seed Beta). |
 
 ### PW-W2-E2E-080 — Error Lab 400
 
 | | |
 |---|---|
 | Pokrycie | existing-pom |
-| Tytuł | `Error Lab 400 shows problem+json from the real backend` |
-| HTTP | `waitForResponse` `.../error-lab/trigger-400` status 400 |
-| Asercje | `problem-details-card` badge 400; brak `Authorization` w body odpowiedzi |
+| Tytuł | `Error Lab 400 is a live backend validation problem (not a 429 mock)` |
+| HTTP | `page.request.fetch` `.../error-lab/trigger-400` as **merchant manager** |
+| Asercje | status **400** `application/problem+json` + `status` w JSON; `expectNoAuthorizationInNetworkResponse` |
 
 ### PW-W2-E2E-081 — Error Lab 401 (nie mock 429)
 
 | | |
 |---|---|
 | Pokrycie | existing-pom |
-| Tytuł | `Error Lab 401 is a live unauthorized response, not a 429 mock` |
-| HTTP | `trigger-401` → 401; przycisk `error-lab-trigger-429` **visible**, nie klikany |
+| Tytuł | `Error Lab 401 canary is a live unauthorized UI response, not a 429 mock` |
+| HTTP | click `error-lab-trigger-401` + `waitForResponse`; przycisk `error-lab-trigger-429` **visible**, nie klikany |
+| Asercje | 401 problem+json; `problem.expectVisible` |
 
 ### PW-W2-E2E-082 — Error Lab 412
 
 | | |
 |---|---|
-| Pokrycie | existing-pom |
+| Pokrycie | existing-pom `error-lab-manager.spec.ts` (`chromium-manager`) |
 | Tytuł | `Error Lab 412 is a live stale If-Match from the backend` · `@security` |
-| HTTP | `trigger-412` → 412 + problem badge |
+| HTTP | `trigger-412` z If-Match `"v99"` (`\"v{n}\"`); malformed `"stale-etag"` to 400, nie 412 |
+| Asercje | status **412** problem+json (brak create → 503 `lab_unavailable`, nie 412) |
 
-### PW-W2-E2E-083 — Error Lab 403 / 404 / 406 / 409 / 415 / 428 / 304
+### PW-W2-E2E-083 — Error Lab 403 / 404 / 406 / 415 (admin) + 409 / 428 / 304 (manager)
 
 | | |
 |---|---|
-| Pokrycie | designed (triggery UI: `error-lab-trigger-{status}` w `error-lab.vue`) |
+| Pokrycie | existing-pom `error-lab.spec.ts` (admin) + `error-lab-manager.spec.ts` (create) |
 | Prio | P1 |
+| Tytuł | admin: remaining statuses without create; manager: 409/428/304 |
 | Poza | 429 = BFF mock, nie POM |
+| Oracle | dokładny `expect(status).toBe(status)`; 4xx `application/problem+json` + `status` w JSON (oprócz 304); 304 **nie** akceptuje 503 (brak seed = 503 `lab_unavailable`); 403 = prawdziwy token + POST Alpha (2xx create → 503 `lab_unavailable`, nie 201) |
 
 ---
 
@@ -331,8 +345,8 @@ Szczegóły filtrów/kontrolek: [../rls-filters-composition-lab/03-playwright-e2
 |---|---|
 | Pokrycie | existing-pom |
 | Tytuł | `stale If-Match on authorize shows 412 problem+json in the drawer` |
-| Kroki | fill If-Match `"stale-etag"` → submit authorize |
-| Asercje | HTTP 412; problem badge; `GET` status `CREATED`; API authorize stale też 412 |
+| Kroki | fill If-Match `"v99"` (format Spring `\"v{n}\"`) → submit authorize |
+| Asercje | HTTP 412; problem badge; `GET` status `CREATED`; API authorize `"v99"` też 412 |
 
 ### PW-W2-E2E-094 — Cancel z ConfirmModal (submit)
 

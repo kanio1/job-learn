@@ -25,9 +25,11 @@ Test map (E2E, HTTP/BFF, security, EP/BVA, DT/UC): [`docs/testing/live-pom-wave-
 | Layer | How |
 |---|---|
 | Postgres + Keycloak | **Podman/Docker Compose** — [`infra/compose/compose.yml`](../../../infra/compose/compose.yml) |
-| Spring Boot | host, `SPRING_PROFILES_ACTIVE=dev` |
-| Nuxt | Playwright `webServer` (or already running `:3000`) |
-| Testcontainers | **Java ITs only** — not used by this suite |
+| Spring Boot | host `dev,seed` **or** `--app` / `--full` image |
+| Nuxt | Playwright `webServer` / host `:3000` **or** `--app` / `--full` image |
+| Caddy | `--tls` (host apps) or `--full` (container apps). **Not** started by `--app`. |
+
+Runbook: [`docs/setup/run-stack-and-pom.md`](../../../docs/setup/run-stack-and-pom.md).
 
 ## Preflight
 
@@ -67,7 +69,9 @@ Learner tree (starts with zero tests):
 corepack pnpm exec playwright test --config playwright.pom-learner.config.ts
 ```
 
-TLS overlay (`playwright.pom.tls.config.ts`): `scripts/dev-stack.sh --tls`, then the same password exports. Chromium trusts mkcert after `mkcert -install`. Without OS trust, `PLAYWRIGHT_TLS_INSECURE=1` — that does not prove CA trust. ConfirmModal dismiss uses `data-testid="confirm-action-dismiss"` (never the drawer button labelled Cancel). A `vite-plugin-checker-error-overlay` fails the POM instead of being clicked away.
+TLS overlay (`playwright.pom.tls.config.ts`): `scripts/dev-stack.sh --tls` or `--full`, then the same password exports. On `--full` set `PLAYWRIGHT_SKIP_WEBSERVER=1`. Chromium trusts mkcert after `mkcert -install` (Linux Chromium may need `nss-tools` / `certutil`). Without OS trust, `PLAYWRIGHT_TLS_INSECURE=1` — that does not prove CA trust. ConfirmModal dismiss uses `data-testid="confirm-action-dismiss"` (never the drawer button labelled Cancel). A `vite-plugin-checker-error-overlay` fails the POM (`count() > 0`); live `webServer` uses `NUXT_TYPECHECK=false`.
+
+FE on + Spring RLS off (`playwright.pom.rls-spring-off.config.ts`): `RLS_LAB_ENABLED=false` on Spring and `PLAYWRIGHT_RLS_SPRING_OFF=1`.
 
 ## Layout (classic skeleton)
 

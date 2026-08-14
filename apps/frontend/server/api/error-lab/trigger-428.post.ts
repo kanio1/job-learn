@@ -1,16 +1,12 @@
 /**
- * Error Lab — 428 Precondition Required trigger.
- *
- * Strategy (two-step in a single handler):
- * 1. Create a new payment order (to get a real order that accepts authorize).
- * 2. Call authorize WITHOUT the If-Match header → backend returns 428.
- *
- * Requirements: 6.1, 6.5
+ * Error Lab — 428 Precondition Required.
+ * Create a real order, then authorize without If-Match.
  */
+import { labUnavailableBody, merchantIdForLabTrigger } from '../../utils/errorLabBackend'
+
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const backendUrl = (config.public.apiBaseUrl as string) || 'http://localhost:8080'
-
   const session = await getUserSession(event)
   const accessToken = session?.secure?.accessToken as string | undefined
 
@@ -24,16 +20,17 @@ export default defineEventHandler(async (event) => {
 
   async function callBackend(
     path: string,
-    opts: { method?: string; headers?: Record<string, string>; body?: unknown }
-  ): Promise<{ status: number; headers: Headers; data: unknown }> {
+    opts: { method?: string, headers?: Record<string, string>, body?: unknown },
+  ): Promise<{ status: number, headers: Headers, data: unknown }> {
     try {
       const res = await $fetch.raw(`${backendUrl}${path}`, {
-        method: (opts.method ?? 'POST') as any,
+        method: (opts.method ?? 'POST') as 'GET' | 'POST',
         headers: opts.headers,
-        body: opts.body as any,
+        body: opts.body as Record<string, unknown>,
       })
       return { status: res.status, headers: res.headers, data: res._data }
-    } catch (err: any) {
+    }
+    catch (err: any) {
       return {
         status: err?.response?.status ?? err?.statusCode ?? 503,
         headers: err?.response?.headers ?? new Headers(),
@@ -42,29 +39,12 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Step 1: Find a real merchant
-  let merchantId: string | null = null
-  let paymentOrderId: string | null = null
-
   const merchantsResult = await callBackend('/api/merchants', {
     method: 'GET',
     headers: authHeaders(),
   })
+  const merchantId = merchantIdForLabTrigger(merchantsResult.data)
 
-  if (merchantsResult.status === 200 && merchantsResult.data) {
-    const data = merchantsResult.data as any
-    const merchants: any[] = Array.isArray(data) ? data : (data?.content ?? data?.merchants ?? [])
-    if (merchants.length > 0) {
-      const activeMerchant = merchants.find((m: any) => m.status === 'ACTIVE') ?? merchants[0]
-      merchantId = activeMerchant?.id ?? activeMerchant?.merchantId ?? null
-    }
-  }
-
-  if (!merchantId) {
-    merchantId = 'error-lab-merchant-428'
-  }
-
-  // Step 2: Create a payment order to get a real orderId
   const createResult = await callBackend(
     `/api/merchants/${merchantId}/payment-orders`,
     {
@@ -75,40 +55,35 @@ export default defineEventHandler(async (event) => {
       body: {
         amountMinor: 500,
         currency: 'PLN',
-        clientOrderReference: 'error-lab-428-order',
+        clientOrderReference: `error-lab-428-${Date.now()}`,
       },
-    }
+    },
   )
-
-  if (createResult.status === 201 || createResult.status === 200) {
-    const createdOrder = createResult.data as any
-    paymentOrderId = createdOrder?.id ?? createdOrder?.paymentOrderId ?? null
+  const createdOrder = createResult.data as { id?: string, paymentOrderId?: string } | undefined
+  const paymentOrderId = createdOrder?.id ?? createdOrder?.paymentOrderId
+  if ((createResult.status !== 201 && createResult.status !== 200) || !paymentOrderId) {
+    setResponseStatus(event, 503)
+    setHeader(event, 'Content-Type', 'application/problem+json')
+    return labUnavailableBody('Could not create a payment order for the 428 trigger.')
   }
 
-  if (!paymentOrderId) {
-    paymentOrderId = 'error-lab-order-428'
-    merchantId = 'error-lab-merchant-428'
-  }
-
-  // Step 3: Call authorize WITHOUT If-Match → 428
   const result = await callBackend(
     `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/authorize`,
     {
       method: 'POST',
       headers: authHeaders({
         'Idempotency-Key': `error-lab-428-auth-${Date.now()}`,
-        // Deliberately NO If-Match header
       }),
       body: {},
-    }
+    },
   )
 
-  // Forward headers (excluding Authorization)
   for (const name of ['ETag', 'Cache-Control', 'Vary', 'X-Correlation-ID', 'Content-Type']) {
     const val = result.headers.get(name)
-    if (val) setHeader(event, name, val)
+    if (val) {
+      setHeader(event, name, val)
+    }
   }
-
   setResponseStatus(event, result.status)
   return result.data
 })

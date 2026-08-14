@@ -2,7 +2,7 @@
 
 Warstwa: `chromium-guest` + admin/manager storageState. Tagi `@security`.
 
-CSRF / clock / TLS lab: katalogi Mirror / TLS — tu tylko to, co Wave 2 wstawia w dashboard POM.
+CSRF / clock: Mirror Lab. TLS HTTPS (E2E-050–056, SEC-RFC-001): [09](../rls-filters-composition-lab/09-wave-b-stack-tls-catalog.md) i [wave-3](../wave-3-compose-tls-pom/). Tu dashboard HTTP POM.
 
 ---
 
@@ -55,8 +55,10 @@ CSRF / clock / TLS lab: katalogi Mirror / TLS — tu tylko to, co Wave 2 wstawia
 
 | | |
 |---|---|
-| Pokrycie | designed (setup Keycloak loguje bez asercji `redirectTo`) |
+| Pokrycie | existing-pom `session-guest.spec.ts` · `login with redirectTo returns to the intended admin path` |
 | Prio | P1 |
+| Kroki | `goto('/admin/users')` → Keycloak → callback |
+| Asercje | URL `/admin/users`; heading `Users` |
 
 ### PW-W2-SEC-012 — Idle lock 121s → Unlock → `/login`
 
@@ -111,15 +113,15 @@ CSRF / clock / TLS lab: katalogi Mirror / TLS — tu tylko to, co Wave 2 wstawia
 
 ---
 
-## D. Designed security (odblokowane)
+## D. Guest BFF i security labs
 
-### PW-W2-SEC-030 — Guest POST `/api/merchants` 401
+### PW-W2-SEC-030 — Guest GET/POST `/api/merchants` 401
 
 | | |
 |---|---|
-| Pokrycie | designed |
+| Pokrycie | existing-pom `session-guest.spec.ts` · `guest BFF merchants GET and POST return 401` |
 | Prio | P1 |
-| Warstwa | `APIRequestContext` bez cookie (nie guest UI) |
+| Warstwa | `page.request` bez cookie (nie destructure `api`) |
 
 ### PW-W2-SEC-031 — CSRF fail path Session Lab
 
@@ -134,4 +136,4 @@ CSRF / clock / TLS lab: katalogi Mirror / TLS — tu tylko to, co Wave 2 wstawia
 |---|---|
 | Pokrycie | existing-pom `rls-lab.spec.ts` — katalog RFC |
 | Prio | P0 |
-| Uczy | Nie dublować TC. Oracle: [rls-filters-composition-lab](../rls-filters-composition-lab/03-playwright-e2e-catalog.md) E2E-002–005; compare JSON `restrictedWithoutTenantGuc`; merchant API 403 ≠ `rls_forbidden`. |
+| Uczy | Nie dublować TC. Oracle HTTP: [RFC 03](../rls-filters-composition-lab/03-playwright-e2e-catalog.md) E2E-002–005. HTTPS: E2E-054 `tls-lab.spec.ts`. |

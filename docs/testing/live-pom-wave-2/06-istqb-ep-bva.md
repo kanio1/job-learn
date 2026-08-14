@@ -20,7 +20,7 @@ Każda partycja mapuje na `PW-W2-E2E-*` / `PW-W2-API-*` / `PW-W2-SEC-*`.
 | BVA-W2-021 | reference 3 znaki | unique ≥3 | API 201 | existing-pom API-001 |
 | EP-W2-022 | name &lt; 2 | `""` | field error | existing-pom |
 | EP-W2-023 | duplikat reference | drugi POST | 409 | existing-pom E2E-026 |
-| EP-W2-024 | brak tenant (admin UI) | form bez pola | 400 | blocked GAP-W2-01 / designed API-003 |
+| EP-W2-024 | brak tenant (admin UI) | form bez pola | 400 | blocked GAP-W2-01 / existing-pom API-003 |
 
 ## Merchant status
 
@@ -38,7 +38,7 @@ Każda partycja mapuje na `PW-W2-E2E-*` / `PW-W2-API-*` / `PW-W2-SEC-*`.
 | EP-W2-041 | unauthorized | 401 | existing-pom |
 | EP-W2-042 | stale precondition | 412 | existing-pom |
 | EP-W2-043 | rate limit | 429 | **poza** POM (mock BFF) |
-| EP-W2-044 | 403/404/406/409/415/428/304 | triggery UI | designed E2E-083 |
+| EP-W2-044 | 403/404/406/415 admin; 409/428/304 manager | BFF `page.request` + canary UI 401 | existing-pom E2E-083 |
 | EP-W2-045 | idempotency replay / conflict | 200 / 409 | existing-pom E2E-091 |
 
 ## Checkout mode × outcome
@@ -60,6 +60,6 @@ Każda partycja mapuje na `PW-W2-E2E-*` / `PW-W2-API-*` / `PW-W2-SEC-*`.
 | EP-W2-061 | manager Support Beta | problem, 0 rows | existing-pom |
 | EP-W2-062 | admin notes na orderze Alpha | 201 lub 403 drift | existing-pom |
 | EP-W2-063 | manager create order Alpha | 201 | existing-pom API-010 |
-| EP-W2-064 | admin create order | 403 | designed API-011 |
+| EP-W2-064 | admin create order | 403 | existing-pom API-011 |
 | EP-W2-065 | manager Beta payments | alert, brak tabeli | existing-pom E2E-100 |
 | EP-W2-066 | CSRF bez tokenu | 403 `csrf_failed` | existing-pom E2E-121 |
