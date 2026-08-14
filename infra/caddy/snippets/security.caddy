@@ -1,0 +1,36 @@
+# Shared edge policy. Imported by Caddyfile / Caddyfile.full.
+# https://caddyserver.com/docs/caddyfile/directives/header
+# https://caddyserver.com/docs/caddyfile/directives/encode
+# https://caddyserver.com/docs/caddyfile/directives/request_body
+
+(security_headers) {
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+}
+
+(app_frame_deny) {
+	header X-Frame-Options DENY
+}
+
+(auth_frame) {
+	header X-Frame-Options SAMEORIGIN
+}
+
+(compression) {
+	encode gzip zstd
+}
+
+(body_limit) {
+	request_body {
+		max_size 5MB
+	}
+}
+
+# Lab HSTS is short so .local experiments are not pinned to HTTPS for a year.
+(hsts_lab) {
+	header Strict-Transport-Security "max-age=300"
+}

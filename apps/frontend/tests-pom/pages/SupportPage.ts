@@ -30,4 +30,10 @@ export class SupportPage extends BasePage {
     await expect(this.byTestId('error-state')).toBeVisible()
     await this.problem.expectVisible()
   }
+
+  async expectResults(): Promise<void> {
+    await expect(this.byTestId('support-search-results')).toBeVisible()
+    await expect(this.page.getByText(/^Results \([1-9]/)).toBeVisible()
+    await expect(this.page.getByRole('table', { name: 'Support search results' })).toBeVisible()
+  }
 }

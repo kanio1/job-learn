@@ -12,7 +12,7 @@ export class ProblemDetailsCard {
   }
 
   async expectStatusBadge(status: number | string): Promise<void> {
-    await expect(this.root().getByText(String(status), { exact: false })).toBeVisible()
+    await expect(this.root().getByText(new RegExp(`^${status}\\b`))).toBeVisible()
   }
 
   async expectError(code: string): Promise<void> {

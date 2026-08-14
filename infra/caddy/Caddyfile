@@ -1,14 +1,40 @@
+# HTTPS overlay: Caddy → host Spring/Nuxt (hot reload) + compose Keycloak.
+# `.local` names do not qualify for public ACME
+# (https://caddyserver.com/docs/automatic-https#hostname-requirements).
+# Leaf certs are mkcert files; `mkcert -install` is the host trust oracle
+# (Caddy in rootless Podman cannot install its local CA into the host NSS store).
+
+import snippets/security.caddy
+
 app.payment-quality.local {
 	tls /certs/cert.pem /certs/key.pem
+	import security_headers
+	import app_frame_deny
+	import hsts_lab
+	import compression
+	import body_limit
+	log
 	reverse_proxy host.docker.internal:3000
 }
 
 api.payment-quality.local {
 	tls /certs/cert.pem /certs/key.pem
+	import security_headers
+	import app_frame_deny
+	import hsts_lab
+	import compression
+	import body_limit
+	log
 	reverse_proxy host.docker.internal:8080
 }
 
 auth.payment-quality.local {
 	tls /certs/cert.pem /certs/key.pem
+	import security_headers
+	import auth_frame
+	import hsts_lab
+	import compression
+	import body_limit
+	log
 	reverse_proxy payment-quality-keycloak:8080
 }

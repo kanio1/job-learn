@@ -17,8 +17,8 @@ Pokrycie: existing-ra `RlsLabRestAssuredTest` + existing-pom E2E-002–005.
 
 ## ST-RFC-042 — If-Match (istniejący)
 
-CREATED --authorize(fresh ETag)→ AUTHORIZED; CREATED --authorize(stale)→ 412, stan CREATED.  
-Pokrycie: existing-pom `payments-lifecycle.spec.ts`.
+CREATED --authorize(fresh ETag `"v{n}"`)→ AUTHORIZED; CREATED --authorize(`"v99"`)→ 412, stan CREATED. Malformed ETag → 400.  
+Pokrycie: existing-pom `payments-lifecycle.spec.ts`; HTTPS: E2E-052 `tls-lab.spec.ts`.
 
 ## UC-RFC-040 — Lie return ≠ fulfillment
 
@@ -61,4 +61,4 @@ Jeśli test JDBC użyje `postgres.getUsername()`, FORCE RLS nie zadziała (BYPAS
 Boolean prop `canRunLifecycle` ukrywa Cancel — capability tylko z `useAuthorization`. Overlay vue-tsc nie jest dismissowany z POM.  
 Pełny zapis: [09](09-wave-b-stack-tls-catalog.md) `EG-RFC-052`, `EG-RFC-053`.
 
-QUERY / TLS / remaining designed: [09](09-wave-b-stack-tls-catalog.md) (`STK-RFC-*`, `RA-RFC-03x`, `UC-RFC-05x`, `EG-RFC-050+`). `EG-RFC-054` w 09 = QUERY/versioning/retry docs-only — nie dublować numeru tutaj.
+QUERY / TLS: [09](09-wave-b-stack-tls-catalog.md) + [wave-3](../wave-3-compose-tls-pom/). `EG-RFC-054` = QUERY/versioning/retry docs-only. E2E-061 (FE off + Spring on) zostaje designed P2.

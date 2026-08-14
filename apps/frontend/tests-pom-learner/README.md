@@ -1,5 +1,7 @@
 # Learner POM tree
 
+Active lesson: [`LESSON-08-first-real-pom.md`](./LESSON-08-first-real-pom.md) — first real POM, three accounts, RBAC vs tenant scope. Do not copy business page objects from `tests-pom`.
+
 Copy TypeScript from [`../tests-pom`](../tests-pom). Keep the same folders: `auth/`, `fixtures/`, `pages/`, `api/`, `data/`, `utils/`, `specs/`.
 
 **Copy `auth/` first** (including `platform-admin.setup.ts`, `merchant-manager.setup.ts`, `keycloak.setup.ts`, `accounts.ts`) plus `pages/LoginPage.ts` and `utils/`. The learner config has the same setup projects as the reference tree, plus `chromium-guest` (empty `storageState`, no Keycloak setup). Guest specs must not use the `api` fixture. Auth files write to `tests-pom-learner/.auth/` (gitignored). Specs without that setup will fail before any page object runs.

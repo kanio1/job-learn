@@ -1,9 +1,17 @@
 ---
 name: index
-last_updated: 2026-08-13
+last_updated: 2026-08-14
 ---
 
 ## Session log
+
+- **Operator runbook (2026-08-14):** [docs/setup/run-stack-and-pom.md](../docs/setup/run-stack-and-pom.md) — HTTP `--app` for POM/TS, HTTPS `--full` for Caddy; Caddy is not broken on `--app` (it is not started). No HTTP-Caddy flag: `--full` is the prod-shaped stack.
+
+- **Podman HTTP/HTTPS stack (2026-08-14):** HTTP compose `--app` verified: issuer `http://localhost:8081`, Nuxt `http://127.0.0.1:3000`, Spring `/api/status`, Nitro `/__oidc` splits browser authorize vs compose-network token/JWKS. Keycloak `start` + `hostname-backchannel-dynamic`. Mode switch fail-closed via `keycloak-issuer-oracle.sh`. Caddy snippets: security headers, encode, 5MB body limit, short lab HSTS. Prod ACME: `infra/caddy/Caddyfile.prod.example`. Realm adds `http://127.0.0.1:3000`. podman-compose/pasta: stop/start overlay containers so host ports bind.
+
+- **Wave 3 findings review fix (2026-08-14):** **IMPLEMENTED**. Merchant 404 uses origin `problem()` (`type`/`title`/`status`/`detail`/`error`); Error Lab BFF forwards Spring body (no `coerceProblemJson`). Trigger 403 fail-closed: 2xx create → 503 `lab_unavailable`. 304 does not auto-create. 401 canary = click + `waitForResponse` + problem card. Live POM `NUXT_TYPECHECK=false`; overlay detect via `count()`. `--full` OIDC discovery is loopback-only; Caddy `/__oidc*` → 404; session password fail-fast (≥32). CA = STK-007 / `mkcert -install` (Linux Chromium may need NSS/`certutil`). Verified: `pnpm typecheck`; `MerchantRestAssuredTest` + merchant/payment security tests; Spring/BFF 401 problem+json via curl. HTTP POM Error Lab/Support needs a Keycloak issuer on `http://localhost:8081` (use `--app` or a fresh HTTP `dev-stack.sh`). `REST-MULTIPART-01` / `REST-OPENAPI-DRIFT-01` remain open.
+
+- **Wave 3 TLS depth + Live POM Wave 2 + compose HTTPS (2026-08-14):** **IMPLEMENTED** (TLS overlay + `--full` compose; HTTP live POM Wave 3 IDs). If-Match stale oracle uses `"v99"` (malformed `"stale-etag"` is 400). `--full`: Caddy → Spring/Nuxt images; BFF talks Keycloak HTTP inside the compose network. HTTP POM stays on host hybrid. Catalog: `docs/testing/wave-3-compose-tls-pom/`.
 
 - **Wave B full local stack + TLS overlay (2026-08-13):** **DONE_VERIFIED**. `scripts/dev-stack.sh` raises compose Postgres+Keycloak, Spring `dev,seed`, and Nuxt. Live POM Wave A HTTP **10/10** (`payments-filters`, `payments-hard-controls`, `rls-lab`). REST-SSL-PROXY-01 part 1: hostile `X-Forwarded-*` does not rewrite relative `Location` (`PaymentOrderForwardedHeadersRestAssuredTest`). TLS overlay: Caddy on host **8443** (rootless Podman cannot bind 443), mkcert gitignored certs, Spring `tls-lab`, additive HTTPS redirect URIs, live POM TLS **4/4**. GAP-RFC-T01: `playwright.rls-flag-off.config.ts`. Seed now clears/reinserts `rls_lab_item` so `dev,seed` works after V17. QUERY / API versioning / `@Retryable` / `REST-MULTIPART-01` / OpenAPI remain outside this wave.
 
@@ -103,10 +111,10 @@ All 7 specs have **no required, currently-executable Kiro task remaining**. Ever
 
 ## Active work
 
-- **Current problem:** Checkout Protocol Lab is implemented on `checkout-protocol-lab-foundation` as the approved test-only redirect+notify lab.
-- **Current phase:** Wave B local stack + TLS lab overlay is **DONE_VERIFIED**. Remaining REST-ADVANCED: `REST-MULTIPART-01`, `REST-OPENAPI-DRIFT-01`; `REST-SSL-PROXY-01` forwarded-headers part is green (real privileged :443 optional).
-- **Next task:** remaining REST-ADVANCED capabilities after their stop gates, or an explicit new wave.
-- **Blockers/gates:** TLS lab overlay is local mkcert (gitignored); privileged :443 optional. OpenAPI drift requires a canonical specification/generation owner. Redirects no longer block — CPL is the training redirect server.
+- **Current problem:** Wave 3 compose HTTPS + remaining Live POM designed cases; Checkout Protocol Lab remains the redirect+notify lab.
+- **Current phase:** Wave 3 TLS depth, Live POM Wave 2 guest/Error Lab/IDOR, and `--full` compose images. Remaining REST-ADVANCED: `REST-MULTIPART-01`, `REST-OPENAPI-DRIFT-01`; `REST-SSL-PROXY-01` forwarded-headers part is green (real privileged :443 optional).
+- **Next task:** remaining REST-ADVANCED capabilities after their stop gates (`REST-MULTIPART-01`, OpenAPI drift).
+- **Blockers/gates:** TLS lab overlay is local mkcert (gitignored); privileged :443 optional. OpenAPI drift requires a canonical specification/generation owner. Redirects no longer block — CPL is the training redirect server. Full compose uses host **8443**, not privileged 443.
 - **Checkout Protocol Lab:** implemented. Keycloak realm unchanged. PostgreSQL module `checkoutlab` (V12+V13). Dashboard hub `/admin/checkout-lab`, hosted `/psp/checkout/{id}`, return `/checkout-lab/return`.
 
 ## Validation baseline

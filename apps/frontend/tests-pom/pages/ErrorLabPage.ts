@@ -18,11 +18,13 @@ export class ErrorLabPage extends BasePage {
     await expect(this.page.getByText('Learning surface')).toBeVisible()
   }
 
-  triggerButton(status: 400 | 401 | 412) {
+  triggerButton(status: 400 | 401 | 403 | 404 | 406 | 409 | 412 | 415 | 428 | 304) {
     return this.byTestId(`error-lab-trigger-${status}`)
   }
 
-  async trigger(status: 400 | 401 | 412): Promise<void> {
-    await this.triggerButton(status).click()
+  async trigger(status: 400 | 401 | 403 | 404 | 406 | 409 | 412 | 415 | 428 | 304): Promise<void> {
+    await this.assertNoDevErrorOverlay()
+    await this.triggerButton(status).scrollIntoViewIfNeeded()
+    await this.triggerButton(status).click({ force: true })
   }
 }

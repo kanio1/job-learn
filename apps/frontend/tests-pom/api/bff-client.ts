@@ -31,11 +31,26 @@ export class BffClient {
     return { status: response.status(), body, headers: response.headers() }
   }
 
-  async createMerchant(merchantReference: string, displayName: string, tenantReference = 'TENANT_ALPHA') {
-    const response = await this.context.post('/api/merchants', {
-      data: { merchantReference, displayName, tenantReference },
-    })
-    const body = await response.json() as { merchantId?: string } & ProblemDetails
+  async createMerchant(
+    merchantReference: string,
+    displayName: string,
+    tenantReference: string | null = 'TENANT_ALPHA',
+  ) {
+    const data: Record<string, string> = { merchantReference, displayName }
+    if (tenantReference !== null) {
+      data.tenantReference = tenantReference
+    }
+    const response = await this.context.post('/api/merchants', { data })
+    const text = await response.text()
+    let body: ({ merchantId?: string } & ProblemDetails) | undefined
+    if (text) {
+      try {
+        body = JSON.parse(text) as { merchantId?: string } & ProblemDetails
+      }
+      catch {
+        body = undefined
+      }
+    }
     return { status: response.status(), body, headers: response.headers() }
   }
 

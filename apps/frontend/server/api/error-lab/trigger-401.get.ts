@@ -7,6 +7,8 @@
  * Security: intentionally omits the token — that is the point of this scenario.
  * Requirements: 6.1, 6.5
  */
+import { forwardLabBackendError } from '../../utils/errorLabBackend'
+
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const backendUrl = (config.public.apiBaseUrl as string) || 'http://localhost:8080'
@@ -27,15 +29,6 @@ export default defineEventHandler(async (event) => {
     }
     return response._data
   } catch (error: any) {
-    const statusCode: number = error?.response?.status ?? error?.statusCode ?? 503
-    const errorData = error?.response?._data ?? error?.data
-    if (error?.response?.headers) {
-      for (const name of ['ETag', 'Cache-Control', 'Vary', 'X-Correlation-ID', 'Content-Type', 'WWW-Authenticate']) {
-        const val = error.response.headers.get(name)
-        if (val) setHeader(event, name, val)
-      }
-    }
-    setResponseStatus(event, statusCode)
-    return errorData
+    return forwardLabBackendError(event, error)
   }
 })

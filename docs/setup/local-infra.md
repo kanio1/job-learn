@@ -16,20 +16,28 @@ The example contains non-secret local values only:
 
 Production secrets, business realm variables, and application OAuth/OIDC client variables are intentionally deferred.
 
-## Full local stack (HTTP)
+**How to run (HTTP POM, HTTPS/Caddy, TypeScript):** [run-stack-and-pom.md](run-stack-and-pom.md).
 
-Postgres and Keycloak stay in Compose. Spring and Nuxt stay on the host (hot reload).
+## Stack modes (Podman)
+
+Postgres and Keycloak always run in Compose. Spring and Nuxt are either host processes (hot reload) or images.
 
 ```bash
-scripts/dev-stack.sh
+scripts/dev-stack.sh            # HTTP DX: host Spring + Nuxt
+scripts/dev-stack.sh --app      # HTTP deploy: Spring + Nuxt containers (POM on :3000)
+scripts/dev-stack.sh --tls      # HTTPS overlay: Caddy → host processes
+scripts/dev-stack.sh --full     # HTTPS deploy: Caddy → Spring + Nuxt containers
 ```
 
-This waits for Postgres, the Keycloak realm, `GET /api/status`, and Nuxt `:3000`. Spring starts with `dev,seed` so `MERCHANT_ALPHA_001` exists for live POM. Logs: `tmp/dev-stack/`. Stop host apps with `scripts/dev-stack.sh --stop`. Tear down Compose with `scripts/dev-stack.sh --down`.
+`--app` and `--full` require `NUXT_SESSION_PASSWORD` (≥32) in `infra/compose/.env` (Nitro production image). `--tls` / `--full` also need `scripts/tls-lab-certs.sh`. See [tls-lab.md](tls-lab.md).
 
-Canonical Playwright POM origin on this stack is `http://localhost:3000` (`playwright.pom.config.ts` uses `reuseExistingServer: true`). HTTP Nuxt binds `127.0.0.1`. The TLS overlay binds `0.0.0.0` so Caddy can reach the host — see [tls-lab.md](tls-lab.md).
+The script waits for Postgres, then **Keycloak OIDC issuer** (`scripts/keycloak-issuer-oracle.sh`). HTTP modes must advertise `http://localhost:8081`. HTTPS modes must advertise `https://auth.payment-quality.local:8443`. A leftover container from the other mode is recreated automatically. `up` always uses `--remove-orphans` so Caddy/app containers from a previous mode do not keep port `:3000`.
 
-HTTPS overlay: [tls-lab.md](tls-lab.md).
+Rootless Podman on Fedora uses pasta. `podman-compose` sometimes records published ports without starting `rootlessport`. `dev-stack.sh --app` / `--full` stop/start the app (and Caddy) containers after they are healthy so `:3000`, `:8080`, and `:8443` actually bind on the host.
 
+Canonical Playwright POM origin on HTTP is `http://127.0.0.1:3000` (`PLAYWRIGHT_SKIP_WEBSERVER=1` when using `--app`). HTTP host Nuxt binds `127.0.0.1`. The TLS overlay binds `0.0.0.0` so Caddy can reach the host — see [tls-lab.md](tls-lab.md).
+
+Stop host apps with `scripts/dev-stack.sh --stop`. Tear down Compose with `scripts/dev-stack.sh --down`.
 
 From the repository root:
 
@@ -75,6 +83,6 @@ These credentials and startup options are for local development only. They are n
 
 ## See Also
 
-- [Root README](../../README.md) — project scope, non-goals, and full baseline verification commands
+- [run-stack-and-pom.md](run-stack-and-pom.md) — daily HTTP `--app`, HTTPS `--full`, POM, Caddy FAQ
 - [Tester Orientation Pack](phase-0-tester-orientation-pack.md) — what exists, what is absent, and tester charters
 - Phase 0 non-goals reminder: no payment business functionality, no Kafka, no PSP integration, no complete OAuth/OIDC application integration, no complete dashboards

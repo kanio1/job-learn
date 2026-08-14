@@ -173,6 +173,10 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
         .when().get("/api/merchants/{id}", UUID.randomUUID())
         .then()
                 .statusCode(404)
+                .contentType("application/problem+json")
+                .body("type", equalTo("https://api.payment-quality.local/problems/not-found"))
+                .body("title", equalTo("Not Found"))
+                .body("status", equalTo(404))
                 .body("error", equalTo("not_found"));
 
         operatorRequest(port)

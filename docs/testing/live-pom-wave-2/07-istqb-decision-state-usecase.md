@@ -10,11 +10,11 @@ Implementacja = konkretny `test('…')` z **03**. `designed` tylko gdy spec nie 
 |---|---|---|---|
 | brak | `/admin/merchants` | `/login?redirectTo=` | E2E-001 |
 | brak | `/admin/session-lab` | login | E2E-002 |
-| brak | `/admin/users` itd. | login | E2E-003 designed |
+| brak | `/admin/users` itd. | login | E2E-003 |
 | admin | `/admin/merchants` | lista | E2E-020 |
 | manager | `/admin/users` | forbidden | E2E-100 |
 | manager | `/admin/support` + Beta UUID | problem, 0 rows | E2E-070 |
-| admin | `/admin/support` | wyniki | E2E-071 designed |
+| admin | `/admin/support` | wyniki | E2E-071 |
 
 ---
 
@@ -26,7 +26,7 @@ Implementacja = konkretny `test('…')` z **03**. `designed` tylko gdy spec nie 
 | notes form admin | nie | 403 | alert / error-state | E2E-040 |
 | risk toggle | tak | PATCH 200 | badge listy | E2E-050 |
 | risk toggle | nie | 403 | unflagged | E2E-050 |
-| notes manager | — | brak POST | designed | E2E-041 |
+| notes manager | — | brak POST | existing-pom | E2E-041 |
 
 ---
 
@@ -84,7 +84,7 @@ Format: aktor · precondition · kroki · oracle · spec.
 - **Aktor:** anonim (`chromium-guest`, puste cookies).
 - **Kroki:** otwiera `/admin/merchants`.
 - **Oracle:** `/login?redirectTo=`; ekran logowania, nie pusta tabela.
-- **TC:** E2E-001. Wariant session-lab: E2E-002.
+- **TC:** E2E-001. Wariant session-lab: E2E-002. Inne strzeżone path: E2E-003. Powrót `redirectTo`: SEC-011. Guest BFF 401: SEC-030.
 
 ### UC-W2-02 — Operator wylogowuje shared browser — P0
 
@@ -108,8 +108,8 @@ Format: aktor · precondition · kroki · oracle · spec.
 - **Aktorzy:** merchant manager (tworzy order Alpha), platform admin (UI notes).
 - **Precondition:** admin JWT **nie** ma `merchant:payments:create` — drugi storageState.
 - **Kroki:** manager POST order 201 → admin detail → `addNote` → POST `/notes`.
-- **Oracle:** 201 + GET list zawiera body **albo** 403 + alert (GAP-W2-02).
-- **TC:** E2E-040.
+- **Oracle:** 201 + GET list zawiera body **albo** 403 + alert (GAP-W2-02). Manager: formularz ukryty (E2E-041).
+- **TC:** E2E-040, E2E-041.
 
 ### UC-W2-05 — Booking gotówka vs karta vs odmowa vs kłamstwo — P0
 
@@ -124,14 +124,15 @@ Format: aktor · precondition · kroki · oracle · spec.
 - **Aktor:** merchant manager (tenant Alpha).
 - **Kroki:** nav Support ukryty → deep-link `/admin/support` → search `merchantBetaId`.
 - **Oracle:** problem+json; tabela wyników count 0 (brak wycieku Beta).
-- **TC:** E2E-070.
+- **Kontrast admin:** search Beta → tabela `Support search results` (E2E-071; `No results` = fail).
+- **TC:** E2E-070, E2E-071.
 
 ### UC-W2-07 — Problem+json z Error Lab — P0
 
-- **Aktor:** admin na `/error-lab`.
-- **Kroki:** trigger 400 / 401 / 412; 429 widoczny ale nie wołany.
-- **Oracle:** żywy status; karta problemu; brak Authorization w body.
-- **TC:** E2E-080…082.
+- **Aktor:** admin (bez create) + manager (create) na `/error-lab`.
+- **Kroki:** canary 401 = click + `waitForResponse`; pozostałe = `page.request.fetch`. 429 widoczny ale nie wołany.
+- **Oracle:** dokładny status (admin 401/403/404/406/415; manager 400/409/412/428/304); 4xx problem+json; 304 bez problem+json (brak seed → 503); manager 403 trigger → 503 `lab_unavailable`; If-Match `"v99"`; brak Authorization w body.
+- **TC:** E2E-080…083.
 
 ### UC-W2-08 — Utworzenie płatności z idempotencją — P0
 
@@ -145,7 +146,7 @@ Format: aktor · precondition · kroki · oracle · spec.
 
 - **Aktor:** manager na detail CREATED.
 - **Kroki:** odczyt ETag z GET → Authorize (If-Match) → Capture z If-Match z drawera.
-- **Negatyw:** If-Match `"stale-etag"` → 412, GET nadal CREATED.
+- **Negatyw:** If-Match `"v99"` (format `\"v{n}\"`) → 412, GET nadal CREATED. Malformed `"stale-etag"` → 400.
 - **TC:** E2E-092, 093.
 
 ### UC-W2-10 — Anulowanie z potwierdzeniem — P0
@@ -188,6 +189,13 @@ Format: aktor · precondition · kroki · oracle · spec.
 - **Oracle:** 403 `csrf_failed`.
 - **TC:** E2E-121. Happy CSRF = designed (MRL).
 
+### UC-W2-17 — Admin BFF RBAC / walidacja — P1
+
+- **Aktor:** platform admin, `BffClient`.
+- **Kroki:** POST payment-order Alpha; POST merchant bez tenanta; GET nieistniejący UUID.
+- **Oracle:** 403 / 400 / 404.
+- **TC:** API-011, API-003, API-004.
+
 ---
 
 ## PWISE-W2-01 — Checkout (zredukowane, as-built)
@@ -221,3 +229,5 @@ TC: E2E-095 / RFC E2E-020–023.
 | EG-W2-06 | `page.selectOption` na USelect | `getByRole('option')` | E2E-096 |
 | EG-W2-07 | Confirm „Cancel” = zły przycisk | `confirm-action-dismiss` | E2E-096 |
 | EG-W2-08 | Globalny `status-badge` łapie dashboard | badge per `clientOrderReference` | E2E-096 |
+| EG-W2-09 | Malformed If-Match `"stale-etag"` | Spring 400 `MalformedPaymentEtagException`; stale = `"v99"` | E2E-093 / E2E-052 |
+| EG-W2-10 | vite-plugin-checker overlay przechwytuje click Error Lab | `NUXT_TYPECHECK=false` na live POM; overlay detect `count()`; canary 401 = click + `waitForResponse` + `problem.expectVisible`; 429 visible, nie wołany | E2E-081 / E2E-083 |

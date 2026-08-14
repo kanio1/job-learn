@@ -85,11 +85,11 @@ public class MerchantExceptionHandler {
     }
 
     @ExceptionHandler(MerchantNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(MerchantNotFoundException e) {
+    public ResponseEntity<Map<String, Object>> handleNotFound(MerchantNotFoundException e) {
         log.warn("merchant.lookup.failed.not-found correlationId={}", MDC.get("correlationId"));
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .contentType(MediaType.APPLICATION_PROBLEM_JSON)
-                .body(new ErrorResponse("not_found", e.getMessage()));
+                .body(problem(HttpStatus.NOT_FOUND, "not_found", "Not Found", e.getMessage()));
     }
 
     @ExceptionHandler(InvalidTransitionException.class)
