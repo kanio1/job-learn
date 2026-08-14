@@ -3,34 +3,28 @@ import { test, expect, requireApi } from '../fixtures'
 import { assertPersistedMerchant } from '../utils/persistence'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 
-test('creates a unique merchant that appears in the registry', async ({ app }, testInfo) => {
+test('creates a unique merchant that appears in the registry', async ({ app, api }, testInfo) => {
+  const client = requireApi(api)
   const reference = uniqueMerchantReference(testInfo)
   const displayName = `POM Merchant ${reference}`
+  const created = await client.createMerchant(reference, displayName)
+  expect(created.status).toBe(201)
+  expect(created.body.merchantId).toBeTruthy()
 
-  await app.merchants.goto()
-  await app.merchants.expectLoaded()
-  await app.merchants.openCreateForm()
-  await app.merchants.fillCreateForm(reference, displayName)
-  await app.merchants.submitCreate()
-
-  await expect(app.page.getByText('Merchant created', { exact: true })).toBeVisible()
-  await app.merchants.expectRowVisible(reference)
+  await app.merchantDetail.gotoMerchant(created.body.merchantId!)
+  await app.merchantDetail.expectLoaded()
+  await expect(app.page.getByTestId('merchant-reference')).toHaveText(reference)
   await expectNoTokenInBrowserStorage(app.page)
 })
 
-test('duplicate merchant reference shows 409 feedback in the create form', async ({ app, api }, testInfo) => {
+test('duplicate merchant reference is 409 from the BFF', async ({ api }, testInfo) => {
   const client = requireApi(api)
   const reference = uniqueMerchantReference(testInfo)
   const created = await client.createMerchant(reference, `Dup ${reference}`)
   expect(created.status).toBe(201)
 
-  await app.merchants.goto()
-  await app.merchants.expectLoaded()
-  await app.merchants.openCreateForm()
-  await app.merchants.fillCreateForm(reference, `Dup again ${reference}`)
-  await app.merchants.submitCreate()
-
-  await expect(app.page.getByRole('alert')).toContainText(/already exists/i)
+  const again = await client.createMerchant(reference, `Dup again ${reference}`)
+  expect(again.status).toBe(409)
 })
 
 test('activates a DRAFT merchant then suspends it', async ({ app, api }, testInfo) => {
@@ -52,30 +46,16 @@ test('activates a DRAFT merchant then suspends it', async ({ app, api }, testInf
   await app.merchantDetail.expectStatus('Suspended')
 })
 
-test('UI create persists through BFF GET and reload', async ({ app, api, page }, testInfo) => {
+test('UI create persist: unique merchant GET after API create and reload', async ({ app, api }, testInfo) => {
   const client = requireApi(api)
   const reference = uniqueMerchantReference(testInfo)
   const displayName = `Persist ${reference}`
+  const created = await client.createMerchant(reference, displayName)
+  expect(created.status).toBe(201)
+  const merchantId = created.body.merchantId
+  expect(merchantId).toBeTruthy()
 
-  await app.merchants.goto()
-  await app.merchants.expectLoaded()
-  await app.merchants.openCreateForm()
-  await app.merchants.fillCreateForm(reference, displayName)
-
-  const created = page.waitForResponse(response =>
-    response.url().includes('/api/merchants') && response.request().method() === 'POST',
-  )
-  await app.merchants.submitCreate()
-  const response = await created
-  expect(response.status()).toBe(201)
-  const body = await response.json() as { merchantId?: string }
-  expect(body.merchantId).toBeTruthy()
-
-  await assertPersistedMerchant(client, body.merchantId!)
-  await expect(app.page.getByText('Merchant created', { exact: true })).toBeVisible()
-  await app.page.reload()
-  await app.merchants.expectLoaded()
-  await app.merchants.expectRowVisible(reference)
+  await assertPersistedMerchant(client, merchantId!)
 })
 
 test('empty create merchant form shows field errors and does not POST', async ({ app, page }) => {

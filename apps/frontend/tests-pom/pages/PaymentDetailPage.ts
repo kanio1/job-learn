@@ -23,8 +23,9 @@ export class PaymentDetailPage extends BasePage {
   }
 
   async openLifecycle(action: 'authorize' | 'capture' | 'cancel'): Promise<void> {
+    await this.assertNoDevErrorOverlay()
     await this.byTestId(`lifecycle-${action}`).click()
-    await expect(this.byTestId('lifecycle-drawer')).toBeVisible()
+    await expect(this.page.getByTestId('lifecycle-submit-button')).toBeVisible()
   }
 
   async fillIfMatch(value: string): Promise<void> {
@@ -57,6 +58,13 @@ export class PaymentDetailPage extends BasePage {
     await this.submitLifecycle()
     await this.confirm.expectOpen(/Confirm Cancel/)
     await this.confirm.confirm()
+  }
+
+  async openCancelThenDismiss(): Promise<void> {
+    await this.openLifecycle('cancel')
+    await this.submitLifecycle()
+    await this.confirm.expectOpen(/Confirm Cancel/)
+    await this.confirm.dismiss()
   }
 
   async uploadEvidence(filePath: string): Promise<void> {

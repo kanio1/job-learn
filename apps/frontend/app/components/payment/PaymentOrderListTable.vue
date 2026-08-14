@@ -23,6 +23,7 @@
         <UFormField label="Status">
           <USelect
             v-model="filters.status"
+            data-testid="payment-filter-status"
             :items="statusOptions"
             placeholder="Any status"
             value-key="value"
@@ -35,6 +36,7 @@
         <UFormField label="Currency">
           <USelect
             v-model="filters.currency"
+            data-testid="payment-filter-currency"
             :items="currencyOptions"
             placeholder="Any currency"
             value-key="value"
@@ -65,6 +67,7 @@
         <UFormField label="Min amount">
           <UInput
             v-model="filters.minAmountStr"
+            data-testid="payment-filter-min-amount"
             type="number"
             min="0"
             placeholder="Min (minor units)"
@@ -75,6 +78,7 @@
         <UFormField label="Max amount">
           <UInput
             v-model="filters.maxAmountStr"
+            data-testid="payment-filter-max-amount"
             type="number"
             min="0"
             placeholder="Max (minor units)"
@@ -85,6 +89,7 @@
         <UFormField label="Client order reference" class="sm:col-span-2">
           <UInput
             v-model="filters.clientOrderReference"
+            data-testid="payment-filter-reference"
             placeholder="Search by reference…"
             clearable
           />
@@ -155,9 +160,9 @@
 
       <!-- Pagination -->
       <template v-if="list && list.totalPages > 1" #footer>
-        <div class="flex justify-center">
+        <div data-testid="payment-orders-pagination" class="flex justify-center">
           <UPagination
-            :default-page="(list.page ?? 0) + 1"
+            :page="(list.page ?? 0) + 1"
             :total="list.totalElements"
             :page-count="list.size"
             @update:page="onPageChange"

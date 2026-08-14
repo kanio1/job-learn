@@ -27,6 +27,10 @@ export class Sidebar {
     await this.page.getByTestId('nav-link-mirror-lab').click()
   }
 
+  async openRlsLab(): Promise<void> {
+    await this.page.getByTestId('nav-link-rls-lab').click()
+  }
+
   async expectUsersVisible(visible: boolean): Promise<void> {
     if (visible) {
       await expect(this.page.getByTestId('nav-link-users')).toBeVisible()

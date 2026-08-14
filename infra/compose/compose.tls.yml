@@ -1,0 +1,33 @@
+# TLS lab overlay. Does not replace compose.yml.
+# Usage: docker compose --env-file infra/compose/.env -f infra/compose/compose.yml -f infra/compose/compose.tls.yml up -d
+# Prefer: scripts/dev-stack.sh --tls  (after scripts/tls-lab-certs.sh)
+#
+# Host 443/80 need privileged ports. Rootless Podman defaults to 8443→443.
+
+services:
+  payment-quality-keycloak:
+    command:
+      - start
+      - --import-realm
+      - --http-enabled=true
+      - --hostname=https://auth.payment-quality.local:${CADDY_HTTPS_PORT:-8443}
+      - --hostname-strict=false
+      - --proxy-headers=xforwarded
+    environment:
+      KC_HOSTNAME: https://auth.payment-quality.local:${CADDY_HTTPS_PORT:-8443}
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+
+  payment-quality-caddy:
+    image: docker.io/library/caddy:2.10
+    container_name: payment-quality-caddy
+    ports:
+      - "${CADDY_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro,Z
+      - ../tls:/certs:ro,Z
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - payment-quality-keycloak

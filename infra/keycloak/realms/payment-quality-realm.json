@@ -145,10 +145,14 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "redirectUris": [
-        "http://localhost:3000/*"
+        "http://localhost:3000/*",
+        "https://app.payment-quality.local/*",
+        "https://app.payment-quality.local:8443/*"
       ],
       "webOrigins": [
-        "http://localhost:3000"
+        "http://localhost:3000",
+        "https://app.payment-quality.local",
+        "https://app.payment-quality.local:8443"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256"

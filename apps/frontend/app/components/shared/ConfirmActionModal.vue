@@ -29,6 +29,7 @@
         <template #footer>
           <div class="flex justify-end gap-3">
             <UButton
+              data-testid="confirm-action-dismiss"
               color="neutral"
               variant="ghost"
               @click="handleCancel"
@@ -36,6 +37,7 @@
               {{ cancelLabel ?? 'Cancel' }}
             </UButton>
             <UButton
+              data-testid="confirm-action-confirm"
               color="error"
               @click="handleConfirm"
             >

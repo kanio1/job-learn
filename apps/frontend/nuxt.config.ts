@@ -33,6 +33,7 @@ export default defineNuxtConfig({
       checkoutLabEnabled: process.env.NUXT_PUBLIC_CHECKOUT_LAB_ENABLED !== 'false',
       mirrorLabEnabled: process.env.NUXT_PUBLIC_MIRROR_LAB_ENABLED !== 'false',
       mirrorLabIdleSeconds: Number(process.env.NUXT_PUBLIC_MIRROR_LAB_IDLE_SECONDS || 120),
+      rlsLabEnabled: process.env.NUXT_PUBLIC_RLS_LAB_ENABLED !== 'false',
     }
   }
 })

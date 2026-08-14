@@ -96,17 +96,20 @@
  * Uses getAvailableActions from the payment-orders Pinia store to determine
  * which actions are currently available based on the payment order status.
  *
+ * Capability comes only from useAuthorization() (session roles). Do not pass a
+ * Boolean prop — Vue casts absent Boolean props to false and hides Cancel for
+ * MERCHANT_MANAGER. Unit tests mock useAuthorization.
+ *
  * Buttons not available for the current status are hidden (not rendered).
  * Emits `action-triggered` with the action name when a button is clicked.
  *
  * Requirements: 5.1, 8.10, 12.6
  */
 
-const props = defineProps<{
-  paymentOrderId: string
-  merchantId: string
-  canRunLifecycle?: boolean
-}>()
+const props = defineProps({
+  paymentOrderId: { type: String, required: true },
+  merchantId: { type: String, required: true },
+})
 
 const emit = defineEmits<{
   'action-triggered': [action: string, amountMinor: number | null]
@@ -114,7 +117,7 @@ const emit = defineEmits<{
 
 const store = usePaymentOrdersStore()
 const { can } = useAuthorization()
-const canRunLifecycle = computed(() => props.canRunLifecycle ?? can.value.canRunLifecycle)
+const canRunLifecycle = computed(() => can.value.canRunLifecycle)
 
 const captureAmount = ref<number | null>(null)
 const refundAmount = ref<number | null>(null)

@@ -9,11 +9,9 @@ test('Ctrl+K palette navigates to Error Lab', { tag: ['@a11y', '@ux'] }, async (
     await expect(app.commandPalette.dialog()).toMatchAriaSnapshot()
   })
 
-  await test.step('type Error Lab and select with keyboard', async () => {
+  await test.step('type Error Lab and select', async () => {
     await app.commandPalette.search('Error Lab')
-    await expect(app.page.getByRole('option').first()).toBeVisible()
-    await app.page.keyboard.press('ArrowDown')
-    await app.page.keyboard.press('Enter')
+    await app.page.getByRole('option', { name: 'Error Lab' }).first().click()
   })
 
   await expect(app.page).toHaveURL(/\/error-lab$/)

@@ -14,4 +14,8 @@ export class ProblemDetailsCard {
   async expectStatusBadge(status: number | string): Promise<void> {
     await expect(this.root().getByText(String(status), { exact: false })).toBeVisible()
   }
+
+  async expectError(code: string): Promise<void> {
+    await expect(this.root().getByTestId('problem-error')).toHaveText(code)
+  }
 }

@@ -1,0 +1,14 @@
+app.payment-quality.local {
+	tls /certs/cert.pem /certs/key.pem
+	reverse_proxy host.docker.internal:3000
+}
+
+api.payment-quality.local {
+	tls /certs/cert.pem /certs/key.pem
+	reverse_proxy host.docker.internal:8080
+}
+
+auth.payment-quality.local {
+	tls /certs/cert.pem /certs/key.pem
+	reverse_proxy payment-quality-keycloak:8080
+}

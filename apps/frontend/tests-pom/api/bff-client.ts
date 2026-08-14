@@ -11,9 +11,11 @@ export class BffClient {
   private constructor(private readonly context: APIRequestContext) {}
 
   static async create(playwright: Playwright, storageState: string): Promise<BffClient> {
+    const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000'
     const context = await playwright.request.newContext({
-      baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
+      baseURL,
       storageState,
+      ignoreHTTPSErrors: process.env.PLAYWRIGHT_TLS_INSECURE === '1',
     })
     return new BffClient(context)
   }
@@ -29,9 +31,9 @@ export class BffClient {
     return { status: response.status(), body, headers: response.headers() }
   }
 
-  async createMerchant(merchantReference: string, displayName: string) {
+  async createMerchant(merchantReference: string, displayName: string, tenantReference = 'TENANT_ALPHA') {
     const response = await this.context.post('/api/merchants', {
-      data: { merchantReference, displayName },
+      data: { merchantReference, displayName, tenantReference },
     })
     const body = await response.json() as { merchantId?: string } & ProblemDetails
     return { status: response.status(), body, headers: response.headers() }
@@ -64,6 +66,56 @@ export class BffClient {
     const text = await response.text()
     const body = text ? JSON.parse(text) as { status?: string, paymentOrderId?: string } : undefined
     return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async listPaymentOrders(
+    merchantId: string,
+    query: Record<string, string | number | undefined> = {},
+  ) {
+    const params = new URLSearchParams()
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== '') {
+        params.set(key, String(value))
+      }
+    }
+    const suffix = params.toString() ? `?${params.toString()}` : ''
+    const response = await this.context.get(`/api/merchants/${merchantId}/payment-orders${suffix}`)
+    const text = await response.text()
+    const body = text
+      ? JSON.parse(text) as {
+        content?: Array<{ clientOrderReference?: string, amountMinor?: number, status?: string, currency?: string }>
+        page?: number
+        totalElements?: number
+      }
+      : undefined
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async listRlsItems() {
+    const response = await this.context.get('/api/rls-lab/items')
+    const text = await response.text()
+    const body = text ? JSON.parse(text) as { items?: Array<{ itemId?: string, label?: string }> } : undefined
+    return { status: response.status(), body }
+  }
+
+  async getRlsItem(itemId: string) {
+    const response = await this.context.get(`/api/rls-lab/items/${itemId}`)
+    const text = await response.text()
+    const body = text ? JSON.parse(text) as ProblemDetails & { itemId?: string, label?: string } : undefined
+    return { status: response.status(), body }
+  }
+
+  async rlsCompare() {
+    const response = await this.context.get('/api/rls-lab/compare')
+    const text = await response.text()
+    const body = text
+      ? JSON.parse(text) as ProblemDetails & {
+        bypassRoleCount?: number
+        restrictedWithoutTenantGuc?: number
+        unprotected?: number
+      }
+      : undefined
+    return { status: response.status(), body }
   }
 
   async authorizePayment(merchantId: string, paymentOrderId: string, etag: string, idempotencyKey: string) {

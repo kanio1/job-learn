@@ -16,10 +16,19 @@ export class ConfirmModal {
   }
 
   async confirm(): Promise<void> {
-    await this.page.getByRole('button', { name: 'Confirm' }).click()
+    await this.page.getByTestId('confirm-action-confirm').click()
   }
 
+  /**
+   * Dismiss without confirming. Uses the footer test id so this never matches
+   * a lifecycle drawer button labelled "Cancel".
+   */
+  async dismiss(): Promise<void> {
+    await this.page.getByTestId('confirm-action-dismiss').click()
+  }
+
+  /** @deprecated Use {@link dismiss} — "cancel" collides with payment Cancel. */
   async cancel(): Promise<void> {
-    await this.page.getByRole('button', { name: 'Go back' }).or(this.page.getByRole('button', { name: 'Cancel' })).click()
+    await this.dismiss()
   }
 }

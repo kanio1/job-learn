@@ -1,7 +1,9 @@
 <template>
-  <UBadge :color="config.color" variant="subtle" size="sm">
-    {{ config.label }}
-  </UBadge>
+  <span :data-testid="testId" :data-status="status">
+    <UBadge :color="config.color" variant="subtle" size="sm">
+      {{ config.label }}
+    </UBadge>
+  </span>
 </template>
 
 <script setup lang="ts">
@@ -39,4 +41,14 @@ const STATUS_MAP: Record<string, BadgeConfig> = {
 const FALLBACK: BadgeConfig = { label: 'Unknown', color: 'neutral' }
 
 const config = computed<BadgeConfig>(() => STATUS_MAP[props.status] ?? FALLBACK)
+
+const testId = computed(() => {
+  if (props.type === 'payment') {
+    return 'payment-status-badge'
+  }
+  if (props.type === 'merchant') {
+    return 'merchant-status-badge'
+  }
+  return 'status-badge'
+})
 </script>

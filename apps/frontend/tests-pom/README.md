@@ -18,6 +18,8 @@ This tree is the **agent reference**. Write your own copy in [`../tests-pom-lear
 
 `@security` session/IDOR/412, `@a11y` ARIA snapshot, `@ux` palette/notes/risk/checkout.
 
+Test map (E2E, HTTP/BFF, security, EP/BVA, DT/UC): [`docs/testing/live-pom-wave-2/`](../../../docs/testing/live-pom-wave-2/README.md). Sibling catalogs: checkout-protocol-lab, payu-bank-mirror-labs, rls-filters-composition-lab.
+
 ## Containers
 
 | Layer | How |
@@ -64,6 +66,8 @@ Learner tree (starts with zero tests):
 ```bash
 corepack pnpm exec playwright test --config playwright.pom-learner.config.ts
 ```
+
+TLS overlay (`playwright.pom.tls.config.ts`): `scripts/dev-stack.sh --tls`, then the same password exports. Chromium trusts mkcert after `mkcert -install`. Without OS trust, `PLAYWRIGHT_TLS_INSECURE=1` — that does not prove CA trust. ConfirmModal dismiss uses `data-testid="confirm-action-dismiss"` (never the drawer button labelled Cancel). A `vite-plugin-checker-error-overlay` fails the POM instead of being clicked away.
 
 ## Layout (classic skeleton)
 
