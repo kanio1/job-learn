@@ -256,4 +256,106 @@ class PaymentOrderListRestAssuredTest extends PostgresContainerSupport {
 
         assertThat(response.content()).isEmpty();
     }
+
+    @Test
+    @DisplayName("list filtered by fromDate and toDate returns orders created today")
+    void listFilteredByDateRangeReturnsMatchingOrders() {
+        String merchantId = seedAndGetReader(3);
+        String readToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+        String today = java.time.LocalDate.now(java.time.ZoneOffset.UTC).toString();
+
+        PaymentOrderListResponse response = MerchantApiTestSupport.requestWithToken(port, readToken)
+                .accept(ContentType.JSON)
+                .queryParam("fromDate", today)
+                .queryParam("toDate", today)
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(200)
+                .extract().as(PaymentOrderListResponse.class);
+
+        assertThat(response.content()).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("list filtered by future date range returns empty content")
+    void listFilteredByFutureDateRangeReturnsEmpty() {
+        String merchantId = seedAndGetReader(3);
+        String readToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        PaymentOrderListResponse response = MerchantApiTestSupport.requestWithToken(port, readToken)
+                .accept(ContentType.JSON)
+                .queryParam("fromDate", "2099-01-01")
+                .queryParam("toDate", "2099-12-31")
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(200)
+                .extract().as(PaymentOrderListResponse.class);
+
+        assertThat(response.content()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("list filtered by minAmount and maxAmount returns matching amounts")
+    void listFilteredByAmountRangeReturnsMatchingOrders() {
+        String merchantId = seedAndGetReader(5);
+        String readToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        PaymentOrderListResponse response = MerchantApiTestSupport.requestWithToken(port, readToken)
+                .accept(ContentType.JSON)
+                .queryParam("minAmount", 2000)
+                .queryParam("maxAmount", 4000)
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(200)
+                .extract().as(PaymentOrderListResponse.class);
+
+        assertThat(response.content()).isNotEmpty();
+        assertThat(response.content())
+                .allMatch(item -> item.amountMinor() >= 2000 && item.amountMinor() <= 4000);
+    }
+
+    @Test
+    @DisplayName("list filtered by status and amount combo returns only matching CREATED PLN-range")
+    void listFilteredByStatusAndAmountCombo() {
+        String merchantId = seedAndGetReader(6);
+        String readToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        PaymentOrderListResponse response = MerchantApiTestSupport.requestWithToken(port, readToken)
+                .accept(ContentType.JSON)
+                .queryParam("status", "CREATED")
+                .queryParam("minAmount", 1000)
+                .queryParam("maxAmount", 6000)
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(200)
+                .extract().as(PaymentOrderListResponse.class);
+
+        assertThat(response.content()).isNotEmpty();
+        assertThat(response.content())
+                .allMatch(item -> "CREATED".equals(item.status())
+                        && item.amountMinor() >= 1000
+                        && item.amountMinor() <= 6000);
+    }
+
+    @Test
+    @DisplayName("minAmount greater than maxAmount returns 400 validation")
+    void minAmountGreaterThanMaxAmountReturns400() {
+        String merchantId = PaymentApiTestSupport.createActiveMerchant(port,
+                MerchantApiTestSupport.operatorRequest(port));
+        String readToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        MerchantApiTestSupport.requestWithToken(port, readToken)
+                .accept(ContentType.JSON)
+                .queryParam("minAmount", 5000)
+                .queryParam("maxAmount", 1000)
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(400)
+                .body("error", equalTo("validation"));
+    }
 }

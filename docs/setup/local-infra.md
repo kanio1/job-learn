@@ -16,7 +16,20 @@ The example contains non-secret local values only:
 
 Production secrets, business realm variables, and application OAuth/OIDC client variables are intentionally deferred.
 
-## Start Services
+## Full local stack (HTTP)
+
+Postgres and Keycloak stay in Compose. Spring and Nuxt stay on the host (hot reload).
+
+```bash
+scripts/dev-stack.sh
+```
+
+This waits for Postgres, the Keycloak realm, `GET /api/status`, and Nuxt `:3000`. Spring starts with `dev,seed` so `MERCHANT_ALPHA_001` exists for live POM. Logs: `tmp/dev-stack/`. Stop host apps with `scripts/dev-stack.sh --stop`. Tear down Compose with `scripts/dev-stack.sh --down`.
+
+Canonical Playwright POM origin on this stack is `http://localhost:3000` (`playwright.pom.config.ts` uses `reuseExistingServer: true`). HTTP Nuxt binds `127.0.0.1`. The TLS overlay binds `0.0.0.0` so Caddy can reach the host — see [tls-lab.md](tls-lab.md).
+
+HTTPS overlay: [tls-lab.md](tls-lab.md).
+
 
 From the repository root:
 

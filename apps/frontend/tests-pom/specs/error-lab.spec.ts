@@ -33,10 +33,10 @@ test('Error Lab 401 is a live unauthorized response, not a 429 mock', async ({ a
 test('Error Lab 412 is a live stale If-Match from the backend', { tag: ['@security'] }, async ({ app, page }) => {
   await app.errorLab.goto()
   await app.errorLab.expectLoaded()
+  await expect(app.errorLab.triggerButton(412)).toBeVisible()
 
   const trigger = page.waitForResponse(response =>
     response.url().includes('/api/error-lab/trigger-412'),
-    { timeout: 30_000 },
   )
   await app.errorLab.trigger(412)
   const response = await trigger

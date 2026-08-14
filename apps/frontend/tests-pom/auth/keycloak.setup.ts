@@ -21,11 +21,13 @@ export async function saveKeycloakStorageState(page: Page, account: PomAccount, 
   }
 
   await page.waitForURL('**/admin/merchants', { timeout: 30_000 })
-  const sessionResponse = await page.request.get('/api/_auth/session')
-  expect(sessionResponse.ok(), 'sealed Nuxt session must exist after Keycloak login').toBe(true)
-  const session = await sessionResponse.json() as {
-    user?: { roles?: string[], tenantId?: string, merchantId?: string }
-  }
+  const session = await page.evaluate(async () => {
+    const response = await fetch('/api/_auth/session')
+    if (!response.ok) {
+      throw new Error(`sealed Nuxt session must exist after Keycloak login (${response.status})`)
+    }
+    return await response.json() as { user?: { roles?: string[], tenantId?: string, merchantId?: string } }
+  })
   expect(session.user?.roles).toContain(account.role)
   expect(session.user?.tenantId).toBe(account.tenantId)
   expect(session.user?.merchantId).toBe(account.merchantId)

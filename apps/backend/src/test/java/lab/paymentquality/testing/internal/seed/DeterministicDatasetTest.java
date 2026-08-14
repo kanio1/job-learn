@@ -9,6 +9,7 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -29,6 +30,9 @@ class DeterministicDatasetTest {
 
     @Mock
     PaymentSeedCapability payments;
+
+    @Mock
+    JdbcTemplate jdbc;
 
     @InjectMocks
     DeterministicDataset dataset;
@@ -67,6 +71,7 @@ class DeterministicDatasetTest {
         assertThat(fieldTypes).containsExactlyInAnyOrder(
                 TenantSeedCapability.class,
                 MerchantSeedCapability.class,
-                PaymentSeedCapability.class);
+                PaymentSeedCapability.class,
+                JdbcTemplate.class);
     }
 }

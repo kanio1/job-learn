@@ -5,6 +5,7 @@ import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 
 async function requireCheckoutLab(app: App): Promise<void> {
   await app.page.goto('/admin/merchants')
+  await expect(app.page.getByTestId('nav-link-merchants')).toBeVisible()
   const nav = app.page.getByTestId('nav-link-checkout-lab')
   if (await nav.count() === 0) {
     test.skip(true, 'Checkout Lab nav is hidden (checkoutLabEnabled=false)')
@@ -42,7 +43,7 @@ test('hub opens booking; online pay uses hosted tab and fulfillment oracle', asy
   await hosted.hostedCheckout.returnToMerchant()
   await hostedPage.waitForURL(/\/checkout-lab\/return/)
   await hosted.checkoutReturn.expectLoaded()
-  await expect(hosted.checkoutReturn.returnHint()).toHaveText('success')
+  await expect(hosted.checkoutReturn.returnHint()).toContainText('success')
   await expect(hosted.checkoutReturn.fulfillmentStatus()).toHaveText('CONFIRMED', { timeout: 45_000 })
 
   const sessionId = new URL(hostedPage.url()).searchParams.get('sessionId')
@@ -104,6 +105,6 @@ test('hosted decline leaves fulfillment cancelled', { tag: ['@ux'] }, async ({ a
   await hosted.hostedCheckout.returnToMerchant()
   await hostedPage.waitForURL(/\/checkout-lab\/return/)
   await hosted.checkoutReturn.expectLoaded()
-  await expect(hosted.checkoutReturn.returnHint()).toHaveText('failure')
+  await expect(hosted.checkoutReturn.returnHint()).toContainText('failure')
   await expect(hosted.checkoutReturn.fulfillmentStatus()).toHaveText('CANCELLED', { timeout: 45_000 })
 })

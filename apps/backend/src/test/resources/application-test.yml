@@ -11,7 +11,7 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
-    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit,classpath:db/migration/checkoutlab,classpath:db/migration/mirrorlab
+    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit,classpath:db/migration/checkoutlab,classpath:db/migration/mirrorlab,classpath:db/migration/rlslab
     baseline-on-migrate: false
 
 payment:
@@ -36,6 +36,14 @@ app:
   mirror-lab:
     enabled: false
     step-up-threshold-minor: 10000
+  rls-lab:
+    enabled: false
+    datasource:
+      username: rls_lab_app
+      password: rls_lab_app
+    bypass:
+      username: rls_lab_bypass
+      password: rls_lab_bypass
 
 logging:
   level:

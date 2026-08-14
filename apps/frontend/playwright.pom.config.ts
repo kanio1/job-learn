@@ -58,7 +58,7 @@ export default defineConfig({
     },
     {
       name: 'chromium-rbac',
-      testMatch: /specs\/(auth-rbac|mirror-lab-rbac)\.spec\.ts/,
+      testMatch: /specs\/(auth-rbac|mirror-lab-rbac|rls-lab)\.spec\.ts/,
       dependencies: ['setup-platform-admin', 'setup-merchant-manager'],
       use: devices['Desktop Chrome'],
     },

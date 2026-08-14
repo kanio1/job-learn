@@ -41,3 +41,8 @@ test-results/
 *.pid
 tmp/
 *.tmp
+
+# TLS lab mkcert material (scripts/tls-lab-certs.sh)
+infra/tls/*.pem
+infra/tls/*.key
+infra/tls/*.crt

@@ -1,0 +1,33 @@
+- dialog "Search Payment Quality Lab":
+  - textbox "Search dashboard..."
+  - button "Close"
+  - listbox:
+    - group "Go to":
+      - text: ""
+      - option "Overview"
+      - option "Merchants"
+      - option "Payment Orders"
+      - option "Users"
+      - option "Audit Log"
+      - option "Support"
+      - option "Error Lab"
+      - option "Checkout Lab"
+      - option "Mirror Lab"
+      - option "RLS Lab"
+    - group "Actions":
+      - text: ""
+      - option "Create merchant"
+      - option "Merchant registry"
+      - option "Payment orders"
+      - option "User management"
+      - option "Audit log"
+      - option "Error Lab"
+      - option "Checkout Lab"
+      - option "Booking Lab"
+      - option "Event Inspector"
+      - option "Mirror Lab"
+    - group "Theme":
+      - text: ""
+      - option "System"
+      - option "Light"
+      - option "Dark"

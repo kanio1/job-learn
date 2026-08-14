@@ -161,46 +161,46 @@ Obserwacja PROCESSING: wąski race — P2; DONE+202 path P0.
 Aktor: merchant tester + płatnik.  
 Główny: Booking ONLINE → Open hosted → Approve (token) → Return.  
 Oracle: fulfillment CONFIRMED; event DONE; hint success **dodatkowy**.  
-TC: PW-E2E-010, 050, 041; PW-API-113, 200.
+TC: PW-E2E-010, 050, 041; live POM `hub opens booking; online pay uses hosted tab and fulfillment oracle`; PW-API-113, 200.
 
 Rozszerzenia: 5xx retry (UC-01a), EUR/USD (UC-01b).
 
 ### UC-02 Cash — P0
 
-Booking CASH → CONFIRMED, brak hosted.  
-TC: PW-E2E-011; PW-API-300.
+Booking CASH przez **select mode** → CONFIRMED, brak hosted.  
+TC: PW-E2E-011; live POM `cash booking confirms fulfillment without hosted checkout`; PW-API-300.
 
 ### UC-03 Lie return — P0
 
 Płatnik otwiera continueUrl z `status=success` bez Approve.  
-Oracle: AWAITING.  
-TC: PW-E2E-040; PW-API-071.
+Oracle: fulfillment ≠ CONFIRMED (`AWAITING_PAYMENT|UNKNOWN`).  
+TC: PW-E2E-040 existing-pw + existing-pom `lie return keeps fulfillment unconfirmed`.
 
 ### UC-04 User cancel — P0
 
-Decline → return failure → CANCELLED.  
-TC: PW-E2E-022, 042; DT-S02.
+Decline → return → fulfillment `CANCELLED` (hint zawiera `failure`; session może być `CANCELED`).  
+TC: PW-E2E-022/042 existing-pom `hosted decline leaves fulfillment cancelled`.
 
 ### UC-05 Pay no return — P0
 
 Approve, zamknij tab, nie return.  
 Oracle: CONFIRMED via GET fulfillment.  
-TC: PW-E2E-043; PW-API-075.
+TC: PW-E2E-043; PW-API-075. **designed** (brak POM).
 
 ### UC-06 Expired link — P0
 
-Clock / EXPIRED_LINK → Approve zablokowane / 409.  
-TC: PW-E2E-024; PW-API-130.
+EXPIRED_LINK → hosted `psp-link-expired`. Approve zablokowane / 409: nadal designed.  
+TC: PW-E2E-024 partial existing-pom `expired hosted checkout exposes test id`; PW-API-130 RA.
 
 ### UC-07 Inspect after pay — P1
 
 Inspector Load → signature, deliveries 202, process DONE.  
-TC: PW-E2E-060–062.
+TC: PW-E2E-060–062; live POM ładuje inspector po approve (E2E-060).
 
 ### UC-08 Unauth vs public — P0
 
-Dashboard bez sesji → login; hosted/return bez sesji → 200 UI.  
-TC: PW-E2E-007, 020, 045.
+Dashboard bez sesji → login (`session-guest` merchants/session-lab). Deep-link `/admin/checkout-lab`: designed. Hosted/return bez sesji → 200 UI.  
+TC: PW-E2E-007 partial; 020, 045.
 
 ### UC-09 Reconcile mismatch — P1
 

@@ -1,0 +1,19 @@
+# Local TLS lab (FR-TLS-LAB). Loaded with SPRING_PROFILES_ACTIVE=dev,tls-lab.
+# Issuer hostname matches Keycloak behind Caddy. JWKS stays on localhost HTTP
+# so the JVM does not need the mkcert CA.
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${TLS_LAB_KEYCLOAK_ISSUER:https://auth.payment-quality.local:8443/realms/payment-quality}
+          jwk-set-uri: ${TLS_LAB_KEYCLOAK_JWKS:http://localhost:8081/realms/payment-quality/protocol/openid-connect/certs}
+
+payment-quality:
+  keycloak:
+    admin:
+      base-url: ${KEYCLOAK_ADMIN_BASE_URL:http://localhost:8081}
+
+app:
+  checkout-lab:
+    hosted-checkout-base-url: ${CHECKOUT_LAB_HOSTED_CHECKOUT_BASE_URL:https://app.payment-quality.local:8443}

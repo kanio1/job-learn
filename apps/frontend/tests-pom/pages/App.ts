@@ -23,6 +23,7 @@ import { MirrorLabHubPage } from './MirrorLabHubPage'
 import { SessionLabPage } from './SessionLabPage'
 import { NetworkLabPage } from './NetworkLabPage'
 import { MirrorLabBankPage } from './MirrorLabBankPage'
+import { RlsLabPage } from './RlsLabPage'
 
 /** Facade: one fixture exposes every page object for the current Page. */
 export class App {
@@ -50,6 +51,7 @@ export class App {
   readonly sessionLab: SessionLabPage
   readonly networkLab: NetworkLabPage
   readonly mirrorBank: MirrorLabBankPage
+  readonly rlsLab: RlsLabPage
 
   constructor(readonly page: Page) {
     this.sidebar = new Sidebar(page)
@@ -76,5 +78,6 @@ export class App {
     this.sessionLab = new SessionLabPage(page)
     this.networkLab = new NetworkLabPage(page)
     this.mirrorBank = new MirrorLabBankPage(page)
+    this.rlsLab = new RlsLabPage(page)
   }
 }

@@ -13,7 +13,7 @@ Compose imports `infra/keycloak/realms/payment-quality-realm.json` with `start-d
 
 - Realm: `payment-quality`
 - Public client: `payment-quality-dashboard`
-- Redirect URI: `http://localhost:3000/*`
+- Redirect URI: `http://localhost:3000/*` and `https://app.payment-quality.local/*` (TLS lab)
 - PKCE: `S256`
 - Discovery endpoint: `http://localhost:8081/realms/payment-quality/.well-known/openid-configuration`
 

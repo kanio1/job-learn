@@ -25,7 +25,15 @@ export async function expectSessionCookieHttpOnly(page: Page): Promise<void> {
   expect(session!.httpOnly, 'nuxt-session must be HttpOnly').toBe(true)
 }
 
+/** Sealed cookie blobs may coincidentally contain "eyJ"; only Web Storage origins are checked. */
 export function expectNoJwtInStorageStateFile(path: string): void {
-  const raw = readFileSync(path, 'utf8')
-  expectNoTokenInText(raw, `storageState ${path}`)
+  const parsed = JSON.parse(readFileSync(path, 'utf8')) as {
+    origins?: { localStorage?: { name: string, value: string }[], sessionStorage?: { name: string, value: string }[] }[]
+  }
+  const blobs = (parsed.origins ?? []).flatMap((origin) => {
+    const local = (origin.localStorage ?? []).map(entry => `${entry.name}=${entry.value}`)
+    const session = (origin.sessionStorage ?? []).map(entry => `${entry.name}=${entry.value}`)
+    return [...local, ...session]
+  })
+  expectNoTokenInText(blobs.join('\n'), `storageState origins ${path}`)
 }

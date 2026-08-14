@@ -17,3 +17,11 @@ app:
   mirror-lab:
     enabled: ${MIRROR_LAB_ENABLED:true}
     step-up-threshold-minor: 10000
+  rls-lab:
+    enabled: ${RLS_LAB_ENABLED:true}
+    datasource:
+      username: rls_lab_app
+      password: rls_lab_app
+    bypass:
+      username: rls_lab_bypass
+      password: rls_lab_bypass

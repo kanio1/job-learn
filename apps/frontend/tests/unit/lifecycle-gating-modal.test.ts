@@ -199,10 +199,8 @@ describe('Modal gating for cancel (Req 5.8)', () => {
       global: globalStubs,
     })
 
-    const buttons = wrapper.findAll('button')
-    const cancelButton = buttons.find(b => b.text() === 'Go back')
-    expect(cancelButton).toBeDefined()
-    await cancelButton!.trigger('click')
+    const cancelButton = wrapper.get('[data-testid="confirm-action-dismiss"]')
+    await cancelButton.trigger('click')
 
     // No confirm event → no request will be dispatched by the page
     expect(wrapper.emitted('cancel')).toBeTruthy()
@@ -221,10 +219,7 @@ describe('Modal gating for cancel (Req 5.8)', () => {
       global: globalStubs,
     })
 
-    const buttons = wrapper.findAll('button')
-    const confirmButton = buttons.find(b => b.text() === 'Confirm')
-    expect(confirmButton).toBeDefined()
-    await confirmButton!.trigger('click')
+    await wrapper.get('[data-testid="confirm-action-confirm"]').trigger('click')
 
     expect(wrapper.emitted('confirm')).toBeTruthy()
     expect(wrapper.emitted('cancel')).toBeFalsy()
@@ -587,10 +582,7 @@ describe('ConfirmActionModal component (Req 5.8, 5.9)', () => {
       global: globalStubs,
     })
 
-    const buttons = wrapper.findAll('button')
-    const confirmButton = buttons.find(b => b.text() === 'Confirm')
-    expect(confirmButton).toBeDefined()
-    await confirmButton!.trigger('click')
+    await wrapper.get('[data-testid="confirm-action-confirm"]').trigger('click')
 
     expect(wrapper.emitted('confirm')).toBeTruthy()
 

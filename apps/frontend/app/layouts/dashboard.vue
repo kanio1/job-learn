@@ -55,6 +55,7 @@ const { can } = useAuthorization()
 const { user } = useUserSession()
 const checkoutLabEnabled = computed(() => useRuntimeConfig().public.checkoutLabEnabled === true)
 const mirrorLabEnabled = computed(() => useRuntimeConfig().public.mirrorLabEnabled === true)
+const rlsLabEnabled = computed(() => useRuntimeConfig().public.rlsLabEnabled === true)
 const tenantId = computed(() => (user.value as { tenantId?: string })?.tenantId)
 
 function closeSidebar() {
@@ -139,6 +140,14 @@ const allLinks: (NavigationMenuItem & { testid: string; visible: ComputedRef<boo
     to: '/admin/mirror-lab',
     onSelect: closeSidebar,
     visible: computed(() => mirrorLabEnabled.value),
+  },
+  {
+    testid: 'nav-link-rls-lab',
+    label: 'RLS Lab',
+    icon: 'i-lucide-shield',
+    to: '/admin/rls-lab',
+    onSelect: closeSidebar,
+    visible: computed(() => rlsLabEnabled.value),
   },
 ]
 

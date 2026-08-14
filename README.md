@@ -143,9 +143,19 @@ From the repository root:
 
 ```bash
 cp infra/compose/.env.example infra/compose/.env
+scripts/dev-stack.sh
+scripts/dev-stack.sh --stop
+scripts/dev-stack.sh --down
+```
+
+Compose-only (Postgres + Keycloak, no apps):
+
+```bash
 docker compose --env-file infra/compose/.env -f infra/compose/compose.yml up -d
 docker compose --env-file infra/compose/.env -f infra/compose/compose.yml down
 ```
+
+HTTPS overlay (mkcert + Caddy): see [docs/setup/tls-lab.md](docs/setup/tls-lab.md) and `scripts/dev-stack.sh --tls`.
 
 See `docs/setup/local-infra.md` for details.
 
@@ -154,8 +164,8 @@ See `docs/setup/local-infra.md` for details.
 - Backend: `apps/backend ./mvnw test`, `./mvnw verify` (Codex broad validation excludes `restkit/**` and `paymentsupport/**` unless explicitly requested)
 - Standalone REST Assured: `apps/api-tests` baseline is Surefire 79/79 and Failsafe 72/72 (2026-07-13)
 - Frontend: `apps/frontend corepack pnpm typecheck`, `corepack pnpm test:unit`, `corepack pnpm exec playwright test`; standard Chromium closure baseline is 82/82 (2026-07-13)
-- Live assurance: run only with explicitly supplied local test credentials and the `playwright.live.config.ts` project; see `status/evidence/latest-validation.md` for its current validation state
-- Infrastructure: Docker Compose startup from `docs/setup/local-infra.md`
+- Live assurance: run only with explicitly supplied local test credentials and the `playwright.live.config.ts` or `playwright.pom.config.ts` project; see `status/evidence/latest-validation.md` for its current validation state
+- Infrastructure: `scripts/dev-stack.sh` or Docker Compose from `docs/setup/local-infra.md`; TLS overlay in `docs/setup/tls-lab.md`
 - Documentation: follow the Tester Orientation Pack in `docs/setup/phase-0-tester-orientation-pack.md`
 
 ## Tester Focus

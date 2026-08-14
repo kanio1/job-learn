@@ -42,7 +42,7 @@ Hosted: `/psp/checkout/{id}` ma `layout: false` — **nie** dashboard overlay.
 
 | | |
 |---|---|
-| Pokrycie | designed (hub pokazuje `checkout-lab-open-widget` gdy flag on — POM `mirror-lab.spec.ts` widzi `widget-session-id`) |
+| Pokrycie | existing-pom `mirror-lab.spec.ts` · `widget iframe is same-origin` (`widget-session-id`). Flaga off: **designed** GAP-T01 |
 | Prio | P1 |
 | Kroki | hub CPL → Widget iframe |
 | Asercje | `widget-session-id` visible gdy flag on |

@@ -10,14 +10,21 @@
  * - /psp-redirect-simulator is a standalone mock of an external PSP checkout
  *   page (F-D2) — a real PSP redirect target lives on a different domain
  *   entirely, so it is intentionally outside this app's session realm.
+ * - /auth/keycloak is the nuxt-auth-utils OIDC start + callback. Do not skip
+ *   the whole /auth/ prefix — a future /auth/* page would otherwise bypass the
+ *   session guard.
  *
  * Feature: iam-roles-and-keycloak-login
  */
+function isOidcHandlerPath(path: string): boolean {
+  return path === '/auth/keycloak' || path.startsWith('/auth/keycloak/')
+}
+
 export default defineNuxtRouteMiddleware(async (to) => {
   const session = useUserSession()
 
   // Standalone PSP simulator — no session realm, same as a real external PSP page.
-  if (to.path === '/psp-redirect-simulator' || to.path.startsWith('/psp/checkout/') || to.path === '/checkout-lab/return') {
+  if (to.path === '/psp-redirect-simulator' || to.path.startsWith('/psp/checkout/') || to.path === '/checkout-lab/return' || isOidcHandlerPath(to.path)) {
     return
   }
 
@@ -32,7 +39,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (!mirrorLabEnabled && mirrorLabPrefixes.some(prefix => to.path === prefix || to.path.startsWith(`${prefix}/`))) {
     throw createError({ statusCode: 404, statusMessage: 'Not Found' })
   }
-  if (!mirrorLabEnabled && to.path === '/admin/checkout-lab/widget') {
+  const rlsLabEnabled = useRuntimeConfig().public.rlsLabEnabled === true
+  if (!rlsLabEnabled && (to.path === '/admin/rls-lab' || to.path.startsWith('/admin/rls-lab/'))) {
     throw createError({ statusCode: 404, statusMessage: 'Not Found' })
   }
 

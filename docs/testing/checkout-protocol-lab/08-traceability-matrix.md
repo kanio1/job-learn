@@ -37,12 +37,12 @@ Priorytet P0 = pieniądze, auth, 400/503, oracle. Nie implementować w tym zadan
 | Scenario | ID | Pokrycie | Prio | Uwaga |
 |---|---|---|---|---|
 | HAPPY_COMPLETED | PW-E2E-050, PW-API-113, 200 | existing | — | |
-| USER_CANCEL | PW-E2E-022, 042, DT-S02 | **designed** | P0 | header no-op |
-| RETURN_LIE_SUCCESS | PW-E2E-040, PW-API-071 | pw yes; API designed | P0 | |
+| USER_CANCEL | PW-E2E-022, 042, DT-S02 | **existing-pom** decline + fulfillment CANCELLED | P0 | header no-op nadal RA |
+| RETURN_LIE_SUCCESS | PW-E2E-040, PW-API-071 | pw + pom yes; API designed | P0 | |
 | BAD_SIGNATURE | PW-API-072, 204 | existing-ra | — | |
 | NOTIFY_5XX_RETRY | PW-API-073, 213, 057 | existing-ra | — | |
 | OOO_EVENTS | PW-API-076, PWISE-10 | **blocked** | — | GAP-01 |
-| EXPIRED_LINK | PW-API-030, 130, PW-E2E-024 | ra clock; header/UI designed | P1 | |
+| EXPIRED_LINK | PW-API-030, 130, PW-E2E-024 | ra clock; POM `psp-link-expired`; Approve-block designed | P1 | |
 | PAY_NO_RETURN | PW-E2E-043, PW-API-075 | **designed** | P0 | |
 
 Unknown scenario: PW-API-029 P1.

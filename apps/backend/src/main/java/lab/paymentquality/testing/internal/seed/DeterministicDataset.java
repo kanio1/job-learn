@@ -29,6 +29,7 @@ public class DeterministicDataset {
     public void reset() {
         payments.clear();
         merchants.clear();
+        clearRlsLabItems();
         tenants.clear();
         jdbc.update("DELETE FROM checkout_anomaly");
         jdbc.update("DELETE FROM checkout_event");
@@ -40,9 +41,33 @@ public class DeterministicDataset {
     public void seed() {
         payments.clear();
         merchants.clear();
+        clearRlsLabItems();
         tenants.clear();
         tenants.seed(Fixtures.tenants());
         merchants.seed(Fixtures.merchants());
         payments.seed(Fixtures.paymentOrders());
+        seedRlsLabItems();
+    }
+
+    private void clearRlsLabItems() {
+        jdbc.update("DELETE FROM rls_lab_item_unprotected");
+        jdbc.update("DELETE FROM rls_lab_item");
+    }
+
+    private void seedRlsLabItems() {
+        jdbc.update("""
+                INSERT INTO rls_lab_item (item_id, tenant_id, label, amount_minor)
+                SELECT '00000000-0000-0000-0000-0000000000a1', tenant_id, 'Alpha secret', 100
+                FROM tenants WHERE tenant_reference = 'TENANT_ALPHA'
+                """);
+        jdbc.update("""
+                INSERT INTO rls_lab_item (item_id, tenant_id, label, amount_minor)
+                SELECT '00000000-0000-0000-0000-0000000000a2', tenant_id, 'Other tenant secret', 200
+                FROM tenants WHERE tenant_reference = 'PLACEHOLDER_TENANT_ID'
+                """);
+        jdbc.update("""
+                INSERT INTO rls_lab_item_unprotected (item_id, tenant_id, label, amount_minor)
+                SELECT item_id, tenant_id, label, amount_minor FROM rls_lab_item
+                """);
     }
 }

@@ -19,6 +19,14 @@ import EmptyStateCard from './EmptyStateCard.vue'
 import ErrorState from './ErrorState.vue'
 import PaymentOrderLifecycleActions from './PaymentOrderLifecycleActions.vue'
 
+const lifecycleAuth = vi.hoisted(() => ({ canRunLifecycle: true }))
+
+vi.mock('~/composables/useAuthorization', () => ({
+  useAuthorization: () => ({
+    can: { value: { canRunLifecycle: lifecycleAuth.canRunLifecycle } },
+  }),
+}))
+
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
 /**
@@ -247,7 +255,6 @@ async function mountWithStatus(status: string | undefined) {
     props: {
       paymentOrderId: 'order-123',
       merchantId: 'merchant-abc',
-      canRunLifecycle: true,
     },
   })
 
@@ -272,7 +279,6 @@ async function mountWithStatus(status: string | undefined) {
     props: {
       paymentOrderId: 'order-123',
       merchantId: 'merchant-abc',
-      canRunLifecycle: true,
     },
   })
 
@@ -281,12 +287,13 @@ async function mountWithStatus(status: string | undefined) {
 
 describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one per available action', () => {
   beforeEach(() => {
+    lifecycleAuth.canRunLifecycle = true
     setActivePinia(createPinia())
   })
 
   it('renders NO lifecycle buttons when status is undefined', async () => {
     const wrapper = await mountSuspended(PaymentOrderLifecycleActions, {
-      props: { paymentOrderId: 'order-x', merchantId: 'merch-x', canRunLifecycle: true },
+      props: { paymentOrderId: 'order-x', merchantId: 'merch-x' },
     })
     const html = wrapper.html()
     for (const testId of ALL_ACTION_TEST_IDS) {
@@ -296,7 +303,7 @@ describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one
 
   it('shows "no actions available" message when no actions exist', async () => {
     const wrapper = await mountSuspended(PaymentOrderLifecycleActions, {
-      props: { paymentOrderId: 'order-x', merchantId: 'merch-x', canRunLifecycle: true },
+      props: { paymentOrderId: 'order-x', merchantId: 'merch-x' },
     })
     expect(wrapper.text()).toContain('No actions available')
   })
@@ -311,7 +318,7 @@ describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one
       setActivePinia(createPinia())
 
       const wrapper = await mountSuspended(PaymentOrderLifecycleActions, {
-        props: { paymentOrderId: 'order-123', merchantId: 'merchant-abc', canRunLifecycle: true },
+        props: { paymentOrderId: 'order-123', merchantId: 'merchant-abc' },
       })
 
       const store = usePaymentOrdersStore()
@@ -329,7 +336,7 @@ describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one
 
       // Re-mount after setting store state
       const w2 = await mountSuspended(PaymentOrderLifecycleActions, {
-        props: { paymentOrderId: 'order-123', merchantId: 'merchant-abc', canRunLifecycle: true },
+        props: { paymentOrderId: 'order-123', merchantId: 'merchant-abc' },
       })
 
       const html = w2.html()
@@ -355,7 +362,7 @@ describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one
     setActivePinia(createPinia())
 
     const wrapper = await mountSuspended(PaymentOrderLifecycleActions, {
-      props: { paymentOrderId: 'order-auth', merchantId: 'merchant-abc', canRunLifecycle: true },
+      props: { paymentOrderId: 'order-auth', merchantId: 'merchant-abc' },
     })
 
     const store = usePaymentOrdersStore()
@@ -372,12 +379,36 @@ describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one
     } as any
 
     const w2 = await mountSuspended(PaymentOrderLifecycleActions, {
-      props: { paymentOrderId: 'order-auth', merchantId: 'merchant-abc', canRunLifecycle: true },
+      props: { paymentOrderId: 'order-auth', merchantId: 'merchant-abc' },
     })
 
     expect(w2.html()).toContain('data-testid="lifecycle-capture"')
     expect(w2.html()).toContain('data-testid="lifecycle-cancel"')
     expect(w2.html()).not.toContain('data-testid="lifecycle-authorize"')
     expect(w2.html()).not.toContain('data-testid="lifecycle-refund"')
+  })
+
+  it('hides lifecycle buttons when useAuthorization.canRunLifecycle is false', async () => {
+    lifecycleAuth.canRunLifecycle = false
+    setActivePinia(createPinia())
+    const store = usePaymentOrdersStore()
+    store.currentOrder = {
+      paymentOrderId: 'order-auth',
+      merchantId: 'merchant-abc',
+      status: 'CREATED',
+      amountMinor: 1000,
+      currency: 'PLN',
+      clientOrderReference: 'ref-auth',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z',
+      versionMarker: '"1"',
+    } as any
+    const wrapper = await mountSuspended(PaymentOrderLifecycleActions, {
+      props: { paymentOrderId: 'order-auth', merchantId: 'merchant-abc' },
+    })
+    expect(wrapper.text()).toContain('You do not have permission to run payment lifecycle actions.')
+    expect(wrapper.html()).not.toContain('data-testid="lifecycle-cancel"')
+    expect(wrapper.html()).not.toContain('data-testid="lifecycle-authorize"')
+    lifecycleAuth.canRunLifecycle = true
   })
 })

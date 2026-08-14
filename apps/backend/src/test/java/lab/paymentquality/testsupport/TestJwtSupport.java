@@ -18,6 +18,12 @@ import java.util.Map;
 public final class TestJwtSupport {
 
     public static final String ISSUER = "http://localhost:9000/test-issuer";
+    /**
+     * Exact {@code iss} string from {@code application-tls-lab.yml}. HTTP Keycloak
+     * ({@code http://localhost:8081/realms/payment-quality}) is a different issuer.
+     */
+    public static final String TLS_LAB_ISSUER =
+            "https://auth.payment-quality.local:8443/realms/payment-quality";
     public static final String EXPECTED_AZP = "payment-quality-dashboard";
     private static final KeyPair KEY_PAIR = generateKeyPair();
 
@@ -83,6 +89,18 @@ public final class TestJwtSupport {
         return tokenWithIssuer("invalid-issuer", "platform.operator", List.of("merchants:read"));
     }
 
+    public static String platformAdminTokenForIssuer(String issuer) {
+        return tokenWithIssuerTenantAndRoles(
+                issuer,
+                "platform.admin",
+                List.of("merchants:create", "merchants:read", "merchants:update-status",
+                        "merchants:update-risk-flag",
+                        "platform:payments:read", "platform:payments:lifecycle", "platform:payments:audit",
+                        "platform:payments:notes:read", "platform:payments:notes:create",
+                        "platform:tenant:settings:read", "platform:tenant:settings:update"),
+                "PLATFORM_TENANT");
+    }
+
     public static String invalidSignatureToken() {
         return platformOperatorToken() + "tampered";
     }
@@ -103,6 +121,29 @@ public final class TestJwtSupport {
             return jwt.serialize();
         } catch (Exception e) {
             throw new IllegalStateException("Failed to create invalid issuer test JWT", e);
+        }
+    }
+
+    private static String tokenWithIssuerTenantAndRoles(
+            String issuer, String subject, List<String> roles, String tenantId) {
+        try {
+            Instant now = Instant.now();
+            JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                    .issuer(issuer)
+                    .subject(subject)
+                    .issueTime(Date.from(now))
+                    .expirationTime(Date.from(now.plusSeconds(3600)))
+                    .claim("realm_access", Map.of("roles", roles))
+                    .claim("tenant_id", tenantId)
+                    .claim("azp", EXPECTED_AZP)
+                    .build();
+            SignedJWT jwt = new SignedJWT(
+                    new JWSHeader.Builder(JWSAlgorithm.RS256).keyID("test-key-1").build(),
+                    claims);
+            jwt.sign(new RSASSASigner((RSAPrivateKey) KEY_PAIR.getPrivate()));
+            return jwt.serialize();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create issuer+tenant test JWT", e);
         }
     }
 

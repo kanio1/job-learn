@@ -66,7 +66,7 @@ Legenda kolumn TC: Priorytet P0–P2; Auth = Keycloak mock / public / none.
 
 | | |
 |---|---|
-| Pokrycie | designed (palette Error Lab jest w `command-palette.spec.ts`, nie CPL) |
+| Pokrycie | existing-pom `command-palette.spec.ts` (Error Lab + ARIA). Checkout Lab z palety: **designed** |
 | Prio | P2 |
 | Kroki | Ctrl+K → wpisz „Checkout Lab” → Enter |
 | Asercje | URL `/admin/checkout-lab` |
@@ -76,10 +76,7 @@ Legenda kolumn TC: Priorytet P0–P2; Auth = Keycloak mock / public / none.
 
 | | |
 |---|---|
-| Pokrycie | designed |
-| Prio | P0 |
-| Auth | **brak** mocka; nowy context bez storage / wyczyść sesję |
-| Kroki | `goto /admin/checkout-lab` |
+| Pokrycie | existing-pom analog `session-guest.spec.ts` (merchants + session-lab). Deep-link `/admin/checkout-lab` bez sesji: **designed** |
 | Asercje | URL `/login`; **nie** hub |
 | Uwaga | storageState chromium ma platform-operator — użyj `browser.newContext()` bez stanu + bez mocka |
 
@@ -114,7 +111,7 @@ Learning copy (asertuj tekst alertu): **POST /bookings = 200 JSON `redirectUri`*
 
 | | |
 |---|---|
-| Pokrycie | designed (existing mockuje `CASH-*` na extOrderId) |
+| Pokrycie | existing-pw (mock `CASH-*`) **+ existing-pom** `checkout-lab.spec.ts` · `cash booking confirms fulfillment without hosted checkout` (`chooseMode('CASH')`) |
 | Prio | P0 |
 | Kroki | ustaw `checkout-booking-mode` = CASH → submit |
 | Asercje | `fulfillment-status` = `CONFIRMED`; `checkout-open-hosted` count 0; body `sessionId` null, `redirectUri` null, `validityUntil` null |
@@ -219,9 +216,7 @@ Selectory: `psp-hosted-checkout`, `psp-approve`, `psp-decline`, `psp-outcome`. L
 
 | | |
 |---|---|
-| Pokrycie | designed |
-| Prio | P0 |
-| Kroki | Decline → `psp-outcome` → „Return to merchant” |
+| Pokrycie | existing-pom `hosted decline leaves fulfillment cancelled` (hint zawiera `failure`; fulfillment `CANCELLED`) |
 | Asercje | simulate body `{outcome: CANCELED}`; return URL `status=failure`; fulfillment (live lub mock) → `CANCELLED` nie `CANCELED` |
 | Learning | Session `CANCELED` vs fulfillment `CANCELLED` |
 
@@ -237,9 +232,7 @@ Selectory: `psp-hosted-checkout`, `psp-approve`, `psp-decline`, `psp-outcome`. L
 
 | | |
 |---|---|
-| Pokrycie | designed |
-| Prio | P0 |
-| Mock GET | `status: EXPIRED`, `simulateToken: null` **lub** simulate 409 `expired_link` |
+| Pokrycie | existing-pom `mirror-lab.spec.ts` · `psp-link-expired` visible. Blokada Approve / 409 `expired_link` w UI: **designed** |
 | Asercje | alert „Payment link expired”; `psp-approve` count 0 |
 
 ### PW-E2E-025 — Simulate 403 missing/invalid token — UI ErrorState
@@ -304,17 +297,17 @@ Selectory: `checkout-return`, `return-hint`, `fulfillment-status`.
 
 | | |
 |---|---|
-| Pokrycie | existing-pw |
+| Pokrycie | existing-pw **+ existing-pom** `lie return keeps fulfillment unconfirmed` |
 | Prio | P0 |
-| Auth | public context |
+| Auth | public context / admin POM po bookingu |
 | Kroki | `goto /checkout-lab/return?sessionId={id}&status=success` bez simulate |
-| Asercje | `return-hint` = `success`; `fulfillment-status` = `AWAITING_PAYMENT` |
+| Asercje | `return-hint` = `success`; `fulfillment-status` nie CONFIRMED (`AWAITING_PAYMENT\|UNKNOWN`) |
 
 ### PW-E2E-041 — Happy return po Approve → CONFIRMED
 
 | | |
 |---|---|
-| Pokrycie | existing-pw (multi-tab, `hosted.goto` return URL) |
+| Pokrycie | existing-pw **+ existing-pom** `hub opens booking; online pay uses hosted tab and fulfillment oracle` |
 | Prio | P0 |
 | Asercje | CONFIRMED; hint może być success — oracle i tak fulfillment |
 
@@ -322,9 +315,7 @@ Selectory: `checkout-return`, `return-hint`, `fulfillment-status`.
 
 | | |
 |---|---|
-| Pokrycie | designed |
-| Prio | P0 |
-| Kroki | Decline → Return to merchant **lub** `goto` z `status=failure` po mocku CANCELED+worker |
+| Pokrycie | existing-pom `hosted decline leaves fulfillment cancelled` |
 | Asercje | hint `failure`; fulfillment `CANCELLED` |
 
 ### PW-E2E-043 — PAY_NO_RETURN: Approve, nie odwiedzaj return, poll fulfillment

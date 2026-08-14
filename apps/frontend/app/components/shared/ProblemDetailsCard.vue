@@ -33,6 +33,11 @@
         <dd class="break-all font-mono text-gray-900 dark:text-gray-100">{{ problem.instance ?? '—' }}</dd>
       </div>
 
+      <div v-if="problem.error" class="flex gap-2">
+        <dt class="w-28 shrink-0 font-medium text-gray-500 dark:text-gray-400">Error</dt>
+        <dd data-testid="problem-error" class="font-mono text-gray-900 dark:text-gray-100">{{ problem.error }}</dd>
+      </div>
+
       <div v-if="problem.correlationId" class="flex gap-2">
         <dt class="w-28 shrink-0 font-medium text-gray-500 dark:text-gray-400">Correlation ID</dt>
         <dd

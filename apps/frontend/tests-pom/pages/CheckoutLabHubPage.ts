@@ -7,7 +7,7 @@ export class CheckoutLabHubPage extends BasePage {
   }
 
   async expectLoaded(): Promise<void> {
-    await expect(this.page.getByText('Three identity worlds').or(this.page.getByText('Hosted capability'))).toBeVisible()
+    await expect(this.byTestId('checkout-lab-open-booking')).toBeVisible()
   }
 
   async openBooking(): Promise<void> {

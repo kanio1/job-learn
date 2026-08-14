@@ -33,6 +33,10 @@ export class MerchantsListPage extends BasePage {
     await expect(row.getByTestId('merchant-risk-badge')).toBeVisible()
   }
 
+  async filterByText(text: string): Promise<void> {
+    await this.page.getByPlaceholder('Filter merchants...').fill(text)
+  }
+
   async expectRowVisible(text: string): Promise<void> {
     await expect(this.page.getByRole('table').getByText(text)).toBeVisible()
   }

@@ -1,10 +1,16 @@
 // @vitest-environment nuxt
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import IfMatchInput from '../../app/components/shared/IfMatchInput.vue'
 import PaymentOrderLifecycleActions from '../../app/components/shared/PaymentOrderLifecycleActions.vue'
 import { usePaymentOrdersStore } from '../../app/stores/payment-orders'
+
+vi.mock('~/composables/useAuthorization', () => ({
+  useAuthorization: () => ({
+    can: { value: { canRunLifecycle: true } },
+  }),
+}))
 
 describe('QA-HARDEN-01.10 — If-Match guidance and accessibility', () => {
   it('associates the If-Match label and exact ETag hint with the editable input', async () => {
@@ -47,7 +53,6 @@ async function mountActions(status: string) {
     props: {
       paymentOrderId: 'payment-101',
       merchantId: 'merchant-101',
-      canRunLifecycle: true,
     },
   })
   setCurrentOrder(status)
@@ -55,7 +60,6 @@ async function mountActions(status: string) {
     props: {
       paymentOrderId: 'payment-101',
       merchantId: 'merchant-101',
-      canRunLifecycle: true,
     },
   })
 }

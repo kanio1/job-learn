@@ -57,6 +57,7 @@ export default defineConfig({
     {
       name: 'chromium',
       testMatch: /e2e\/.*\.spec\.ts/,
+      testIgnore: /e2e\/rls-lab-flag-off\.spec\.ts/,
       grepInvert: /@visual-negative/,
       dependencies: ['auth-setup'],
       use: {

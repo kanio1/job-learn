@@ -97,6 +97,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/mirror-lab/tpp/**").permitAll()
                         .requestMatchers("/api/mirror-lab/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/rls-lab/compare").hasAuthority(Authorities.PLATFORM_PAYMENTS_READ)
+                        .requestMatchers("/api/rls-lab/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders").hasAuthority(Authorities.MERCHANT_PAYMENTS_CREATE)
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders/*/authorize").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_LIFECYCLE, Authorities.PLATFORM_PAYMENTS_LIFECYCLE)
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/payment-orders/*/capture").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_LIFECYCLE, Authorities.PLATFORM_PAYMENTS_LIFECYCLE)
@@ -158,7 +160,10 @@ public class SecurityConfig {
 
     private static CorsConfigurationSource labCorsConfigurationSource() {
         var config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "https://app.payment-quality.local",
+                "https://app.payment-quality.local:8443"));
         config.setAllowedMethods(List.of("GET", "HEAD", "POST", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of(
                 "Authorization", "Content-Type",
