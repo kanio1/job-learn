@@ -2,8 +2,8 @@
 name: browser-session-visual-network-lab
 origin: POST_KIRO_WORK
 status: IMPLEMENTED
-related_gate: REST-MULTIPART-01 remains open (disputes RA is not apps/api-tests payment evidence)
-last_updated: 2026-08-13
+related_gate: REST-MULTIPART-01 DONE_VERIFIED (Wave 4 payment-evidence api-tests; disputes RA is not that gate)
+last_updated: 2026-08-14
 ---
 
 # PayU / bank mirror labs — backlog wykonawczy

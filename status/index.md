@@ -1,15 +1,22 @@
 ---
 name: index
-last_updated: 2026-08-14
+last_updated: 2026-08-15
 ---
 
 ## Session log
+
+- **Wave 5 OpenAPI springdoc (2026-08-15):** **IMPLEMENTED**. `springdoc-openapi-starter-webmvc-api` 3.1.0; authenticated `GET /v3/api-docs`; labs/test excluded; UI off; prod `api-docs.enabled=false`. Backend `OpenApiRestAssuredTest` **4/4**, `ModulithArchitectureTest` **1/1**, Failsafe `OpenApiDisabledIT` **1/1**. Live api-tests `OpenApiContractSpec` not claimed (needs `BACKEND_IMAGE`). Catalog impact table: existing UC-W4 / POM / lab HTTP oracles unchanged. Snapshot + CI = Wave 6. Catalog: [docs/testing/wave-5-openapi-springdoc/README.md](../docs/testing/wave-5-openapi-springdoc/README.md).
+
+- **Wave 5 OpenAPI catalog (2026-08-15):** Catalog written, then implemented the same day (see above).
+
+- **Wave 4 REST contract gates (2026-08-15):** **DONE_VERIFIED** for `REST-MULTIPART-01`; **DECISION_RECORDED** for `REST-OPENAPI-DRIFT-01`. Black-box `PaymentEvidenceMultipartContractSpec` (AT-MP-01…10) Failsafe **12/12**. Review findings closed: truncated multipart is `400` `validation` via `GlobalExceptionHandler` (`MultipartException`, no new domain `error`); GET list uses `ResponseSpecs.sensitive()` + BOLA `404`; seed reset IT covers evidence FK. OpenAPI tooling stays Wave 5 ([docs/architecture/openapi-ownership.md](../docs/architecture/openapi-ownership.md)). Catalog: [docs/testing/wave-4-rest-contract-gates/README.md](../docs/testing/wave-4-rest-contract-gates/README.md). Offline api-tests Surefire **81/81**.
+
 
 - **Operator runbook (2026-08-14):** [docs/setup/run-stack-and-pom.md](../docs/setup/run-stack-and-pom.md) — HTTP `--app` for POM/TS, HTTPS `--full` for Caddy; Caddy is not broken on `--app` (it is not started). No HTTP-Caddy flag: `--full` is the prod-shaped stack.
 
 - **Podman HTTP/HTTPS stack (2026-08-14):** HTTP compose `--app` verified: issuer `http://localhost:8081`, Nuxt `http://127.0.0.1:3000`, Spring `/api/status`, Nitro `/__oidc` splits browser authorize vs compose-network token/JWKS. Keycloak `start` + `hostname-backchannel-dynamic`. Mode switch fail-closed via `keycloak-issuer-oracle.sh`. Caddy snippets: security headers, encode, 5MB body limit, short lab HSTS. Prod ACME: `infra/caddy/Caddyfile.prod.example`. Realm adds `http://127.0.0.1:3000`. podman-compose/pasta: stop/start overlay containers so host ports bind.
 
-- **Wave 3 findings review fix (2026-08-14):** **IMPLEMENTED**. Merchant 404 uses origin `problem()` (`type`/`title`/`status`/`detail`/`error`); Error Lab BFF forwards Spring body (no `coerceProblemJson`). Trigger 403 fail-closed: 2xx create → 503 `lab_unavailable`. 304 does not auto-create. 401 canary = click + `waitForResponse` + problem card. Live POM `NUXT_TYPECHECK=false`; overlay detect via `count()`. `--full` OIDC discovery is loopback-only; Caddy `/__oidc*` → 404; session password fail-fast (≥32). CA = STK-007 / `mkcert -install` (Linux Chromium may need NSS/`certutil`). Verified: `pnpm typecheck`; `MerchantRestAssuredTest` + merchant/payment security tests; Spring/BFF 401 problem+json via curl. HTTP POM Error Lab/Support needs a Keycloak issuer on `http://localhost:8081` (use `--app` or a fresh HTTP `dev-stack.sh`). `REST-MULTIPART-01` / `REST-OPENAPI-DRIFT-01` remain open.
+- **Wave 3 findings review fix (2026-08-14):** **IMPLEMENTED**. Merchant 404 uses origin `problem()` (`type`/`title`/`status`/`detail`/`error`); Error Lab BFF forwards Spring body (no `coerceProblemJson`). Trigger 403 fail-closed: 2xx create → 503 `lab_unavailable`. 304 does not auto-create. 401 canary = click + `waitForResponse` + problem card. Live POM `NUXT_TYPECHECK=false`; overlay detect via `count()`. `--full` OIDC discovery is loopback-only; Caddy `/__oidc*` → 404; session password fail-fast (≥32). CA = STK-007 / `mkcert -install` (Linux Chromium may need NSS/`certutil`). Verified: `pnpm typecheck`; `MerchantRestAssuredTest` + merchant/payment security tests; Spring/BFF 401 problem+json via curl. HTTP POM Error Lab/Support needs a Keycloak issuer on `http://localhost:8081` (use `--app` or a fresh HTTP `dev-stack.sh`). `REST-MULTIPART-01` is Wave 4; OpenAPI **tooling** is Wave 5.
 
 - **Wave 3 TLS depth + Live POM Wave 2 + compose HTTPS (2026-08-14):** **IMPLEMENTED** (TLS overlay + `--full` compose; HTTP live POM Wave 3 IDs). If-Match stale oracle uses `"v99"` (malformed `"stale-etag"` is 400). `--full`: Caddy → Spring/Nuxt images; BFF talks Keycloak HTTP inside the compose network. HTTP POM stays on host hybrid. Catalog: `docs/testing/wave-3-compose-tls-pom/`.
 
@@ -111,10 +118,10 @@ All 7 specs have **no required, currently-executable Kiro task remaining**. Ever
 
 ## Active work
 
-- **Current problem:** Wave 3 compose HTTPS + remaining Live POM designed cases; Checkout Protocol Lab remains the redirect+notify lab.
-- **Current phase:** Wave 3 TLS depth, Live POM Wave 2 guest/Error Lab/IDOR, and `--full` compose images. Remaining REST-ADVANCED: `REST-MULTIPART-01`, `REST-OPENAPI-DRIFT-01`; `REST-SSL-PROXY-01` forwarded-headers part is green (real privileged :443 optional).
-- **Next task:** remaining REST-ADVANCED capabilities after their stop gates (`REST-MULTIPART-01`, OpenAPI drift).
-- **Blockers/gates:** TLS lab overlay is local mkcert (gitignored); privileged :443 optional. OpenAPI drift requires a canonical specification/generation owner. Redirects no longer block — CPL is the training redirect server. Full compose uses host **8443**, not privileged 443.
+- **Current problem:** Wave 5 OpenAPI generator is in; snapshot/CI drift is Wave 6.
+- **Current phase:** `REST-MULTIPART-01` **DONE_VERIFIED**; `REST-OPENAPI-DRIFT-01` **DECISION_RECORDED** + Wave 5 tooling **IMPLEMENTED** (runtime `/v3/api-docs`, not CI). Catalog: [docs/testing/wave-5-openapi-springdoc/README.md](../docs/testing/wave-5-openapi-springdoc/README.md). `REST-SSL-PROXY-01` forwarded-headers part is green (real privileged :443 optional).
+- **Next task:** Wave 6 — committed OpenAPI snapshot + breaking-change CI (allowlist). Optional: live Failsafe `OpenApiContractSpec`; RLS-lab++ / checkout `@Retryable`.
+- **Blockers/gates:** OpenAPI **CI drift** waits on Wave 6. TLS lab overlay is local mkcert (gitignored); privileged :443 optional. Redirects no longer block — CPL is the training redirect server. Full compose uses host **8443**, not privileged 443.
 - **Checkout Protocol Lab:** implemented. Keycloak realm unchanged. PostgreSQL module `checkoutlab` (V12+V13). Dashboard hub `/admin/checkout-lab`, hosted `/psp/checkout/{id}`, return `/checkout-lab/return`.
 
 ## Validation baseline
@@ -146,16 +153,16 @@ These are later work programs layered on top of (not part of) the seven Kiro spe
 - `status/roadmaps/playwright-phase3-roadmap.md` — Playwright/SDET test-suite expansion (Phase 3A/3B/3C, feature IDs F-A1..F-D7), reported complete/green by its own execution report, but a fresh chromium run found 21 failures, contradicting that report's "all green" claim (TD-2). Updated session 4 with the TD-2A closure record (10 of 21 fixed) and the remaining TD-2B/C/D breakdown.
 - `status/roadmaps/audit-export-closure.md` — Formal closure record for two previously-unowned POST_KIRO_WORK features found living in the `audit` module (export index + `AuditExportEvent`/`Response`, and the before/after-state diff drawer "F-D7"). Decision: KEEP both (real UI/API usage, safe field scoping, dedicated tests). Resolves TD-1.
 - `status/roadmaps/checkout-protocol-lab/` — **IMPLEMENTED** (2026-08-13) on `checkout-protocol-lab-foundation`. Educational Checkout Protocol Lab (redirect 302, signed notify, Postgres inbox, no Kafka). Closes `REST-REDIRECT-01`.
-- `status/roadmaps/browser-session-visual-network-lab/` — **IMPLEMENTED** (2026-08-13). Mirror labs in `apps/**`. `REST-MULTIPART-01` still open (no `apps/api-tests` payment-evidence construction suite).
+- `status/roadmaps/browser-session-visual-network-lab/` — **IMPLEMENTED** (2026-08-13). Mirror labs in `apps/**`. `REST-MULTIPART-01` is **DONE_VERIFIED** by Wave 4 payment-evidence api-tests (not mirror disputes).
 
 ## REST-ADVANCED Wave 2B design gate
 
 Wave 2A made no REST-ADVANCED production or test-framework change. The recommended Wave 2B order is based on present domain value and repository prerequisites:
 
-1. **REST-MULTIPART-01 — evidence upload contract.** Current implementation already has the real payment-order evidence upload endpoint and backend/frontend coverage, so the next value is standalone `apps/api-tests` construction and negative-contract support, not a new product endpoint. Acceptance should cover multipart construction, binary content type/filename, `201` plus `Location`, subsequent persistence/read proof, missing/empty/unsupported/oversized parts, unsafe filename, malformed boundary, and cross-merchant denial. Stop if supporting metadata would require inventing a new business contract. Expected files: focused `apps/api-tests` request helper/spec/DTO changes only unless a focused test confirms a production defect.
+1. **REST-MULTIPART-01 — DONE_VERIFIED (Wave 4).** Black-box `apps/api-tests` `PaymentEvidenceMultipartContractSpec` covers multipart construction, PNG binary type/filename, `201` + relative `Location`, GET-list read-back, missing/empty/unsupported/oversized parts, unsafe filename, malformed boundary (`400` `validation` without a new `error` code), cross-merchant POST `403` / GET `404`, and non-multipart `415`. Evidence: Failsafe **12/12** against `BACKEND_IMAGE=payment-quality/backend:local`; offline api-tests Surefire **81/81**. Catalog: `docs/testing/wave-4-rest-contract-gates/`.
 2. **REST-SSL-PROXY-01 — forwarded headers first, real TLS separately.** Current backend uses `server.forward-headers-strategy: none` and current `Location` values are relative. First prove hostile `Host`/`X-Forwarded-*` input cannot rewrite contract output. A TLS phase requires an approved ephemeral self-signed certificate/truststore, no committed production key, explicit no-proxy behavior, certificate-failure proof, and CI feasibility. Stop before certificate material or proxy behavior that has no operational requirement.
 3. **REST-REDIRECT-01 — DONE_VERIFIED by Checkout Protocol Lab.** `POST /api/checkout-lab/sessions` returns **302** + `Location` (RA `redirects().follow(false)`). Hosted checkout is the test-only redirect target. No production payment 3xx was invented. Evidence: `CheckoutLabCreateSessionRestAssuredTest`, `CheckoutLabProtocolRestAssuredTest`, Playwright `checkout-lab.spec.ts`.
-4. **REST-OPENAPI-DRIFT-01 — ownership decision before tooling.** The repository has no canonical OpenAPI document, generation owner, or exposed `/v3/api-docs` contract. Stop until spec-first versus code-first ownership is decided. Then validate implemented paths/methods/statuses/headers/problem bodies/enums, detect breaking changes in CI, exclude internal endpoints, and define an explicit false-positive/allowlist policy. Do not add a second generator if a canonical mechanism is selected elsewhere.
+4. **REST-OPENAPI-DRIFT-01 — DECISION_RECORDED (Wave 4); tooling Wave 5 IMPLEMENTED; CI Wave 6.** Code-first; owner is `apps/backend` (`springdoc-openapi-starter-webmvc-api` 3.1.0). api-tests is a consumer (`OpenApiContractSpec`), not a generator. Exclude lab paths (not `*.internal` packages). Allowlist: problem+json vs OpenAPI defaults, relative `Location`, omitted headers. Do not add a second generator. Catalog: `docs/testing/wave-5-openapi-springdoc/`. Record: `docs/architecture/openapi-ownership.md`.
 
 ## Completeness self-check (per audit brief §19)
 

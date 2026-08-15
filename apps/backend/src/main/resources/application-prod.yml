@@ -1,3 +1,7 @@
 app:
   testing:
     enabled: false
+
+springdoc:
+  api-docs:
+    enabled: false

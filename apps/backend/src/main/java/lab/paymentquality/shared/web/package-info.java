@@ -1,6 +1,5 @@
 /**
- * Reserved for narrow cross-cutting web conventions when they become necessary.
- *
- * <p>Do not use this package as a generic utility dumping ground.</p>
+ * Narrow cross-cutting web conventions: global MVC exception mapping, correlation/rejection
+ * filters, and the code-first OpenAPI bean. Not a generic utility dumping ground.
  */
 package lab.paymentquality.shared.web;

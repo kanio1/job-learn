@@ -15,7 +15,7 @@ cd apps/api-tests && mvn -q test
 cd apps/api-tests && BACKEND_IMAGE=payment-quality/backend:local mvn verify
 ```
 
-Current baseline through Phase 8S: `79` offline tests, `72` live tests.
+Current baseline: **81** offline tests (Phase 8S 79 + Wave 4 `RequestSpecs` multipart wiring). Live: Phase 8S **72** plus Wave 4 **12** (`PaymentEvidenceMultipartContractSpec`) plus Wave 5 `OpenApiContractSpec` (5 methods; run with `BACKEND_IMAGE`).
 
 ## Selective Live Runs
 
@@ -49,7 +49,7 @@ intentionally untagged, so selective live commands may report zero Surefire test
 | Test data | `src/test/java/.../core/data` | idempotency keys, unique refs, fixed seed IDs, ETag/version helpers |
 | Problem/schema | `src/test/java/.../core/problem` | `ProblemAssert`, `ProblemCodes`, `SchemaAssertions` |
 | Stack | `src/test/java/.../core/stack`, `support` | Testcontainers backend/Postgres/Keycloak orchestration and JUnit extension |
-| API facades | `src/test/java/.../api` | `StatusApi`, `SeedApi`, `MerchantsApi`, `PaymentOrdersApi`, `AuditApi` |
+| API facades | `src/test/java/.../api` | `StatusApi`, `SeedApi`, `MerchantsApi`, `PaymentOrdersApi`, `AuditApi`, `OpenApiApi` |
 | Scenarios | `src/test/java/.../scenarios` | Live `*Spec` classes grouped by contract/risk area |
 | JSON schemas | `src/test/resources/schema` | `problem`, `payment-order`, `payment-summary` schema contracts |
 | Keycloak realm | `src/test/resources/keycloak` | Test users, roles, tenant/merchant claims |
@@ -70,6 +70,8 @@ intentionally untagged, so selective live commands may report zero Surefire test
 | Audit / async eventual consistency | `AuditContractSpec` |
 | Payment summary/reporting | `PaymentSummaryContractSpec` |
 | Tenant / merchant isolation | `TenantIsolationContractSpec` |
+| Payment evidence multipart | `PaymentEvidenceMultipartContractSpec` |
+| OpenAPI runtime document | `OpenApiContractSpec` |
 
 ## Phase 8 Index
 
@@ -94,25 +96,27 @@ intentionally untagged, so selective live commands may report zero Surefire test
 | 8Q | Targeted cleanup fixes from review |
 | 8R | Final commit-prep diff review |
 | 8S | Final documentation ledger polish |
+| Wave 4 | `PaymentEvidenceMultipartContractSpec` (`REST-MULTIPART-01`) |
+| Wave 5 | `OpenApiContractSpec` (`REST-OPENAPI-DRIFT-01` runtime `/v3/api-docs`) |
 
 ## Tag Map
 
 | Tag | Purpose | Examples |
 |---|---|---|
 | `smoke` | Fast health/security confidence | `StatusSpec`, `SecuritySmokeSpec` |
-| `contract` | HTTP resource contract and response semantics | `MerchantsContractSpec`, `PaymentOrdersContractSpec`, `PatchMetadataContractSpec` |
+| `contract` | HTTP resource contract and response semantics | `MerchantsContractSpec`, `PaymentOrdersContractSpec`, `PatchMetadataContractSpec`, `PaymentEvidenceMultipartContractSpec`, `OpenApiContractSpec` |
 | `security` | Auth, BOLA/BFLA, tenant/merchant boundaries | `SecuritySmokeSpec`, `TenantIsolationContractSpec` |
 | `lifecycle` | Payment state transitions, history, refund flow | lifecycle methods in `PaymentOrdersContractSpec`, `PartialRefundContractSpec` |
 | `idempotency` | Create/lifecycle replay and conflict behavior | `LifecycleIdempotencyContractSpec`, idempotency methods in `PaymentOrdersContractSpec` |
 | `audit` | Async audit/event visibility | `AuditContractSpec` |
-| `schema` | JSON schema drift checks | `JsonSchemaContractSpec` |
+| `schema` | JSON schema / OpenAPI document drift checks | `JsonSchemaContractSpec`, `OpenApiContractSpec` |
 | `http` | Method/content-negotiation/merge-patch semantics | `HttpMethodSemanticsContractSpec`, `PatchMetadataContractSpec` |
 | `concurrency` | Race and optimistic-locking behavior | concurrent methods in `PaymentOrdersContractSpec` |
 | `regression` | Locked-in fixes for previously found bugs | refund-on-authorized and create-race regression methods |
 
 ## Navigation Notes
 
-- Use `RequestSpecs.lifecycle(ifMatch, key)` for lifecycle POSTs requiring both `If-Match` and `Idempotency-Key`.
+- Use `RequestSpecs.multipart()` for evidence uploads; `RequestSpecs.rawMultipart(...)` for malformed-boundary probes.
 - Use `ResponseSpecs.sensitive()` for sensitive read responses and `ResponseSpecs.conditional()` for lifecycle/PATCH mutation responses.
 - Use `ProblemAssert` for problem+json errors; add schema checks only where structural drift is the target.
 - Use deterministic IDs from `Seeds` for seeded cross-tenant/security cases; use API-created orders for lifecycle/idempotency flows.

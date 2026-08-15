@@ -73,6 +73,17 @@ class CoreHttpWiringTest {
     }
 
     @Test
+    void multipartSpec_buildsWithoutThrowingBeforeHttpCall() {
+        assertThatNoException().isThrownBy(RequestSpecs::multipart);
+    }
+
+    @Test
+    void rawMultipartSpec_buildsWithoutThrowingBeforeHttpCall() {
+        assertThatNoException().isThrownBy(
+                () -> RequestSpecs.rawMultipart("multipart/form-data; boundary=wave4"));
+    }
+
+    @Test
     void sensitiveResponseSpec_buildsWithoutThrowing() {
         assertThatNoException().isThrownBy(ResponseSpecs::sensitive);
     }

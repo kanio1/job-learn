@@ -1,5 +1,8 @@
 package lab.paymentquality.apitest.core.http;
 
+import io.restassured.RestAssured;
+import io.restassured.config.EncoderConfig;
+import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 
 import static io.restassured.RestAssured.given;
@@ -103,6 +106,30 @@ public final class RequestSpecs {
         return base()
                 .contentType(ContentTypes.MERGE_PATCH_JSON)
                 .header(Headers.IF_MATCH, ifMatch);
+    }
+
+    /**
+     * Multipart upload: overrides the JSON content-type on {@link #base()}.
+     *
+     * <p>REST Assured 6 rejects {@code multiPart} when the spec still has
+     * {@code Content-Type: application/json}.
+     */
+    public static RequestSpecification multipart() {
+        return base().contentType(ContentTypes.MULTIPART_FORM_DATA);
+    }
+
+    /**
+     * Raw multipart body (malformed-boundary probes). Encodes the body as text so REST
+     * Assured does not try to serialize a String as JSON under a multipart content-type.
+     */
+    public static RequestSpecification rawMultipart(String contentTypeHeader) {
+        return base()
+                .config(RestAssured.config().encoderConfig(
+                        EncoderConfig.encoderConfig()
+                                .encodeContentTypeAs(
+                                        ContentTypes.MULTIPART_FORM_DATA,
+                                        ContentType.TEXT)))
+                .contentType(contentTypeHeader);
     }
 
     private static void requireInstalled() {

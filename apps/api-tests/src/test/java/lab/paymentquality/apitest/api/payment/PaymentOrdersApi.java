@@ -59,6 +59,8 @@ public final class PaymentOrdersApi {
             "/api/merchants/{merchantId}/payment-orders/{paymentOrderId}/history";
     private static final String SUMMARY_PATH =
             "/api/merchants/{merchantId}/payment-orders/summary";
+    private static final String EVIDENCE_PATH =
+            "/api/merchants/{merchantId}/payment-orders/{paymentOrderId}/evidence";
 
     private PaymentOrdersApi() {}
 
@@ -717,5 +719,91 @@ public final class PaymentOrdersApi {
                 .queryParam("currency", currency)
                 .when()
                 .get(SUMMARY_PATH);
+    }
+
+    /**
+     * {@code POST .../payment-orders/{paymentOrderId}/evidence} — multipart part {@code file}.
+     *
+     * <p>Requires {@code merchant:payments:lifecycle} (or platform lifecycle) and a matching
+     * {@code merchant_id} claim for merchant-scoped callers. Happy path: 201 + relative
+     * {@code Location} {@code .../evidence/{evidenceId}}.
+     */
+    public static Response uploadEvidence(
+            String merchantId,
+            String paymentOrderId,
+            String filename,
+            byte[] content,
+            String contentType) {
+        return RequestSpecs.multipart()
+                .pathParam("merchantId", merchantId)
+                .pathParam("paymentOrderId", paymentOrderId)
+                .multiPart("file", filename, content, contentType)
+                .when()
+                .post(EVIDENCE_PATH);
+    }
+
+    /**
+     * {@code GET .../payment-orders/{paymentOrderId}/evidence} — metadata list.
+     *
+     * <p>Read proof for uploads: the list envelope is {@code { "content": [...] }}. There is
+     * no GET-by-evidenceId handler.
+     */
+    public static Response listEvidence(String merchantId, String paymentOrderId) {
+        return RequestSpecs.base()
+                .pathParam("merchantId", merchantId)
+                .pathParam("paymentOrderId", paymentOrderId)
+                .when()
+                .get(EVIDENCE_PATH);
+    }
+
+    /**
+     * POST evidence as multipart with a part that is not named {@code file}.
+     *
+     * <p>Expected: 400 {@code validation} ({@code MissingServletRequestPartException}).
+     */
+    public static Response uploadEvidenceMissingFilePart(
+            String merchantId, String paymentOrderId) {
+        return RequestSpecs.multipart()
+                .pathParam("merchantId", merchantId)
+                .pathParam("paymentOrderId", paymentOrderId)
+                .multiPart("notfile", "note.txt", "ignored".getBytes(), "text/plain")
+                .when()
+                .post(EVIDENCE_PATH);
+    }
+
+    /**
+     * POST evidence with JSON body (not multipart).
+     *
+     * <p>Expected: 415 ({@code HttpMediaTypeNotSupportedException} on the evidence URI).
+     */
+    public static Response uploadEvidenceAsJson(String merchantId, String paymentOrderId) {
+        return RequestSpecs.base()
+                .contentType(ContentTypes.JSON)
+                .pathParam("merchantId", merchantId)
+                .pathParam("paymentOrderId", paymentOrderId)
+                .body("{}")
+                .when()
+                .post(EVIDENCE_PATH);
+    }
+
+    /**
+     * POST evidence with a truncated multipart body (declared boundary, no closing delimiter).
+     *
+     * <p>Tomcat fails the parse before the controller. {@code GlobalExceptionHandler} maps
+     * {@code MultipartException} to {@code 400} {@code validation} — no new domain {@code error}.
+     */
+    public static Response uploadEvidenceMalformedBoundary(
+            String merchantId, String paymentOrderId) {
+        String boundary = "----Wave4DeclaredBoundary";
+        String body = "--" + boundary + "\r\n"
+                + "Content-Disposition: form-data; name=\"file\"; filename=\"proof.txt\"\r\n"
+                + "Content-Type: text/plain\r\n\r\n"
+                + "hello";
+        return RequestSpecs.rawMultipart("multipart/form-data; boundary=" + boundary)
+                .pathParam("merchantId", merchantId)
+                .pathParam("paymentOrderId", paymentOrderId)
+                .body(body)
+                .when()
+                .post(EVIDENCE_PATH);
     }
 }

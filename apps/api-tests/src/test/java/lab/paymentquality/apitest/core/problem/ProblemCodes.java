@@ -138,5 +138,20 @@ public final class ProblemCodes {
      */
     public static final String IDEMPOTENCY_CREATE_IN_PROGRESS = "create_in_progress";
 
+    /** 400 — evidence multipart part {@code file} is empty. */
+    public static final String EMPTY_EVIDENCE_FILE = "empty_evidence_file";
+
+    /** 400 — evidence filename is blank or missing. */
+    public static final String MISSING_EVIDENCE_FILENAME = "missing_evidence_filename";
+
+    /** 400 — evidence filename contains path segments or other unsafe characters. */
+    public static final String INVALID_EVIDENCE_FILENAME = "invalid_evidence_filename";
+
+    /** 415 — evidence {@code Content-Type} is missing or not in the allow-list. */
+    public static final String UNSUPPORTED_EVIDENCE_CONTENT_TYPE = "unsupported_evidence_content_type";
+
+    /** 413 — evidence payload exceeds 2 MiB. */
+    public static final String EVIDENCE_FILE_TOO_LARGE = "evidence_file_too_large";
+
     private ProblemCodes() {}
 }
