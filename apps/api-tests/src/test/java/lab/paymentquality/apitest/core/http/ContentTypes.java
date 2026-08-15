@@ -27,5 +27,8 @@ public final class ContentTypes {
      */
     public static final String MERGE_PATCH_JSON = "application/merge-patch+json";
 
+    /** Multipart uploads (payment-order evidence). */
+    public static final String MULTIPART_FORM_DATA = "multipart/form-data";
+
     private ContentTypes() {}
 }

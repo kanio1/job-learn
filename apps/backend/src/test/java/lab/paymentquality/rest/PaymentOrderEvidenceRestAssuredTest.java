@@ -1,5 +1,8 @@
 package lab.paymentquality.rest;
 
+import io.restassured.RestAssured;
+import io.restassured.config.EncoderConfig;
+import io.restassured.http.ContentType;
 import lab.paymentquality.payment.internal.infrastructure.JpaPaymentOrderEvidenceRepository;
 import lab.paymentquality.testsupport.*;
 import org.junit.jupiter.api.Test;
@@ -101,6 +104,31 @@ class PaymentOrderEvidenceRestAssuredTest extends PostgresContainerSupport {
                 .statusCode(400)
                 .contentType("application/problem+json")
                 .body("error", equalTo("empty_evidence_file"));
+    }
+
+    @Test
+    void truncatedMultipartReturnsProblemDetailsWithoutServerError() {
+        String merchantId = PaymentApiTestSupport.createActiveMerchant(port, MerchantApiTestSupport.operatorRequest(port));
+        String paymentOrderId = createPaymentOrder(merchantId);
+        String token = TestJwtSupport.merchantPaymentLifecycleToken(merchantId);
+        String boundary = "----Wave4DeclaredBoundary";
+        String truncated = "--" + boundary + "\r\n"
+                + "Content-Disposition: form-data; name=\"file\"; filename=\"proof.txt\"\r\n"
+                + "Content-Type: text/plain\r\n\r\n"
+                + "hello";
+
+        MerchantApiTestSupport.requestWithToken(port, token)
+                .config(RestAssured.config().encoderConfig(
+                        EncoderConfig.encoderConfig()
+                                .encodeContentTypeAs("multipart/form-data", ContentType.TEXT)))
+                .contentType("multipart/form-data; boundary=" + boundary)
+                .body(truncated)
+                .when()
+                .post("/api/merchants/{merchantId}/payment-orders/{paymentOrderId}/evidence", merchantId, paymentOrderId)
+                .then()
+                .statusCode(400)
+                .contentType("application/problem+json")
+                .body("error", equalTo("validation"));
     }
 
     @Test

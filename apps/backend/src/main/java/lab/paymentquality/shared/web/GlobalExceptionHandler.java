@@ -2,14 +2,18 @@ package lab.paymentquality.shared.web;
 
 import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.LinkedHashMap;
@@ -22,7 +26,8 @@ import java.util.UUID;
  *
  * <p>Extends {@link ResponseEntityExceptionHandler} to override Spring MVC's built-in handling
  * of HTTP-level exceptions ({@link HttpRequestMethodNotSupportedException},
- * {@link HttpMediaTypeNotSupportedException}, {@link HttpMediaTypeNotAcceptableException})
+ * {@link HttpMediaTypeNotSupportedException}, {@link HttpMediaTypeNotAcceptableException},
+ * {@link MultipartException})
  * so they are returned as {@code application/problem+json} consistent with the payment API error
  * contract, rather than Spring's default empty-body responses.
  *
@@ -82,6 +87,27 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .headers(problemHeaders())
                 .body(problemBody(status.value(), "not_acceptable", "Not Acceptable",
                         "Accept header must allow application/json"));
+    }
+
+    /**
+     * Multipart parse failures happen in DispatcherServlet before a controller method,
+     * so scoped payment advice cannot map them. Keep the existing {@code validation}
+     * code — do not invent a new domain error.
+     */
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<Object> handleMultipartException(MultipartException ex) {
+        if (ex instanceof MaxUploadSizeExceededException) {
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                    .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                    .headers(problemHeaders())
+                    .body(problemBody(413, "validation", "Payload Too Large",
+                            "Maximum upload size exceeded"));
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .headers(problemHeaders())
+                .body(problemBody(400, "validation", "Bad Request",
+                        "Multipart request is malformed"));
     }
 
     // -------------------------------------------------------------------------

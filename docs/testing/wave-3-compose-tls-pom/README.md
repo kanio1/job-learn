@@ -122,4 +122,4 @@ E2E-025 UI 409, E2E-031/032 palette/ARIA, MRL E2E-022 idle re-goto, SEC-031 CSRF
 
 ## Poza Wave 3
 
-MULTIPART, OpenAPI drift, mockowane `tests/e2e`, privileged :443, `forward-headers-strategy: framework`.
+`REST-MULTIPART-01` zamknięty w [Wave 4](../wave-4-rest-contract-gates/README.md). OpenAPI **tooling** (springdoc / drift CI) = Wave 5; decyzja ownera: [openapi-ownership.md](../../architecture/openapi-ownership.md). Mockowane `tests/e2e`, privileged :443, `forward-headers-strategy: framework`.

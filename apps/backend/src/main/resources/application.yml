@@ -66,6 +66,22 @@ payment:
       enabled: true
       fixed-rate-ms: 60000
 
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: true
+  paths-to-exclude:
+    - /api/checkout-lab/**
+    - /api/mirror-lab/**
+    - /api/rls-lab/**
+    - /api/test/**
+  packages-to-exclude:
+    - lab.paymentquality.checkoutlab
+    - lab.paymentquality.mirrorlab
+    - lab.paymentquality.rlslab
+    - lab.paymentquality.testing
+
 logging:
   level:
     lab.paymentquality: DEBUG

@@ -5,6 +5,8 @@ import lab.paymentquality.payment.PaymentOrderSeed;
 import lab.paymentquality.payment.PaymentSeedCapability;
 import lab.paymentquality.payment.internal.domain.PaymentOrderStatusHistory;
 import lab.paymentquality.payment.internal.infrastructure.JpaIdempotencyRecordRepository;
+import lab.paymentquality.payment.internal.infrastructure.JpaPaymentOrderEvidenceRepository;
+import lab.paymentquality.payment.internal.infrastructure.JpaPaymentOrderNoteRepository;
 import lab.paymentquality.payment.internal.infrastructure.JpaPaymentOrderRepository;
 import lab.paymentquality.payment.internal.infrastructure.JpaPaymentOrderStatusHistoryRepository;
 import org.springframework.stereotype.Service;
@@ -19,15 +21,21 @@ class PaymentSeedService implements PaymentSeedCapability {
 
     private final JpaIdempotencyRecordRepository idempotencyRepository;
     private final JpaPaymentOrderStatusHistoryRepository historyRepository;
+    private final JpaPaymentOrderEvidenceRepository evidenceRepository;
+    private final JpaPaymentOrderNoteRepository noteRepository;
     private final JpaPaymentOrderRepository paymentOrderRepository;
     private final EntityManager entityManager;
 
     PaymentSeedService(JpaIdempotencyRecordRepository idempotencyRepository,
                        JpaPaymentOrderStatusHistoryRepository historyRepository,
+                       JpaPaymentOrderEvidenceRepository evidenceRepository,
+                       JpaPaymentOrderNoteRepository noteRepository,
                        JpaPaymentOrderRepository paymentOrderRepository,
                        EntityManager entityManager) {
         this.idempotencyRepository = idempotencyRepository;
         this.historyRepository = historyRepository;
+        this.evidenceRepository = evidenceRepository;
+        this.noteRepository = noteRepository;
         this.paymentOrderRepository = paymentOrderRepository;
         this.entityManager = entityManager;
     }
@@ -88,6 +96,8 @@ class PaymentSeedService implements PaymentSeedCapability {
     @Override
     @Transactional
     public void clear() {
+        evidenceRepository.deleteAllInBatch();
+        noteRepository.deleteAllInBatch();
         idempotencyRepository.deleteAllInBatch();
         historyRepository.deleteAllInBatch();
         paymentOrderRepository.deleteAllInBatch();

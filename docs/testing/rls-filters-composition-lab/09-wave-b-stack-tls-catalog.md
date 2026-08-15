@@ -383,8 +383,8 @@ Zielone 4/4 TLS POM z `ignoreHTTPSErrors` nie znaczy „przeglądarka ufa mkcert
 
 ## G. Poza Wave B (nie dodawać TC jako „brak implementacji”)
 
-- `REST-MULTIPART-01` (`apps/api-tests` evidence).
-- `REST-OPENAPI-DRIFT-01`.
+- `REST-MULTIPART-01` — Wave 4 (`apps/api-tests` evidence). See [wave-4-rest-contract-gates](../wave-4-rest-contract-gates/README.md).
+- `REST-OPENAPI-DRIFT-01` — Wave 4 decision recorded; springdoc/CI = Wave 5. See [openapi-ownership.md](../../architecture/openapi-ownership.md).
 - RLS na `merchants` / `payment_orders`.
 - Kafka, PSP. Konteneryzacja Spring/Nuxt = Wave 3 `--full` (nie zastępuje HTTP DX).
 - Uprzywilejowane :443 bez sysctl.
@@ -396,7 +396,7 @@ Zielone 4/4 TLS POM z `ignoreHTTPSErrors` nie znaczy „przeglądarka ufa mkcert
 Wave 3 zamknęło RA-RFC-031 live, E2E-052–056, E2E-060, STK-007, SEC-RFC-001. Zostaje:
 
 1. PW-RFC-E2E-061 FE off + Spring on (P2).
-2. `REST-MULTIPART-01` / `REST-OPENAPI-DRIFT-01` (poza Wave 3).
+2. `REST-MULTIPART-01` / OpenAPI **decision** — Wave 4. OpenAPI **tooling** — Wave 5.
 
 RA-RFC-032 (issuer) i RA-RFC-033 (CORS) są **existing-ra**.
 

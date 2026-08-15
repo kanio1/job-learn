@@ -3,8 +3,10 @@ package lab.paymentquality.testing;
 import io.restassured.RestAssured;
 import io.restassured.response.ValidatableResponse;
 import lab.paymentquality.testing.internal.seed.DeterministicDataset;
+import lab.paymentquality.testsupport.MerchantApiTestSupport;
 import lab.paymentquality.testsupport.PostgresContainerSupport;
 import lab.paymentquality.testsupport.TestJwtConfiguration;
+import lab.paymentquality.testsupport.TestJwtSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -123,6 +125,34 @@ class TestEndpointsEnabledIT extends PostgresContainerSupport {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_orders", Integer.class)).isEqualTo(0);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM merchants", Integer.class)).isEqualTo(0);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tenants", Integer.class)).isEqualTo(0);
+    }
+
+    @Test
+    void resetAfterEvidenceUploadReturns200AndClearsEvidenceRows() {
+        RestAssured.given().port(port).post("/api/test/seed").then().statusCode(200);
+
+        String merchantId = "00000000-0000-0000-0000-0000000000b1";
+        String paymentOrderId = "00000000-0000-0000-0000-0000000000c1";
+        String token = TestJwtSupport.merchantPaymentLifecycleToken(merchantId);
+
+        MerchantApiTestSupport.requestWithToken(port, token)
+                .multiPart("file", "reset-proof.txt", "keep".getBytes(), "text/plain")
+                .when()
+                .post("/api/merchants/{merchantId}/payment-orders/{paymentOrderId}/evidence",
+                        merchantId, paymentOrderId)
+                .then()
+                .statusCode(201);
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_order_evidence", Integer.class))
+                .isGreaterThan(0);
+
+        RestAssured.given().port(port).post("/api/test/reset").then().statusCode(200);
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_order_evidence", Integer.class))
+                .isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_order_note", Integer.class))
+                .isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_orders", Integer.class)).isEqualTo(0);
     }
 
     @Test
