@@ -147,6 +147,26 @@ export class BffClient {
     return { status: response.status(), headers: response.headers(), body: await response.json().catch(() => undefined) }
   }
 
+  async capturePayment(
+    merchantId: string,
+    paymentOrderId: string,
+    etag: string,
+    idempotencyKey: string,
+    amountMinor: number,
+  ) {
+    const response = await this.context.post(
+      `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/capture`,
+      {
+        data: { amountMinor },
+        headers: {
+          'Idempotency-Key': idempotencyKey,
+          'If-Match': etag,
+        },
+      },
+    )
+    return { status: response.status(), headers: response.headers(), body: await response.json().catch(() => undefined) }
+  }
+
   async getTenantSettings() {
     const response = await this.context.get('/api/tenants/current/settings')
     return { status: response.status(), headers: response.headers(), body: await response.json() as TenantSettingsBody }

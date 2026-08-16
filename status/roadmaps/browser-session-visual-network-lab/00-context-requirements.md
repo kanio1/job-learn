@@ -2,7 +2,7 @@
 name: mrl-context-requirements
 parent: browser-session-visual-network-lab
 origin: POST_KIRO_WORK
-last_updated: 2026-08-13
+last_updated: 2026-08-15
 ---
 
 # 00 — Kontekst, wymagania, non-goals
@@ -62,7 +62,8 @@ Flagowane, lokalne laby lustrzane. Enterprise dashboard **albo** end-user deskto
 | FR-S01 | Cookie inspector: nazwa, HttpOnly, Secure, SameSite, Path, Expires | E1 |
 | FR-S02 | Porównanie: `nuxt-session` vs cookies Keycloak vs **brak** cookies na hosted | E1 |
 | FR-S03 | Idle timeout + lock screen + countdown; re-auth bez sleep w testach | E1 |
-| FR-S04 | Logout BFF + OIDC end-session; pusty storageState nie wchodzi na `/admin` | E1 |
+| FR-S04a | Logout **aplikacji**: `session.clear()` (menu Sign out, idle Unlock) → `/login`; pusty storageState nie wchodzi na `/admin` | E1 |
+| FR-S04b | Logout **RP OIDC**: Session lab End OIDC → Keycloak `end_session` (`client_id`, bez `id_token_hint`) | E1 |
 | FR-S05 | Lista sesji równoległych + revoke (labowy, nie Keycloak admin w E1) | E1 |
 | FR-S06 | CSRF na mutating BFF cookie-auth → 403; Bearer API **bez** CSRF | E1 |
 | FR-S07 | Guest project: `storageState: { cookies: [], origins: [] }` | E1 |

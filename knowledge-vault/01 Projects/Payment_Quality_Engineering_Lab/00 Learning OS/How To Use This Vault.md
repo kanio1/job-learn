@@ -58,13 +58,13 @@ Key deferrals:
 - PSP integration
 - Complete OAuth/OIDC and business dashboards ← Phase 0 guardrails
 
-## When To Use Spec Kit
+## When To Write a Spec
 
-See [[Current Learning Flow#Spec Kit Decision]] for the decision table.
+See [[Current Learning Flow#Spec / tickets decision]] for the decision table.
 
 Short version:
-- Adding a test? **NO** Spec Kit.
-- New module / resource / security model? **YES** Spec Kit.
+- Adding a test? **NO** spec.
+- New module / resource / security model? **YES** — `to-spec` then `to-tickets`.
 - Everything in between? Check the table.
 
 ## Repeatable Prompts
@@ -94,7 +94,7 @@ cd apps/frontend && corepack pnpm typecheck                  # frontend check
 | See what lesson I'm on | [[Current Lesson]] |
 | Read the current lesson | [[Lesson 06 - Payment Order Create Read Foundation]] |
 | See sprint status | [[Current Sprint]] |
-| Know if I should use Spec Kit | [[Current Learning Flow#Spec Kit Decision]] |
+| Know if I should write a spec | [[Current Learning Flow#Spec / tickets decision]] |
 | See technology connections | [[Curriculum Backbone]] |
 | Track my progress | [[Learning Progress Board]] |
 | Find a lesson prompt | [[Learning Prompts MOC|Learning Prompts/README]] |

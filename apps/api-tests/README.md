@@ -5,6 +5,8 @@ Standalone Maven module for live HTTP contract testing of `payment-quality-lab`.
 Rules: no backend production imports, no `@SpringBootTest`, no MockMvc, no backend DTO reuse.
 Scenario specs call API facades; facades own REST Assured request mechanics.
 
+Manual exploration of the same Spring surface (Bruno/Postman, ROPC Bearer): [docs/setup/bruno-postman-api.md](../../docs/setup/bruno-postman-api.md).
+
 ## Run
 
 ```bash

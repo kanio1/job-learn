@@ -10,7 +10,10 @@ UC = [07](07-istqb-decision-state-usecase.md). Spec = konkretny `test('…')` w 
 | FR-W2-01 unauth merchants | E2E-001, UC-01 | existing-pom `session-guest` | P0 |
 | FR-W2-01 unauth session-lab | E2E-002 | existing-pom | P0 |
 | Unauth inne `/admin` | E2E-003 | existing-pom `session-guest` | P1 |
-| FR-W2-02 logout | E2E-010, UC-02 | existing-pom `session.spec` | P0 |
+| FR-W2-02 logout aplikacji | E2E-010, UC-02 | existing-pom `session.spec` (nie OIDC) | P0 |
+| FR-OIDC / FR-S04b End OIDC | E2E-013, UC-18 | designed | P0 |
+| Cookie &lt; 4 KB / brak id_token | SEC-005, UC-19 | designed | P0 |
+| SameSite / Secure vs policy JSON | SEC-006 | designed; TLS E2E-056 existing | P1 |
 | FR-W2-03 HttpOnly / no JWT | E2E-011, SEC-001–003 | existing-pom | P0 |
 | Idle 121s Unlock → login | E2E-012, EP-013, UC-16 | existing-pom `session-lab` | P0 |
 | Ponowny `/admin` po idle unlock | MRL E2E-022, EP-014 | designed | P1 |
@@ -62,8 +65,15 @@ UC = [07](07-istqb-decision-state-usecase.md). Spec = konkretny `test('…')` w 
 | Evidence + CSV no token | E2E-097, UC-14 | existing-pom | P1 |
 | Tenant If-Match | E2E-112, UC-15 | existing-pom | P1 |
 | Users / audit | E2E-110/111 | existing-pom | P1 |
+| Dual-control refund | UC-W2-22, [09 BC-OP-07](09-core-domain-flows.md) | existing-ra + real-stack spec | P0 |
+| Tenant admin vs Beta 404 | UC-W2-20 | existing-ra; POM designed | P0 |
+| Manager vs ALPHA_002 create | UC-W2-21 | existing-ra; POM designed | P0 |
+| Caddy / TLS / Location względny | UC-W2-23, UC-W3-09 | existing-ra + setup oracle | P0 |
+| Mix `--app` token + `api.` HTTPS | UC-W2-23 | **401** iss; EG-W2-13 | P0 |
 
 ## Checkout (delta)
+
+Hosted hops, HMAC, `Idempotency-Key` na **sesji** CPL, PAY_NO_RETURN: [CPL 08](../checkout-protocol-lab/08-traceability-matrix.md) i [CPL README](../checkout-protocol-lab/README.md). Tu tylko delta dashboardu.
 
 | Wymaganie | ID | Pokrycie | Prio |
 |---|---|---|---|
@@ -74,6 +84,8 @@ UC = [07](07-istqb-decision-state-usecase.md). Spec = konkretny `test('…')` w 
 | EXPIRED_LINK hosted | E2E-065 | existing-pom `mirror-lab` | P1 |
 | Lab flag off | E2E-064 | existing-pom skip | P1 |
 | HMAC/notify | — | CPL, nie tu | — |
+| PAY_NO_RETURN close-tab | — | CPL PW-E2E-043 **designed** | — |
+| `RETURN_LIE_SUCCESS` przez header API | — | CPL PW-API-071 **designed** | — |
 
 ## Support / Error Lab / laby
 
@@ -110,7 +122,10 @@ UC = [07](07-istqb-decision-state-usecase.md). Spec = konkretny `test('…')` w 
 | Palette ARIA Error Lab | tak | inne cele; ARIA login |
 | Notes / risk | 201\|403 | realm roles (E2E-041 existing) |
 | Payments idempotency / ETag / cancel | tak | — |
+| Dual-control refund | RA + real-stack spec | Wave 2 POM 1:1 nie |
+| Tenant.admin / ALPHA_002 BOLA | RA | POM UC-W2-20/21 |
 | CASH / decline / lie / expired hosted | tak | PAY_NO_RETURN (CPL) |
 | Support IDOR | tak | — |
 | Error Lab 400/401/412 + remaining BFF | tak | 429 mock |
 | CSRF fail / 503 / RLS / TLS | tak | CSRF happy |
+| Caddy Location / CORS / Secure cookie | RA + TLS POM | CPL hosted pełny na `--full` |

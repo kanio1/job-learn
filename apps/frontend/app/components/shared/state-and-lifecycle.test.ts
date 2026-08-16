@@ -7,7 +7,7 @@
  *   - LoadingState: loading indicator presence, no data content shown
  *   - EmptyStateCard: description + next action text rendered
  *   - ErrorState: error message rendered, ProblemDetailsCard rendered for problem prop, no token content
- *   - PaymentOrderLifecycleActions: exactly one control per available action from getAvailableActions
+ *   - PaymentOrderLifecycleActions: authorize/capture/cancel only; refunds are dual-control
  */
 
 // @vitest-environment nuxt
@@ -219,13 +219,13 @@ describe('ErrorState', () => {
 // ─── PaymentOrderLifecycleActions ─────────────────────────────────────────────
 
 /**
- * Maps each Payment_Status to the actions that getAvailableActions returns.
- * Mirrors the store logic exactly so tests remain independent of the Pinia instance.
+ * Maps each Payment_Status to the lifecycle buttons rendered in the UI.
+ * Captured refunds are requested via dual-control, not a one-click Refund button.
  */
 const EXPECTED_ACTIONS: Record<string, string[]> = {
   CREATED: ['authorize', 'cancel'],
   AUTHORIZED: ['capture', 'cancel'],
-  CAPTURED: ['refund'],
+  CAPTURED: [],
   CANCELLED: [],
   EXPIRED: [],
   REFUNDED: [],

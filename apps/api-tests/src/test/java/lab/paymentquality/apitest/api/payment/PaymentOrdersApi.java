@@ -3,9 +3,14 @@ package lab.paymentquality.apitest.api.payment;
 import io.restassured.response.Response;
 import lab.paymentquality.apitest.api.payment.dto.CreatePaymentOrderRequest;
 import lab.paymentquality.apitest.api.payment.dto.PatchMetadataRequest;
+import lab.paymentquality.apitest.core.auth.Identities;
+import lab.paymentquality.apitest.core.context.Ctx;
+import lab.paymentquality.apitest.core.context.TestContext;
 import lab.paymentquality.apitest.core.http.ContentTypes;
 import lab.paymentquality.apitest.core.http.Headers;
 import lab.paymentquality.apitest.core.http.RequestSpecs;
+
+import java.util.function.Supplier;
 
 /**
  * Thin client facade for {@code /api/merchants/{merchantId}/payment-orders} endpoints.
@@ -448,13 +453,13 @@ public final class PaymentOrdersApi {
      */
     public static Response refund(
             String merchantId, String paymentOrderId, String ifMatch, String idempotencyKey) {
-        return RequestSpecs.lifecycle(ifMatch, idempotencyKey)
+        return asPlatformLifecycle(() -> RequestSpecs.lifecycle(ifMatch, idempotencyKey)
                 .contentType(ContentTypes.JSON)
                 .pathParam("merchantId", merchantId)
                 .pathParam("paymentOrderId", paymentOrderId)
                 .body("{}")
                 .when()
-                .post(REFUND_PATH);
+                .post(REFUND_PATH));
     }
 
     /**
@@ -484,13 +489,13 @@ public final class PaymentOrdersApi {
     public static Response refundWithAmount(
             String merchantId, String paymentOrderId, String ifMatch,
             String idempotencyKey, long amountMinor) {
-        return RequestSpecs.lifecycle(ifMatch, idempotencyKey)
+        return asPlatformLifecycle(() -> RequestSpecs.lifecycle(ifMatch, idempotencyKey)
                 .contentType(ContentTypes.JSON)
                 .pathParam("merchantId", merchantId)
                 .pathParam("paymentOrderId", paymentOrderId)
                 .body("{\"amountMinor\":" + amountMinor + "}")
                 .when()
-                .post(REFUND_PATH);
+                .post(REFUND_PATH));
     }
 
     /**
@@ -805,5 +810,15 @@ public final class PaymentOrdersApi {
                 .body(body)
                 .when()
                 .post(EVIDENCE_PATH);
+    }
+
+    private static Response asPlatformLifecycle(Supplier<Response> call) {
+        TestContext previous = Ctx.current();
+        Ctx.set(new TestContext(previous.correlationId(), Identities.platformAdmin(), previous.scenarioName()));
+        try {
+            return call.get();
+        } finally {
+            Ctx.set(previous);
+        }
     }
 }

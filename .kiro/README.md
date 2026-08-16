@@ -49,12 +49,33 @@ description: Use when...  # short, activation-friendly trigger phrase
 | `project-skill-governance-and-quality-review` | Reviewing or evolving the skill collection |
 | `rapid-software-testing-risk-thinking` | Applying RST thinking, risk statements, exploratory charters |
 | `rest-api-security-oauth-testing` | Designing or testing REST security, Keycloak, OAuth/OIDC |
-| `spec-kit-feature-workflow` | Converting a capability into a structured Kiro Spec |
 | `spring-boot4-spring7-backend-architect` | Designing or reviewing Spring Boot 4 backend architecture |
 | `spring-modulith-2-0-6-modular-monolith-testing` | Working with Spring Modulith module boundaries and tests |
 | `test-analysis-design-and-data` | Turning requirements and risks into test conditions |
 | `typescript6-playwright-engineering` | Designing or implementing Playwright 1.60 + TypeScript 6 tests |
 | `web-research-and-data-extraction` | Performing broader research or repo mining |
+
+### Engineering process skills (Cursor / Codex / OpenCode)
+
+Canonical copies live in `.agents/skills/` (adapted from mattpocock/skills). Tracker: `docs/agents/issue-tracker.md`.
+
+| Skill | Activates when |
+|---|---|
+| `ask-engineering-flow` | Choosing grill vs spec vs TDD vs review |
+| `grill-me` / `grill-with-docs` | Aligning before a change |
+| `to-spec` / `to-tickets` | Writing a spec or tracer-bullet tickets under `.codex/` |
+| `tdd` / `implement` | Building test-first (REST Assured, Playwright E2E, Playwright REST) |
+| `wayfinder` | Foggy work bigger than one session |
+| `triage` | Incoming bugs/requests |
+| `prototype` | Throwaway logic HTML or Nuxt UI variants |
+| `research` | Cited primary-source notes (Firecrawl) |
+| `wizard` | Human-only Keycloak/mkcert/secrets steps |
+| `teach` | Multi-session learning under `.codex/teach` |
+| `code-review` | Two-axis review of a diff |
+| `diagnosing-bugs` | Hard bugs and flakes |
+| `handoff` | Session handoff |
+
+See `.agents/skills/README.md`.
 
 ---
 
@@ -106,15 +127,15 @@ This project uses **both** Kilo Code and Kiro IDE. Both skill collections are ma
 
 ### Why skills are duplicated intentionally
 
-- Kilo Code uses its own skill format (metadata section, license field, Spec Kit command references).
+- Kilo Code uses its own skill format (metadata section, license field).
 - Kiro uses a simpler frontmatter format (`name` + `description` only).
-- Kiro skills replace Kilo-specific wording (`/speckit.specify`, `Kilo Code Orchestrator mode`) with Kiro equivalents (`Kiro Spec Mode`, `requirements.md → design.md → tasks.md`).
+- New work uses `.agents/skills/` process skills (`to-spec`, `to-tickets`, `implement`) rather than Spec Kit or Kiro Spec Mode.
 
 ### Keeping skills in sync
 
 When you update a skill that both tools use:
 1. Edit the skill in **both** `.kilocode/skills/<name>/SKILL.md` **and** `.kiro/skills/<name>/SKILL.md`.
-2. In `.kilocode/skills/`, preserve the existing Kilo Code format (metadata, license, Spec Kit commands).
+2. In `.kilocode/skills/`, preserve the existing Kilo Code format (metadata, license).
 3. In `.kiro/skills/`, keep only `name` + `description` frontmatter and replace any Kilo-specific wording.
 
 To copy all Kilo Code skills to Kiro and review for adaptation:
@@ -137,11 +158,8 @@ done
 
 | Replace (Kilo Code) | With (Kiro) |
 |---|---|
-| `Use Kilo Code Orchestrator mode` | `Use Kiro Spec Mode when requirements/design/tasks are needed` |
-| `Use Kilo Code Architect mode` | `Produce requirements.md, design.md, and tasks.md before implementation` |
-| `/speckit.specify` | `Kiro Spec Mode (requirements phase)` |
-| `/speckit.clarify` | `requirements phase clarification` |
-| `Spec Kit` (when referring to the workflow) | `Kiro Spec` |
+| `Use Kilo Code Orchestrator mode` | `Use engineering process skills in .agents/skills/` |
+| `Use Kilo Code Architect mode` | `Produce a .codex spec and tickets before implementation` |
 | `Run in Kilo mode` | `Ask for approval before large implementation steps` |
 
 ---
@@ -160,7 +178,7 @@ Every `.kiro/skills/<name>/SKILL.md` must:
 2. `name` must match the folder name (kebab-case, lowercase, hyphens only).
 3. `description` must be specific and activation-friendly — start with "Use when".
 4. Must not contain Kilo-specific metadata fields (`license`, `metadata.category`, `metadata.author`, `metadata.version`).
-5. Must not reference Kilo Code commands (`/speckit.*`).
+5. Must not reference Spec Kit or `/speckit.*` commands.
 
 ---
 

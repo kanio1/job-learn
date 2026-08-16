@@ -28,6 +28,10 @@ export default defineEventHandler(async (event): Promise<any> => {
   const form = new FormData()
   const blob = new Blob([file.data], { type: file.type || 'application/octet-stream' })
   form.append('file', blob, file.filename || 'evidence')
+  const category = parts?.find(part => part.name === 'category')
+  if (category?.data) {
+    form.append('category', new TextDecoder().decode(category.data))
+  }
 
   const headers: Record<string, string> = {
     Authorization: `Bearer ${accessToken}`,

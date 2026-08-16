@@ -1,19 +1,20 @@
 ---
 name: rest-api-test-design
-description: Use to design or review REST Assured tests for the implemented merchant and payment-order APIs; do not use for PSP, Kafka, ETag/idempotency requirements that are not in current code/spec, or generic REST tutorials.
+description: Use to design or review REST Assured tests and Playwright REST/BFF HTTP tests for merchant and payment-order APIs; do not use for PSP, Kafka, or header requirements that are not in current code/spec, or generic REST tutorials.
 ---
 
 # REST API Test Design
 
-Use this skill for focused REST/API test design in the current repository.
+Use this skill for focused REST/API test design in the current repository. When **writing** the tests test-first, follow `tdd` (REST Assured seam and Playwright REST seam). This skill owns coverage matrix, data/token setup, and assertion design.
 
 ## Inspect First
 
 - Controller and exception handler for the endpoint.
 - `SecurityConfig` authorities and ownership checks.
 - Existing REST Assured support classes in `testsupport`.
+- Playwright REST / BFF suites under `apps/frontend/tests/live/http` and `apps/frontend/tests-pom` when the contract is consumed through the Nuxt BFF.
 - Flyway migration and repository behavior if persistence is part of the oracle.
-- Current Spec Kit contract under `specs/`.
+- Current spec under `.codex/specs/` or `docs/testing/**`. Historical `specs/` is prior art only.
 
 ## Merchant API Coverage
 

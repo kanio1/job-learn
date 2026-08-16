@@ -22,9 +22,46 @@ Istniejące wykonanie (odniesienie, nie duplikat): RA w `CheckoutLabProtocolRest
 4. Przypadki REST (Playwright `APIRequestContext`) → **04** (auth/sessions) i **05** (hosted/notify/ops).
 5. Projektowanie czarnoskrzynkowe ISTQB FL → **06** (EP/BVA), **07** (DT/ST/UC/pairwise).
 6. Śledzenie FR → TC → **08**.
+7. Pełne skrypty HTTP/UI (pozytyw/negatyw, od health do notify) → **09**.
+8. Druga iteracja przez Caddy/TLS (`app.` / `api.` / `auth.`) → [live-pom 10](../live-pom-wave-2/10-full-stack-edge-flows.md) (BC-CPL-EDGE w 09).
 
 Każdy REST case podaje **method, path, headers, body, status, `error`/`code`, nagłówki odpowiedzi**.  
 Oracle pieniędzy = **fulfillment / event / DB**, nigdy sam query `status=success` na `continueUrl`.
+
+Dashboard `payment_orders` (JWT, `Idempotency-Key` na create, ETag) to **inny** świat: [live-pom-wave-2](../live-pom-wave-2/). Bruno: [bruno-postman-api.md](../../setup/bruno-postman-api.md).
+
+---
+
+## Redirect, continueUrl, „już zapłacone”
+
+Analogia PayU/Stripe w tym labie: `POST /sessions` → **302** + `Location` (hosted). `continueUrl` to **hint** powrotu (query `status=`), nie oracle pieniędzy.
+
+| Mechanizm | Use case / DT | Testy | Pokrycie |
+|---|---|---|---|
+| Create session, ten sam `Idempotency-Key` + ten sam fingerprint → replay 302 | FR-11, EP-111 | PW-API-024 | existing-ra |
+| Ten sam key, inny fingerprint → 409 `idempotency_conflict` | EP-112 | PW-API-025 | existing-ra |
+| Ten sam key, zmiana **tylko** `validitySeconds` → replay (pole poza fingerprint) | EP-113 | [PW-API-026](04-playwright-api-auth-sessions.md) | **designed** |
+| Duplicate notify HMAC → 200 `{duplicate:true}`, 0 drugi event | FR-08, ST-024 | PW-API-208 | existing-ra |
+| Simulate na sesji COMPLETED → noop | ST hosted | PW-API-114 | existing-ra (cienko) |
+| Happy: hosted Approve → return, fulfillment CONFIRMED | [UC-01](07-istqb-decision-state-usecase.md) | PW-E2E-050 | existing-pw / pom |
+| Return z `status=success` **bez** Approve | [UC-03](07-istqb-decision-state-usecase.md) | PW-E2E-040; [PW-API-071](04-playwright-api-auth-sessions.md) header `RETURN_LIE_SUCCESS` | UI existing; **API designed** |
+| Approve, nie odwiedzaj return | [UC-05](07-istqb-decision-state-usecase.md) | [PW-E2E-043](03-playwright-e2e-catalog.md), PW-API-075 | **designed** (GAP-02) |
+| Decline → CANCELLED | UC-04 | PW-E2E-022/042 | existing-pom |
+
+Nie mylić z `POST /api/merchants/{id}/payment-orders` + replay 200/409 — to [E2E-091](../live-pom-wave-2/03-playwright-e2e-catalog.md), nie `continueUrl`.
+
+---
+
+## Otwarte luki (ten pakiet)
+
+| ID | Co brakuje | Gdzie |
+|---|---|---|
+| GAP-01 | `OOO_EVENTS` — enum bez reorder | [01](01-business-gap-analysis.md); TC **blocked** |
+| GAP-02 | Close-tab / PAY_NO_RETURN | PW-E2E-043, PW-API-075 **designed** |
+| FR-04 test | `Lab-Force-Scenario: RETURN_LIE_SUCCESS` w RA/PW-API | PW-API-071 **designed**; UI lie jest |
+| FR-11 test | Replay przy zmianie samego TTL | PW-API-026 **designed** |
+
+Pełna kolejka P0: [08-traceability-matrix.md](08-traceability-matrix.md).
 
 ---
 
@@ -40,6 +77,7 @@ Oracle pieniędzy = **fulfillment / event / DB**, nigdy sam query `status=succes
 | [06-istqb-ep-bva.md](06-istqb-ep-bva.md) | Equivalence partitioning + boundary value analysis | `EP-*`, `BVA-*` |
 | [07-istqb-decision-state-usecase.md](07-istqb-decision-state-usecase.md) | Decision tables, state transition, use case, pairwise, error guessing | `DT-*`, `ST-*`, `UC-*`, `PWISE-*`, `EG-*` |
 | [08-traceability-matrix.md](08-traceability-matrix.md) | FR/NFR/scenariusz → ID + priorytet P0–P2 | — |
+| [09-protocol-flow-simulations.md](09-protocol-flow-simulations.md) | BA/TA: hops z headers/body, UC-01…06 pos/neg | `BC-CPL-*` |
 
 ---
 

@@ -58,7 +58,44 @@ test('displays payment order detail', async ({ page }) => {
   await expect(page.getByText(paymentOrderId)).toBeVisible()
   // exact:true prevents case-insensitive substring match on "Created At" label
   await expect(page.getByTestId('payment-order-detail').getByText('Created', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('payment-order-detail').getByTitle('CREATED')).toBeVisible()
   await expect(page.getByText('5000 minor units')).toBeVisible()
   await expect(page.getByText('EUR')).toBeVisible()
   await expect(page.getByText('PAY-READ-001')).toBeVisible()
+})
+
+test('copies the payment reference to the clipboard', async ({ page, context }) => {
+  const merchantId = '11111111-1111-4111-8111-111111111111'
+  const paymentOrderId = '33333333-3333-4333-8333-333333333333'
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await mockAuthenticatedSession(page)
+  await page.route(`**/api/merchants/${merchantId}/payment-orders/${paymentOrderId}`, async (route) => {
+    if (route.request().method() === 'HEAD') {
+      await route.fulfill({ status: 200 })
+      return
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        paymentOrderId,
+        merchantId,
+        clientOrderReference: 'PAY-READ-001',
+        amountMinor: 5000,
+        currency: 'EUR',
+        status: 'CREATED',
+        createdAt: '2026-05-27T10:00:00Z',
+        updatedAt: '2026-05-27T10:00:00Z',
+      }),
+    })
+  })
+  await page.route(`**/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/history`, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ content: [] }) })
+  })
+  await page.route(`**/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/evidence`, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ content: [] }) })
+  })
+  await page.goto(`/admin/merchants/${merchantId}/payments/${paymentOrderId}`)
+  await page.getByTestId('copy-payment-reference').click()
+  await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText())).toBe('PAY-READ-001')
 })

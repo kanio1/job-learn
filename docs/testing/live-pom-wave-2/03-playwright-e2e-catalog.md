@@ -3,6 +3,8 @@
 Warstwa: Chromium live POM (`tests-pom`). Zero `fulfill`.  
 Każdy wiersz **existing-pom** = jeden konkretny `test('…')`. `designed` = nadal brak specu.
 
+Skrypty HTTP + kombinacje person (tenant.admin, ALPHA_002, dual-control): [09](09-core-domain-flows.md). Brzeg Caddy/TLS: [10](10-full-stack-edge-flows.md). Checkout hops: [CPL 09](../checkout-protocol-lab/09-protocol-flow-simulations.md).
+
 ---
 
 ## A. Sesja i gość — `chromium-guest` / `chromium-admin`
@@ -36,7 +38,7 @@ Każdy wiersz **existing-pom** = jeden konkretny `test('…')`. `designed` = nad
 | Kroki | `goto` `/admin/users`, `/admin/merchants/{alpha}/payments`, `/error-lab`, `/admin/checkout-lab` |
 | Asercje | URL `/login?redirectTo=` **równe** ścieżce; `LoginPage.expectLoaded()`. Nie `/psp/checkout` (hosted bez sesji). |
 
-### PW-W2-E2E-010 — Logout → login → ponowny admin zablokowany
+### PW-W2-E2E-010 — Logout **aplikacji** → login → ponowny admin zablokowany
 
 | | |
 |---|---|
@@ -44,6 +46,17 @@ Każdy wiersz **existing-pom** = jeden konkretny `test('…')`. `designed` = nad
 | Spec | `session.spec.ts` · `logout returns to login and blocks admin again` |
 | Kroki | `merchants.goto` → `userMenu.signOut()` (`logout-control` + menuitem Sign out) → `goto('/admin/merchants')` |
 | Asercje | URL `/login` po sign-out **i** po drugim goto |
+| Nie asertuje | Keycloak `end_session` (to jest E2E-013). Kontrakt: [session-bff-oidc-contract](../session-bff-oidc-contract.md) UC-SESS-01 |
+
+### PW-W2-E2E-013 — End OIDC session (Session Lab) — **designed**
+
+| | |
+|---|---|
+| Pokrycie | designed · FR-OIDC / FR-S04b |
+| Spec | `session-lab.spec.ts` (brak) · klik `session-lab-end-oidc` |
+| Kroki | POST `/api/session-lab/end-session` → nawigacja `endSessionUrl` |
+| Asercje | URL zawiera `client_id=` i `post_logout_redirect_uri=`; **brak** `id_token_hint`; `nuxt-session` znika; brak JWT w Web Storage |
+| Uwaga | IdP może pokazać confirm. Realm bez `post.logout.redirect.uris` (GAP-SESS-01) |
 
 ### PW-W2-E2E-011 — Cookie HttpOnly + brak JWT w storage
 
@@ -426,7 +439,7 @@ Szczegóły filtrów/kontrolek: [../rls-filters-composition-lab/03-playwright-e2
 | | |
 |---|---|
 | Pokrycie | existing-pom `session-lab.spec.ts` |
-| Katalog | [../payu-bank-mirror-labs/03-playwright-e2e-catalog.md](../payu-bank-mirror-labs/03-playwright-e2e-catalog.md) E2E-010/011 |
+| Katalog | [../payu-bank-mirror-labs/03-playwright-e2e-catalog.md](../payu-bank-mirror-labs/03-playwright-e2e-catalog.md) E2E-010/011. OIDC hop / 4 KB: [session-bff-oidc-contract](../session-bff-oidc-contract.md) (designed E2E-013) |
 
 ### PW-W2-E2E-121 — CSRF demo 403 `csrf_failed`
 

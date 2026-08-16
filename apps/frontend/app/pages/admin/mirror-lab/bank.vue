@@ -47,11 +47,25 @@
 
         <UCard>
           <h2 class="font-semibold mb-2">Maker-checker</h2>
-          <UButton data-testid="approval-create" @click="createApproval">Create as maker</UButton>
-          <UInput v-model="approvalId" class="mt-2" data-testid="approval-id" />
-          <UButton data-testid="approval-approve" variant="outline" @click="approve">Approve as checker</UButton>
+          <p class="text-sm text-muted mb-2">Lab refund approvals (not payment_orders). Create as maker, approve as a second role.</p>
+          <div class="flex flex-wrap gap-2">
+            <UButton data-testid="approval-create" @click="createApproval">Create as maker</UButton>
+            <UInput v-model="approvalId" class="mt-2" data-testid="approval-id" />
+            <UButton data-testid="approval-approve" variant="outline" @click="confirmApproveOpen = true">
+              Approve as checker
+            </UButton>
+          </div>
           <pre data-testid="approval-result" class="text-xs mt-2">{{ approvalResult }}</pre>
         </UCard>
+
+        <ConfirmActionModal
+          :open="confirmApproveOpen"
+          title="Approve refund"
+          description="Checker confirms this lab approval. Maker self-approve is rejected."
+          confirm-label="Approve"
+          @confirm="approve"
+          @update:open="confirmApproveOpen = $event"
+        />
 
         <UButton to="/consent/mirror-lab" data-testid="mirror-lab-open-consent">AIS-lite consent</UButton>
       </div>
@@ -69,6 +83,7 @@ const stepUpResult = ref('')
 const disputeId = ref('')
 const approvalId = ref('')
 const approvalResult = ref('')
+const confirmApproveOpen = ref(false)
 
 async function submitRefund(stepUp: boolean) {
   try {
@@ -127,6 +142,7 @@ async function createApproval() {
 }
 
 async function approve() {
+  confirmApproveOpen.value = false
   try {
     const response = await $fetch.raw(`/api/mirror-lab/refund-approvals/${approvalId.value}/approve`, { method: 'POST' })
     approvalResult.value = JSON.stringify({ status: response.status, body: response._data })

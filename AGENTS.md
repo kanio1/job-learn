@@ -4,7 +4,7 @@
 
 Payment Quality Engineering Lab is a learning-oriented payment platform used to practice Java/Spring backend engineering, REST API testing, security testing, frontend contract consumption, and SDET review skills.
 
-Implementation is done by the main Codex CLI session. Helper agents and skills are for mapping, planning, mentoring, test design, and review only.
+Implementation is done by the main Codex CLI session. Domain helper skills are for mapping, planning, mentoring, test design, and review. Engineering process skills in `.agents/skills/` are used by that session when building, reviewing, or writing REST Assured, Playwright E2E, and Playwright REST tests. Tracker: `docs/agents/issue-tracker.md`. Index: `.agents/skills/README.md`.
 
 ## Codex Execution Overlay
 
@@ -12,16 +12,31 @@ Implementation is done by the main Codex CLI session. Helper agents and skills a
 
 `.codex/**` is the mutable Codex execution layer. Use it for continuation notes, execution status, review checklists, and prompts. OpenCode also uses `.codex/**` as the shared execution overlay; `opencode.jsonc` loads the same instruction files.
 
-`.kiro/**` files are read-only during Codex implementation unless the user explicitly asks to maintain Kiro specs. Codex may read `.kiro/specs/**` for requirements, design, and task sequencing, but must not check or uncheck tasks, rewrite plans, or adjust Kiro task files during normal implementation. Track implementation status in `.codex/current-state.md`, not in `.kiro`.
+`.kiro/**` is historical prior art. Codex may read `.kiro/specs/**` for old requirements, but must not check or uncheck tasks or rewrite those plans. Track new work in `.codex/` (`docs/agents/issue-tracker.md`).
 
 Recommended read order for current execution work:
 
 1. `AGENTS.md`
-2. `.codex/README.md`
-3. `.codex/current-state.md`
-4. `status/evidence/latest-validation.md`
-5. `status/roadmaps/playwright-phase3-roadmap.md`
-6. relevant current implementation and tests
+2. `.agents/skills/README.md` — engineering process skills
+3. `docs/agents/issue-tracker.md` — local markdown tracker
+4. `.codex/README.md`
+5. `.codex/current-state.md`
+6. `status/evidence/latest-validation.md`
+7. relevant current implementation and tests
+
+## Agent skills
+
+### Issue tracker
+
+Local markdown under `.codex/`. See `docs/agents/issue-tracker.md`. This lab does not use GitHub Issues or Linear as the work tracker.
+
+### Triage labels
+
+`Status:` line on those files. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Repo map in root `CONTEXT.md`; glossary in `.codex/CONTEXT.md`; ADRs in `.codex/adr/`. See `docs/agents/domain.md`.
 
 ## Current Phase
 
@@ -137,12 +152,14 @@ Payment orders:
 - Do not run backend tests from `apps/backend/src/test/java/lab/paymentquality/restkit/` or `apps/backend/src/test/java/lab/paymentquality/paymentsupport/` unless the user explicitly asks for those suites. This is a standing rule for Codex validation, including broad backend test requests.
 - Security tests belong in `security` and import `TestJwtConfiguration`.
 - Architecture/module boundaries are checked by `ModulithArchitectureTest`, `MerchantModuleTest`, and `PaymentModuleTest`.
-- Playwright tests live under `apps/frontend/tests` and use the existing auth setup/storage state pattern.
+- Playwright E2E tests live under `apps/frontend/tests/e2e` and use the existing auth setup/storage state pattern.
+- Playwright REST / live HTTP tests live under `apps/frontend/tests/live/http` and `apps/frontend/tests-pom`.
+- When writing tests test-first, follow `.agents/skills/tdd`. When changing Spring/Java production code, follow `.agents/skills/spring-modulith`. When changing Nuxt/TypeScript/Nitro production code, follow `.agents/skills/nuxt-frontend`. When reviewing a diff, follow `.agents/skills/code-review` plus the layer skills `java-spring-review`, `rest-api-test-design`, and `playwright-sdet-review`.
 - Ignore learner copies such as `My*` and `Lesson*` unless the task explicitly concerns learning files.
 
 ## Implementation Rules
 
-- Keep changes scoped to the current Spec Kit task or explicitly requested small step.
+- Keep changes scoped to the current `.codex` spec/ticket or explicitly requested small step.
 - Preserve Spring Modulith boundaries: public module APIs under module root packages, implementation under `internal`.
 - Do not make the payment module depend on `merchant.internal`.
 - For tenant isolation work, `merchant` may import only public tenant API from `lab.paymentquality.tenant.*` and must never import `lab.paymentquality.tenant.internal.*`.

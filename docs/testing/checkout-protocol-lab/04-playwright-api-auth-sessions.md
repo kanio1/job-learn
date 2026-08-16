@@ -431,6 +431,8 @@ Wszystkie: `Authorization: Bearer lab.*`. 404 sesji = problem+json `not_found`.
 
 ## 4.5 Scenariusze na create (header) — mostek do 05
 
+Luki designed w tej tabeli (071, 075) oraz PW-API-026: [README](README.md) i [01 GAP](01-business-gap-analysis.md).
+
 | ID | Header `Lab-Force-Scenario` | Oczekiwane po łańcuchu | Pokrycie |
 |---|---|---|---|
 | PW-API-070 | (brak) / `HAPPY_COMPLETED` | notify po COMPLETED simulate | existing-ra |

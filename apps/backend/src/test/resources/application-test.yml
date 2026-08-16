@@ -20,6 +20,8 @@ payment:
       # Disabled in tests so integration test runs stay deterministic — the
       # sweep logic is unit tested directly against PaymentExpirationService.
       enabled: false
+  export-jobs:
+    worker-enabled: false
 
 app:
   checkout-lab:

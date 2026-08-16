@@ -65,6 +65,9 @@ payment:
     scheduler:
       enabled: true
       fixed-rate-ms: 60000
+  export-jobs:
+    worker-enabled: true
+    worker-delay-ms: 250
 
 springdoc:
   swagger-ui:

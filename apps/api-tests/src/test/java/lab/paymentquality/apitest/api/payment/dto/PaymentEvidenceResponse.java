@@ -17,5 +17,7 @@ public record PaymentEvidenceResponse(
         String originalFilename,
         String contentType,
         long sizeBytes,
-        String uploadedAt) {
+        String uploadedAt,
+        String category,
+        Boolean hasContent) {
 }

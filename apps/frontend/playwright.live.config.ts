@@ -6,6 +6,9 @@ import { defineConfig, devices } from '@playwright/test'
  * Chromium baseline so a developer cannot accidentally turn placeholder auth
  * into evidence for RBAC or BFF contracts.
  */
+const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === '1'
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000'
+
 export default defineConfig({
   testDir: './tests/live',
   forbidOnly: true,
@@ -15,7 +18,7 @@ export default defineConfig({
     // The Keycloak client allow-list and the OIDC redirect URI use localhost.
     // Keep the browser origin identical so PKCE state cookies return to the
     // same host during the authorization-code callback.
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -55,10 +58,14 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: 'corepack pnpm dev --host 127.0.0.1 --port 3000',
-    url: 'http://localhost:3000',
-    reuseExistingServer: false,
-    timeout: 120_000,
-  },
+  ...(skipWebServer
+    ? {}
+    : {
+        webServer: {
+          command: 'corepack pnpm dev --host 127.0.0.1 --port 3000',
+          url: baseURL,
+          reuseExistingServer: true,
+          timeout: 120_000,
+        },
+      }),
 })

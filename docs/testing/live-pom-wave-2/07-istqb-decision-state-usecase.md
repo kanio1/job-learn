@@ -2,6 +2,8 @@
 
 Implementacja = konkretny `test('…')` z **03**. `designed` tylko gdy spec nie istnieje.
 
+**Pełne skrypty** (headers, body, status, UI analog, kombinacje person): [09-core-domain-flows.md](09-core-domain-flows.md). Reverse proxy / TLS: [10](10-full-stack-edge-flows.md). Poniższe UC to indeks + oracles; nie powtarzać 09/10 1:1.
+
 ---
 
 ## DT-W2-01 — Kto widzi `/admin`
@@ -15,6 +17,11 @@ Implementacja = konkretny `test('…')` z **03**. `designed` tylko gdy spec nie 
 | manager | `/admin/users` | forbidden | E2E-100 |
 | manager | `/admin/support` + Beta UUID | problem, 0 rows | E2E-070 |
 | admin | `/admin/support` | wyniki | E2E-071 |
+| `tenant.admin` | `GET /api/merchants/{BETA_001}` | **404** (nie 200 Beta) | UC-W2-20, existing-ra |
+| `merchant.manager` | `POST …/{ALPHA_002}/payment-orders` | **403** | UC-W2-21, existing-ra |
+| `merchant.denied` | `GET /api/merchants` | **403** | UC-W2-21, existing-ra |
+
+Pełna macierz 11 kombinacji: [09 BC-OP-03](09-core-domain-flows.md).
 
 ---
 
@@ -54,9 +61,11 @@ CREATED --authorize(If-Match fresh)→ AUTHORIZED --capture(If-Match)→ CAPTURE
 CREATED --authorize(stale)→ 412, zostaje CREATED
 CREATED --cancel + ConfirmModal submit→ CANCELLED
 CREATED --ConfirmModal dismiss→ CREATED (brak POST /cancel)
+CAPTURED --merchant POST /refund→ 409 dual_control_required
+CAPTURED --refund-approvals + other-sub approve→ REFUNDED
 ```
 
-TC: E2E-092, 093, 094, 096.
+TC: E2E-092, 093, 094, 096; dual-control [09 BC-OP-07](09-core-domain-flows.md) / UC-W2-22.
 
 ---
 
@@ -86,22 +95,37 @@ Format: aktor · precondition · kroki · oracle · spec.
 - **Oracle:** `/login?redirectTo=`; ekran logowania, nie pusta tabela.
 - **TC:** E2E-001. Wariant session-lab: E2E-002. Inne strzeżone path: E2E-003. Powrót `redirectTo`: SEC-011. Guest BFF 401: SEC-030.
 
-### UC-W2-02 — Operator wylogowuje shared browser — P0
+### UC-W2-02 — Operator wylogowuje **aplikację** (BFF) — P0
 
 - **Aktor:** platform admin.
 - **Kroki:** registry loaded → Sign out → wpisuje `/admin/merchants`.
-- **Oracle:** oba razy `/login`.
-- **TC:** E2E-010.
+- **Oracle:** oba razy `/login` (ścieżka A). SSO Keycloak **może** zostać.
+- **TC:** E2E-010. OIDC hop = UC-W2-18.
+
+### UC-W2-18 — Operator kończy SSO (Session Lab End OIDC) — P0
+
+- **Aktor:** platform admin.
+- **Kroki:** `/admin/session-lab` → `session-lab-end-oidc`.
+- **Oracle:** `endSessionUrl` z `client_id`, bez `id_token_hint`; cookie BFF znika.
+- **TC:** E2E-013 **designed**. Szczegół: [session-bff-oidc-contract](../session-bff-oidc-contract.md) UC-SESS-03.
+
+### UC-W2-19 — Sesja cookie mieści się w limicie UA — P0
+
+- **Oracle:** `nuxt-session` &lt; 4096 B; brak `id_token` w sealed session.
+- **TC:** SEC-005 **designed**.
 
 ### UC-W2-03 — Rejestracja merchantu — P0
 
+Skrypt HTTP (201 + `tenantReference`, 400 bez tenanta, 409 duplikat, ST activate/suspend): [09 BC-OP-02](09-core-domain-flows.md).
+
 - **Aktor:** platform admin + `BffClient`.
-- **Happy:** unique POST 201 → detail pokazuje reference (E2E-020).
+- **Happy:** unique POST 201 → detail pokazuje reference (E2E-020). Body: `merchantReference`, `displayName`, `tenantReference`.
 - **Persist:** GET 200 po create (E2E-022).
 - **Walidacja:** pusty form, 0 POST (E2E-023).
 - **Unikalność:** drugi POST 409 (E2E-026).
 - **Lifecycle:** Draft → Active → Suspended (E2E-021).
 - **Blocked:** UI POST z tenantem (E2E-024).
+- **Negatyw:** `merchant.manager` POST merchants **403**.
 
 ### UC-W2-04 — Notatka na żywej płatności — P0
 
@@ -136,17 +160,24 @@ Format: aktor · precondition · kroki · oracle · spec.
 
 ### UC-W2-08 — Utworzenie płatności z idempotencją — P0
 
-- **Aktor:** merchant manager, merchant Alpha.
-- **Kroki:** formularz amount/currency/reference + Idempotency-Key → submit.
-- **Oracle:** request niesie ten sam klucz; landuje na detail UUID.
-- **Replay:** ten sam key+body → 200 to samo id; inny body → 409 `idempotency_conflict`.
+Skrypt (201/200/409/400, admin 403): [09 BC-OP-04](09-core-domain-flows.md).
+
+- **Aktor:** merchant manager, merchant Alpha (`…b1`).
+- **Kroki HTTP:** `POST /api/merchants/{ALPHA_001}/payment-orders` + `Idempotency-Key` + `{ amountMinor, currency, clientOrderReference }`.
+- **Oracle:** **201**, `Location`, `ETag: "v0"`, `status: CREATED`.
+- **Replay:** ten sam key+body → **200**; inny body → **409** `idempotency_conflict`.
+- **UI:** formularz + `idempotency-key-input` → detail UUID.
 - **TC:** E2E-090, 091.
+- **Nie mylić** z CPL `POST /sessions` + `continueUrl` ([UC-01/03/05](../checkout-protocol-lab/07-istqb-decision-state-usecase.md)). To create **orderu** operatora, nie hosted return.
 
 ### UC-W2-09 — Autoryzacja i capture z ETag — P0
 
+Skrypt (`If-Match: "v0"`, 412/428/400/422): [09 BC-OP-05](09-core-domain-flows.md).
+
 - **Aktor:** manager na detail CREATED.
-- **Kroki:** odczyt ETag z GET → Authorize (If-Match) → Capture z If-Match z drawera.
-- **Negatyw:** If-Match `"v99"` (format `\"v{n}\"`) → 412, GET nadal CREATED. Malformed `"stale-etag"` → 400.
+- **Kroki HTTP:** GET ETag → `POST …/authorize` + `Idempotency-Key` + `If-Match` + `{ reason? }` → `POST …/capture` ze świeżym ETag.
+- **Oracle:** 200 AUTHORIZED potem CAPTURED.
+- **Negatyw:** `If-Match: "v99"` → **412**, GET nadal CREATED. `"stale-etag"` → **400**. Brak If-Match → **428**.
 - **TC:** E2E-092, 093.
 
 ### UC-W2-10 — Anulowanie z potwierdzeniem — P0
@@ -195,6 +226,47 @@ Format: aktor · precondition · kroki · oracle · spec.
 - **Kroki:** POST payment-order Alpha; POST merchant bez tenanta; GET nieistniejący UUID.
 - **Oracle:** 403 / 400 / 404.
 - **TC:** API-011, API-003, API-004.
+- **Rozszerzenie person:** [09 BC-OP-03](09-core-domain-flows.md).
+
+### UC-W2-20 — Tenant admin izolacja merchantów — P0
+
+- **Aktor:** `tenant.admin` (`TENANT_ALPHA`).
+- **Happy:** `POST /api/merchants` bez `tenantReference` → **201** w Alpha; `GET {ALPHA_001}` → **200**.
+- **Negatyw:** `GET {BETA_001}` → **404** (mask); activate Beta → **403**.
+- **Pokrycie:** existing-ra `TenantIsolationIT`; POM **designed**.
+- **Skrypt:** [09 BC-OP-03](09-core-domain-flows.md).
+
+### UC-W2-21 — BOLA ten sam tenant (001 vs 002) i denied — P0
+
+- **Aktor:** `merchant.manager` (`merchant_id=MERCHANT_ALPHA_001`).
+- **Negatyw create:** `POST …/{ALPHA_002}/payment-orders` + Idempotency-Key + body kwoty → **403**.
+- **Negatyw read:** GET obcego orderu → **404**.
+- **Denied:** `merchant.denied` `GET /api/merchants` → **403** (nie 401).
+- **Pokrycie:** existing-ra security; POM Support/RBAC E2E-070/100 (Beta), nie 002 CRUD.
+- **Skrypt:** [09 EXC-OP-03e](09-core-domain-flows.md).
+
+### UC-W2-22 — Dual-control refund — P0
+
+- **Aktorzy:** maker = manager; checker ≠ ten sam JWT `sub` (drugi lifecycle albo `platform.admin`).
+- **Direct merchant refund:** `POST …/refund` + If-Match → **409** `dual_control_required`.
+- **Wniosek:** `POST …/refund-approvals` → **201** PENDING.
+- **Self-approve:** **409** `dual_control_self_approve`.
+- **Approve checker:** `POST …/approve` + Idempotency-Key + If-Match → **200** REFUNDED.
+- **Override:** platform `POST …/refund` → **200**.
+- **Pokrycie:** existing-ra `PlaywrightLearningStackRestAssuredTest`; live spec refund dual-control; Wave 2 POM **nie** duplikować 1:1.
+- **Skrypt:** [09 BC-OP-07](09-core-domain-flows.md).
+
+### UC-W2-23 — Operator przez reverse proxy (Caddy) — P0
+
+- **Pre:** `--full` lub `--tls`; `/etc/hosts`; mkcert. **Nie** mieszać z `--app`.
+- **Happy smoke:** `GET https://api.payment-quality.local:8443/api/status` → 200; `GET https://app…:8443/admin/merchants` po PKCE.
+- **Location:** POST create order na `api.` → `Location` względny (nie `https://api…` ani `evil.example` mimo `X-Forwarded-*`).
+- **Izolacja (ten sam kod co 09, inny host):** tenant.admin GET Beta → **404**; manager POST `ALPHA_002` → **403**; manager refund → **409** `dual_control_required`.
+- **Negatyw iss:** token z `http://localhost:8081` na `api.` HTTPS → **401**.
+- **`/__oidc*`** z `app.` (`--full`) → **404**.
+- **Frame:** `X-Frame-Options: DENY` na `app.`/`api.`; hosted CPL nie działa w iframe.
+- **Pokrycie:** UC-W3-08…10, RA-RFC-030/031/033, TLS POM 050–056.
+- **Skrypt:** [10](10-full-stack-edge-flows.md).
 
 ---
 
@@ -224,6 +296,8 @@ TC: E2E-095 / RFC E2E-020–023.
 | EG-W2-01 | Overlay Vite przejmuje click | `addLocatorHandler` + zwykły `.click()` | fixtures |
 | EG-W2-02 | `localhost` → `::1` ECONNREFUSED | `BffClient` `127.0.0.1`; browser `localhost` | API |
 | EG-W2-03 | Sealed cookie zawiera `eyJ` | skan tylko `origins` | E2E-011 |
+| EG-W2-11 | Menu logout mylony z `end_session` | E2E-010 ≠ E2E-013 | UC-W2-02 / 18 |
+| EG-W2-12 | `id_token` w cookie → drop sesji | nie zapisywać `id_token`; SEC-005 | designed |
 | EG-W2-04 | `payments-internal-notes.spec.ts` wpadnie w manager project | plik `internal-notes.spec.ts` | E2E-040 |
 | EG-W2-05 | Double `status` na continueUrl | `toContainText('failure')` nie exact | E2E-063 |
 | EG-W2-06 | `page.selectOption` na USelect | `getByRole('option')` | E2E-096 |
@@ -231,3 +305,5 @@ TC: E2E-095 / RFC E2E-020–023.
 | EG-W2-08 | Globalny `status-badge` łapie dashboard | badge per `clientOrderReference` | E2E-096 |
 | EG-W2-09 | Malformed If-Match `"stale-etag"` | Spring 400 `MalformedPaymentEtagException`; stale = `"v99"` | E2E-093 / E2E-052 |
 | EG-W2-10 | vite-plugin-checker overlay przechwytuje click Error Lab | `NUXT_TYPECHECK=false` na live POM; overlay detect `count()`; canary 401 = click + `waitForResponse` + `problem.expectVisible`; 429 visible, nie wołany | E2E-081 / E2E-083 |
+| EG-W2-13 | Token HTTP `iss` na `api.` HTTPS | issuer oracle; nie mieszać `--app`/`--full` | UC-W2-23, [10](10-full-stack-edge-flows.md) |
+| EG-W2-14 | Hosted CPL w iframe merchanta | `X-Frame-Options: DENY` na `app.` — nowa karta, nie widget | BC-EDGE-03 |

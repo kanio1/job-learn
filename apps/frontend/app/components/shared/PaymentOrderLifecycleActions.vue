@@ -9,7 +9,7 @@
       role="alert"
     />
 
-    <span v-if="availableActions.includes('authorize')" data-testid="action-lifecycle-authorize">
+    <span v-if="displayedActions.includes('authorize')" data-testid="action-lifecycle-authorize">
       <UButton
         data-testid="lifecycle-authorize"
         color="info"
@@ -22,7 +22,7 @@
       </UButton>
     </span>
 
-    <span v-if="availableActions.includes('capture')" data-testid="action-lifecycle-capture" class="flex items-center gap-1">
+    <span v-if="displayedActions.includes('capture')" data-testid="action-lifecycle-capture" class="flex items-center gap-1">
       <UInput
         v-model.number="captureAmount"
         data-testid="capture-amount-input"
@@ -45,7 +45,7 @@
       </UButton>
     </span>
 
-    <span v-if="availableActions.includes('cancel')" data-testid="action-lifecycle-cancel">
+    <span v-if="displayedActions.includes('cancel')" data-testid="action-lifecycle-cancel">
       <UButton
         data-testid="lifecycle-cancel"
         color="warning"
@@ -58,31 +58,15 @@
       </UButton>
     </span>
 
-    <span v-if="availableActions.includes('refund')" data-testid="action-lifecycle-refund" class="flex items-center gap-1">
-      <UInput
-        v-model.number="refundAmount"
-        data-testid="refund-amount-input"
-        type="number"
-        size="sm"
-        placeholder="Minor units (empty = full)"
-        aria-label="Refund amount in minor units"
-        class="w-40"
-        :min="1"
-      />
-      <UButton
-        data-testid="lifecycle-refund"
-        color="error"
-        variant="soft"
-        size="sm"
-        icon="i-lucide-rotate-ccw"
-        @click="triggerAction('refund', refundAmount ?? null)"
-      >
-        Refund
-      </UButton>
-    </span>
-
     <p
-      v-if="canRunLifecycle && availableActions.length === 0"
+      v-if="canRunLifecycle && displayedActions.length === 0 && availableActions.includes('refund')"
+      class="text-sm text-gray-400 italic"
+      data-testid="lifecycle-refund-dual-control-hint"
+    >
+      Refunds use dual-control approval
+    </p>
+    <p
+      v-else-if="canRunLifecycle && displayedActions.length === 0"
       class="text-sm text-gray-400 italic"
     >
       No actions available for current status
@@ -120,7 +104,6 @@ const { can } = useAuthorization()
 const canRunLifecycle = computed(() => can.value.canRunLifecycle)
 
 const captureAmount = ref<number | null>(null)
-const refundAmount = ref<number | null>(null)
 
 const availableActions = computed<string[]>(() => {
   if (!canRunLifecycle.value) return []
@@ -129,6 +112,9 @@ const availableActions = computed<string[]>(() => {
     : undefined
   return store.getAvailableActions(status)
 })
+
+/** Direct POST /refund is merchant dual-control only; do not render a one-click refund. */
+const displayedActions = computed(() => availableActions.value.filter(action => action !== 'refund'))
 
 function triggerAction(action: string, amountMinor: number | null = null) {
   emit('action-triggered', action, amountMinor)

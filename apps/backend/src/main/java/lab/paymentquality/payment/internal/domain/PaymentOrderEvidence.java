@@ -1,7 +1,6 @@
 package lab.paymentquality.payment.internal.domain;
 
 import jakarta.persistence.*;
-
 import java.time.Instant;
 import java.util.UUID;
 
@@ -28,6 +27,13 @@ public class PaymentOrderEvidence {
     @Column(name = "storage_key", length = 200, nullable = false)
     private String storageKey;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category", length = 20, nullable = false)
+    private PaymentEvidenceCategory category;
+
+    @Column(name = "content_bytes")
+    private byte[] contentBytes;
+
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private Instant uploadedAt;
 
@@ -35,7 +41,8 @@ public class PaymentOrderEvidence {
     }
 
     public static PaymentOrderEvidence create(UUID evidenceId, UUID paymentOrderId, String originalFilename,
-                                              String contentType, long sizeBytes, Instant uploadedAt) {
+                                              String contentType, long sizeBytes, Instant uploadedAt,
+                                              PaymentEvidenceCategory category, byte[] contentBytes) {
         var evidence = new PaymentOrderEvidence();
         evidence.evidenceId = evidenceId;
         evidence.paymentOrderId = paymentOrderId;
@@ -43,6 +50,8 @@ public class PaymentOrderEvidence {
         evidence.contentType = contentType;
         evidence.sizeBytes = sizeBytes;
         evidence.uploadedAt = uploadedAt;
+        evidence.category = category == null ? PaymentEvidenceCategory.OTHER : category;
+        evidence.contentBytes = contentBytes;
         evidence.storageKey = "payment-order-evidence/" + paymentOrderId + "/" + evidenceId;
         return evidence;
     }
@@ -73,5 +82,13 @@ public class PaymentOrderEvidence {
 
     public Instant getUploadedAt() {
         return uploadedAt;
+    }
+
+    public PaymentEvidenceCategory getCategory() {
+        return category;
+    }
+
+    public byte[] getContentBytes() {
+        return contentBytes;
     }
 }

@@ -53,6 +53,10 @@ export default defineOAuthOidcEventHandler({
         tenantId,
         merchantId,
       },
+      // Never persist id_token here. Sealed nuxt-session cookies must stay under
+      // ~4 KB; access_token + id_token together overflow that limit, the browser
+      // drops the cookie, and live login lands with an empty session (no user).
+      // RP logout uses client_id + post_logout_redirect_uri instead of id_token_hint.
       secure: {
         accessToken: tokens.access_token,
       },

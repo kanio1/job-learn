@@ -104,6 +104,15 @@
         :merchant-id="merchantId"
       />
 
+      <RefundApprovalsCard
+        v-if="store.currentOrder && can.canRunLifecycle"
+        :merchant-id="merchantId"
+        :payment-order-id="paymentOrderId"
+        :etag="store.versionMarker"
+        :order-status="store.currentOrder.status"
+        @approved="handleRetry"
+      />
+
       <InternalNotes
         v-if="store.currentOrder && can.canReadPaymentNotes"
         :payment-order-id="paymentOrderId"

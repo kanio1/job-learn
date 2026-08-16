@@ -23,7 +23,12 @@ import java.time.format.DateTimeParseException;
 
 import java.util.List;
 
-@RestControllerAdvice(assignableTypes = PaymentOrderController.class)
+@RestControllerAdvice(assignableTypes = {
+        PaymentOrderController.class,
+        PaymentExportJobController.class,
+        PaymentRefundApprovalController.class,
+        PaymentExpirationOpsController.class
+})
 public class PaymentExceptionHandler {
 
     private static final String ERROR_VALIDATION = "validation";
@@ -120,6 +125,34 @@ public class PaymentExceptionHandler {
     @ExceptionHandler(PaymentOrderNotFoundException.class)
     public ResponseEntity<PaymentErrorResponse> handleNotFound(PaymentOrderNotFoundException ex) {
         return problem(HttpStatus.NOT_FOUND, ERROR_NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler({PaymentExportJobNotFoundException.class, PaymentRefundApprovalNotFoundException.class})
+    public ResponseEntity<PaymentErrorResponse> handleJobNotFound(RuntimeException ex) {
+        return problem(HttpStatus.NOT_FOUND, ERROR_NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(DualControlSelfApproveException.class)
+    public ResponseEntity<PaymentErrorResponse> handleDualControl(DualControlSelfApproveException ex) {
+        return problem(HttpStatus.CONFLICT, ex.error(), ex.getMessage());
+    }
+
+    @ExceptionHandler(DualControlRequiredException.class)
+    public ResponseEntity<PaymentErrorResponse> handleDualControlRequired(DualControlRequiredException ex) {
+        return problem(ex.status(), ex.error(), ex.getMessage());
+    }
+
+    @ExceptionHandler(PaymentExportJobNotReadyException.class)
+    public ResponseEntity<PaymentErrorResponse> handleExportJobNotReady(PaymentExportJobNotReadyException ex) {
+        HttpHeaders headers = paymentErrorHeaders();
+        headers.set(HttpHeaders.RETRY_AFTER, "1");
+        return problem(ex.status(), ex.error(), ex.getMessage(), headers);
+    }
+
+    @ExceptionHandler(PaymentEvidenceContentUnavailableException.class)
+    public ResponseEntity<PaymentErrorResponse> handleEvidenceContentUnavailable(
+            PaymentEvidenceContentUnavailableException ex) {
+        return problem(ex.status(), ex.error(), ex.getMessage());
     }
 
     @ExceptionHandler(AccessDeniedException.class)

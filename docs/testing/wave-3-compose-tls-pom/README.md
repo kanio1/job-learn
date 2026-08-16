@@ -4,7 +4,7 @@ Dokumentacja **task-force**. Wave 3 zamyka luki **designed** z Wave B (katalog 0
 
 To **nie** zamyka `REST-MULTIPART-01` ani `REST-OPENAPI-DRIFT-01`. QUERY / `@Retryable` / versioning / RLS na `merchants` i `payment_orders` zostają docs-only.
 
-Kroki UI/HTTP: [live-pom-wave-2](../live-pom-wave-2/) (03/04/05/07). TLS/stos: [09-wave-b-stack-tls-catalog.md](../rls-filters-composition-lab/09-wave-b-stack-tls-catalog.md).
+Kroki UI/HTTP: [live-pom-wave-2](../live-pom-wave-2/) (03/04/05/07). Domena: [09](../live-pom-wave-2/09-core-domain-flows.md). **Brzeg Caddy (iteracja 2):** [10](../live-pom-wave-2/10-full-stack-edge-flows.md). TLS/stos IDs: [09-wave-b-stack-tls-catalog.md](../rls-filters-composition-lab/09-wave-b-stack-tls-catalog.md).
 
 ## Cztery entrypointy
 

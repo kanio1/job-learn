@@ -1,6 +1,6 @@
 ---
 name: business-analysis-and-product-discovery-for-payment-lab
-description: Use when proposing, sequencing or refining realistic product capabilities for the Payment Quality Engineering Lab before Spec Kit specification, with business goals, actors, workflows, domain rules, data needs, acceptance criteria, ambiguities, risks and tester-facing analysis.
+description: Use when proposing, sequencing or refining realistic product capabilities for the Payment Quality Engineering Lab before a written spec, with business goals, actors, workflows, domain rules, data needs, acceptance criteria, ambiguities, risks and tester-facing analysis.
 license: MIT
 metadata:
   category: business-analysis
@@ -14,7 +14,7 @@ metadata:
 - choosing the next realistic product capability,
 - turning a vague idea into a business feature,
 - deciding whether a feature belongs now or later,
-- preparing high-quality input for `/speckit.specify`,
+- preparing high-quality input for `to-spec`,
 - exposing business ambiguity before implementation.
 
 ## Role in the project
@@ -37,7 +37,7 @@ It protects the project from becoming a random sequence of technical exercises a
 5. What would a tester want clarified before this becomes a formal spec?
 
 ## Required BA Discovery Pack
-Before a substantial capability goes to Spec Kit, produce:
+Before a substantial capability goes to `to-spec`, produce:
 
 ### 1. Capability Proposal
 - working name,
@@ -87,7 +87,7 @@ Identify:
 - test-data categories that will matter later.
 
 ### 8. Candidate Acceptance Criteria
-Provide observable, testable, business-oriented acceptance criteria that can seed `/speckit.specify`.
+Provide observable, testable, business-oriented acceptance criteria that can seed `to-spec`.
 
 ### 9. Ambiguities and Open Questions
 List unresolved decisions, assumptions and questions that may materially affect test strategy.
@@ -108,7 +108,7 @@ State whether the capability should be:
 - merged,
 - rejected as premature.
 
-### 12. Spec Kit Input Summary
+### 12. Spec Input Summary
 End with:
 - suggested feature title,
 - one-paragraph feature intent,
@@ -120,7 +120,7 @@ End with:
 ## Relationship to other skills
 Coordinate with:
 - `payment-quality-lab-orchestrator`
-- `spec-kit-feature-workflow`
+- `to-spec`
 - `test-analysis-design-and-data`
 - `rapid-software-testing-risk-thinking`
 - `bpmn-uml-dmn-for-testers`

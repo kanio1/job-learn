@@ -36,7 +36,19 @@
                 <HttpStatusBadge :status="response.status" />
               </div>
               <div v-if="response.headers && Object.keys(response.headers).length > 0">
-                <p class="text-xs font-medium text-gray-500 mb-1">Response Headers</p>
+                <div class="mb-1 flex items-center justify-between">
+                  <p class="text-xs font-medium text-gray-500">Response Headers</p>
+                  <UButton
+                    v-if="correlationId"
+                    size="xs"
+                    variant="ghost"
+                    data-testid="copy-correlation-id"
+                    aria-label="Copy correlation id"
+                    @click="copyCorrelation"
+                  >
+                    Copy correlation id
+                  </UButton>
+                </div>
                 <HeaderKeyValuePanel :headers="maskedResponseHeaders" />
               </div>
               <div>
@@ -93,6 +105,17 @@ function maskHeaders(headers: Record<string, string> | undefined): Record<string
 
 const maskedRequestHeaders = computed(() => maskHeaders(props.request?.headers))
 const maskedResponseHeaders = computed(() => maskHeaders(props.response?.headers))
+const correlationId = computed(() => {
+  const headers = props.response?.headers
+  if (!headers) return undefined
+  return headers['x-correlation-id'] || headers['X-Correlation-ID']
+})
+
+async function copyCorrelation() {
+  if (correlationId.value) {
+    await navigator.clipboard.writeText(correlationId.value)
+  }
+}
 
 const tabs = [
   { label: 'Request', slot: 'request' as const },

@@ -423,6 +423,9 @@ public class PaymentOrderController {
             @AuthenticationPrincipal Jwt jwt) {
 
         verifyMerchantOwnership(merchantId, jwt, authentication);
+        if (!isPlatformLifecycle(authentication)) {
+            throw new DualControlRequiredException();
+        }
         long expectedVersion = PaymentEtag.requireVersion(ifMatch);
         IdempotencyKey idempotencyKey = IdempotencyKey.of(idempotencyKeyHeader);
         String correlationId = PaymentHttpHeaders.correlationId();
@@ -488,11 +491,13 @@ public class PaymentOrderController {
             @PathVariable UUID merchantId,
             @PathVariable UUID paymentOrderId,
             @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "category", required = false) String category,
             Authentication authentication,
             @AuthenticationPrincipal Jwt jwt) {
 
         verifyMerchantOwnership(merchantId, jwt, authentication);
-        PaymentOrderEvidence evidence = paymentEvidenceService.uploadForOrder(merchantId, paymentOrderId, file);
+        PaymentOrderEvidence evidence = paymentEvidenceService.uploadForOrder(
+                merchantId, paymentOrderId, file, category);
         PaymentEvidenceResponse response = PaymentEvidenceMapper.toResponse(evidence);
         URI location = URI.create("/api/merchants/" + merchantId + "/payment-orders/"
                 + paymentOrderId + "/evidence/" + evidence.getEvidenceId());
@@ -518,6 +523,28 @@ public class PaymentOrderController {
         return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
                         PaymentHttpHeaders.VARY_AUTHORIZATION)
                 .body(new PaymentEvidenceResponse.ListResponse(content));
+    }
+
+    @GetMapping(value = "/{paymentOrderId}/evidence/{evidenceId}")
+    public ResponseEntity<byte[]> downloadEvidence(
+            @PathVariable UUID merchantId,
+            @PathVariable UUID paymentOrderId,
+            @PathVariable UUID evidenceId,
+            Authentication authentication,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        findReadablePaymentOrder(merchantId, paymentOrderId, authentication, jwt);
+        PaymentOrderEvidence evidence = paymentEvidenceService.getForOrder(merchantId, paymentOrderId, evidenceId);
+        if (evidence.getContentBytes() == null || evidence.getContentBytes().length == 0) {
+            throw new PaymentEvidenceContentUnavailableException(evidenceId);
+        }
+        String filename = evidence.getOriginalFilename().replace("\"", "");
+        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+                        PaymentHttpHeaders.VARY_AUTHORIZATION)
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType(evidence.getContentType()))
+                .body(evidence.getContentBytes());
     }
 
     @GetMapping(value = "/{paymentOrderId}/notes", produces = MediaType.APPLICATION_JSON_VALUE)

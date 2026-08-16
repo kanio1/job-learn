@@ -14,6 +14,8 @@ Design only dla wierszy `designed`. Wartości **z kodu** 2026-08-13.
 | EP-MRL-013 | storageState | Keycloak / empty / other role | admin / login / 403 UI | guest existing-pom |
 | EP-MRL-014 | JS cookie view | HttpOnly `nuxt-session` vs non-HttpOnly `mrl-csrf` | invisible / visible | partial POM |
 | EP-MRL-015 | Unlock action | logout+clear vs sam navigate `/login` | `/login` trwałe / bounce na admin | existing-pom logout |
+| EP-MRL-016 | Logout rodzaj | Sign out / Unlock vs End OIDC | BFF only vs `end_session` | BFF existing; OIDC designed |
+| EP-MRL-017 | Cookie size | accessToken only / + id_token | sesja żyje / UA drop | designed E2E-028 |
 
 ## BVA-MRL — Idle, progi, pliki, TPP
 

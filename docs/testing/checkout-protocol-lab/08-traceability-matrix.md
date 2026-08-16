@@ -5,6 +5,9 @@ Kolumny: wymaganie → technika → ID → pokrycie dziś → priorytet **implem
 
 Priorytet P0 = pieniądze, auth, 400/503, oracle. Nie implementować w tym zadaniu — tylko mapa.
 
+Skrót continueUrl / idempotencja / luki: [README](README.md). Luki produktowe: [01](01-business-gap-analysis.md) (GAP-01…07). Dashboard orders: [live-pom 08](../live-pom-wave-2/08-traceability-matrix.md).  
+Symulacje hop-by-hop: [09](09-protocol-flow-simulations.md). Brzeg Caddy/TLS: [live-pom 10](../live-pom-wave-2/10-full-stack-edge-flows.md) BC-EDGE-07.
+
 ---
 
 ## FR / NFR

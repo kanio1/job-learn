@@ -59,6 +59,7 @@ test('uploads payment order evidence and shows returned metadata', async ({ page
                 contentType: 'text/plain',
                 sizeBytes: 53,
                 uploadedAt: '2026-06-29T10:10:00Z',
+                category: 'OTHER',
               }]
             : [],
         }),
@@ -84,6 +85,7 @@ test('uploads payment order evidence and shows returned metadata', async ({ page
         contentType: 'text/plain',
         sizeBytes: 53,
         uploadedAt: '2026-06-29T10:10:00Z',
+        category: 'OTHER',
       }),
     })
   })
@@ -103,4 +105,42 @@ test('uploads payment order evidence and shows returned metadata', async ({ page
   await expect(page.getByTestId('evidence-list')).toContainText('sample-evidence.txt')
   await expect(page.getByTestId('evidence-file-name')).toHaveText('sample-evidence.txt')
   await expectNoTokenInBrowserStorage(page)
+})
+
+test('exposes evidence category radios and a dropzone', async ({ page }) => {
+  const merchantId = '11111111-1111-4111-8111-111111111111'
+  const paymentOrderId = '22222222-2222-4222-8222-222222222222'
+
+  await mockAuthenticatedSession(page)
+  await page.route(`**/api/merchants/${merchantId}/payment-orders/${paymentOrderId}`, async (route) => {
+    if (route.request().method() === 'HEAD') {
+      await route.fulfill({ status: 200 })
+      return
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        paymentOrderId,
+        merchantId,
+        clientOrderReference: 'PAY-EVIDENCE-DROP',
+        amountMinor: 1500,
+        currency: 'PLN',
+        status: 'CREATED',
+        createdAt: '2026-06-29T10:00:00Z',
+        updatedAt: '2026-06-29T10:00:00Z',
+      }),
+    })
+  })
+  await page.route(`**/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/history`, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ content: [] }) })
+  })
+  await page.route(`**/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/evidence`, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ content: [] }) })
+  })
+
+  await page.goto(`/admin/merchants/${merchantId}/payments/${paymentOrderId}`)
+  await expect(page.getByTestId('evidence-dropzone')).toBeVisible({ timeout: 15000 })
+  await page.getByRole('radio', { name: 'INVOICE' }).check()
+  await expect(page.getByRole('radio', { name: 'INVOICE' })).toBeChecked()
 })

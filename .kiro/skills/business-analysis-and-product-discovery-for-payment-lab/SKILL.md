@@ -112,16 +112,13 @@ End with:
 - must-preserve acceptance criteria,
 - open questions that should survive into the requirements phase.
 
-## Kiro Spec Mode integration
-When the BA Discovery Pack is ready, use Kiro Spec Mode (Requirements-First workflow) to turn it into `requirements.md`, `design.md`, and `tasks.md`.
-- Preserve the business goal and unresolved ambiguities in requirements.
-- Do not flatten business rules into vague implementation language.
-- Retain candidate acceptance criteria unless deliberately refined.
+## Spec handoff
+When the BA Discovery Pack is ready, use `to-spec` then `to-tickets` under `.codex/` (see `docs/agents/issue-tracker.md`).
 
 ## Relationship to other skills
 Coordinate with:
 - `payment-quality-lab-orchestrator`
-- `spec-kit-feature-workflow`
+- `to-spec`
 - `test-analysis-design-and-data`
 - `rapid-software-testing-risk-thinking`
 - `bpmn-uml-dmn-for-testers`

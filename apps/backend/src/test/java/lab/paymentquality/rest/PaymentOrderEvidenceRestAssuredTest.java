@@ -17,6 +17,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +44,9 @@ class PaymentOrderEvidenceRestAssuredTest extends PostgresContainerSupport {
     @Autowired
     JpaPaymentOrderEvidenceRepository evidenceRepository;
 
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
     @Test
     void successfulEvidenceUploadReturnsMetadataAndPersistsRecord() {
         String merchantId = PaymentApiTestSupport.createActiveMerchant(port, MerchantApiTestSupport.operatorRequest(port));
@@ -60,14 +65,15 @@ class PaymentOrderEvidenceRestAssuredTest extends PostgresContainerSupport {
                 .body("paymentOrderId", equalTo(paymentOrderId))
                 .body("originalFilename", equalTo("refund-proof.txt"))
                 .body("contentType", equalTo("text/plain"))
+                .body("category", equalTo("OTHER"))
                 .body("sizeBytes", equalTo(15))
+                .body("hasContent", equalTo(true))
                 .body("storageKey", nullValue())
                 .extract().path("evidenceId");
 
-        assertThat(evidenceRepository.findAll())
-                .singleElement()
+        assertThat(evidenceRepository.findById(java.util.UUID.fromString(evidenceId)))
+                .get()
                 .satisfies(evidence -> {
-                    assertThat(evidence.getEvidenceId().toString()).isEqualTo(evidenceId);
                     assertThat(evidence.getOriginalFilename()).isEqualTo("refund-proof.txt");
                     assertThat(evidence.getStorageKey()).doesNotContain("refund-proof.txt");
                 });
@@ -146,6 +152,33 @@ class PaymentOrderEvidenceRestAssuredTest extends PostgresContainerSupport {
                 .statusCode(403)
                 .contentType("application/problem+json")
                 .body("error", equalTo("forbidden"));
+    }
+
+    @Test
+    void downloadWithoutStoredBytesReturnsEvidenceContentUnavailable() {
+        String merchantId = PaymentApiTestSupport.createActiveMerchant(port, MerchantApiTestSupport.operatorRequest(port));
+        String paymentOrderId = createPaymentOrder(merchantId);
+        String token = TestJwtSupport.merchantPaymentLifecycleToken(merchantId);
+
+        String evidenceId = MerchantApiTestSupport.requestWithToken(port, token)
+                .multiPart("file", "refund-proof.txt", "refund approved".getBytes(StandardCharsets.UTF_8), "text/plain")
+                .when()
+                .post("/api/merchants/{merchantId}/payment-orders/{paymentOrderId}/evidence", merchantId, paymentOrderId)
+                .then()
+                .statusCode(201)
+                .extract().path("evidenceId");
+
+        jdbcTemplate.update("UPDATE payment_order_evidence SET content_bytes = NULL WHERE evidence_id = ?",
+                java.util.UUID.fromString(evidenceId));
+
+        MerchantApiTestSupport.requestWithToken(port, token)
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders/{paymentOrderId}/evidence/{evidenceId}",
+                        merchantId, paymentOrderId, evidenceId)
+                .then()
+                .statusCode(404)
+                .contentType("application/problem+json")
+                .body("error", equalTo("evidence_content_unavailable"));
     }
 
     private String createPaymentOrder(String merchantId) {

@@ -14,6 +14,8 @@ Checkout Protocol Lab to **edukacyjny** łańcuch redirect+notify, nie produkcyj
 | Idempotency | Replay ten sam body → ten sam `sessionId` + `Idempotency-Replayed`; inny body → 409 |
 | Flaga | `app.checkout-lab.enabled=false` → 404, brak beanów |
 
+Hop-by-hop (OAuth → 302 → hosted → simulate → HMAC → return): [09](09-protocol-flow-simulations.md).
+
 NFR-01 (p95 ACK poniżej 200 ms) — poza katalogiem funkcjonalnym; osobny test wydajności jeśli kiedyś mierzony.
 
 ## 2. Piramida i narzędzia
@@ -124,7 +126,7 @@ Hub copy + booking; sidebar; Error Lab via **sidebar** (SSR); cash (mock `CASH-*
 
 ### Luki (designed — ten pakiet)
 
-Pełna lista w 03–07. Najwyższy P0: Decline/CANCELLED, simulate 403 w UI, pay_no_return, BVA amount, unknown scenario, hosted fulfillment 404 empty vs Bearer 404 problem, Bearer na bookings/ops, BFF forward token, `RETURN_LIE_SUCCESS` przez `Lab-Force-Scenario` w API.
+Tabela ID + GAP: [README](README.md), [01](01-business-gap-analysis.md) GAP-01…07. Najwyższy P0: Decline/CANCELLED, simulate 403 w UI, **PW-E2E-043 / PW-API-075** pay_no_return, BVA amount, unknown scenario, hosted fulfillment 404 empty vs Bearer 404 problem, Bearer na bookings/ops, BFF forward token, **PW-API-071** `RETURN_LIE_SUCCESS` przez `Lab-Force-Scenario`, **PW-API-026** replay przy samym `validitySeconds`.
 
 ## 9. Playwright — ograniczenia implementacyjne (gdy przyjdzie czas)
 

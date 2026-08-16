@@ -32,6 +32,22 @@ CSRF / clock: Mirror Lab. TLS HTTPS (E2E-050–056, SEC-RFC-001): [09](../rls-fi
 | Prio | P0 |
 | Uczy | Sealed cookie **może** zawierać `eyJ` — nie skanować blobu ciasteczek. |
 
+### PW-W2-SEC-005 — Cookie &lt; 4 KB; brak `id_token` w sesji — **designed**
+
+| | |
+|---|---|
+| Pokrycie | designed · UC-SESS-04 |
+| Prio | P0 |
+| Uczy | Drugi JWT w `nuxt-session` zrzuca ciasteczko (UA ~4096 B). Produkt: tylko `accessToken`. |
+
+### PW-W2-SEC-006 — SameSite + Secure z `context.cookies()` — **designed**
+
+| | |
+|---|---|
+| Pokrycie | designed (HttpOnly = SEC-001 existing). TLS Secure = RFC E2E-056 existing |
+| Prio | P1 |
+| Uczy | JSON `/api/session-lab/cookie-policy` ma zahardkodowane `secure: false` — nie jest oraclem HTTPS. |
+
 ### PW-W2-SEC-004 — Odpowiedź Error Lab bez `Authorization` w body
 
 | | |

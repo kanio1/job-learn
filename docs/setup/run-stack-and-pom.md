@@ -1,7 +1,7 @@
 # Uruchamianie stosu (Podman) i nauka POM / TypeScript
 
 Operator runbook: codzienny HTTP, HTTPS jak produkcja, Playwright POM, REST.
-Szczegóły TLS/mkcert: [tls-lab.md](tls-lab.md). Compose Phase 0: [local-infra.md](local-infra.md).
+Szczegóły TLS/mkcert: [tls-lab.md](tls-lab.md). Compose Phase 0: [local-infra.md](local-infra.md). Bruno/Postman (JWT ROPC na `:8080`): [bruno-postman-api.md](bruno-postman-api.md).
 
 ## Krótka odpowiedź
 

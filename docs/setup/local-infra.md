@@ -84,5 +84,6 @@ These credentials and startup options are for local development only. They are n
 ## See Also
 
 - [run-stack-and-pom.md](run-stack-and-pom.md) — daily HTTP `--app`, HTTPS `--full`, POM, Caddy FAQ
+- [bruno-postman-api.md](bruno-postman-api.md) — Bearer JWT via Keycloak ROPC in Bruno/Postman
 - [Tester Orientation Pack](phase-0-tester-orientation-pack.md) — what exists, what is absent, and tester charters
 - Phase 0 non-goals reminder: no payment business functionality, no Kafka, no PSP integration, no complete OAuth/OIDC application integration, no complete dashboards

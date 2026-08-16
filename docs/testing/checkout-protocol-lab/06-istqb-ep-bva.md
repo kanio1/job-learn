@@ -182,7 +182,7 @@ Fingerprint = `extOrderId|amountMinor|currency|continueUrl|notifyUrl` (**bez** v
 | EP-110 | brak key | 302 unique ids | — | PW-API-027 |
 | EP-111 | same key + same fp | 302 | `Idempotency-Replayed: true` | PW-API-024 |
 | EP-112 | same key + other fp | 409 | — | PW-API-025 `idempotency_conflict` |
-| EP-113 | same key + other validitySeconds | 302 replay | Replayed | PW-API-026 |
+| EP-113 | same key + other validitySeconds | 302 replay | Replayed | PW-API-026 **designed** (GAP-07) |
 | EP-114 | inny key + ten sam body | 302 dwa sessionId | — | designed |
 
 ---

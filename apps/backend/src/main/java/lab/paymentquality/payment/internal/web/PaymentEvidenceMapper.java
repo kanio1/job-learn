@@ -14,7 +14,9 @@ public final class PaymentEvidenceMapper {
                 evidence.getOriginalFilename(),
                 evidence.getContentType(),
                 evidence.getSizeBytes(),
-                evidence.getUploadedAt()
+                evidence.getUploadedAt(),
+                evidence.getCategory(),
+                evidence.getContentBytes() != null && evidence.getContentBytes().length > 0
         );
     }
 }

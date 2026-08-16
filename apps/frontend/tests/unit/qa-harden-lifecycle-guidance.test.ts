@@ -81,18 +81,11 @@ describe('QA-HARDEN-01.11 — capture/refund minor-unit guidance', () => {
     expect(wrapper.emitted('action-triggered')?.at(-1)).toEqual(['capture', 2500])
   })
 
-  it('shows and emits the refund amount in minor units only for a captured order', async () => {
+  it('does not present a direct refund control for captured orders', async () => {
     const wrapper = await mountActions('CAPTURED')
-    const input = wrapper.get('input[aria-label="Refund amount in minor units"]')
-
-    expect(input.attributes('placeholder')).toBe('Minor units (empty = full)')
-    expect(input.attributes('type')).toBe('number')
-    expect(input.attributes('min')).toBe('1')
-    expect(wrapper.find('input[aria-label="Capture amount in minor units"]').exists()).toBe(false)
-
-    await input.setValue('750')
-    await wrapper.get('[data-testid="lifecycle-refund"]').trigger('click')
-    expect(wrapper.emitted('action-triggered')?.at(-1)).toEqual(['refund', 750])
+    expect(wrapper.find('input[aria-label="Refund amount in minor units"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="lifecycle-refund"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('dual-control')
   })
 
   it('does not present capture or refund inputs when neither action is supported', async () => {

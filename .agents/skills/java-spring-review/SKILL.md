@@ -5,7 +5,7 @@ description: Use to review Java/Spring backend changes for this repository's mod
 
 # Java Spring Review
 
-Use this skill to review backend diffs.
+Use this skill to review backend diffs. When the user asked for a full branch/PR review, `code-review` runs first (Standards vs Spec); this skill is the Spring layer pass.
 
 ## Review Focus
 
@@ -40,6 +40,6 @@ Then include:
 
 ## Guardrails
 
-- Do not implement fixes.
+- Do not implement fixes. Placement while building is `spring-modulith`.
 - Do not request broad refactors unless they directly reduce current risk.
 - Do not duplicate the large Java learning skills; keep review operational.
