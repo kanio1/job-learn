@@ -14,7 +14,7 @@ Warstwa: Nuxt `:3000` z ciasteczkiem sesji. **Nie** nowy suite REST Assured. Czy
 |---|---|
 | Pokrycie | existing-pom `createMerchant` + `assertPersistedMerchant` |
 | Method / path | `POST /api/merchants` → `GET /api/merchants/{id}` |
-| Body | `reference`, `displayName`, `tenantReference=TENANT_ALPHA` |
+| Body | `merchantReference`, `displayName`, `tenantReference=TENANT_ALPHA` |
 | Status | 201 potem 200 |
 | Uczy | Platform create **wymaga** tenanta (GAP-W2-01). |
 
@@ -79,6 +79,34 @@ Warstwa: Nuxt `:3000` z ciasteczkiem sesji. **Nie** nowy suite REST Assured. Czy
 |---|---|
 | Pokrycie | existing-pom `waitForResponse` `/risk-flag` |
 | Uczy | Capability UI ≠ authority JWT. |
+
+### PW-W2-API-014 — Tenant admin GET Beta merchant 404
+
+| | |
+|---|---|
+| Pokrycie | existing-ra `TenantIsolationIT`; POM **designed** |
+| Method / path | `GET /api/merchants/{BETA_001}` token `tenant.admin` |
+| Status | **404** problem+json |
+| UC | UC-W2-20, [09 EXC-OP-03a](09-core-domain-flows.md) |
+
+### PW-W2-API-015 — Manager POST order na ALPHA_002 → 403
+
+| | |
+|---|---|
+| Pokrycie | existing-ra; POM **designed** |
+| Headers | `Authorization` manager, `Idempotency-Key`, `Content-Type: application/json` |
+| Body | `{ "amountMinor": 1000, "currency": "PLN", "clientOrderReference": "BOLA-002" }` |
+| Status | **403** |
+| UC | UC-W2-21 |
+
+### PW-W2-API-016 — Merchant direct refund → 409 dual_control_required
+
+| | |
+|---|---|
+| Pokrycie | existing-ra; live dual-control spec |
+| Method / path | `POST …/refund` + `If-Match` + `Idempotency-Key` |
+| Status | **409** `error: dual_control_required` |
+| UC | UC-W2-22, [09 BC-OP-07](09-core-domain-flows.md) |
 
 ---
 

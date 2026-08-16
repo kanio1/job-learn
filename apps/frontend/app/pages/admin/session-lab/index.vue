@@ -30,8 +30,8 @@
           <UButton data-testid="session-lab-open-hosted" href="/psp/checkout/00000000-0000-4000-8000-000000000001" target="_blank">
             Open hosted checkout (new tab)
           </UButton>
-          <UButton data-testid="session-lab-refresh-policy" variant="outline" @click="loadPolicy">
-            Refresh policy
+          <UButton data-testid="session-lab-end-oidc" color="error" variant="outline" @click="endOidc">
+            End OIDC session
           </UButton>
         </div>
 
@@ -92,6 +92,13 @@ async function loadDevices() {
 async function revoke(id: string) {
   await $fetch(`/api/session-lab/devices/${id}/revoke`, { method: 'POST' })
   await loadDevices()
+}
+
+async function endOidc() {
+  const result = await $fetch<{ ended: boolean, endSessionUrl: string }>('/api/session-lab/end-session', {
+    method: 'POST',
+  })
+  window.location.href = result.endSessionUrl
 }
 
 async function csrfDemo(withToken: boolean) {

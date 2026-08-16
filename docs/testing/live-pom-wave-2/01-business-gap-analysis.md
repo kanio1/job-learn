@@ -20,7 +20,7 @@ Wave 2 nie dodaje domeny płatniczej. Dodaje **sposób testowania** żywego dash
 | ID | Wymaganie | Stan produktu |
 |---|---|---|
 | FR-W2-01 | Niezalogowany `/admin/*` → `/login?redirectTo=` | Done |
-| FR-W2-02 | Sign out niszczy sesję UI | Done |
+| FR-W2-02 | Sign out niszczy sesję **UI/BFF** (nie SSO) | Done |
 | FR-W2-03 | Sesja HttpOnly; JWT nie w Web Storage | Done (cookie `nuxt-session`) |
 | FR-W2-04 | Merchant unikalny persystuje (GET po create) | Done (API create; UI POST admin bez tenanta → 400) |
 | FR-W2-05 | Duplikat `reference` → 409 | Done (BFF) |
@@ -49,6 +49,12 @@ Wave 2 nie dodaje domeny płatniczej. Dodaje **sposób testowania** żywego dash
 | GAP-W2-03 | Hosted decline dokleja drugi `status` do `continueUrl` | produkt | Query może być tablicą (`success,failure`); asercja `toContainText('failure')`. |
 | GAP-W2-04 | Overlay Vite potrafi przejąć click | test infra | `addLocatorHandler` w fixtures; nie `element.click()` (Vue `@click` nie wstaje). |
 | GAP-W2-05 | `localhost` vs `::1` vs `127.0.0.1` | infra | Node → IPv4; browser → localhost (OIDC). |
+| GAP-W2-06 | Dwa logouty (menu vs End OIDC) | test design | E2E-010 ≠ FR-OIDC. Kontrakt: [session-bff-oidc-contract](../session-bff-oidc-contract.md). |
+| GAP-W2-07 | Brak TC rozmiaru cookie / `id_token` | test | designed SEC-005. |
+| GAP-W2-08 | PAY_NO_RETURN / close-tab po Approve | **CPL**, nie Wave 2 | Nie dodawać tu E2E — [CPL GAP-02](../checkout-protocol-lab/01-business-gap-analysis.md), PW-E2E-043 designed. Lie return **jest** (E2E-061). |
+| GAP-W2-09 | `payment_orders` vs CPL `continueUrl` | dokumentacja | Operator nie ma hosted return URL. Idempotencja create = E2E-091, nie UC-03 CPL. Mapa: [README](README.md). |
+| GAP-W2-10 | Brak UC `tenant.admin` / ALPHA_002 / dual-control w Wave 2 07 | katalog | **Zamknięte dokumentacyjnie** w [09](09-core-domain-flows.md) + UC-W2-20…22. POM tenant.admin nadal designed. |
+| GAP-W2-11 | Katalogi 09 były host-only (`:8080`) | katalog | **Iteracja 2:** [10](10-full-stack-edge-flows.md) + UC-W2-23. Brak vhosta `psp.`; hosted na `app.` z `X-Frame-Options: DENY`. |
 
 ## Scenariusze biznesowe odblokowane
 
@@ -61,3 +67,6 @@ Wave 2 nie dodaje domeny płatniczej. Dodaje **sposób testowania** żywego dash
 7. Problem+json z Error Lab (kontrakt BFF; canary UI 401; nie mock 429).
 8. Gość: Users / payments / Error Lab / Checkout Lab → `redirectTo`; guest API 401; login wraca na Users.
 9. Admin Support Beta vs manager IDOR; manager bez formularza notatek.
+10. Tenant.admin: własny merchant 200, Beta **404**; manager vs `ALPHA_002` **403** ([09](09-core-domain-flows.md)).
+11. Dual-control refund: merchant 409, checker ≠ maker ([UC-W2-22](07-istqb-decision-state-usecase.md)).
+12. Ten sam kontrakt przez Caddy `api.` / `app.` / `auth.` ([10](10-full-stack-edge-flows.md), UC-W2-23).

@@ -22,7 +22,7 @@ Do not edit files. Prepare the main Codex session to implement.
 
 ## Guardrails
 
-- Main Codex implements; this skill plans and explains.
+- Main session implements via `implement` / `tdd`; this skill plans and explains. Do not edit files.
 - Prefer current specs under `specs/` and current code over old Phase 0/Phase 1 docs.
 - Keep each step small enough to review in one sitting.
 - Do not propose PSP, Kafka, settlement, reconciliation, KYC, top-level `POST /payments`, or fake dashboard work.

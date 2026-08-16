@@ -6,10 +6,12 @@ Priorytet = dalszej implementacji `designed`. Pokrycie: `existing-*` | `designed
 
 | Wymaganie | ID | Pokrycie | Prio |
 |---|---|---|---|
-| FR-S01 inspector | E2E-010/011, API-023/030, EP-014 | existing-pom partial | P0 |
+| FR-S01 inspector | E2E-010/011/013/014, API-023/030, EP-014 | existing-pom partial; SameSite/TLS drift designed | P0 |
+| FR-S04a logout BFF | E2E-021/022/027, UC-01 | existing-pom `/login`; designed deep link + no-end_session | P0 |
+| FR-S04b logout OIDC | E2E-026, API-024/025, UC-07 | designed | P0 |
+| Cookie 4 KB / no id_token | E2E-028 | designed | P0 |
 | FR-S02 trzy światy cookies | E2E-024, API-032/033, guest | existing-pw + existing-pom | P0 |
 | FR-S03 idle | E2E-020–025, BVA-010, DT-02 | existing-pom 121s + Unlock; designed TTL-1 | P0 |
-| FR-S04 logout | E2E-021/022, UC-01 | existing-pom `/login`; designed deep link | P0 |
 | FR-S05 concurrent | E2E-030, API-020–022 | existing-pom cienko | P1 |
 | FR-S06 CSRF | E2E-040–042, API-010–014, DT-01 | existing-pom fail; designed happy + kontrast | P1 |
 | FR-S07 guest | E2E-005, session-guest | existing-pom | P0 |

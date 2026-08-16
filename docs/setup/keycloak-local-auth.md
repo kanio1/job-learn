@@ -33,3 +33,5 @@ The backend maps these to `platform:merchants:create`, `platform:merchants:read`
 - `merchant.denied` / `merchant.denied`: authenticated but no merchant realm roles, with deterministic local profile fields.
 
 Add new local users by editing the realm import or through the Keycloak Admin Console at `http://localhost:8081`, then document their intended test role.
+
+Manual REST in Bruno/Postman (Bearer JWT via password grant, not the Nuxt session cookie): [bruno-postman-api.md](bruno-postman-api.md).

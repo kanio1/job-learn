@@ -9,7 +9,7 @@ To nie jest już mapa „Missing FR” sprzed implementacji — FR z [00-context
 |---|---|---|---|
 | Flaga FE `NUXT_PUBLIC_MIRROR_LAB_ENABLED` (default **on**) | Hub, nav, middleware 404, BFF `requireMirrorLab` | hub mocked; Spring IT flag off | FE flag-off project; BFF 404 bez Spring |
 | Flaga Spring `app.mirror-lab.enabled` (yml **false**, dev **true**) | Controller `@ConditionalOnProperty` | `MirrorLabEndpointsEnabledIT` / `DisabledIT` | — |
-| Session Lab | cookies, idle overlay w `dashboard.vue`, Unlock = logout, CSRF demo, devices | POM session-lab + guest | BVA TTL-1; CSRF isolation vs merchant POST |
+| Session Lab | cookies, idle overlay, Unlock = logout **BFF**, End OIDC = `end_session`, CSRF, devices | POM session-lab + guest | hop OIDC designed; SameSite; cookie 4 KB; BVA TTL-1; CSRF isolation |
 | Visual Lab | kafelki + dark + break | mocked `visual-lab.spec.ts` | full-page mask; ARIA snapshot |
 | Network Lab | 503 TTL 10s, abort, lie, HAR, CORS cookie | mocked + POM 503 | `setOffline`; strip headers; CORS OPTIONS |
 | CPL Wave 3 | GET-body 403, `?lang=`, refund `REFUNDED`, expiry testid, iframe, `trusted_merchant` | RA + mocked widget/idle-absent | lang copy hosted POM; duplicate refund eventId |
@@ -39,10 +39,11 @@ Jedna flaga FE. CSRF **tylko** `POST /api/session-lab/csrf-demo`. TPP GET `permi
 
 | ID | Produkt | Test |
 |---|---|---|
-| FR-S01 inspector | tabela cookie policy vs `document.cookie` | existing-pom (partial: nuxt-session HttpOnly) |
+| FR-S01 inspector | tabela cookie policy vs `document.cookie` | existing-pom (partial: nuxt-session HttpOnly). SameSite / live Secure / Keycloak-host cookies: designed |
 | FR-S02 trzy origin | hosted `layout: false`; dashboard overlay | existing-pw hosted bez idle; POM guest |
 | FR-S03 idle | `useIdleLock` 120s, `page.clock` | existing-pom lock + Unlock → `/login` |
-| FR-S04 logout | Unlock woła `auth.logout()` | existing-pom URL `/login`; designed: empty storage + `/admin` |
+| FR-S04a logout aplikacji | Unlock / Sign out → `auth.logout()` | existing-pom URL `/login`; designed: empty storage + `/admin` |
+| FR-S04b logout RP OIDC | `session-lab-end-oidc` + POST end-session | produkt DONE; POM **designed** |
 | FR-S05 concurrent | in-memory devices per session cookie | existing-pom dwa contexty revoke (cienko) |
 | FR-S06 CSRF lab | cookie `mrl-csrf` non-HttpOnly; header match | existing-pom fail path; designed: happy + kontrast merchant |
 | FR-S07 guest | `session-guest.spec.ts` | existing-pom login redirect |

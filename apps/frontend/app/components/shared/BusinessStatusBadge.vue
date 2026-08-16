@@ -1,5 +1,5 @@
 <template>
-  <span :data-testid="testId" :data-status="status">
+  <span :data-testid="testId" :data-status="status" :title="status">
     <UBadge :color="config.color" variant="subtle" size="sm">
       {{ config.label }}
     </UBadge>

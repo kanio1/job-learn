@@ -236,7 +236,7 @@ Hasła: `PLAYWRIGHT_PLATFORM_ADMIN_PASSWORD`, `PLAYWRIGHT_MERCHANT_MANAGER_PASSW
 | Pokrycie | existing-pom `tls-lab.spec.ts` (`expectNoTokenInBrowserStorage`) |
 | Prio | P0 |
 | Asercje | `expectNoTokenInBrowserStorage` po loginie TLS |
-| Uczy | Sesja sealed cookie; access token w secure partition. |
+| Uczy | Sesja sealed cookie; access token w secure partition. Rozmiar cookie / brak `id_token`: [session-bff-oidc-contract](../session-bff-oidc-contract.md) SEC-005 designed. |
 
 ### PW-RFC-E2E-056 — cookie Secure na origin TLS — **existing-pom**
 

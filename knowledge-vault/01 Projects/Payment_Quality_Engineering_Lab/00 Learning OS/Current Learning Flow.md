@@ -30,7 +30,7 @@ tags:
 ```
 Small topic (HTTP header, RA method, Java syntax, SQL clause, AssertJ assertion)
   → [[Prompt - Concept Lesson]]
-  → No Spec Kit — never
+  → No extra spec workflow — never
   → Study concept + example from repo + one exercise
   → Mark progress
 ```
@@ -67,8 +67,8 @@ Use for: idempotent create flow, tenant isolation matrix, response headers contr
 ```
 New business capability needed
   → [[Prompt - Learning Sprint Discovery]]
-  → BA Discovery → Architecture → Spec Kit decision
-  → Spec Kit only when: new module, new resource, new security model
+  → BA Discovery → Architecture → spec decision
+  → `to-spec` / `to-tickets` when: new module, new resource, new security model
   → Implementation → tests → lesson note → evidence → interview
   → Update evidence with [[Prompt - Post Sprint Evidence Update]]
 ```
@@ -86,19 +86,19 @@ Every lesson or sprint must respect:
 - **One** SQL/data focus
 - **One** test design method
 
-## Spec Kit Decision
+## Spec / tickets decision
 
-| Scope | Spec Kit? |
+| Scope | `.codex` spec? |
 |---|---|
 | Adding a test | **NO** |
 | Fixing a bug | **NO** |
 | Deepening existing topic | **NO** |
 | Adding validation rule | **NO** |
 | New API endpoint (same module) | **NO** (lesson extension) |
-| New REST resource with its own lifecycle | **LIGHT:** spec + plan |
-| New Spring Modulith module | **FULL:** spec + plan + tasks + data-model + contracts |
-| New security role model | **FULL** |
-| Cross-module public API boundary | **FULL** |
+| New REST resource with its own lifecycle | **YES:** `to-spec` |
+| New Spring Modulith module | **YES:** `to-spec` + `to-tickets` |
+| New security role model | **YES:** `to-spec` + `to-tickets` |
+| Cross-module public API boundary | **YES:** `to-spec` + `to-tickets` |
 
 ## Active Specs
 
@@ -108,7 +108,7 @@ Every lesson or sprint must respect:
 | `specs/002-merchant-registry-activation/` | Completed |
 | `specs/003-payment-order-access-lifecycle/` | Completed baseline for Lesson 06 |
 | `specs/004-payment-order-list-filter/` | Completed baseline for Lesson 07 |
-| Lesson 08 summary extension | Planned; no Full Spec Kit by default |
+| Lesson 08 summary extension | Planned; no full spec by default |
 
 ## Key Commands
 

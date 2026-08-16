@@ -28,13 +28,14 @@ apps/backend/          Java 25 Spring Boot 4 backend and merchant module
 apps/frontend/         Nuxt 4 dashboard with /admin/merchants
 infra/compose/         Local PostgreSQL and Keycloak compose setup
 infra/keycloak/        Keycloak local realm import for Phase 1
-specs/                 Spec Kit feature artifacts
+specs/                 Historical feature write-ups (prior art)
 docs/setup/            Setup and tester orientation documentation
 docs/testing/          Test architecture and quality baseline documentation
 docs/architecture/     Modular monolith architecture notes
 knowledge-vault/       Structured Obsidian learning system
 .kilo/                 Current Kilo project configuration location
-.specify/              Spec Kit memory and templates
+.codex/                Live work tracker (specs, tickets, wayfinder)
+docs/agents/           Local-markdown tracker config for engineering skills
 ```
 
 The Obsidian vault remains one existing learning system. Use the established top-level structure:
@@ -78,7 +79,7 @@ Validated on 2026-05-18 before dependency scaffolding:
 
 ## Local Environment
 
-Day-to-day Podman stack, Playwright POM, and Caddy/HTTPS: [docs/setup/run-stack-and-pom.md](docs/setup/run-stack-and-pom.md).
+Day-to-day Podman stack, Playwright POM, and Caddy/HTTPS: [docs/setup/run-stack-and-pom.md](docs/setup/run-stack-and-pom.md). Bruno/Postman against Spring (`Bearer` JWT): [docs/setup/bruno-postman-api.md](docs/setup/bruno-postman-api.md).
 
 The concrete local service environment example is `infra/compose/.env.example`.
 

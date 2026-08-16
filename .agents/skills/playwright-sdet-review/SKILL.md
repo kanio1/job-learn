@@ -1,11 +1,17 @@
 ---
 name: playwright-sdet-review
-description: Use to review Playwright tests for the current Nuxt dashboard merchant and payment-order journeys; do not use when no frontend/E2E change is involved or for generic Playwright tutorials.
+description: Use to review Playwright E2E and Playwright REST/BFF tests for merchant and payment-order journeys; do not use when no frontend or Playwright HTTP change is involved, or for generic Playwright tutorials.
 ---
 
 # Playwright SDET Review
 
-Use this skill for frontend/E2E review in `apps/frontend/tests`.
+Use this skill for frontend/E2E and Playwright REST review. When **writing** tests test-first, follow `tdd`. Product Vue/Nitro placement is `nuxt-frontend`. This skill owns locators, auth/session, isolation, and flake review.
+
+Suites:
+
+- E2E UI: `apps/frontend/tests/e2e`
+- Playwright REST / live HTTP: `apps/frontend/tests/live/http`
+- POM live: `apps/frontend/tests-pom`
 
 ## Review Focus
 

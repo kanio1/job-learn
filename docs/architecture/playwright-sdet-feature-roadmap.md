@@ -1262,7 +1262,6 @@ Używaj gdy Context7 jest niejednoznaczny dla:
 | `official-docs-and-versioned-research` | (wszystkie architekci) | Weryfikacja wersji API |
 | `obsidian-learning-os` | docs-architect | Notatki Obsidian, MOC |
 | `bpmn-uml-dmn-for-testers` | (brak odpowiednika) | Diagramy przepływów |
-| `spec-kit-feature-workflow` | (wewnętrzny) | Cykl spec → implementacja |
 
 **Braki skills (nie istnieją ani w Claude Code ani w Kiro):**
 - `playwright-mcp-expert` — obsługę MCP Playwright przejmuje `typescript6-playwright-engineering`
@@ -1574,7 +1573,6 @@ postgres18-data-architecture-and-risk
 project-skill-governance-and-quality-review
 rapid-software-testing-risk-thinking
 rest-api-security-oauth-testing
-spec-kit-feature-workflow
 spring-boot4-spring7-backend-architect
 spring-modulith-2-0-6-modular-monolith-testing
 test-analysis-design-and-data

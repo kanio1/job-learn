@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Payment Quality Engineering Lab — a learning-oriented payment platform for practicing Java/Spring backend engineering, REST API testing, security testing, frontend contract consumption, and SDET skills.
 
+Engineering process skills: `.agents/skills/README.md`. Tracker: `docs/agents/issue-tracker.md` (local markdown under `.codex/`). Use `tdd` when writing REST Assured, Playwright E2E, or Playwright REST tests; `spring-modulith` for Java 25 / Spring Boot 4 / Modulith 2.0.6 production placement; `nuxt-frontend` for Nuxt 4 / TypeScript 6 / Node 22+ production placement; `code-review` for diffs; `wayfinder` for foggy multi-session work.
+
 ## Commands
 
 ### Backend (from `apps/backend`)
@@ -120,7 +122,7 @@ Nuxt 4 app-directory layout. All browser-to-backend traffic is proxied through `
 - Security tests go in `apps/backend/src/test/java/lab/paymentquality/security/` and import `TestJwtConfiguration`.
 - Architecture boundary tests: `ModulithArchitectureTest`, `MerchantModuleTest`, `TenantModuleTest`, `PaymentModuleTest`.
 - Frontend unit/property tests: Vitest + fast-check, colocated with source. Property tests are tagged `Feature: <spec>, Property {n}: ...` and run ≥ 100 iterations.
-- Playwright specs live in `apps/frontend/tests/`.
+- Playwright E2E: `apps/frontend/tests/e2e`. Playwright REST / live HTTP: `apps/frontend/tests/live/http` and `apps/frontend/tests-pom`.
 - Ignore `My*` and `Lesson*` test files — they are learner practice copies.
 
 ## Active Implementation Context

@@ -33,7 +33,18 @@
               </div>
               <div class="flex justify-between">
                 <dt class="text-gray-500">Client Reference</dt>
-                <dd>{{ order.clientOrderReference }}</dd>
+                <dd class="flex items-center gap-2">
+                  <span>{{ order.clientOrderReference }}</span>
+                  <UButton
+                    size="xs"
+                    variant="ghost"
+                    data-testid="copy-payment-reference"
+                    aria-label="Copy payment reference"
+                    @click="copyText(order.clientOrderReference)"
+                  >
+                    Copy
+                  </UButton>
+                </dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-gray-500">Captured Amount</dt>
@@ -201,6 +212,10 @@ const props = defineProps<{
   rawBody?: string
   problem?: ProblemDetails | null
 }>()
+
+async function copyText(value: string) {
+  await navigator.clipboard.writeText(value)
+}
 
 const tabItems = [
   { label: 'Business', slot: 'business' as const },

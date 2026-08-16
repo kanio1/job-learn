@@ -5,6 +5,7 @@ Cel: kompletna mapa przypadków dla **zaimplementowanego** Mirror Labs (T01–T2
 
 Źródła: kod w `apps/frontend` (hub, Session/Visual/Network, bank, BFF Nitro) i `apps/backend` (`checkoutlab` Wave 3, modulith `mirrorlab`, Flyway V15/V16).  
 Roadmapa: [status/roadmaps/browser-session-visual-network-lab/](../../status/roadmaps/browser-session-visual-network-lab/).  
+Sesja BFF vs OIDC: [session-bff-oidc-contract](../session-bff-oidc-contract.md).  
 CPL (nie duplikować 1:1): [docs/testing/checkout-protocol-lab/](../checkout-protocol-lab/).
 
 ## Jak czytać

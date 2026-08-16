@@ -156,41 +156,59 @@ Obserwacja PROCESSING: wąski race — P2; DONE+202 path P0.
 
 ## 7.8 Use cases (UC)
 
+Indeks ucznia (PayU/Stripe vs lab, trzy „już zapłacone”, luki designed): [README](README.md).  
+Hop-by-hop headers/body (UC-01…06 pos/neg): [09](09-protocol-flow-simulations.md).  
+`payment_orders` Idempotency-Key / ETag: [live-pom UC-W2-08](../live-pom-wave-2/07-istqb-decision-state-usecase.md) — **nie** te UC.
+
+| Analogia | Ten pakiet |
+|---|---|
+| Redirect na hosted | UC-01 (`Location` / Open hosted) |
+| Return URL niewiarygodny | UC-03 |
+| Płatnik zapłacił, nie wrócił na sklep | UC-05 (**designed** PW-E2E-043) |
+| Ponowny POST create (idempotencja sesji) | FR-11 / EP-110–113, nie osobny UC |
+| Ponowny notify (IPN duplikat) | ST-024 / PW-API-208 |
+
 ### UC-01 Happy book-pay-return — P0
 
 Aktor: merchant tester + płatnik.  
-Główny: Booking ONLINE → Open hosted → Approve (token) → Return.  
+Główny: Booking ONLINE → Open hosted → Approve (`psp-approve` / simulate `COMPLETED`) → HMAC notify 202 → Return.  
 Oracle: fulfillment CONFIRMED; event DONE; hint success **dodatkowy**.  
-TC: PW-E2E-010, 050, 041; live POM `hub opens booking; online pay uses hosted tab and fulfillment oracle`; PW-API-113, 200.
+HTTP: [09 BC-CPL-02](09-protocol-flow-simulations.md).  
+TC: PW-E2E-010, 050, 041; live POM E2E-060; PW-API-113, 200.
 
 Rozszerzenia: 5xx retry (UC-01a), EUR/USD (UC-01b).
 
 ### UC-02 Cash — P0
 
-Booking CASH przez **select mode** → CONFIRMED, brak hosted.  
-TC: PW-E2E-011; live POM `cash booking confirms fulfillment without hosted checkout`; PW-API-300.
+`POST /api/checkout-lab/bookings` `{ "mode": "CASH", … }` → CONFIRMED, brak hosted.  
+HTTP: [09 BC-CPL-03](09-protocol-flow-simulations.md).  
+TC: PW-E2E-011; live POM E2E-062; PW-API-300.
 
 ### UC-03 Lie return — P0
 
 Płatnik otwiera continueUrl z `status=success` bez Approve.  
-Oracle: fulfillment ≠ CONFIRMED (`AWAITING_PAYMENT|UNKNOWN`).  
-TC: PW-E2E-040 existing-pw + existing-pom `lie return keeps fulfillment unconfirmed`.
+Oracle: fulfillment ≠ CONFIRMED.  
+API designed: `Lab-Force-Scenario: RETURN_LIE_SUCCESS` (PW-API-071).  
+HTTP: [09 BC-CPL-04](09-protocol-flow-simulations.md).  
+TC: PW-E2E-040 existing-pw + existing-pom E2E-061.
 
 ### UC-04 User cancel — P0
 
-Decline → return → fulfillment `CANCELLED` (hint zawiera `failure`; session może być `CANCELED`).  
-TC: PW-E2E-022/042 existing-pom `hosted decline leaves fulfillment cancelled`.
+`psp-decline` / simulate `CANCELED` → fulfillment `CANCELLED`.  
+HTTP: [09 BC-CPL-05](09-protocol-flow-simulations.md).  
+TC: PW-E2E-022/042, E2E-063.
 
 ### UC-05 Pay no return — P0
 
-Approve, zamknij tab, nie return.  
-Oracle: CONFIRMED via GET fulfillment.  
-TC: PW-E2E-043; PW-API-075. **designed** (brak POM).
+Approve, zamknij tab, nie return; GET fulfillment CONFIRMED.  
+HTTP: [09 BC-CPL-06](09-protocol-flow-simulations.md).  
+TC: PW-E2E-043; PW-API-075. **designed**.
 
 ### UC-06 Expired link — P0
 
-EXPIRED_LINK → hosted `psp-link-expired`. Approve zablokowane / 409: nadal designed.  
-TC: PW-E2E-024 partial existing-pom `expired hosted checkout exposes test id`; PW-API-130 RA.
+`EXPIRED_LINK` / clock → simulate **409** `expired_link`; UI `psp-link-expired`.  
+HTTP: [09 BC-CPL-07](09-protocol-flow-simulations.md).  
+TC: PW-E2E-024 partial, E2E-065, PW-API-130.
 
 ### UC-07 Inspect after pay — P1
 

@@ -53,7 +53,7 @@ validate and improve decisions, not to replace them.
 ## When NOT to Use
 
 - When the answer is clearly in Nuxt UI docs or existing `frontend-nuxt-ui.md` steering.
-- For backend Java/Spring/security work (use `#spec-kit-feature-workflow` or backend skills).
+- For backend Java/Spring/security work (use backend skills).
 - For Playwright test writing (writing tests is explicitly out of scope here).
 - For Keycloak realm configuration changes.
 - When the existing project code already has an established, tested pattern.

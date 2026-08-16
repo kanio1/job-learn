@@ -16,9 +16,12 @@ export async function backendApi(
 ) {
   const config = useRuntimeConfig()
   const backendUrl = config.public.apiBaseUrl || 'http://localhost:8080'
+  const method = (opts.method || 'GET').toUpperCase()
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(opts.headers || {})
+    ...(opts.headers || {}),
+  }
+  if (method !== 'HEAD' && !headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = 'application/json'
   }
 
   const session = await requireUserSession(event)
@@ -48,12 +51,15 @@ export async function backendApi(
 
   try {
     const response = await $fetch.raw(`${backendUrl}${path}`, {
-      method: (opts.method || 'GET') as any,
-      body: opts.body,
-      headers
+      method: method as any,
+      body: method === 'HEAD' ? undefined : opts.body,
+      headers,
     })
     forwardBackendHeaders(event, response.headers)
     setResponseStatus(event, response.status)
+    if (method === 'HEAD') {
+      return ''
+    }
     return response._data
   } catch (error: any) {
     const statusCode = error?.statusCode || error?.response?.status

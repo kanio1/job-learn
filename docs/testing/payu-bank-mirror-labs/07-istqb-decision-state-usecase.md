@@ -20,7 +20,7 @@ CSRF **nie** wolno nakładać na `/api/merchants/**`.
 |---|---|---|---|---|
 | `/admin/**` | no | — | dashboard | — |
 | `/admin/session-lab` | yes | — | overlay | existing-pom |
-| `/admin/**` | yes | logout | `/login`, sesja pusta | existing-pom Unlock |
+| `/admin/session-lab` | yes | logout | `/login`, sesja **BFF** pusta, SSO może zostać | existing-pom Unlock |
 | `/psp/checkout/**` | yes | — | **brak** overlay | existing-pw |
 | `/login` | yes | — | n/a | — |
 
@@ -104,8 +104,13 @@ Pokrycie: existing-ra refund; Flyway V16 CHECK.
 
 ## UC-MRL-01 — Logout on idle Unlock
 
-Login → admin → clock lock → Unlock → `/login` → deep link `/admin` nadal login.  
+Login → admin → clock lock → Unlock → `/login` (ścieżka **aplikacji**, nie `end_session`).  
 Pokrycie: Unlock URL existing-pom; deep link designed.
+
+## UC-MRL-07 — End OIDC z Session Lab
+
+Login → session-lab → End OIDC session → POST end-session → hop Keycloak.  
+Oracle: `client_id`, brak `id_token_hint`. Pokrycie: **designed** (E2E-026, API-024).
 
 ## UC-MRL-02 — Lie body
 

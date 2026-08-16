@@ -6,6 +6,8 @@ import lab.paymentquality.payment.PaymentSeedCapability;
 import lab.paymentquality.payment.internal.domain.PaymentOrderStatusHistory;
 import lab.paymentquality.payment.internal.infrastructure.JpaIdempotencyRecordRepository;
 import lab.paymentquality.payment.internal.infrastructure.JpaPaymentOrderEvidenceRepository;
+import lab.paymentquality.payment.internal.infrastructure.JpaPaymentExportJobRepository;
+import lab.paymentquality.payment.internal.infrastructure.JpaPaymentRefundApprovalRepository;
 import lab.paymentquality.payment.internal.infrastructure.JpaPaymentOrderNoteRepository;
 import lab.paymentquality.payment.internal.infrastructure.JpaPaymentOrderRepository;
 import lab.paymentquality.payment.internal.infrastructure.JpaPaymentOrderStatusHistoryRepository;
@@ -22,19 +24,25 @@ class PaymentSeedService implements PaymentSeedCapability {
     private final JpaIdempotencyRecordRepository idempotencyRepository;
     private final JpaPaymentOrderStatusHistoryRepository historyRepository;
     private final JpaPaymentOrderEvidenceRepository evidenceRepository;
+    private final JpaPaymentExportJobRepository exportJobRepository;
+    private final JpaPaymentRefundApprovalRepository refundApprovalRepository;
     private final JpaPaymentOrderNoteRepository noteRepository;
     private final JpaPaymentOrderRepository paymentOrderRepository;
     private final EntityManager entityManager;
 
     PaymentSeedService(JpaIdempotencyRecordRepository idempotencyRepository,
                        JpaPaymentOrderStatusHistoryRepository historyRepository,
-                       JpaPaymentOrderEvidenceRepository evidenceRepository,
-                       JpaPaymentOrderNoteRepository noteRepository,
+                                   JpaPaymentOrderEvidenceRepository evidenceRepository,
+                                   JpaPaymentExportJobRepository exportJobRepository,
+                                   JpaPaymentRefundApprovalRepository refundApprovalRepository,
+                                   JpaPaymentOrderNoteRepository noteRepository,
                        JpaPaymentOrderRepository paymentOrderRepository,
                        EntityManager entityManager) {
         this.idempotencyRepository = idempotencyRepository;
         this.historyRepository = historyRepository;
         this.evidenceRepository = evidenceRepository;
+        this.exportJobRepository = exportJobRepository;
+        this.refundApprovalRepository = refundApprovalRepository;
         this.noteRepository = noteRepository;
         this.paymentOrderRepository = paymentOrderRepository;
         this.entityManager = entityManager;
@@ -96,6 +104,8 @@ class PaymentSeedService implements PaymentSeedCapability {
     @Override
     @Transactional
     public void clear() {
+        refundApprovalRepository.deleteAllInBatch();
+        exportJobRepository.deleteAllInBatch();
         evidenceRepository.deleteAllInBatch();
         noteRepository.deleteAllInBatch();
         idempotencyRepository.deleteAllInBatch();

@@ -1,13 +1,16 @@
 package lab.paymentquality.payment.internal.application;
 
+import lab.paymentquality.payment.internal.domain.PaymentEvidenceCategory;
 import lab.paymentquality.payment.internal.domain.PaymentEvidenceValidationException;
 import lab.paymentquality.payment.internal.domain.PaymentOrderEvidence;
+import lab.paymentquality.payment.internal.domain.PaymentOrderNotFoundException;
 import lab.paymentquality.payment.internal.infrastructure.JpaPaymentOrderEvidenceRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
@@ -36,15 +39,33 @@ public class PaymentEvidenceService {
         this.paymentOrderService = paymentOrderService;
     }
 
-    public PaymentOrderEvidence uploadForOrder(UUID merchantId, UUID paymentOrderId, MultipartFile file) {
+    public PaymentOrderEvidence uploadForOrder(UUID merchantId, UUID paymentOrderId, MultipartFile file,
+                                               String categoryRaw) {
         paymentOrderService.findForPlatform(merchantId, paymentOrderId);
         String filename = validateFilename(file);
         String contentType = validateContentType(file);
         long sizeBytes = validateSize(file);
+        PaymentEvidenceCategory category = parseCategory(categoryRaw);
+        byte[] contentBytes;
+        try {
+            contentBytes = file.getBytes();
+        } catch (IOException ex) {
+            throw new PaymentEvidenceValidationException(HttpStatus.BAD_REQUEST, "empty_evidence_file",
+                    "Evidence file must not be empty");
+        }
 
         PaymentOrderEvidence evidence = PaymentOrderEvidence.create(
-                UUID.randomUUID(), paymentOrderId, filename, contentType, sizeBytes, Instant.now());
+                UUID.randomUUID(), paymentOrderId, filename, contentType, sizeBytes, Instant.now(),
+                category, contentBytes);
         return evidenceRepository.saveAndFlush(evidence);
+    }
+
+    @Transactional(readOnly = true)
+    public PaymentOrderEvidence getForOrder(UUID merchantId, UUID paymentOrderId, UUID evidenceId) {
+        paymentOrderService.findForPlatform(merchantId, paymentOrderId);
+        return evidenceRepository.findById(evidenceId)
+                .filter(evidence -> evidence.getPaymentOrderId().equals(paymentOrderId))
+                .orElseThrow(() -> new PaymentOrderNotFoundException(evidenceId));
     }
 
     @Transactional(readOnly = true)
@@ -103,5 +124,17 @@ public class PaymentEvidenceService {
                     "Evidence file must not exceed 2 MB");
         }
         return size;
+    }
+
+    private PaymentEvidenceCategory parseCategory(String categoryRaw) {
+        if (categoryRaw == null || categoryRaw.isBlank()) {
+            return PaymentEvidenceCategory.OTHER;
+        }
+        try {
+            return PaymentEvidenceCategory.valueOf(categoryRaw.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            throw new PaymentEvidenceValidationException(HttpStatus.BAD_REQUEST, "invalid_evidence_category",
+                    "Evidence category must be INVOICE, RECEIPT, or OTHER");
+        }
     }
 }

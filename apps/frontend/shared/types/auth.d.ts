@@ -22,6 +22,7 @@ declare module '#auth-utils' {
 
   /**
    * Server-only partition — never exposed to the browser.
+   * Do not add idToken: the sealed session cookie must stay under ~4 KB.
    */
   interface SecureSessionData {
     accessToken?: string

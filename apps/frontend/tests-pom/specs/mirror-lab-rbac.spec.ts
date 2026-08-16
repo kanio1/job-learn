@@ -21,12 +21,14 @@ test('maker cannot self-approve; checker can', async ({ browser }) => {
     expect(approvalId.length).toBeGreaterThan(8)
 
     await manager.page.getByTestId('approval-approve').click()
+    await manager.page.getByTestId('confirm-action-confirm').click()
     await expect(manager.page.getByTestId('approval-result')).toContainText('403')
 
     await admin.mirrorBank.goto()
     await admin.mirrorBank.expectLoaded()
     await approvalInput(admin.page).fill(approvalId)
     await admin.page.getByTestId('approval-approve').click()
+    await admin.page.getByTestId('confirm-action-confirm').click()
     await expect(admin.page.getByTestId('approval-result')).toContainText('200')
   }
   finally {

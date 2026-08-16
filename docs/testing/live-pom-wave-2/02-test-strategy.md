@@ -16,6 +16,10 @@ Wave 2 uczy **czterech oracles**: UI, HTTP (BFF `:3000`), cookie/storage, **nie*
 | Pieniądze checkout | `fulfillment-status`, nie sam hint `status=` |
 | POM czysty | zero `page.route` / `fulfill` |
 | Guest bez API | nie destructure `api` w `session-guest.spec.ts` |
+| Tenant × merchant × user | [09](09-core-domain-flows.md) — 404 mask vs 403 mutate vs dual-control |
+| Ten sam kontrakt za Caddy | [10](10-full-stack-edge-flows.md) — `iss`, Location względny, DENY, 5MB |
+
+Skrypty HTTP od `/api/status`: **09**. Indeks UC: **07**.
 
 ## 2. Piramida
 
@@ -72,6 +76,7 @@ Wave 2 uczy **czterech oracles**: UI, HTTP (BFF `:3000`), cookie/storage, **nie*
 - `waitForTimeout` jako sync.
 - `page.route` w `tests-pom`.
 - Asercja JWT w **cookie blob** (sealed session może zawierać `eyJ`).
+- Traktowanie menu Sign out jako Keycloak `end_session` (to dwa UC — [kontrakt](../session-bff-oidc-contract.md)).
 - SQL / Testcontainers z Node.
 - Import page objects z `tests-pom` do learner.
 - Uczenie „hint `status=success` = pieniądze”.

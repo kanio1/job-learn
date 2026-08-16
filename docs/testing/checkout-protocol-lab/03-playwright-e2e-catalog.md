@@ -9,6 +9,8 @@ Warstwa: przeglądarka Chromium. Domyślnie obecny spec **mockuje** BFF (`contex
 
 Legenda kolumn TC: Priorytet P0–P2; Auth = Keycloak mock / public / none.
 
+Skrót continueUrl / UC-03 / UC-05 / luki designed: [README](README.md). PAY_NO_RETURN = PW-E2E-043 (**designed**). Lie UI = PW-E2E-040; header API = PW-API-071 w [04](04-playwright-api-auth-sessions.md).
+
 ---
 
 ## A. Wejścia i nawigacja

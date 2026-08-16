@@ -9,11 +9,12 @@ description: Use when coordinating the full Payment Quality Engineering Lab so t
 - starting or reviewing a project phase,
 - coordinating multiple specialist skills,
 - turning a broad learning/product goal into an execution path,
-- deciding what becomes Business Analysis, Kiro Spec input, implementation or tester learning.
+- deciding what becomes Business Analysis, a `.codex` spec/tickets, implementation or tester learning.
 
 ## Project posture
-- **Business Analysis clarifies substantial product capabilities before formal specification.**
-- **Implementation is driven by Kiro Specs**: requirements.md → design.md → tasks.md.
+- **Business Analysis clarifies substantial product capabilities before a written spec.**
+- **New work uses engineering process skills**: grill → (wayfinder if foggy) → `to-spec` → `to-tickets` → `implement`/`tdd`.
+- Tracker: local markdown under `.codex/` (`docs/agents/issue-tracker.md`).
 - **User learns through quality engineering**:
   - requirements analysis,
   - risk analysis,
@@ -26,7 +27,7 @@ description: Use when coordinating the full Payment Quality Engineering Lab so t
   - interview-quality explanation.
 
 ## Product Discovery Gate
-Before a substantial new feature goes to a Kiro Spec, route through:
+Before a substantial new feature goes to `to-spec`, route through:
 - `business-analysis-and-product-discovery-for-payment-lab`
 
 Expected output:
@@ -34,21 +35,12 @@ Expected output:
 - business goal, actors, workflow, business rules, data needs,
 - candidate acceptance criteria,
 - ambiguities/open questions,
-- feature sequencing recommendation,
-- Kiro Spec input summary.
+- feature sequencing recommendation.
 
 This gate may be skipped only for:
 - tiny non-product technical work,
 - documentation-only adjustments,
 - obvious refactors with no product ambiguity.
-
-## Kiro Spec Mode
-After BA Discovery, use **Kiro Spec Mode** (Requirements-First or Design-First workflow) to produce:
-- `requirements.md` — user stories + EARS acceptance criteria,
-- `design.md` — architecture, components, sequence diagrams, correctness properties,
-- `tasks.md` — small, dependency-ordered implementation tasks.
-
-Produce requirements.md, design.md, and tasks.md before implementation when the request is architectural or product-oriented. Ask for approval before large implementation steps.
 
 ## Standard task labels
 - `[IMPLEMENT]`
@@ -58,6 +50,27 @@ Produce requirements.md, design.md, and tasks.md before implementation when the 
 - `[TESTER-AUTOMATE]`
 - `[REVIEW]`
 - `[DISCUSS]`
+
+## Engineering process skills
+
+Canonical copies live in `.agents/skills/`. Route building/review/test-writing through them:
+
+| Intent | Process skill |
+|---|---|
+| Align before building | `grill-me` / `grill-with-docs` |
+| Foggy multi-session work | `wayfinder` |
+| Incoming bugs/requests | `triage` |
+| Write spec / tickets | `to-spec` / `to-tickets` |
+| Implement test-first | `implement` → `tdd` |
+| Logic/UI question | `prototype` |
+| Primary-source reading | `research` |
+| Human-only setup | `wizard` |
+| Learn over sessions | `teach` |
+| REST Assured / Playwright REST / Playwright E2E tests | `tdd` + domain test skills |
+| Review a diff | `code-review` + layer review skills |
+| Hard bug | `diagnosing-bugs` |
+
+Index: `.agents/skills/README.md`.
 
 ## When Not to Use
 Do not use this for a narrow local question with an obvious specialist skill.

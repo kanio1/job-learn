@@ -67,7 +67,7 @@ Lesson 11 execution checklist:
 
 ## Next Sprint Options
 
-| Option | Description | Requires Spec Kit? |
+| Option | Description | Needs `.codex` spec? |
 |---|---|---|
 | Sprint 11 | REST Assured Framework Architecture and Test Organization | No |
 | Sprint 12 | Advanced Assertions, Type-Safe Extraction, and Parameterized Testing after Lesson 11 | No |
@@ -92,4 +92,3 @@ cd apps/backend
 
 - [[Current Lesson]] — what to study/practice NOW
 - [[Current Learning Flow]] — process and flow
-- [[Spec Kit Decision Guide]] — when to use Spec Kit

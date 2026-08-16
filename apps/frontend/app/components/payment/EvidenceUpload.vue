@@ -28,6 +28,31 @@
         :description="errorMessage"
       />
 
+      <fieldset>
+        <legend class="text-sm font-medium mb-2">Evidence category</legend>
+        <div class="flex flex-wrap gap-4">
+          <label v-for="option in categories" :key="option" class="flex items-center gap-2 text-sm">
+            <input
+              v-model="category"
+              type="radio"
+              name="evidence-category"
+              :value="option"
+              :data-testid="`evidence-category-${option.toLowerCase()}`"
+            >
+            {{ option }}
+          </label>
+        </div>
+      </fieldset>
+
+      <div
+        data-testid="evidence-dropzone"
+        class="rounded-md border border-dashed border-gray-300 p-4 text-sm dark:border-gray-700"
+        @dragover.prevent
+        @drop.prevent="onDrop"
+      >
+        Drop a file here or choose one below.
+      </div>
+
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
           ref="fileInput"
@@ -60,13 +85,31 @@
         <div
           v-for="item in evidence"
           :key="item.evidenceId"
-          class="grid gap-1 rounded-md border border-gray-200 p-3 text-sm dark:border-gray-800 sm:grid-cols-[1fr_auto]"
+          class="grid gap-2 rounded-md border border-gray-200 p-3 text-sm dark:border-gray-800 sm:grid-cols-[auto_1fr_auto]"
         >
+          <img
+            v-if="item.hasContent && isImage(item.contentType)"
+            :src="contentUrl(item.evidenceId)"
+            :alt="item.originalFilename"
+            class="h-16 w-16 rounded object-cover"
+            data-testid="evidence-thumbnail"
+          >
           <div>
             <p class="font-medium" data-testid="evidence-file-name">{{ item.originalFilename }}</p>
-            <p class="text-xs text-gray-500">{{ item.contentType }} · {{ formatBytes(item.sizeBytes) }}</p>
+            <p class="text-xs text-gray-500">{{ item.contentType }} · {{ item.category }} · {{ formatBytes(item.sizeBytes) }}</p>
           </div>
-          <p class="text-xs text-gray-500 sm:text-right">{{ new Date(item.uploadedAt).toLocaleString() }}</p>
+          <div class="flex flex-col items-end gap-1">
+            <p class="text-xs text-gray-500">{{ new Date(item.uploadedAt).toLocaleString() }}</p>
+            <UButton
+              v-if="item.hasContent"
+              size="xs"
+              variant="outline"
+              :to="contentUrl(item.evidenceId)"
+              data-testid="evidence-download"
+            >
+              Download
+            </UButton>
+          </div>
         </div>
       </div>
     </div>
@@ -84,6 +127,8 @@ const props = defineProps<{
 const toast = useAppToast()
 const { listEvidence, uploadEvidence } = usePaymentEvidenceApi()
 
+const categories = ['INVOICE', 'RECEIPT', 'OTHER'] as const
+const category = ref<(typeof categories)[number]>('OTHER')
 const evidence = ref<PaymentEvidence[]>([])
 const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -97,10 +142,26 @@ function onFileChange(event: Event) {
   errorMessage.value = null
 }
 
+function onDrop(event: DragEvent) {
+  const file = event.dataTransfer?.files?.[0]
+  if (file) {
+    selectedFile.value = file
+    errorMessage.value = null
+  }
+}
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function isImage(contentType: string) {
+  return contentType === 'image/png' || contentType === 'image/jpeg'
+}
+
+function contentUrl(evidenceId: string) {
+  return `/api/merchants/${props.merchantId}/payment-orders/${props.paymentOrderId}/evidence/${evidenceId}`
 }
 
 async function loadEvidence() {
@@ -123,7 +184,12 @@ async function handleUpload() {
   uploading.value = true
   errorMessage.value = null
   try {
-    const response = await uploadEvidence(props.merchantId, props.paymentOrderId, selectedFile.value)
+    const response = await uploadEvidence(
+      props.merchantId,
+      props.paymentOrderId,
+      selectedFile.value,
+      category.value,
+    )
     if (response.data) {
       evidence.value = [response.data, ...evidence.value]
       selectedFile.value = null

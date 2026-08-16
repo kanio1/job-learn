@@ -5,6 +5,10 @@ last_updated: 2026-08-15
 
 ## Session log
 
+- **Session BFF/OIDC catalog (2026-08-15):** Test/use-case docs aligned with two logout paths (BFF Sign out vs Session lab `end_session`), cookie 4 KB / no `id_token`, and policy JSON vs live `Secure`. Canonical: [docs/testing/session-bff-oidc-contract.md](../docs/testing/session-bff-oidc-contract.md). No Playwright spec added.
+
+- **Playwright real-stack learning (2026-08-15):** **IMPLEMENTED**. Fale 1–4: BFF HEAD + live `APIRequestContext`; evidence category/bytes/dropzone; clipboard; offline banner; expiration sweep; OIDC end_session; badge `title`; bank ConfirmActionModal; axe; async export-jobs 202+Location+worker; dual-control refund na `payment_orders`. Catalog: [status/roadmaps/playwright-real-stack-learning/](roadmaps/playwright-real-stack-learning/). `.kiro/**` unchanged. Wave 6 OpenAPI snapshot/CI remains the prior queue item.
+
 - **Wave 5 OpenAPI springdoc (2026-08-15):** **IMPLEMENTED**. `springdoc-openapi-starter-webmvc-api` 3.1.0; authenticated `GET /v3/api-docs`; labs/test excluded; UI off; prod `api-docs.enabled=false`. Backend `OpenApiRestAssuredTest` **4/4**, `ModulithArchitectureTest` **1/1**, Failsafe `OpenApiDisabledIT` **1/1**. Live api-tests `OpenApiContractSpec` not claimed (needs `BACKEND_IMAGE`). Catalog impact table: existing UC-W4 / POM / lab HTTP oracles unchanged. Snapshot + CI = Wave 6. Catalog: [docs/testing/wave-5-openapi-springdoc/README.md](../docs/testing/wave-5-openapi-springdoc/README.md).
 
 - **Wave 5 OpenAPI catalog (2026-08-15):** Catalog written, then implemented the same day (see above).

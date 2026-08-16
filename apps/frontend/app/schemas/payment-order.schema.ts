@@ -98,6 +98,8 @@ export const paymentEvidenceSchema = z.object({
   contentType: z.enum(['application/pdf', 'image/png', 'image/jpeg', 'text/plain', 'text/csv']),
   sizeBytes: z.number().int().positive(),
   uploadedAt: z.string(),
+  category: z.enum(['INVOICE', 'RECEIPT', 'OTHER']).default('OTHER'),
+  hasContent: z.boolean().default(false),
 })
 
 export const paymentEvidenceListResponseSchema = z.object({

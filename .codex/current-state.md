@@ -24,6 +24,10 @@ Do not modify files under `.kiro/**` during implementation. If execution status 
 
 No further work on `deterministic-seed-and-test-isolation` unless explicitly requested. Await next spec assignment.
 
+### Overlay 2026-08-15 — session catalogs
+
+Canonical session/OIDC test map: `docs/testing/session-bff-oidc-contract.md`. Product `end_session` exists; Playwright hop and cookie-size TCs remain **designed**. Do not treat menu Sign out as FR-OIDC.
+
 ---
 
 ## Historical context (tenant-model-and-isolation and earlier specs)

@@ -8,13 +8,12 @@ tags:
   - skill-orchestration
   - qa-architecture
   - business-analysis
-  - speckit
   - sdet
 ---
 
 # Skill Orchestration Runbook
 
-Cel: upewnić się, że przy nowych business flows skills uruchamiają się w dobrej kolejności i żaden obszar nie wypada: business analysis, architektura, QA architecture, test design, Spec Kit (tylko gdy potrzebny), implementacja, UI i evidence.
+Cel: upewnić się, że przy nowych business flows skills uruchamiają się w dobrej kolejności i żaden obszar nie wypada: business analysis, architektura, QA architecture, test design, spec/tickets w `.codex/`, implementacja, UI i evidence.
 
 > **Navigation:** [[START HERE - Learning Dashboard]] | [[Current Learning Flow]] | [[Home]]
 
@@ -22,7 +21,7 @@ Cel: upewnić się, że przy nowych business flows skills uruchamiają się w do
 
 There are only two paths now. Pick based on scope size:
 
-### Path A: Lesson Extension (NO Spec Kit)
+### Path A: Lesson Extension
 
 ```
 Learning objective (small)
@@ -35,22 +34,45 @@ Learning objective (small)
 
 Use this for: adding a test, deepening a topic, SQL exercises, assertion strategy practice, interview prep.
 
-### Path B: New Business Capability (WITH Spec Kit)
+### Path B: New Business Capability
 
 ```
 Learning objective (new behavior)
   → BA Discovery (actors, workflow, rules)
-  → Architecture decision (module, data, security)
-  → QA Architecture & learning delta
-  → [[Spec Kit Decision Guide]] — check if Spec Kit needed
-  → Spec Kit: spec → plan → tasks (if scope is large enough)
-  → Implementation (code + tests)
-  → Lesson note
-  → Evidence update
-  → Interview explanation
+  → grill-with-docs (or wayfinder if the effort is foggy)
+  → to-spec → to-tickets under .codex/
+  → implement → tdd (REST Assured, Playwright REST, Playwright E2E)
+  → code-review
+  → Lesson note / evidence / interview explanation
 ```
 
-Use this for: new module, new REST resource, new DB schema, new security model.
+Use this for: new module, new REST resource, new DB schema, new security model. This lab does **not** use Spec Kit.
+
+## Engineering process (Matt Pocock pack, adapted)
+
+Canonical skills: `.agents/skills/README.md`. Tracker: `docs/agents/issue-tracker.md`.
+
+```
+grill-with-docs
+  → wayfinder (only if bigger than one session)
+  → to-spec → to-tickets
+  → implement → tdd
+  → code-review
+```
+
+| Skill | When |
+|---|---|
+| `ask-engineering-flow` | Unsure which process skill to start |
+| `wayfinder` | Foggy multi-session effort |
+| `triage` | Incoming bugs/requests |
+| `prototype` | Logic/UI cannot be settled on paper |
+| `research` | Primary-source reading (Firecrawl) |
+| `wizard` | Human-only Keycloak/mkcert/secrets steps |
+| `teach` | Multi-session learning |
+| `tdd` | Writing REST Assured, Playwright E2E, or Playwright REST tests |
+| `code-review` | Reviewing a branch/diff |
+| `diagnosing-bugs` | Hard bug, flake, or performance regression |
+| `handoff` | Ending a session for another agent |
 
 ## Core Skills (Always Use)
 
@@ -66,8 +88,7 @@ Use this for: new module, new REST resource, new DB schema, new security model.
 | Skill | When |
 |---|---|
 | `qa-architecture-sprint-team` | New business capability (Path B) |
-| `business-analysis-and-product-discovery-for-payment-lab` | BA Discovery before Spec Kit |
-| `spec-kit-feature-workflow` | Spec Kit handoff (only if Spec Kit needed) |
+| `business-analysis-and-product-discovery-for-payment-lab` | BA Discovery before `to-spec` |
 | `spring-boot4-spring7-backend-architect` | Backend design |
 | `spring-modulith-2-0-6-modular-monolith-testing` | Module boundary changes |
 | `postgres18-data-architecture-and-risk` | New DB schema |

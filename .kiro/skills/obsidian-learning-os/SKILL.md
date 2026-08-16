@@ -46,8 +46,8 @@ Every lesson or sprint must leave:
 4. Competency matrix update if new skill practiced
 
 ### Kiro integration
-- When planning a new capability, use Kiro Spec Mode instead of the old Spec Kit `/speckit.specify` command.
-- Path B (new business capability) flows through: BA discovery → Kiro Spec (requirements.md → design.md → tasks.md) → implement → lesson note → evidence.
+- When planning a new capability, use `to-spec` / `to-tickets` under `.codex/`.
+- Path B (new business capability) flows through: BA discovery → `to-spec` → `to-tickets` → `implement` → lesson note → evidence.
 
 ## When Not to Use
 Do not use this for coding tasks with no documentation impact or uncurated transcript dumping.

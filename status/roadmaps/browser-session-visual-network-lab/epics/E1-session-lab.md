@@ -3,7 +3,7 @@ name: epic-e1-session-lab
 parent: browser-session-visual-network-lab
 epic: E1
 tasks: [MRL-T02, MRL-T03, MRL-T04, MRL-T05, MRL-T12, MRL-T13]
-last_updated: 2026-08-13
+last_updated: 2026-08-15
 ---
 
 # Epic E1 — Browser Session Lab
@@ -68,20 +68,21 @@ Jako operator chcę lock screen po bezczynności, jak w bankowości elektroniczn
 ---
 
 ## Story E1-S3 — Logout + empty storageState  
-**Task:** `MRL-T04` · P0 · FR-S04 FR-S07
+**Task:** `MRL-T04` · P0 · FR-S04a FR-S04b FR-S07
 
 ### Jako / chcę / aby
 Jako SDET chcę pełny logout, aby nowy context bez `storageState` nie widział `/admin`.
 
 ### Acceptance criteria
 - [ ] Logout czyści `nuxt-session` (Set-Cookie max-age=0 lub brak cookie).
-- [ ] Redirect na `/login` (i dokumentowany hop Keycloak end-session jeśli już w nuxt-auth-utils).
+- [x] Menu Sign out / Unlock: redirect `/login` **bez** Keycloak `end_session` (`auth.logout`).
+- [x] Hop Keycloak: przycisk `session-lab-end-oidc` (nie menu). Playwright hop: **designed** (FR-S04b).
 - [ ] POM: `test.use({ storageState: { cookies: [], origins: [] } })` → `/admin/merchants` pokazuje login, nie dane.
 - [ ] Po logout `expectNoTokenInBrowserStorage`.
 
 ### Learning
 - `PW:` reset storageState per file (Playwright auth docs).
-- `KC:` SSO vs application session.
+- `KC:` SSO vs application session (dwie ścieżki — [kontrakt](../../../docs/testing/session-bff-oidc-contract.md)).
 
 ---
 
@@ -94,7 +95,7 @@ Jako bank chcę listę sesji i revoke jednej, aby ćwiczyć dwa `BrowserContext`
 ### Acceptance criteria
 - [ ] `GET/POST` lab devices (INFRA-BFF-04).
 - [ ] UI lista + Revoke.
-- [ ] AC testowe: dwa contexty, ten sam user; revoke A → A 401, B nadal 200 **albo** (toggle) revoke-all.
+- [ ] AC testowe: dwa contexty, ten sam user; revoke A → A 401, B nadal 200 **albo** (toggle) revoke-all. Dziś POM tylko klika revoke (MRL E2E-030).
 - [ ] Brak Keycloak Admin API w wave 1.
 
 ### Learning

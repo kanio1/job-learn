@@ -67,7 +67,24 @@ Hosted: `/psp/checkout/{id}` ma `layout: false` — **nie** dashboard overlay.
 | Suite | POM |
 | Kroki | login → `/admin/session-lab` |
 | Asercje | `session-lab-cookie-policy` zawiera `nuxt-session` i `httpOnly`; `context.cookies()` HttpOnly true |
+| Nie asertuje | SameSite, Secure vs prawdziwe cookie, Domain Keycloak |
 | FR | S01 · P0 |
+
+### PW-MRL-E2E-013 — SameSite Lax z `context.cookies()` — **designed**
+
+| | |
+|---|---|
+| Pokrycie | designed |
+| Asercje | `nuxt-session.sameSite` Lax/lax; **nie** z JSON policy |
+| FR | S01 · P1 |
+
+### PW-MRL-E2E-014 — Policy JSON `secure:false` vs TLS cookie — **designed**
+
+| | |
+|---|---|
+| Pokrycie | designed / docs-only drift (GAP-SESS-04) |
+| Asercje | HTTP POM: JSON `secure: false` zgodne z cookie. TLS: cookie `Secure=true`, JSON nadal false — oracle = `context.cookies()`, nie UI |
+| FR | S01 · P1 |
 
 ### PW-MRL-E2E-011 — document.cookie nie zawiera nuxt-session
 
@@ -100,8 +117,33 @@ Hosted: `/psp/checkout/{id}` ma `layout: false` — **nie** dashboard overlay.
 | Pokrycie | existing-pom |
 | Kroki | po lock click `session-lab-idle-unlock` |
 | Asercje | URL `/login` (nie `/admin/merchants`) |
-| FR | S03/S04 · P0 |
-| Uwaga review | Unlock **musi** `session.clear()`; sam `to="/login"` zostawia sesję |
+| FR | S03/S04a · P0 |
+| Uwaga review | Unlock **musi** `session.clear()`; sam `to="/login"` zostawia sesję. To **nie** jest Keycloak `end_session`. |
+
+### PW-MRL-E2E-026 — End OIDC session (`session-lab-end-oidc`) — **designed**
+
+| | |
+|---|---|
+| Pokrycie | designed · FR-S04b |
+| Kroki | klik `session-lab-end-oidc` → POST `/api/session-lab/end-session` → `endSessionUrl` |
+| Asercje | query `client_id` + `post_logout_redirect_uri`; brak `id_token_hint`; `nuxt-session` znika |
+| FR | S04b · P0 |
+
+### PW-MRL-E2E-027 — Menu Sign out **nie** woła `end_session` — **designed**
+
+| | |
+|---|---|
+| Pokrycie | designed (kontrast E2E-010 / MRL-021) |
+| Kroki | Sign out z `/admin/merchants`; `waitForRequest` do `/protocol/openid-connect/logout` count 0 |
+| FR | S04a · P1 |
+
+### PW-MRL-E2E-028 — Cookie `nuxt-session` &lt; 4 KB — **designed**
+
+| | |
+|---|---|
+| Pokrycie | designed |
+| Asercje | długość value cookie poniżej 4096; sesja bez `id_token` |
+| FR | S08 + limit UA · P0 |
 
 ### PW-MRL-E2E-022 — Po Unlock `/admin/merchants` nadal login
 

@@ -1,7 +1,7 @@
 ---
 name: mrl-infra-keycloak-bff
 parent: browser-session-visual-network-lab
-last_updated: 2026-08-13
+last_updated: 2026-08-15
 ---
 
 # 01 — Infra: Keycloak, BFF cookies, CSRF, idle
@@ -14,7 +14,7 @@ Decyzje na czas **designu**. Implementacja nie rusza realm w wave 1.
 |---|---|
 | `payment-quality-realm.json` | **Bez zmian** w E0–E3 |
 | Login dashboard | Istniejący OIDC PKCE (`nuxt-auth-utils`) |
-| Logout | BFF clear cookie + opcjonalny Keycloak `end_session` URL już wspierany przez IdP; E1-S3 dokumentuje hop |
+| Logout | **Dwie ścieżki:** (A) BFF `clearUserSession` / `session.clear()` bez hopu IdP; (B) POST `/api/session-lab/end-session` buduje Keycloak `end_session` z `client_id` + `post_logout_redirect_uri` (bez `id_token` w cookie). Realm **bez** `post.logout.redirect.uris` (C-07) |
 | ACR / OTP | **E5 only**; wymaga osobnej decyzji realm (INFRA-KC-01) |
 
 ### INFRA-KC-01 — Step-up (E5, gated)
@@ -30,9 +30,10 @@ Obserwowalne atrybuty (inspector + Playwright `context.cookies()`):
 | Name | `nuxt-session` |
 | HttpOnly | **true** |
 | Secure | false na `http://localhost`; true za HTTPS |
-| SameSite | `Lax` (typowe OIDC redirect) — udokumentować, nie zgadywać |
+| SameSite | `Lax` (typowe OIDC redirect) — asercja z `context.cookies()`, nie z JSON policy |
 | Path | `/` |
-| JWT w cookie value | sealed; testy **nie** dekodują payload do asercji ról (używają `/api/_auth/session`) |
+| JWT w cookie value | sealed `accessToken`; **nie** `id_token` (limit UA ~4 KB). Testy **nie** dekodują blobu do ról (`/api/_auth/session`). Rozmiar cookie: UC-SESS-04 designed |
+| Cookie-policy API | `GET /api/session-lab/cookie-policy` = **statyczny** opis (`secure: false`). Na HTTPS prawdziwe cookie ma `Secure=true` — INFRA vs JSON rozjeżdżają się |
 
 Keycloak cookies (`AUTH_SESSION_ID`, `KC_RESTART`, `KEYCLOAK_IDENTITY` …) żyją na hoście IdP (`localhost:8180` / compose port), **nie** na `:3000`. Inspector musi to pokazać — to lekcja Domain.
 

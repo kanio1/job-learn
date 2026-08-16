@@ -16,6 +16,7 @@ target/
 **/.mvn/wrapper/apache-maven-*-bin.zip
 
 # Node / Nuxt / pnpm
+.pnpm-store/
 node_modules/
 .nuxt/
 .output/

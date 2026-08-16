@@ -22,6 +22,8 @@ Zespół: PM + test analyst. Pytanie: **czy wszystkie zaplanowane features CPL s
 
 Do czasu (1) testy `OOO_EVENTS` oznaczać `blocked`.
 
+Hop-by-hop (pozytyw/negatyw, headers/body): [09-protocol-flow-simulations.md](09-protocol-flow-simulations.md).
+
 ---
 
 ## FR-01 … FR-15
@@ -101,6 +103,21 @@ Unknown header → 400 `validation` (`UnknownCheckoutScenarioException`) — **b
 | GAP-04 | Brak Ops UI | Low | Zostawić API (SDET-first) — nie blocker |
 | GAP-05 | Copy booking wspomina 302 debug na „direct session create”, UI go nie ma | Low | Usunąć zdanie albo dodać mini-form 302 |
 | GAP-06 | AC per-scenario test | Medium | Katalog 03–05 zamyka lukę testową bez czekania na GAP-01 (blocked) |
+| GAP-07 | Idempotency: zmiana tylko `validitySeconds` | Low (test) | PW-API-026 / EP-113 **designed** — produkt już replay (fingerprint bez TTL) |
+
+Mapa UC / „już zapłacone” / dwa światy: [README](README.md). Śledzenie ID: [08](08-traceability-matrix.md).
+
+### Luki testowe (designed) — jawne ID
+
+Nie mylić z luką produktową GAP-01. Poniższe zachowanie **jest** w kodzie (albo jest świadomym no-opem scenariusza); brakuje **specu**.
+
+| ID testu | Scenariusz | Status |
+|---|---|---|
+| PW-API-071 | `RETURN_LIE_SUCCESS` przez header → 0 eventów, fulfillment AWAITING | designed (UI: PW-E2E-040 existing) |
+| PW-E2E-043 | PAY_NO_RETURN: Approve, nie return, poll fulfillment CONFIRMED | designed |
+| PW-API-075 | to samo REST (simulate + GET fulfillment, bez GET return) | designed |
+| PW-API-026 | ten sam `Idempotency-Key`, inny tylko `validitySeconds` → 302 replay | designed |
+| PW-API-076 | `OOO_EVENTS` | **blocked** GAP-01 |
 
 ---
 

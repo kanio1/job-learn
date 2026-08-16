@@ -1,6 +1,6 @@
 ---
 name: obsidian-learning-os
-description: Maintain the Obsidian Learning OS: MOCs, trackers, note types, project dashboards, Learning OS Status dashboard, Tech Connection Map, Spec Kit Decision Guide, Business Analysis discovery notes, Effective Java progress, testing stories, practitioner insights, Spring Modulith notes and parallel-test architecture notes.
+description: Maintain the Obsidian Learning OS: MOCs, trackers, note types, project dashboards, Learning OS Status dashboard, Tech Connection Map, Business Analysis discovery notes, Effective Java progress, testing stories, practitioner insights, Spring Modulith notes and parallel-test architecture notes.
 license: MIT
 metadata:
   category: knowledge-management
@@ -26,7 +26,7 @@ Every learner starts from `START HERE - Learning Dashboard.md` in the project fo
 | File | Purpose |
 |---|---|
 | [[START HERE - Learning Dashboard]] | Single entry point. Open first every session. |
-| `00 Learning OS/Current Learning Flow.md` | Process: Path A (extension) vs Path B (new capability), Spec Kit decisions |
+| `00 Learning OS/Current Learning Flow.md` | Process: Path A (extension) vs Path B (new capability) |
 | `00 Learning OS/Current Lesson.md` | Dashboard: NOW, COVERED, INTRODUCED, NEEDS PRACTICE, DEFERRED |
 | `00 Learning OS/Current Sprint.md` | Sprint status, remaining tasks, next options |
 | `00 Learning OS/Curriculum Backbone.md` | Technology ↔ lesson cross-reference |
@@ -62,8 +62,8 @@ Repeatable prompts:
 ### Lesson Creation (From Lesson 6 onward)
 
 Two paths:
-- **Path A: Lesson Extension (small).** No Spec Kit. Just: study → practice → update lesson note → update evidence.
-- **Path B: New Business Capability (large).** Spec Kit if scope demands. Full: BA → architecture → Spec Kit → implement → lesson note → evidence → interview.
+- **Path A: Lesson Extension (small).** study → practice → update lesson note → update evidence.
+- **Path B: New Business Capability (large).** BA → `to-spec` → `to-tickets` → `implement` → lesson note → evidence → interview.
 
 Use templates:
 - Prompt template: `05 Templates/Template - Lesson 7+ Prompt.md`
@@ -82,7 +82,7 @@ Every lesson or sprint must leave:
 - Do NOT duplicate content between lesson notes and reference materials. Link instead.
 - Do NOT create new dashboards without updating `START HERE - Learning Dashboard.md`.
 - Do NOT add topics listed under "DEFERRED" in `00 Learning OS/Current Lesson.md`.
-- Do NOT use Spec Kit for small extensions (check `00 Learning OS/Current Learning Flow.md`).
+- Do NOT skip evidence updates after a lesson or sprint.
 
 ## Business Analysis knowledge capture
 For meaningful new product capabilities, preserve:
@@ -100,7 +100,7 @@ These should capture:
 - data needs,
 - open questions,
 - tester lens,
-- handoff to Spec Kit.
+- handoff to `to-spec`.
 
 ## When Not to Use
 Do not use this for coding tasks with no documentation impact or uncurated transcript dumping.

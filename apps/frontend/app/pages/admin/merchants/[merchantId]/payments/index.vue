@@ -18,6 +18,26 @@
             @click="handleExportCsv"
           />
           <UButton
+            data-testid="export-payment-orders-async"
+            icon="i-lucide-hourglass"
+            color="neutral"
+            variant="ghost"
+            :loading="asyncExportPolling"
+            aria-label="Export payment orders asynchronously"
+            @click="handleAsyncExport"
+          >
+            Export (async)
+          </UButton>
+          <UButton
+            v-if="can.canReadPlatformPayments && can.canRunLifecycle"
+            data-testid="run-expiration-sweep"
+            color="neutral"
+            variant="outline"
+            @click="handleExpirationSweep"
+          >
+            Run expiration sweep
+          </UButton>
+          <UButton
             icon="i-lucide-refresh-cw"
             color="neutral"
             variant="ghost"
@@ -31,7 +51,18 @@
 
     <template #body>
       <div class="space-y-6">
-        <!-- Merchant identifier -->
+        <p v-if="asyncExportStatus" data-testid="async-export-status" class="text-sm text-muted">
+          Async export: {{ asyncExportStatus }}
+        </p>
+        <UAlert
+          v-if="offline"
+          color="warning"
+          variant="subtle"
+          icon="i-lucide-wifi-off"
+          title="You are offline"
+          description="Payment list cannot refresh until the browser is online. Retry when connectivity returns."
+          data-testid="payments-offline-banner"
+        />
         <div>
           <p class="text-sm text-muted">Merchant</p>
           <p class="font-mono text-sm text-highlighted">{{ merchantId }}</p>
@@ -94,6 +125,11 @@ const route = useRoute()
 const router = useRouter()
 const merchantId = route.params.merchantId as string
 const { listOrders, getOrderSummary } = usePaymentOrdersApi()
+const { can } = useAuthorization()
+const toast = useAppToast()
+const offline = ref(false)
+const asyncExportPolling = ref(false)
+const asyncExportStatus = ref('')
 
 // ---------------------------------------------------------------------------
 // Summary state
@@ -267,10 +303,67 @@ function handleExportCsv() {
   link.click()
 }
 
+async function handleAsyncExport() {
+  asyncExportPolling.value = true
+  asyncExportStatus.value = 'PENDING'
+  try {
+    const created = await $fetch.raw<{ jobId: string, status: string }>(
+      `/api/merchants/${merchantId}/payment-orders/export-jobs`,
+      { method: 'POST' },
+    )
+    const jobId = created._data?.jobId
+    const location = created.headers.get('location')
+    if (!jobId) {
+      throw new Error('Export job did not return a job id')
+    }
+    for (let i = 0; i < 20; i++) {
+      const job = await $fetch<{ status: string }>(
+        `/api/merchants/${merchantId}/payment-orders/export-jobs/${jobId}`,
+      )
+      asyncExportStatus.value = job.status
+      if (job.status === 'READY') {
+        const link = document.createElement('a')
+        link.href = `/api/merchants/${merchantId}/payment-orders/export-jobs/${jobId}/content`
+        link.click()
+        toast.success('Export ready', location || jobId)
+        return
+      }
+      if (job.status === 'FAILED') {
+        toast.error('Export failed', 'The async export job failed.')
+        return
+      }
+      await new Promise(resolve => setTimeout(resolve, 300))
+    }
+    toast.error('Export still pending', 'Poll the job again from the network tab.')
+  } catch (error: any) {
+    toast.error('Async export failed', error?.data?.detail || error?.message || 'Request failed')
+  } finally {
+    asyncExportPolling.value = false
+  }
+}
+
+async function handleExpirationSweep() {
+  const result = await $fetch<{ expiredCount: number }>('/api/payment-ops/expiration-sweep', { method: 'POST' })
+  toast.success('Expiration sweep complete', `${result.expiredCount} order(s) expired`)
+  await reload()
+}
+
+function syncOffline() {
+  offline.value = !navigator.onLine
+}
+
 // ---------------------------------------------------------------------------
 // Initial load
 // ---------------------------------------------------------------------------
 onMounted(() => {
+  syncOffline()
+  window.addEventListener('online', syncOffline)
+  window.addEventListener('offline', syncOffline)
   reload()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('online', syncOffline)
+  window.removeEventListener('offline', syncOffline)
 })
 </script>
