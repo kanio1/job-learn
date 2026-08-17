@@ -102,6 +102,83 @@ class TestEndpointsEnabledIT extends PostgresContainerSupport {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tenants", Integer.class)).isEqualTo(3);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM merchants", Integer.class)).isEqualTo(4);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_orders", Integer.class)).isEqualTo(104);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_session", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_event", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_fulfillment", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_anomaly", Integer.class)).isEqualTo(0);
+    }
+
+    @Test
+    void postSeedLearningReturns200WithPaymentTruth() {
+        RestAssured.given().port(port)
+                .when().post("/api/test/seed-learning")
+                .then()
+                .statusCode(200)
+                .header("X-Correlation-ID", notNullValue())
+                .body("operation", equalTo("seed-learning"))
+                .body("status", equalTo("completed"))
+                .body("truth.tenants", equalTo(5))
+                .body("truth.merchants", equalTo(20))
+                .body("truth.payments", equalTo(10_000))
+                .body("truth.paymentHistoryRows", equalTo(28_000))
+                .body("truth.capturedPayments", equalTo(6_000))
+                .body("truth.refundedPayments", equalTo(1_200))
+                .body("truth.cancelledPayments", equalTo(800))
+                .body("truth.authorizedPayments", equalTo(800))
+                .body("truth.expiredPayments", equalTo(400))
+                .body("truth.createdPayments", equalTo(800))
+                .body("truth.tenantAlphaPayments", equalTo(5_500))
+                .body("truth.checkoutSessions", equalTo(2_000))
+                .body("truth.checkoutEvents", equalTo(5_000))
+                .body("truth.checkoutFulfillments", equalTo(1_950))
+                .body("truth.checkoutAnomalies", equalTo(50))
+                .body("truth.auditEvents", equalTo(10_000))
+                .body("truth.publicationEvents", equalTo(10_000))
+                .body("truth.failedPublications", equalTo(100));
+    }
+
+    @Test
+    void postSeedLearningAcceptsExplicitSmallProfile() {
+        RestAssured.given().port(port)
+                .queryParam("profile", "SMALL")
+                .when().post("/api/test/seed-learning")
+                .then()
+                .statusCode(200)
+                .body("operation", equalTo("seed-learning"))
+                .body("status", equalTo("completed"))
+                .body("truth.tenants", equalTo(5))
+                .body("truth.failedPublications", equalTo(100));
+    }
+
+    @Test
+    void postSeedLearningRejectsUnknownProfile() {
+        RestAssured.given().port(port)
+                .queryParam("profile", "MEDIUM")
+                .when().post("/api/test/seed-learning")
+                .then()
+                .statusCode(400)
+                .contentType("application/problem+json")
+                .body("status", equalTo(400))
+                .body("title", equalTo("Bad Request"))
+                .body("error", equalTo("validation"))
+                .body("detail", equalTo("Learning seed profile must be SMALL"))
+                .header("X-Correlation-ID", notNullValue());
+    }
+
+    @Test
+    void seedAfterLearningSeedStillLoads104PaymentOrders() {
+        RestAssured.given().port(port).post("/api/test/seed-learning").then().statusCode(200);
+        RestAssured.given().port(port).post("/api/test/seed").then().statusCode(200);
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_orders", Integer.class)).isEqualTo(104);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tenants", Integer.class)).isEqualTo(3);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM merchants", Integer.class)).isEqualTo(4);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_session", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_event", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_fulfillment", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_anomaly", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_event", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM event_publication", Integer.class)).isEqualTo(0);
     }
 
     @Test
@@ -125,6 +202,20 @@ class TestEndpointsEnabledIT extends PostgresContainerSupport {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_orders", Integer.class)).isEqualTo(0);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM merchants", Integer.class)).isEqualTo(0);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tenants", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_session", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_event", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM event_publication", Integer.class)).isEqualTo(0);
+    }
+
+    @Test
+    void resetAfterLearningSeedClearsCheckoutAuditAndPublications() {
+        RestAssured.given().port(port).post("/api/test/seed-learning").then().statusCode(200);
+        RestAssured.given().port(port).post("/api/test/reset").then().statusCode(200);
+
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_orders", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_session", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM audit_event", Integer.class)).isEqualTo(0);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM event_publication", Integer.class)).isEqualTo(0);
     }
 
     @Test

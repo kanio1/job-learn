@@ -53,7 +53,8 @@ public class SecurityConfig {
         http
                 .securityMatcher(new OrRequestMatcher(
                         PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/test/reset"),
-                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/test/seed")))
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/test/seed"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/test/seed-learning")))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());

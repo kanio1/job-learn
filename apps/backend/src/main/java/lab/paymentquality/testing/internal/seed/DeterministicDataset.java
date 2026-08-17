@@ -31,10 +31,7 @@ public class DeterministicDataset {
         merchants.clear();
         clearRlsLabItems();
         tenants.clear();
-        jdbc.update("DELETE FROM checkout_anomaly");
-        jdbc.update("DELETE FROM checkout_event");
-        jdbc.update("DELETE FROM checkout_fulfillment");
-        jdbc.update("DELETE FROM checkout_session");
+        SatelliteTableWipes.clearCheckoutAuditAndPublications(jdbc);
     }
 
     @Transactional
@@ -43,6 +40,7 @@ public class DeterministicDataset {
         merchants.clear();
         clearRlsLabItems();
         tenants.clear();
+        SatelliteTableWipes.clearCheckoutAuditAndPublications(jdbc);
         tenants.seed(Fixtures.tenants());
         merchants.seed(Fixtures.merchants());
         payments.seed(Fixtures.paymentOrders());

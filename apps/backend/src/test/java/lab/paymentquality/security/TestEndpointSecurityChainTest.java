@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Verifies the specificity of the test-endpoint pass-through SecurityFilterChain.
- * The pass-through chain permits only POST /api/test/reset and POST /api/test/seed.
+ * The pass-through chain permits POST /api/test/reset, /seed, and /seed-learning.
  * All other paths remain protected by the main JWT chain.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -52,6 +52,13 @@ class TestEndpointSecurityChainTest extends PostgresContainerSupport {
     void postTestSeedWithoutAuthReturns404NotHandlerAbsent() {
         RestAssured.given().port(port)
                 .when().post("/api/test/seed")
+                .then().statusCode(404);
+    }
+
+    @Test
+    void postTestSeedLearningWithoutAuthReturns404NotHandlerAbsent() {
+        RestAssured.given().port(port)
+                .when().post("/api/test/seed-learning")
                 .then().statusCode(404);
     }
 
