@@ -1,100 +1,240 @@
 # Payment Quality Engineering Lab
 
-Payment Quality Engineering Lab is a learning-oriented full-stack payment platform. The current scope has moved beyond the historical Phase 0/Phase 1 merchant-only foundation.
+Learning-oriented payment platform for Java/Spring backend work, REST API testing, security testing, frontend contract consumption, and SDET practice.
 
-## Current Scope
+It is a modular monolith with a JWT-protected Spring API, a Nuxt dashboard that talks to the API through a Nitro BFF, and local PostgreSQL + Keycloak. Product APIs sit next to flag-gated learning labs (checkout protocol, PayU/bank mirrors, RLS, HTTP errors, SQL/ETL).
+
+## Current scope
 
 In scope:
-- Merchant registry with create, list, retrieve, activate, suspend, and tenant ownership
-- Payment orders with create/read/list/summary, lifecycle transitions, metadata/history, `ETag`/`If-Match`, idempotency, conditional GET, and HEAD contracts
-- IAM and local Keycloak roles, tenant isolation, user management, and audit-log capabilities
-- PostgreSQL 18 persistence with Flyway-owned merchant schema
-- Keycloak-backed local operator login and JWT resource-server authorization
-- Nuxt merchant/payment, user-management, and audit dashboard routes
-- Unit, repository, REST Assured, security, Testcontainers, mocked Chromium, and separate live-Keycloak Playwright assurance coverage
-- Tester-facing Phase 1 setup, auth, data, and test-design documentation
+
+- Merchant registry: create, list, retrieve, activate, suspend, tenant ownership, risk flag
+- Payment orders (merchant-scoped): create, read, list/filter, summary, CSV export, async export jobs, authorize / capture / cancel / refund, dual-control refunds, metadata PATCH, history, evidence, internal notes
+- HTTP contracts on payment orders: `ETag` / `If-Match`, `Idempotency-Key`, conditional GET, HEAD, OPTIONS, `X-Correlation-ID`, `application/problem+json`
+- IAM with local Keycloak roles (`platform:*` and `merchant:*`), tenant isolation, user management, tenant settings
+- Audit log list, detail, JSON export, and before/after state
+- Nuxt operator dashboard for merchants, payments, users, audit, support, and the learning labs
+- Deterministic seed (contract world, ~104 payments) and a separate data-learning seed (10 000 payments) plus a payment ETL lab
+- Authenticated OpenAPI document at `GET /v3/api-docs` (Swagger UI off; disabled in prod)
 
 Out of scope:
-- `POST /payments`
-- Kafka
-- PSP integration or PSP mock flows
-- PSP integration, Kafka, settlement, reconciliation, KYC, Client Credentials Flow
-- Complete merchant self-service, admin, risk, operations, or reconciliation dashboards
 
-## Repository Map
+- Top-level `POST /payments`
+- Real PSP / card / PAN / PCI / 3DS
+- Kafka, webhooks, outbox, settlement, payout, KYC
+- Production OAuth/OIDC completion (local Keycloak only)
+- Fake KPI / business dashboards
+- Spark, Airflow, Iceberg, or a warehouse stack — the ETL lab is OLTP source → staging → target in Postgres
+
+## Stack
+
+| Layer | Versions in this repo |
+|---|---|
+| Backend | Java 25, Maven Wrapper 3.9.11, Spring Boot 4.0.6 / Spring Framework 7, Spring Modulith 2.0.6 |
+| Persistence | PostgreSQL 18, Flyway, JPA `ddl-auto: validate` |
+| Security | Spring Security JWT resource server; Keycloak 26.6.1 realm roles → `platform:*` / `merchant:*` |
+| API docs | springdoc-openapi 3.1.0 (`GET /v3/api-docs`) |
+| Backend tests | JUnit 6.0.3, AssertJ, Mockito, REST Assured 6.0.0, jqwik 1.9.2, Testcontainers 2.0.5, WireMock 3.13.2 |
+| Frontend | Nuxt 4.4.6, Nuxt UI 4.7.1, Vue 3, TypeScript 6.0.3, Pinia 3.0.4, Zod 4.4.3, Tailwind CSS 4, `nuxt-auth-utils` |
+| Frontend tests | Vitest, fast-check, Playwright 1.61.0, @axe-core/playwright |
+| Package manager | pnpm 11.18.0 via Corepack |
+| Local infra | Postgres 18 + Keycloak 26.6.1 via Compose; optional Caddy/mkcert HTTPS overlay |
+
+Node for the frontend follows Nuxt 4: `^22.12.0 || ^24.11.0 || >=26.0.0`.
+
+## Repository map
 
 ```text
-apps/backend/          Java 25 Spring Boot 4 backend and merchant module
-apps/frontend/         Nuxt 4 dashboard with /admin/merchants
-infra/compose/         Local PostgreSQL and Keycloak compose setup
-infra/keycloak/        Keycloak local realm import for Phase 1
-specs/                 Historical feature write-ups (prior art)
-docs/setup/            Setup and tester orientation documentation
-docs/testing/          Test architecture and quality baseline documentation
-docs/architecture/     Modular monolith architecture notes
-knowledge-vault/       Structured Obsidian learning system
-.kilo/                 Current Kilo project configuration location
-.codex/                Live work tracker (specs, tickets, wayfinder)
-docs/agents/           Local-markdown tracker config for engineering skills
+apps/backend/          Spring Boot modular monolith (Java 25)
+apps/frontend/         Nuxt 4 dashboard, Nitro BFF, Playwright
+apps/api-tests/        Standalone black-box REST Assured (no Spring imports)
+infra/compose/         Postgres + Keycloak; optional app/TLS overlays
+infra/keycloak/        Local realm import (`payment-quality`)
+infra/caddy/           HTTPS reverse-proxy overlay
+scripts/               `dev-stack.sh` and TLS/OIDC oracles
+docs/setup/            Local stack, TLS, Bruno/Postman
+docs/testing/          Test catalogs (POM, TLS, OpenAPI, labs)
+docs/data-learning/    SQL / ETL learning exercises
+docs/architecture/     Modular monolith and OpenAPI ownership notes
+.codex/                Live specs, tickets, ADRs, guides
+.agents/skills/        Engineering process skills
+knowledge-vault/       Obsidian learning system
+status/                Execution registry and validation evidence
 ```
 
-The Obsidian vault remains one existing learning system. Use the established top-level structure:
-- `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/` for project and feature knowledge
-- `knowledge-vault/02 Areas/` for long-lived learning areas, including technical learning, business/product/testing thinking, and interview capital
-- `knowledge-vault/03 Resources/` for reusable external materials such as books, official docs, papers, repositories, and attachments
-- `knowledge-vault/04 Archives/`, `05 Templates/`, `06 MOCs/`, and `07 Dashboards/` for archived material, templates, maps of content, and dashboards
+Historical specs live under `specs/` and `.kiro/specs/`. New work is tracked in `.codex/` — see `docs/agents/issue-tracker.md`. Do not introduce `.kilocode/` as a project-organization target; use `.kilo/` where Kilo config is referenced.
 
-The Phase 0 hub is `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/00 Phase 0 - Foundation/Phase 0 - Project Foundation and Running Skeleton.md`. The Phase 1 hub is `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/01 Phase 1 - Merchant Registry/Phase 1 - Merchant Registry and Activation.md`.
+## Backend modules
 
-Do not introduce `.kilocode/` as a new Phase 0 project-organization target. Historical or generated files may exist, but current Phase 0 documentation and implementation should use `.kilo/` for Kilo project configuration references.
+Spring Modulith modules under `lab.paymentquality.*`:
+
+| Module | Role |
+|---|---|
+| `merchant` | Merchant registry and eligibility |
+| `payment` | Payment orders, lifecycle, evidence, notes, export, dual-control refunds |
+| `tenant` | Tenant registry, context, settings |
+| `iam` | User management against local Keycloak admin |
+| `audit` | Audit events from domain activity |
+| `testing` | Seed / reset / learning dataset / payment ETL (flag-gated, never prod) |
+| `checkoutlab` | Redirect + notify checkout protocol lab |
+| `mirrorlab` | PayU / bank-style mirror flows |
+| `rlslab` | PostgreSQL row-level security lab |
+
+Flyway owns schema under `apps/backend/src/main/resources/db/migration/{tenant,merchant,payment,shared,audit,checkoutlab,mirrorlab,rlslab,testing}`.
+
+Labs and `/api/test/**` are off unless explicitly enabled (`app.checkout-lab.enabled`, `app.mirror-lab.enabled`, `app.rls-lab.enabled`, `app.testing.enabled`). They are excluded from the OpenAPI document.
+
+### Product API
+
+```text
+GET    /api/status
+GET    /v3/api-docs
+
+POST   /api/merchants
+GET    /api/merchants
+GET    /api/merchants/{id}
+POST   /api/merchants/{id}/activate
+POST   /api/merchants/{id}/suspend
+PATCH  /api/merchants/{id}/risk-flag
+
+POST   /api/merchants/{merchantId}/payment-orders
+GET    /api/merchants/{merchantId}/payment-orders
+GET    /api/merchants/{merchantId}/payment-orders/summary
+GET    /api/merchants/{merchantId}/payment-orders/export
+HEAD   /api/merchants/{merchantId}/payment-orders/{paymentOrderId}
+GET    /api/merchants/{merchantId}/payment-orders/{paymentOrderId}
+PATCH  /api/merchants/{merchantId}/payment-orders/{paymentOrderId}
+GET    /api/merchants/{merchantId}/payment-orders/{paymentOrderId}/history
+POST   /api/merchants/{merchantId}/payment-orders/{paymentOrderId}/authorize|capture|cancel|refund
+POST/GET  .../evidence
+GET/POST  .../notes
+POST/GET  .../refund-approvals
+POST/GET  .../export-jobs
+
+GET/PATCH /api/tenants/current/settings
+GET/POST/PATCH /api/users
+POST   /api/users/{id}/roles
+GET    /api/audit
+GET    /api/audit/export.json
+GET    /api/audit/{id}
+POST   /api/payment-ops/expiration-sweep
+```
+
+`GET /api/status` stays public and does not expose secrets, database, Keycloak, or business identifiers:
+
+```json
+{"application":"payment-quality-lab","phase":"foundation","status":"UP"}
+```
+
+### Test and learning endpoints
+
+Enabled only with `APP_TESTING_ENABLED=true` (and never on `prod`):
+
+```text
+POST /api/test/reset
+POST /api/test/seed              # contract world (~104 payments)
+POST /api/test/seed-learning     # SMALL learning world (10 000 payments)
+POST /api/test/etl/payments/full|incremental|rebuild
+```
+
+Checkout / mirror / RLS labs live under `/api/checkout-lab/**`, `/api/mirror-lab/**`, and `/api/rls-lab/**`. How to use the two seed worlds and the ETL lab: [`.codex/guides/data-learning-interview-program.md`](.codex/guides/data-learning-interview-program.md) and [`docs/data-learning/etl-migration/`](docs/data-learning/etl-migration/01-source-target-map.md).
+
+## Frontend
+
+Nuxt dashboard with Keycloak Authorization Code + PKCE (`nuxt-auth-utils`). Browser code never holds access tokens: Nitro `server/api/**` reads the sealed session and forwards `Authorization: Bearer …` to Spring.
+
+Operator routes:
+
+- `/admin/merchants` and nested payment-order pages
+- `/admin/users`, `/admin/audit`, `/admin/support`, `/admin/tenant/settings`
+- Learning: `/error-lab`, `/admin/checkout-lab`, `/admin/mirror-lab`, `/admin/rls-lab`, plus session / visual / network labs
+
+The browser client validates JSON with Zod before render and surfaces HTTP status, forwarded headers (`ETag`, `Location`, `Vary`, `X-Correlation-ID`, …), and `application/problem+json`.
+
+## What we test
+
+### Backend (`apps/backend`)
+
+`./mvnw test` runs `*Test.java` (Surefire). `./mvnw verify` also runs `*IT.java` (Failsafe). Spring-context tests use `@ActiveProfiles("test")`. DB tests extend `PostgresContainerSupport`; Flyway owns schema. HTTP security tests use locally signed JWTs (`TestJwtConfiguration`), not live Keycloak.
+
+| Layer | Where | Focus |
+|---|---|---|
+| Domain / service | module `internal` tests | lifecycle, validation, idempotency, tenant rules |
+| Property | jqwik | realm/seed alignment and converters |
+| Persistence | `*RepositoryTest`, Failsafe ITs | Flyway schema, JPA, RLS, learning seed/ETL |
+| REST Assured | `lab.paymentquality.rest` | merchant/payment HTTP contracts, labs, OpenAPI, TLS/CORS |
+| Security | `lab.paymentquality.security` | authorities, tenant isolation, lab/test endpoint chains |
+| Modulith | `ModulithArchitectureTest`, `*ModuleTest` | public vs `internal` package boundaries |
+
+Broad Codex/agent validation skips `lab.paymentquality.restkit/**` and `lab.paymentquality.paymentsupport/**` (learner copies such as `My*` / `Lesson*` unless the task is about those files).
+
+### Frontend (`apps/frontend`)
+
+| Layer | Command / config | Focus |
+|---|---|---|
+| Unit / component / property | `corepack pnpm test:unit` (Vitest + fast-check) | Zod contracts, RBAC, HTTP presentation, colocated UI states |
+| Mocked E2E | `corepack pnpm exec playwright test` | merchants, payments, RBAC, labs, a11y (axe), visual; sessions mocked |
+| Live Keycloak | `playwright.live.config.ts` | real OIDC, multi-role, worker-owned data, BFF idempotency / 304 |
+| Live POM | `playwright.pom.config.ts` (+ TLS / RLS-off variants) | page-object journeys against the running stack |
+
+Live Playwright needs a running backend/Keycloak and passwords from the environment. Do not commit storage-state files.
+
+### Black-box API (`apps/api-tests`)
+
+Standalone REST Assured: no Spring Boot, no backend DTO reuse. Offline framework tests with `mvn test`; live specs with `BACKEND_IMAGE=… mvn verify`. Covers merchant/payment contracts, isolation, multipart evidence, OpenAPI, HTTP method semantics.
+
+### Tester focus
+
+Merchant and payment contracts, lifecycle transitions, IAM and tenant boundaries, audit and user-management flows, persistence effects, frontend loading/empty/error/forbidden states, parallel-safe test data, and (when labs are on) checkout / mirror / RLS / ETL behaviour.
 
 ## Prerequisites
 
-- Java JDK 25
-- Docker with Docker Compose
-- Node.js compatible with Nuxt 4 tooling, currently Node `^22.12.0 || ^24.11.0 || >=26.0.0`
-- pnpm
-- Bash-compatible shell for `apps/backend/mvnw`
+- JDK 25
+- Docker or Podman with Compose
+- Node compatible with Nuxt 4 (see stack table)
+- Corepack / pnpm
+- Bash for `apps/backend/mvnw` and `scripts/dev-stack.sh`
 
-## Version Validation Record
+## Local environment
 
-Validated on 2026-05-18 before dependency scaffolding:
-- Java JDK 25: configured via Maven compiler release `25`
-- Maven Wrapper: Maven `3.9.11`
-- Spring Boot: `4.0.6`
-- Spring Framework: aligned by Spring Boot `4.0.6`
-- Spring Modulith: `2.0.6`
-- JUnit: `6.0.3`
-- REST Assured: `6.0.0`
-- Testcontainers core: `2.0.5`; module-specific `junit-jupiter` and `postgresql` artifacts are deferred because Maven Central still publishes those modules on the `1.21.4` line
-- WireMock standalone: `3.13.2`
-- Nuxt: `4.4.6`
-- Nuxt UI: `4.7.1`
-- TypeScript: `6.0.3`
-- Pinia module: `@pinia/nuxt 0.11.3` with `pinia 3.0.4`
-- Zod: `4.4.3`
-- Playwright: `@playwright/test 1.61.0`
-- PostgreSQL image: `postgres:18`
-- Keycloak image: `keycloak/keycloak:26.6.1`
+Day-to-day Podman stack, Playwright POM, and Caddy/HTTPS: [docs/setup/run-stack-and-pom.md](docs/setup/run-stack-and-pom.md). Bruno/Postman against Spring (`Bearer` JWT): [docs/setup/bruno-postman-api.md](docs/setup/bruno-postman-api.md). TLS overlay: [docs/setup/tls-lab.md](docs/setup/tls-lab.md).
 
-## Local Environment
+Copy `infra/compose/.env.example` to `infra/compose/.env`. Do not commit real secrets, tokens, or generated Keycloak/Playwright state.
 
-Day-to-day Podman stack, Playwright POM, and Caddy/HTTPS: [docs/setup/run-stack-and-pom.md](docs/setup/run-stack-and-pom.md). Bruno/Postman against Spring (`Bearer` JWT): [docs/setup/bruno-postman-api.md](docs/setup/bruno-postman-api.md).
+Non-secret application variables:
 
-The concrete local service environment example is `infra/compose/.env.example`.
-
-Application-level non-secret variables:
 - `SPRING_PROFILES_ACTIVE`
-- `APP_POSTGRES_HOST`
-- `APP_POSTGRES_PORT`
+- `APP_TESTING_ENABLED`
+- `APP_POSTGRES_HOST` / `APP_POSTGRES_PORT`
 - `NUXT_PUBLIC_API_BASE_URL`
-- `NUXT_PUBLIC_KEYCLOAK_URL`
-- `NUXT_PUBLIC_KEYCLOAK_REALM`
-- `NUXT_PUBLIC_KEYCLOAK_CLIENT_ID`
+- `NUXT_PUBLIC_KEYCLOAK_URL` / `NUXT_PUBLIC_KEYCLOAK_REALM` / `NUXT_PUBLIC_KEYCLOAK_CLIENT_ID`
 
-Do not commit real secrets. Phase 0 does not require production credentials, business realm variables, or full application auth variables.
+Keycloak imports `infra/keycloak/realms/payment-quality-realm.json`. Local admin is `admin` / `admin`.
 
-## Backend Commands
+## Commands
+
+### Infrastructure
+
+From the repository root:
+
+```bash
+cp infra/compose/.env.example infra/compose/.env
+scripts/dev-stack.sh            # Postgres + Keycloak in Compose; Spring + Nuxt on the host
+scripts/dev-stack.sh --app      # full HTTP stack in containers (POM / TS learning)
+scripts/dev-stack.sh --tls      # Caddy HTTPS → host apps
+scripts/dev-stack.sh --full     # Caddy HTTPS → containerized apps
+scripts/dev-stack.sh --stop
+scripts/dev-stack.sh --down
+```
+
+Compose-only (Postgres + Keycloak):
+
+```bash
+docker compose --env-file infra/compose/.env -f infra/compose/compose.yml up -d
+docker compose --env-file infra/compose/.env -f infra/compose/compose.yml down
+```
+
+### Backend
 
 From `apps/backend`:
 
@@ -104,73 +244,49 @@ From `apps/backend`:
 SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
 ```
 
-> **Local dev profile required.** The `dev` profile activates CORS for the Nuxt frontend on `http://localhost:3000`. Running without `-Dspring-boot.run.profiles=dev` or `SPRING_PROFILES_ACTIVE=dev` fails at startup with a missing `corsConfigurationSource` bean. The `test` profile is for the test suite only. Do not disable security or CORS as a workaround.
+The `dev` profile is required for local startup — it activates CORS for the Nuxt app on `http://localhost:3000`. Without it the context fails on a missing `corsConfigurationSource` bean. `test` is for the test suite only.
 
-The backend exposes the public technical status endpoint and secured merchant endpoints:
+Learning seed / ETL also needs test endpoints:
 
-```text
-GET /api/status
-POST /api/merchants
-GET /api/merchants
-GET /api/merchants/{id}
-POST /api/merchants/{id}/activate
-POST /api/merchants/{id}/suspend
+```bash
+SPRING_PROFILES_ACTIVE=dev APP_TESTING_ENABLED=true ./mvnw spring-boot:run
 ```
 
-Expected response shape:
-
-```json
-{"application":"payment-quality-lab","phase":"foundation","status":"UP"}
-```
-
-## Frontend Commands
+### Frontend
 
 From `apps/frontend`:
 
 ```bash
-pnpm install
-pnpm dev
-pnpm typecheck
-pnpm build
+corepack pnpm install
+corepack pnpm dev
+corepack pnpm typecheck
+corepack pnpm test:unit
+corepack pnpm build
 corepack pnpm exec playwright test
 corepack pnpm exec playwright test --config playwright.live.config.ts
+corepack pnpm exec playwright test --config playwright.pom.config.ts
 ```
 
-If `pnpm` is not installed as a shell command, use Corepack: `corepack pnpm <command>`.
+Use `pnpm` directly only if it is already on `PATH`.
 
-The standard Chromium suite uses mocked sessions. `playwright.live.config.ts` is a separate assurance project: it requires a running local backend/Keycloak and environment-supplied test-user passwords; runtime storage states are ignored and must never be committed.
+### Black-box API tests
 
-## Infrastructure Commands
-
-From the repository root:
+From `apps/api-tests`:
 
 ```bash
-cp infra/compose/.env.example infra/compose/.env
-scripts/dev-stack.sh
-scripts/dev-stack.sh --stop
-scripts/dev-stack.sh --down
+mvn test
+BACKEND_IMAGE=payment-quality/backend:local mvn verify
 ```
 
-Compose-only (Postgres + Keycloak, no apps):
+Latest recorded validation snapshots live in `status/evidence/latest-validation.md` (they lag the working tree; treat them as evidence, not as this README's source of truth).
 
-```bash
-docker compose --env-file infra/compose/.env -f infra/compose/compose.yml up -d
-docker compose --env-file infra/compose/.env -f infra/compose/compose.yml down
-```
+## Where to look next
 
-HTTPS overlay (mkcert + Caddy): see [docs/setup/tls-lab.md](docs/setup/tls-lab.md) and `scripts/dev-stack.sh --tls`.
-
-See `docs/setup/local-infra.md` for details.
-
-## Baseline Verification
-
-- Backend: `apps/backend ./mvnw test`, `./mvnw verify` (Codex broad validation excludes `restkit/**` and `paymentsupport/**` unless explicitly requested)
-- Standalone REST Assured: `apps/api-tests` baseline is Surefire 79/79 and Failsafe 72/72 (2026-07-13)
-- Frontend: `apps/frontend corepack pnpm typecheck`, `corepack pnpm test:unit`, `corepack pnpm exec playwright test`; standard Chromium closure baseline is 82/82 (2026-07-13)
-- Live assurance: run only with explicitly supplied local test credentials and the `playwright.live.config.ts` or `playwright.pom.config.ts` project; see `status/evidence/latest-validation.md` for its current validation state
-- Infrastructure: `scripts/dev-stack.sh` or Docker Compose from `docs/setup/local-infra.md`; TLS overlay in `docs/setup/tls-lab.md`
-- Documentation: follow the Tester Orientation Pack in `docs/setup/phase-0-tester-orientation-pack.md`
-
-## Tester Focus
-
-Testing focuses on merchant/payment contracts, lifecycle transitions, IAM and tenant boundaries, audit/user-management flows, persistence effects, frontend feedback states, and parallel-safe test data.
+- Repo map / glossary: `CONTEXT.md`, `.codex/CONTEXT.md`
+- Agent instructions: `AGENTS.md`
+- Backend notes: `apps/backend/README.md`
+- Frontend notes: `apps/frontend/README.md`
+- Setup: `docs/setup/`
+- Testing catalogs: `docs/testing/`
+- Learning vault: `knowledge-vault/01 Projects/Payment_Quality_Engineering_Lab/`
+- Historical Phase 0/1 hubs in that vault remain useful orientation, not a description of current product scope
