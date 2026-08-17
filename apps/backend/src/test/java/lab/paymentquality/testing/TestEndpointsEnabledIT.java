@@ -161,6 +161,7 @@ class TestEndpointsEnabledIT extends PostgresContainerSupport {
                 .body("status", equalTo(400))
                 .body("title", equalTo("Bad Request"))
                 .body("error", equalTo("validation"))
+                .body("code", equalTo("VALIDATION"))
                 .body("detail", equalTo("Learning seed profile must be SMALL"))
                 .header("X-Correlation-ID", notNullValue());
     }

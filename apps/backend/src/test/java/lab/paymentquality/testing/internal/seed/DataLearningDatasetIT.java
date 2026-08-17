@@ -71,6 +71,12 @@ class DataLearningDatasetIT extends PostgresContainerSupport {
         assertThat(truth.auditEvents()).isEqualTo(10_000);
         assertThat(truth.publicationEvents()).isEqualTo(10_000);
         assertThat(truth.incompletePublications()).isEqualTo(100);
+        assertThat(truth.totalAmountMinor()).isEqualTo(59_995_000L);
+        assertThat(truth.paymentsPln()).isEqualTo(3_334);
+        assertThat(truth.paymentsEur()).isEqualTo(3_333);
+        assertThat(truth.paymentsUsd()).isEqualTo(3_333);
+        assertThat(truth.totalCapturedAmountMinor()).isPositive();
+        assertThat(truth.totalRefundedAmountMinor()).isPositive();
 
         assertThat(count("SELECT COUNT(*) FROM payment_refund_approvals")).isEqualTo(0);
         assertThat(count("SELECT COUNT(*) FROM rls_lab_item")).isEqualTo(2);

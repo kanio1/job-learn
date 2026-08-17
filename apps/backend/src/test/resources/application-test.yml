@@ -11,7 +11,7 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
-    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit,classpath:db/migration/checkoutlab,classpath:db/migration/mirrorlab,classpath:db/migration/rlslab
+    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit,classpath:db/migration/checkoutlab,classpath:db/migration/mirrorlab,classpath:db/migration/rlslab,classpath:db/migration/testing
     baseline-on-migrate: false
 
 payment:

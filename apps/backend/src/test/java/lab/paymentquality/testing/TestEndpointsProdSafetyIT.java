@@ -68,6 +68,30 @@ class TestEndpointsProdSafetyIT extends PostgresContainerSupport {
     }
 
     @Test
+    void postEtlFullReturns404EvenWhenFlagForcedTrue() {
+        RestAssured.given().port(port)
+                .when().post("/api/test/etl/payments/full")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void postEtlIncrementalReturns404EvenWhenFlagForcedTrue() {
+        RestAssured.given().port(port)
+                .when().post("/api/test/etl/payments/incremental")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void postEtlRebuildReturns404EvenWhenFlagForcedTrue() {
+        RestAssured.given().port(port)
+                .when().post("/api/test/etl/payments/rebuild")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
     void testControllerBeanIsAbsentUnderProdProfile() {
         // @Profile("!prod") prevents registration regardless of app.testing.enabled.
         assertThatThrownBy(() ->

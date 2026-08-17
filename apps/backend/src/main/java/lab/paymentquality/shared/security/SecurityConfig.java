@@ -54,7 +54,10 @@ public class SecurityConfig {
                 .securityMatcher(new OrRequestMatcher(
                         PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/test/reset"),
                         PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/test/seed"),
-                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/test/seed-learning")))
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/test/seed-learning"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/test/etl/payments/full"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/test/etl/payments/incremental"),
+                        PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/api/test/etl/payments/rebuild")))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());

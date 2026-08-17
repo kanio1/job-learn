@@ -20,6 +20,12 @@ public record DataLearningTruth(
         int checkoutAnomalies,
         int auditEvents,
         int publicationEvents,
-        @JsonProperty("failedPublications") int incompletePublications
+        @JsonProperty("failedPublications") int incompletePublications,
+        long totalAmountMinor,
+        long totalCapturedAmountMinor,
+        long totalRefundedAmountMinor,
+        int paymentsPln,
+        int paymentsEur,
+        int paymentsUsd
 ) {
 }

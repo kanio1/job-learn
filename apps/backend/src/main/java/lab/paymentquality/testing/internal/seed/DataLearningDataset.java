@@ -415,8 +415,26 @@ public class DataLearningDataset {
                 count(Relation.EVENT_PUBLICATION),
                 jdbc.queryForObject(
                         "SELECT COUNT(*) FROM event_publication WHERE completion_date IS NULL",
-                        Integer.class)
+                        Integer.class),
+                sum("SELECT COALESCE(SUM(amount_minor), 0)::bigint FROM payment_orders"),
+                sum("SELECT COALESCE(SUM(captured_amount_minor), 0)::bigint FROM payment_orders"),
+                sum("SELECT COALESCE(SUM(refunded_amount_minor), 0)::bigint FROM payment_orders"),
+                countCurrency("PLN"),
+                countCurrency("EUR"),
+                countCurrency("USD")
         );
+    }
+
+    private long sum(String sql) {
+        Long value = jdbc.queryForObject(sql, Long.class);
+        return value == null ? 0L : value;
+    }
+
+    private int countCurrency(String currency) {
+        Integer value = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM payment_orders WHERE currency = ?",
+                Integer.class, currency);
+        return value == null ? 0 : value;
     }
 
     private int count(Relation relation) {
