@@ -31,6 +31,7 @@ Tracker: `docs/agents/issue-tracker.md`.
 - Wizards: `.codex/wizards/`
 - Teach workspaces: `.codex/teach/`
 - ADRs: `.codex/adr/`
+- Guides: `.codex/guides/`
 - Rejected enhancements: `.codex/out-of-scope/`
 
 ## Source-of-Truth Rules

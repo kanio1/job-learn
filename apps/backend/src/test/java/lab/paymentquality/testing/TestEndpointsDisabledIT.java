@@ -72,6 +72,30 @@ class TestEndpointsDisabledIT extends PostgresContainerSupport {
     }
 
     @Test
+    void postEtlFullWithoutAuthReturns404NotUnauthorized() {
+        RestAssured.given().port(port)
+                .when().post("/api/test/etl/payments/full")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void postEtlIncrementalWithoutAuthReturns404NotUnauthorized() {
+        RestAssured.given().port(port)
+                .when().post("/api/test/etl/payments/incremental")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    void postEtlRebuildWithoutAuthReturns404NotUnauthorized() {
+        RestAssured.given().port(port)
+                .when().post("/api/test/etl/payments/rebuild")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
     void passedThroughDisabledRequestsCarryCorrelationIdHeader() {
         // CorrelationIdFilter still runs for pass-through requests.
         RestAssured.given().port(port)

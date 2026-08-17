@@ -18,7 +18,8 @@ import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Verifies the specificity of the test-endpoint pass-through SecurityFilterChain.
- * The pass-through chain permits POST /api/test/reset, /seed, and /seed-learning.
+ * The pass-through chain permits POST /api/test/reset, /seed, /seed-learning,
+ * and /etl/payments/{full,incremental,rebuild}.
  * All other paths remain protected by the main JWT chain.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -60,6 +61,34 @@ class TestEndpointSecurityChainTest extends PostgresContainerSupport {
         RestAssured.given().port(port)
                 .when().post("/api/test/seed-learning")
                 .then().statusCode(404);
+    }
+
+    @Test
+    void postEtlFullWithoutAuthReturns404NotHandlerAbsent() {
+        RestAssured.given().port(port)
+                .when().post("/api/test/etl/payments/full")
+                .then().statusCode(404);
+    }
+
+    @Test
+    void postEtlIncrementalWithoutAuthReturns404NotHandlerAbsent() {
+        RestAssured.given().port(port)
+                .when().post("/api/test/etl/payments/incremental")
+                .then().statusCode(404);
+    }
+
+    @Test
+    void postEtlRebuildWithoutAuthReturns404NotHandlerAbsent() {
+        RestAssured.given().port(port)
+                .when().post("/api/test/etl/payments/rebuild")
+                .then().statusCode(404);
+    }
+
+    @Test
+    void getEtlFullWithoutAuthReturns401ProtectedByMainChain() {
+        RestAssured.given().port(port)
+                .when().get("/api/test/etl/payments/full")
+                .then().statusCode(401);
     }
 
     @Test
