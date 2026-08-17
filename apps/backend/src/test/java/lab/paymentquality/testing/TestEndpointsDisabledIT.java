@@ -64,6 +64,14 @@ class TestEndpointsDisabledIT extends PostgresContainerSupport {
     }
 
     @Test
+    void postSeedLearningWithoutAuthReturns404NotUnauthorized() {
+        RestAssured.given().port(port)
+                .when().post("/api/test/seed-learning")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
     void passedThroughDisabledRequestsCarryCorrelationIdHeader() {
         // CorrelationIdFilter still runs for pass-through requests.
         RestAssured.given().port(port)
