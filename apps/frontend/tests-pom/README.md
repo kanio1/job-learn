@@ -18,7 +18,7 @@ This tree is the **only product Playwright suite** (UI/E2E + BFF REST). Write a 
 
 `@security` session/IDOR/412, `@a11y` ARIA snapshot, `@ux` palette/notes/risk/checkout.
 
-Test map (E2E, HTTP/BFF, security, EP/BVA, DT/UC): [`docs/testing/live-pom-wave-2/`](../../../docs/testing/live-pom-wave-2/README.md). Sibling catalogs: checkout-protocol-lab, payu-bank-mirror-labs, rls-filters-composition-lab.
+Test map (E2E, HTTP/BFF, security, EP/BVA, DT/UC): [`docs/testing/live-pom-wave-2/`](../../../docs/testing/live-pom-wave-2/README.md). Sibling catalogs: checkout-protocol-lab, payu-bank-mirror-labs, rls-filters-composition-lab. Catalog `existing-pom` means a named `test()` in this tree. Mocked `page.route` / abort / fulfill / HAR is `designed` (no `tests/e2e`).
 
 ## Containers
 
@@ -50,6 +50,7 @@ export PLAYWRIGHT_MERCHANT_MANAGER_PASSWORD=merchant.manager
 export PLAYWRIGHT_TENANT_ADMIN_PASSWORD=tenant.admin
 export PLAYWRIGHT_SUPPORT_AGENT_PASSWORD=support.agent
 export PLAYWRIGHT_READ_ONLY_PASSWORD=readonly.user
+export PLAYWRIGHT_MERCHANT_DENIED_PASSWORD=merchant.denied
 # optional until Fala 2 worker setup; realm defaults match usernames
 export PLAYWRIGHT_MERCHANT_MANAGER_W0_PASSWORD=merchant.manager.w0
 export PLAYWRIGHT_MERCHANT_MANAGER_W1_PASSWORD=merchant.manager.w1
@@ -109,7 +110,14 @@ REST 4xx on BFF uses `expectProblem` (`status` + title/detail; `error` when the 
 
 `chromium-manager` logs `merchant.manager.w{n}` and mutates `MERCHANT-Wn` (`fullyParallel`). Default workers: **2 on CI, 4 locally**, capped at 4 (`PLAYWRIGHT_WORKERS` overrides). Do not use Playwright’s CPU default.
 
-Browser `PLAYWRIGHT_BASE_URL` must be `http://localhost:3000` (OIDC `redirectURL`). Node `BffClient` rewrites that host to `127.0.0.1`. Do not point Playwright at `127.0.0.1` — the state cookie will not match the Keycloak callback.
+OIDC origin must match `NUXT_OAUTH_OIDC_REDIRECT_URL` (canon: [`docs/setup/run-stack-and-pom.md`](../../../docs/setup/run-stack-and-pom.md) §3.3). Wrong host → Keycloak **state mismatch**.
+
+| Stack | `PLAYWRIGHT_BASE_URL` | Script |
+|---|---|---|
+| Host DX (`scripts/dev-stack.sh`) | `http://localhost:3000` | `corepack pnpm test:e2e` |
+| Compose `--app` | `http://127.0.0.1:3000` | `corepack pnpm test:e2e:app` or `scripts/run-app-stack-tests.sh` |
+
+Always set `PLAYWRIGHT_SKIP_WEBSERVER=1` against a running Nuxt. Node `BffClient` uses the same origin as the browser (IPv4 via `ipv4-first`).
 
 - `setup-worker-managers` — logs `w0`–`w3` once (no lazy `existsSync` race).
 - `chromium-serial` — tenant settings + dual-control (project default is platform-admin; specs may `test.use` manager).
@@ -118,12 +126,14 @@ Browser `PLAYWRIGHT_BASE_URL` must be `http://localhost:3000` (OIDC `redirectURL
 
 FE on + Spring RLS off (`playwright.pom.rls-spring-off.config.ts`): `RLS_LAB_ENABLED=false` on Spring and `PLAYWRIGHT_RLS_SPRING_OFF=1`.
 
+FE Mirror/Session lab flag off (`playwright.mirror-flag-off.config.ts`): second Nuxt on `:3012`, `NUXT_PUBLIC_MIRROR_LAB_ENABLED=false`. `scripts/run-app-stack-tests.sh --mirror-off`.
+
 ## Layout (classic skeleton)
 
 ```text
 auth/        storageState setup (real OIDC) — admin, tenant.admin, manager
 fixtures/    test.extend — App facade + BffClient + workerWorld
-pages/       POM (BasePage, components, one class per screen)
+pages/       POM (BasePage, components including IdleOverlay, one class per screen)
 api/         app-as-API against the BFF (no seed-learning / ETL)
 data/        unique factories + PaymentOrderDraft
 utils/       env, http, wait-bff, roles.openAs, dates, problem, persistence

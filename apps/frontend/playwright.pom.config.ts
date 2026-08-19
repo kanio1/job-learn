@@ -77,6 +77,11 @@ export default defineConfig({
       fullyParallel: false,
     },
     {
+      name: 'setup-merchant-denied',
+      testMatch: /auth\/merchant-denied\.setup\.ts/,
+      fullyParallel: false,
+    },
+    {
       name: 'chromium-guest',
       testMatch: /specs\/session-guest\.spec\.ts/,
       use: {
@@ -148,9 +153,9 @@ export default defineConfig({
       : []),
     {
       name: 'chromium-rbac',
-      testMatch: /specs\/(auth-rbac|tenant-scope|mirror-lab-rbac|rls-lab|support-rbac|readonly-rbac)\.spec\.ts/,
+      testMatch: /specs\/(auth-rbac|tenant-scope|mirror-lab-rbac|rls-lab|support-rbac|readonly-rbac|denied-rbac)\.spec\.ts/,
       fullyParallel: false,
-      dependencies: ['setup-platform-admin', 'setup-tenant-admin', 'setup-merchant-manager', 'setup-support-agent', 'setup-read-only-user'],
+      dependencies: ['setup-platform-admin', 'setup-tenant-admin', 'setup-merchant-manager', 'setup-support-agent', 'setup-read-only-user', 'setup-merchant-denied'],
       use: devices['Desktop Chrome'],
     },
   ],

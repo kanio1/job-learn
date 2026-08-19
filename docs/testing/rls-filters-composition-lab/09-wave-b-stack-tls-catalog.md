@@ -17,7 +17,7 @@ Prefiksy: `STK-RFC-*` (smoke/infra), `RA-RFC-03x` (proxy/TLS HTTP), `PW-RFC-E2E-
 ```text
         Live POM TLS (login PKCE + filtr + RLS hub)     existing-pom
            Live POM HTTP (filtry, hard-controls, RLS)  existing-pom DONE_VERIFIED
-              Playwright FE flag-off :3010             existing-pw
+              Playwright FE flag-off :3010             existing-pom
                  RA Location + issuer + CORS                     existing-ra
                     Smoke stack / Caddy / seed         existing-setup
                        Modulith + Flyway V17–V18       existing (Wave A)
@@ -248,11 +248,11 @@ Hasła: `PLAYWRIGHT_PLATFORM_ADMIN_PASSWORD`, `PLAYWRIGHT_MERCHANT_MANAGER_PASSW
 
 ### C3. Flag composition
 
-### PW-RFC-E2E-006 — FE flag off — existing-pw
+### PW-RFC-E2E-006 — FE flag off — existing-pom
 
 | | |
 |---|---|
-| Pokrycie | existing-pw `playwright.rls-flag-off.config.ts` (Nuxt **:3010**, nie reuse :3000) |
+| Pokrycie | existing-pom `playwright.rls-flag-off.config.ts` (Nuxt **:3010**, nie reuse :3000) |
 | Prio | P1 |
 | Asercje | `nav-link-rls-lab` 0; strona bez table; BFF `/api/rls-lab/items` **404** |
 

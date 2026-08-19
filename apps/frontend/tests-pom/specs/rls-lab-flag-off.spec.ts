@@ -7,7 +7,7 @@ test('rls lab nav and page are absent when the public flag is off', async ({ app
 
   await app.page.goto('/admin/rls-lab')
   await expect(app.page.getByTestId('rls-lab-items-table')).toHaveCount(0)
-  await expect(app.page.getByText(/404|not found/i).first()).toBeVisible()
+  await app.rlsLab.expectNotFound()
 })
 
 test('rls lab BFF returns 404 when the public flag is off', async ({ api }) => {

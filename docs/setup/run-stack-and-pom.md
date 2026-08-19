@@ -108,13 +108,22 @@ Ręczny login: otwórz **`http://127.0.0.1:3000`** (albo `http://localhost:3000`
 Jedna komenda (oracles + POM + BFF REST, bez Caddy). **Jedyny katalog Playwright to `tests-pom`.**
 
 ```bash
-scripts/run-app-stack-tests.sh            # Playwright
+scripts/run-app-stack-tests.sh            # Playwright against --app (127.0.0.1)
 scripts/run-app-stack-tests.sh --visual     # screenshoty Visual Lab + ARIA
 scripts/run-app-stack-tests.sh --rls-off    # drugi Nuxt :3010, RLS flag off
+scripts/run-app-stack-tests.sh --mirror-off # drugi Nuxt :3012, Mirror/Session lab flag off
 scripts/run-app-stack-tests.sh --backend  # plus ./mvnw test (bez restkit/, Ryuk off)
 ```
 
-Ręcznie:
+Z `apps/frontend` (zawsze `PLAYWRIGHT_SKIP_WEBSERVER=1` gdy Nuxt już stoi):
+
+| Skrypt | Origin | Kiedy |
+|---|---|---|
+| `corepack pnpm test:e2e` | `http://localhost:3000` | host DX (`scripts/dev-stack.sh`) |
+| `corepack pnpm test:e2e:app` | `http://127.0.0.1:3000` | compose `--app` |
+| `scripts/run-app-stack-tests.sh` | `http://127.0.0.1:3000` | ten sam `--app`, plus flag-off overlays |
+
+Ręcznie na `--app`:
 
 ```bash
 PLAYWRIGHT_SKIP_WEBSERVER=1 \

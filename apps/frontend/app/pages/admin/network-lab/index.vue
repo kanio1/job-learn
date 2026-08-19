@@ -22,7 +22,8 @@
           <UButton data-testid="network-lab-cors" variant="outline" @click="triggerCors">CORS cookie demo</UButton>
           <UButton data-testid="network-lab-har" variant="outline" @click="triggerHar">HAR replay path</UButton>
         </div>
-        <pre data-testid="network-lab-result" class="text-xs whitespace-pre-wrap">{{ result }}</pre>
+        <ErrorState v-if="failure" :message="failure" />
+        <pre v-else data-testid="network-lab-result" class="text-xs whitespace-pre-wrap">{{ result }}</pre>
         <p class="text-sm text-muted">
           Hosted checkout must not send credentialed cross-origin cookies. This demo allows credentials only for http://localhost:3000.
         </p>
@@ -32,16 +33,25 @@
 </template>
 
 <script setup lang="ts">
+import ErrorState from '~/components/shared/ErrorState.vue'
+
 definePageMeta({ layout: 'dashboard' })
 
 const result = ref('')
+const failure = ref('')
 
 async function capture(path: string, method: 'GET' | 'POST' = 'GET') {
+  failure.value = ''
   try {
     const response = await $fetch.raw(path, { method })
     result.value = JSON.stringify({ status: response.status, retryAfter: response.headers.get('retry-after'), body: response._data })
   }
   catch (error: any) {
+    if (!error?.statusCode) {
+      failure.value = error?.message || 'Network request failed'
+      result.value = ''
+      return
+    }
     result.value = JSON.stringify({
       status: error.statusCode,
       retryAfter: error.response?.headers?.get?.('retry-after'),

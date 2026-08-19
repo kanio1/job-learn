@@ -1,5 +1,5 @@
 import { merchantAlphaId } from '../auth/accounts'
-import { uniqueIdempotencyKey, uniqueOrderReference, uniqueToken } from '../data/factories'
+import { uniqueIdempotencyKey, uniqueMerchantReference, uniqueOrderReference, uniqueToken } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
 import { expectMerchantError, expectProblem } from '../utils/http'
 
@@ -23,6 +23,21 @@ test('POST merchant without tenantReference is 400', async ({ api }) => {
   const created = await client.createMerchant(`NO-TENANT-${uniqueToken()}`, 'Missing tenant', null)
   expect(created.status).toBe(400)
   expectMerchantError(created.body, 'validation')
+})
+
+test('POST merchant without CSRF token is 201 not csrf_failed', { tag: ['@security'] }, async ({ page }, testInfo) => {
+  const merchantReference = uniqueMerchantReference(testInfo)
+  const response = await page.request.post('/api/merchants', {
+    data: {
+      merchantReference,
+      displayName: `CSRF contrast ${merchantReference}`,
+      tenantReference: 'TENANT_ALPHA',
+    },
+  })
+  expect(response.status()).toBe(201)
+  const body = await response.json() as { error?: string, merchantId?: string }
+  expect(body.error).not.toBe('csrf_failed')
+  expect(body.merchantId).toBeTruthy()
 })
 
 test('GET unknown merchant is 404', async ({ api }) => {

@@ -17,4 +17,12 @@ export class NetworkLabPage extends BasePage {
   async triggerLie(): Promise<void> {
     await this.byTestId('network-lab-lie').click()
   }
+
+  result() {
+    return this.byTestId('network-lab-result')
+  }
+
+  errorState() {
+    return this.byTestId('error-state')
+  }
 }

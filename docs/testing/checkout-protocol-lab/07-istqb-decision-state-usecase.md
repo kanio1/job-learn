@@ -190,7 +190,7 @@ Płatnik otwiera continueUrl z `status=success` bez Approve.
 Oracle: fulfillment ≠ CONFIRMED.  
 API designed: `Lab-Force-Scenario: RETURN_LIE_SUCCESS` (PW-API-071).  
 HTTP: [09 BC-CPL-04](09-protocol-flow-simulations.md).  
-TC: PW-E2E-040 existing-pw + existing-pom E2E-061.
+TC: PW-E2E-040 existing-pom + existing-pom E2E-061.
 
 ### UC-04 User cancel — P0
 

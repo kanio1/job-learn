@@ -22,6 +22,7 @@ export const pomAuthFiles = {
   merchantManager: `${authDir}/merchant-manager.json`,
   supportAgent: `${authDir}/support-agent.json`,
   readOnlyUser: `${authDir}/read-only-user.json`,
+  merchantDenied: `${authDir}/merchant-denied.json`,
 } as const
 
 export function workerManagerAuthFile(index: number): string {

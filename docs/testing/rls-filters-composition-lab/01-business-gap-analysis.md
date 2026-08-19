@@ -37,11 +37,11 @@ Flaga Spring `app.rls-lab.enabled` default **false**, `dev` **true**.
 | FR-RLS-04 compare platform-only | GET `/compare`: matcher + `@PreAuthorize(platform:payments:read)` + `isPlatformScoped()` | existing-ra (dwa 403) + existing-pom |
 | FR-RLS-05 flag off 404 | ConditionalOnProperty | existing-it |
 | FR-FLT-01 date+status+reference | UI + list API | existing-pom + existing-ra |
-| FR-FLT-02 min/max amount | UI testid + RA | existing-pw + existing-pom + existing-ra |
-| FR-FLT-03 page-reset on Apply | `applyFilters` page 0 | existing-pw + existing-pom |
-| FR-FLT-04 UPagination 1-based vs 0-based | wrapper testid | existing-pw |
+| FR-FLT-02 min/max amount | UI testid + RA | existing-pom + existing-pom + existing-ra |
+| FR-FLT-03 page-reset on Apply | `applyFilters` page 0 | existing-pom + existing-pom |
+| FR-FLT-04 UPagination 1-based vs 0-based | wrapper testid | existing-pom |
 | FR-CTL-01 USelect not native | labels | existing-pom |
-| FR-CTL-02 badge data-status | BusinessStatusBadge | existing-pw + existing-pom |
+| FR-CTL-02 badge data-status | BusinessStatusBadge | existing-pom + existing-pom |
 | FR-CTL-03 ConfirmModal dismiss | no POST effect | existing-pom |
 | FR-RACE-01 stale If-Match | już lifecycle | existing-pom |
 | FR-RACE-02 lie ≠ fulfillment | checkout-lab POM | existing-pom |
@@ -54,7 +54,7 @@ Flaga Spring `app.rls-lab.enabled` default **false**, `dev` **true**.
 
 | ID | Luka | Warstwa | Prio |
 |---|---|---|---|
-| GAP-RFC-T01 | FE flag off: nav 0 + BFF 404 | PW project env | P1 existing-pw |
+| GAP-RFC-T01 | FE flag off: nav 0 + BFF 404 | PW project env | P1 existing-pom |
 | GAP-RFC-T02 | List status inne niż CREATED | backend Pattern | docs (kontrakt) |
 
 ## Docs-only (Wave A leftovers; TLS moved to Wave B)

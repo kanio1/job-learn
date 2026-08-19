@@ -10,8 +10,8 @@ Każda partycja mapuje na `PW-W2-E2E-*` / `PW-W2-API-*` / `PW-W2-SEC-*`.
 | EP-W2-011 | ważna sesja admin | storageState | dashboard 200 UI | existing-pom |
 | EP-W2-012 | po logout aplikacji | sign out | login + blokada `/admin`; **brak** `end_session` | existing-pom E2E-010 |
 | EP-W2-013 | idle 121s Session Lab | `clock.fastForward(121_000)` | lock + Unlock → `/login` | existing-pom E2E-012 |
-| EP-W2-014 | wygasła sesja mid-journey | clear cookies na `/admin` | login | designed (nie E2E-012) |
-| EP-W2-015 | logout RP OIDC | `session-lab-end-oidc` | `end_session` + `client_id`, bez `id_token_hint` | designed E2E-013 |
+| EP-W2-014 | wygasła sesja mid-journey | clear cookies na `/admin` | login | existing-pom `session.spec.ts` |
+| EP-W2-015 | logout RP OIDC | `session-lab-end-oidc` | `end_session` + `client_id`, bez `id_token_hint` | existing-pom E2E-013 |
 
 ## Merchant reference / name (UI Zod)
 

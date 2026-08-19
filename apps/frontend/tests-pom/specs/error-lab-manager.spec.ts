@@ -1,4 +1,5 @@
-import { test, expect } from '../fixtures'
+import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
+import { test, expect, requireApi } from '../fixtures'
 import { expectNoAuthorizationInNetworkResponse } from '../utils/network'
 
 function triggerMethod(status: number): 'GET' | 'POST' {
@@ -59,7 +60,18 @@ test.describe('Error Lab live triggers (merchant manager)', () => {
     await expectProblemStatus(response, 428)
   })
 
-  test('Error Lab 304 is a live conditional GET', async ({ app, page }) => {
+  test('Error Lab 304 is a live conditional GET', async ({ app, page, api, ownedMerchantId }, testInfo) => {
+    const created = await requireApi(api).createPaymentOrder(
+      ownedMerchantId,
+      {
+        amountMinor: 1999,
+        currency: 'PLN',
+        clientOrderReference: uniqueOrderReference(testInfo, 'E304'),
+      },
+      uniqueIdempotencyKey(testInfo, 'E304'),
+    )
+    expect(created.status).toBe(201)
+
     await app.errorLab.goto()
     await app.errorLab.expectLoaded()
     await expect(app.errorLab.triggerButton(304)).toBeVisible()

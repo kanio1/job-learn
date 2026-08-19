@@ -18,15 +18,15 @@
 | EP-RFC-021 | min>max | 5000>1000 | 400 | existing-ra |
 | BVA-RFC-020 | amount = min | 2000 | włącznie | existing-ra allMatch ≥ |
 | BVA-RFC-021 | amount = max | 4000 | włącznie | existing-ra |
-| EP-RFC-022 | UI min/max + status CREATED | 5000–10000 | URL query | existing-pw |
+| EP-RFC-022 | UI min/max + status CREATED | 5000–10000 | URL query | existing-pom |
 
 ## Paginacja
 
 | ID | Partycja | Oczekiwanie | Pokrycie |
 |---|---|---|---|
 | EP-RFC-030 | page 0 default | metadata | existing-ra first page |
-| BVA-RFC-030 | widget page 2 | query page=1 | existing-pw |
-| BVA-RFC-031 | Apply przy page=1 | page znika / 0 | existing-pw + POM |
+| BVA-RFC-030 | widget page 2 | query page=1 | existing-pom |
+| BVA-RFC-031 | Apply przy page=1 | page znika / 0 | existing-pom + POM |
 | EP-RFC-031 | size 10, 25 elementów | 3 strony, last=5 | existing-ra |
 
 ## RLS visibility

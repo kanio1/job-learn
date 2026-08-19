@@ -22,6 +22,18 @@ function sessionCookie(page: Page) {
   return page.context().cookies().then(cookies => cookies.find(cookie => cookie.name === 'nuxt-session'))
 }
 
+/** Path A (app Sign out / idle Unlock): sealed blob is gone. Empty value is as-built, not RFC 6265 delete. */
+export async function expectSessionCookieCleared(page: Page): Promise<void> {
+  const session = await sessionCookie(page)
+  expect(session?.value ?? '', 'nuxt-session must not carry a sealed session after app logout').toBe('')
+}
+
+/** RFC 6265 delete: cookie absent (Max-Age=0 / past Expires). Do not use for path A while the product leaves an empty session cookie. */
+export async function expectSessionCookieDeleted(page: Page): Promise<void> {
+  const session = await sessionCookie(page)
+  expect(session, 'nuxt-session must be absent after RFC cookie delete').toBeUndefined()
+}
+
 export async function expectSessionCookieHttpOnly(page: Page): Promise<void> {
   const session = await sessionCookie(page)
   expect(session, 'nuxt-session cookie must be present').toBeTruthy()

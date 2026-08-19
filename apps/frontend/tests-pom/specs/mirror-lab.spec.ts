@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { test, expect } from '../fixtures'
 
 test('mirror hub and bank statements download', async ({ app }) => {
@@ -5,10 +6,19 @@ test('mirror hub and bank statements download', async ({ app }) => {
   await app.mirrorHub.expectLoaded()
   await app.mirrorHub.openBank()
   await app.mirrorBank.expectLoaded()
-  const downloadPromise = app.page.waitForEvent('download')
-  await app.page.getByTestId('statement-download-csv').click()
-  const download = await downloadPromise
+  const download = await app.mirrorBank.downloadCsv()
   expect(download.suggestedFilename()).toMatch(/statement/i)
+})
+
+test('bank statement PDF download starts with PDF magic bytes', async ({ app }) => {
+  await app.mirrorBank.goto()
+  await app.mirrorBank.expectLoaded()
+  const download = await app.mirrorBank.downloadPdf()
+  expect(download.suggestedFilename()).toMatch(/\.pdf$/i)
+  const path = await download.path()
+  expect(path, 'Playwright must keep the PDF download on disk').toBeTruthy()
+  const header = readFileSync(path!).subarray(0, 5).toString('latin1')
+  expect(header).toBe('%PDF-')
 })
 
 test('expired hosted checkout exposes test id', async ({ app, context }) => {

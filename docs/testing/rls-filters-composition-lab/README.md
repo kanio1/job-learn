@@ -53,7 +53,7 @@ Stack                scripts/dev-stack.sh       — compose + Spring dev,seed + 
 
 | Wartość | Znaczenie |
 |---|---|
-| `existing-pw` | Historyczne — drzewo `tests/e2e` usunięte; ślad = `existing-pom` |
+| `existing-pom` | Historyczne — drzewo `tests/e2e` usunięte; ślad = `existing-pom` |
 | `existing-pom` | Jest w `tests-pom` |
 | `existing-ra` | REST Assured `*Test.java` |
 | `existing-it` | `*IT.java` |

@@ -39,6 +39,7 @@ test('hub opens booking; online pay uses hosted tab and fulfillment oracle', asy
   const hostedPage = await hostedPromise
   const hosted = new App(hostedPage)
   await hosted.hostedCheckout.expectLoaded()
+  await expect(hosted.idle.lock()).toHaveCount(0)
   await hosted.hostedCheckout.approve()
   await hosted.hostedCheckout.expectOutcome()
   await hosted.hostedCheckout.returnToMerchant()
@@ -139,4 +140,31 @@ test('hosted decline leaves fulfillment cancelled', { tag: ['@ux'] }, async ({ a
   await hosted.checkoutReturn.expectLoaded()
   await expect(hosted.checkoutReturn.returnHint()).toContainText('failure')
   await expect(hosted.checkoutReturn.fulfillmentStatus()).toHaveText('CANCELLED', { timeout: 45_000 })
+})
+
+test('widget iframe Approve confirms fulfillment', async ({ app }, testInfo) => {
+  await requireCheckoutLab(app)
+  await app.checkoutBooking.goto()
+  await app.checkoutBooking.expectLoaded()
+  await app.checkoutBooking.fillExtOrderId(uniqueExtOrderId(testInfo))
+  await app.checkoutBooking.submit()
+  await expect(app.page.getByTestId('checkout-open-hosted')).toBeVisible()
+
+  const sessionId = sessionIdFromHostedHref(await app.checkoutBooking.hostedCheckoutHref())
+  expect(sessionId).toBeTruthy()
+
+  await app.checkoutWidget.goto()
+  await app.checkoutWidget.expectLoaded()
+  await app.checkoutWidget.loadSession(sessionId!)
+  await app.checkoutWidget.approveInFrame()
+  await app.checkoutWidget.expectApprovedInFrame()
+
+  await expect.poll(async () => {
+    const fulfillment = await app.page.request.get(`/api/checkout-lab/hosted/sessions/${sessionId}/fulfillment`)
+    if (fulfillment.status() !== 200) {
+      return fulfillment.status()
+    }
+    const body = await parseJson<{ status?: string }>(fulfillment)
+    return body?.status
+  }, { timeout: 45_000 }).toBe('CONFIRMED')
 })

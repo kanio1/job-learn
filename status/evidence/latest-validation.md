@@ -7,6 +7,8 @@ audited_commit: 95e35c97d74608bdc3d7925a4f6bb0b46c99a79b
 
 # Latest Validation Evidence
 
+> **SUPERSEDED as current POM evidence (2026-08-19).** This file records Assurance Closure Wave 1 (2026-07-13): mocked Chromium **82/82**, `playwright.live.config.ts`, `tests/e2e`. Product Playwright is now live POM only: `apps/frontend/playwright.pom.config.ts` / `tests-pom`. Runbook: [docs/setup/run-stack-and-pom.md](../../docs/setup/run-stack-and-pom.md). Do not cite 82/82 as the current suite.
+
 ## Assurance Closure Wave 1 — validation-02 closure, 2026-07-13
 
 ```text

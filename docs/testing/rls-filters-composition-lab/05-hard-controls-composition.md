@@ -34,7 +34,7 @@ POM asertuje `new URL(request.url()).port === '3000'`. To jest lekcja API compos
 
 | Temat | Gdzie | Oracle |
 |---|---|---|
-| Ambiguous timeout | Network Lab abort (`existing-pw`) | request aborted ≠ success |
+| Ambiguous timeout | Network Lab abort (`existing-pom`) | request aborted ≠ success |
 | Ack vs fulfillment | Checkout lie return (`existing-pom`) | `fulfillment-status` nie CONFIRMED |
 | Check-then-act | If-Match 412 (`existing-pom`) + modal dismiss `confirm-action-dismiss` (brak POST cancel) | GET status CREATED |
 | Idempotency | payments-create replay (`existing-pom`) | ten sam paymentOrderId |

@@ -1,8 +1,10 @@
 import { test, expect } from '../fixtures'
+import { App } from '../pages/App'
 import { pomAuthFiles } from '../utils/env'
 import {
   expectNoJwtInStorageStateFile,
   expectNoTokenInBrowserStorage,
+  expectSessionCookieCleared,
   expectSessionCookieHttpOnly,
   expectSessionCookieSameSiteLax,
   expectSessionCookieUnderUaLimit,
@@ -15,15 +17,46 @@ test('two contexts sharing storageState can revoke a device', { tag: ['@security
   const second = await browser.newContext({ storageState: pomAuthFiles.platformAdminSession })
   const page1 = await first.newPage()
   const page2 = await second.newPage()
+  const lab1 = new App(page1).sessionLab
+  const lab2 = new App(page2).sessionLab
   try {
-    await page1.goto('/admin/session-lab')
-    await page2.goto('/admin/session-lab')
-    await expect(page1.getByTestId('session-lab-device-list')).toBeVisible()
-    await expect(page2.getByTestId('session-lab-device-list')).toBeVisible()
-    const revoke = page1.getByRole('button', { name: 'Revoke' }).first()
-    await expect(revoke).toBeVisible()
-    await revoke.click()
-    await expect(page1.getByTestId('session-lab-device-list')).toBeVisible()
+    await lab1.goto()
+    await lab2.goto()
+    await lab1.expectLoaded()
+    await lab2.expectLoaded()
+    await expect(lab1.deviceList()).toBeVisible()
+    await expect(lab2.deviceList()).toBeVisible()
+
+    const extraId = `pom-rev-${crypto.randomUUID()}`
+    const created = await page1.request.post('/api/session-lab/devices', {
+      data: { id: extraId, label: 'POM extra device' },
+    })
+    expect(created.status()).toBe(200)
+
+    await page1.reload()
+    await lab1.expectLoaded()
+    await expect(lab1.revokeButton(extraId)).toBeVisible()
+
+    const before2 = await page2.request.get('/api/session-lab/devices')
+    expect(before2.status()).toBe(200)
+
+    const revokeResponse = page1.waitForResponse(response =>
+      response.url().includes(`/api/session-lab/devices/${extraId}/revoke`)
+      && response.request().method() === 'POST')
+    await lab1.revoke(extraId)
+    const revoked = await revokeResponse
+    expect(revoked.status()).toBe(200)
+    expect((await revoked.json() as { revoked?: boolean }).revoked).toBe(true)
+    await expect(lab1.revokeButton(extraId)).toHaveCount(0)
+
+    const after1 = await page1.request.get('/api/session-lab/devices')
+    const after2 = await page2.request.get('/api/session-lab/devices')
+    expect(after1.status()).toBe(200)
+    expect(after2.status()).toBe(200)
+    const ids1 = (await after1.json() as { id: string }[]).map(device => device.id)
+    const ids2 = (await after2.json() as { id: string }[]).map(device => device.id)
+    expect(ids1).not.toContain(extraId)
+    expect(ids2).not.toContain(extraId)
   }
   finally {
     await first.close()
@@ -37,7 +70,18 @@ test('logout returns to login and blocks admin again', { tag: ['@security', '@se
   await app.userMenu.signOut()
   await expect(app.page).toHaveURL(/\/login/)
   await app.login.expectLoaded()
+  await expectSessionCookieCleared(app.page)
+  await expectNoTokenInBrowserStorage(app.page)
 
+  await app.page.goto('/admin/merchants')
+  await expect(app.page).toHaveURL(/\/login/)
+  await app.login.expectLoaded()
+})
+
+test('clearing cookies mid-journey on merchants returns to login', { tag: ['@security'] }, async ({ app, context }) => {
+  await app.merchants.goto()
+  await app.merchants.expectLoaded()
+  await context.clearCookies()
   await app.page.goto('/admin/merchants')
   await expect(app.page).toHaveURL(/\/login/)
   await app.login.expectLoaded()
@@ -98,6 +142,7 @@ test('Session Lab end-session JSON has client_id and no id_token_hint', { tag: [
   await page.goto('/admin/merchants')
   await expect(page).toHaveURL(/\/login/)
   await app.login.expectLoaded()
+  await expectSessionCookieCleared(page)
 })
 
 test('Session Lab end OIDC posts a logout URL without id_token_hint then hops to Keycloak', { tag: ['@security'] }, async ({ app, page }) => {
@@ -113,11 +158,13 @@ test('Session Lab end OIDC posts a logout URL without id_token_hint then hops to
   expect(endSessionUrl.searchParams.has('id_token_hint')).toBe(false)
 
   const confirm = page.getByRole('button', { name: /^(logout|yes|continue)$/i })
-  if (await confirm.count() > 0) {
-    await confirm.first().click()
+  await expect(confirm.or(page.getByRole('heading', { name: /sign in|log in/i }))).toBeVisible({ timeout: 15_000 })
+  if (await confirm.isVisible()) {
+    await confirm.click()
   }
   await expect(page).toHaveURL(/\/login/, { timeout: 15_000 })
   await app.login.expectLoaded()
+  await expectSessionCookieCleared(page)
   await page.goto('/admin/merchants')
   await expect(page).toHaveURL(/\/login/)
   await app.login.expectLoaded()

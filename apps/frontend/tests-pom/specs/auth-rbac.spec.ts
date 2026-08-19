@@ -1,6 +1,7 @@
 import { expect, test } from '../fixtures'
 import { merchantAlphaId, merchantBetaId } from '../auth/accounts'
 import { pomAuthFiles } from '../utils/env'
+import { expectProblem } from '../utils/http'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 import { App } from '../pages/App'
 
@@ -37,6 +38,10 @@ test('real roles see Alpha payments; merchant manager is denied Beta and Users',
 
     await manager.users.goto()
     await manager.users.expectForbidden()
+    const usersResponse = await managerPage.request.get('/api/users')
+    expect(usersResponse.status()).toBe(403)
+    expect(usersResponse.status()).not.toBe(502)
+    expectProblem(await usersResponse.json(), 403)
   } finally {
     await platformContext.close()
     await managerContext.close()

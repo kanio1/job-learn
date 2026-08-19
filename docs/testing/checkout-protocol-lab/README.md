@@ -59,7 +59,7 @@ Nie mylić z `POST /api/merchants/{id}/payment-orders` + replay 200/409 — to [
 | GAP-01 | `OOO_EVENTS` — enum bez reorder | [01](01-business-gap-analysis.md); TC **blocked** |
 | GAP-02 | Close-tab / PAY_NO_RETURN | PW-E2E-043 existing-pom (fulfillment GET, bez return) |
 | FR-04 test | `Lab-Force-Scenario: RETURN_LIE_SUCCESS` w RA | PW-API-071 existing-ra; UI lie existing-pom |
-| FR-11 test | Replay przy zmianie samego TTL | PW-API-026 **designed** |
+| FR-11 test | Replay przy zmianie samego TTL | PW-API-026 **existing-ra** |
 
 Pełna kolejka P0: [08-traceability-matrix.md](08-traceability-matrix.md).
 
@@ -105,7 +105,7 @@ Format: `{PREFIX}-{NNN}` + kolumna **Pokrycie**:
 
 | Wartość | Znaczenie |
 |---|---|
-| `existing-pw` | Jest w `checkout-lab.spec.ts` |
+| `existing-pom` | Jest w `checkout-lab.spec.ts` |
 | `existing-ra` | Jest w RA (Protocol / OAuth / Create / Get / SecurityChain) |
 | `designed` | Zaplanowany, **niezaimplementowany** |
 | `blocked` | Zależny od luki produktowej (np. `OOO_EVENTS`) |

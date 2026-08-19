@@ -24,10 +24,9 @@ export async function requireMirrorLabSession(event: H3Event) {
 
 type RetryEntry = { count: number, at: number }
 const retryEntries: Map<string, RetryEntry> = ((globalThis as any).__mrlRetry ??= new Map())
-const RETRY_TTL_MS = 10_000
+export const RETRY_TTL_MS = 10_000
 
-export function nextRetryAttempt(key: string): number {
-  const now = Date.now()
+export function nextRetryAttempt(key: string, now = Date.now()): number {
   const previous = retryEntries.get(key)
   if (!previous || now - previous.at > RETRY_TTL_MS) {
     retryEntries.set(key, { count: 1, at: now })
@@ -36,6 +35,14 @@ export function nextRetryAttempt(key: string): number {
   const count = previous.count + 1
   retryEntries.set(key, { count, at: now })
   return count
+}
+
+export function retryWindowRemainingMs(key: string, now = Date.now()): number {
+  const previous = retryEntries.get(key)
+  if (!previous) {
+    return 0
+  }
+  return Math.max(0, RETRY_TTL_MS - (now - previous.at))
 }
 
 export function clearRetryAttempt(key: string) {

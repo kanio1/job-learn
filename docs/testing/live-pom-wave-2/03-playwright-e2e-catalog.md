@@ -423,6 +423,21 @@ Szczegóły filtrów/kontrolek: [../rls-filters-composition-lab/03-playwright-e2
 | Spec | `users.spec.ts` · `platform admin sees the users table and page summary` |
 | Oracle | `api.listUsers()` 200 + copy `Page N · … user(s) shown` |
 
+### PW-W2-E2E-110a — Users create + disable (admin)
+
+| | |
+|---|---|
+| Pokrycie | existing-pom `users.spec.ts` |
+| Oracle | unique username appears in table + `listUsers`; Disable → Enable button; BFF `enabled: false` |
+| Nie | Keycloak persistence / 403 matrix (RA `UserManagementKeycloakAdminIT`) |
+
+### PW-W2-E2E-110b — Users assign extra role (admin)
+
+| | |
+|---|---|
+| Pokrycie | existing-pom `users.spec.ts` · `platform admin assigns an extra role on a created user` |
+| Oracle | unique user + drawer Save roles; row contains SUPPORT AGENT; BFF `roles` zawiera `READ_ONLY_USER` i `SUPPORT_AGENT` |
+
 ### PW-W2-E2E-111 — Audit filtr + export JSON + drawer
 
 | | |
@@ -448,7 +463,7 @@ Szczegóły filtrów/kontrolek: [../rls-filters-composition-lab/03-playwright-e2
 | | |
 |---|---|
 | Pokrycie | existing-pom `session-lab.spec.ts` |
-| Katalog | [../payu-bank-mirror-labs/03-playwright-e2e-catalog.md](../payu-bank-mirror-labs/03-playwright-e2e-catalog.md) E2E-010/011. OIDC hop / 4 KB: [session-bff-oidc-contract](../session-bff-oidc-contract.md) (designed E2E-013) |
+| Katalog | [../payu-bank-mirror-labs/03-playwright-e2e-catalog.md](../payu-bank-mirror-labs/03-playwright-e2e-catalog.md) E2E-010/011. OIDC hop / 4 KB: [session-bff-oidc-contract](../session-bff-oidc-contract.md) (existing-pom E2E-013) |
 
 ### PW-W2-E2E-121 — CSRF demo 403 `csrf_failed`
 
@@ -462,7 +477,7 @@ Szczegóły filtrów/kontrolek: [../rls-filters-composition-lab/03-playwright-e2
 | | |
 |---|---|
 | Pokrycie | existing-pom `session.spec.ts` · `two contexts sharing storageState can revoke a device` · project `chromium-session` |
-| Asercje | oba `session-lab-device-list`; click Revoke (brak asercji 401 na drugim — MRL designed) |
+| Asercje | oba `session-lab-device-list`; POST revoke **200** `{revoked:true}`; GET devices obu kontekstów nadal **200**; revoked id usunięty (as-built: wspólna sesja, nie 401) |
 
 ### PW-W2-E2E-123 — Network Lab 503 → 200 bez `fulfill`
 

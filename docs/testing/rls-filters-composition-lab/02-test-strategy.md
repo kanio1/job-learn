@@ -42,7 +42,7 @@ Wave B (stos, TLS, TC): [09](09-wave-b-stack-tls-catalog.md). Wave 3 UC/TC: [wav
 | USelect native select | P1 | count `select` | POM |
 | Confirm bez POST | P0 | GET status CREATED | POM (`confirm-action-dismiss`) |
 | Flag off 404 | P0 | IT | existing-it |
-| FE flag-off | P1 | osobny project `playwright.rls-flag-off.config.ts` | existing-pw |
+| FE flag-off | P1 | osobny project `playwright.rls-flag-off.config.ts` | existing-pom |
 | X-Forwarded przepisuje Location | P0 | RA hostile + Caddy-shaped headers | existing-ra RA-030/031 |
 | PKCE / iss TLS | P0 | live POM TLS + issuer-uri | existing-pom + existing-ra RA-032 |
 | CORS HTTPS obok HTTP | P1 | OPTIONS Origin | existing-ra RA-033 |

@@ -6,11 +6,11 @@ Design only tam, gdzie Pokrycie ≠ existing. ID: `DT-MRL-*`, `ST-MRL-*`, `UC-MR
 
 | Cookie sesji | CSRF header | Client | Expect | Pokrycie |
 |---|---|---|---|---|
-| yes | valid match | BFF `csrf-demo` | 2xx | designed |
+| yes | valid match | BFF `csrf-demo` | 2xx | existing-pom |
 | yes | missing | BFF `csrf-demo` | 403 `csrf_failed` | existing-pom |
-| yes | wrong | BFF `csrf-demo` | 403 | designed |
-| no | any | BFF `csrf-demo` | 401 | designed |
-| n/a | missing | Bearer payment POST | 2xx (kontrast) | designed |
+| yes | wrong | BFF `csrf-demo` | 403 | existing-pom |
+| no | any | BFF `csrf-demo` | 401 | existing-pom |
+| n/a | missing | merchant POST (no CSRF header) | 201 (kontrast) | existing-pom |
 
 CSRF **nie** wolno nakładać na `/api/merchants/**`.
 
@@ -21,7 +21,7 @@ CSRF **nie** wolno nakładać na `/api/merchants/**`.
 | `/admin/**` | no | — | dashboard | — |
 | `/admin/session-lab` | yes | — | overlay | existing-pom |
 | `/admin/session-lab` | yes | logout | `/login`, sesja **BFF** pusta, SSO może zostać | existing-pom Unlock |
-| `/psp/checkout/**` | yes | — | **brak** overlay | existing-pw |
+| `/psp/checkout/**` | yes | — | **brak** overlay | existing-pom |
 | `/login` | yes | — | n/a | — |
 
 ## DT-MRL-03 — Mock vs POM network
@@ -119,7 +119,7 @@ Network Lab lie → UI `success` → (designed) GET fulfillment / CPL oracle nie
 ## UC-MRL-03 — Iframe pay
 
 Widget load session → Approve w `frameLocator` → outcome w ramce; new-tab hosted nadal działa.  
-Pokrycie: mocked existing-pw; live designed.
+Pokrycie: mocked existing-pom; live designed.
 
 ## UC-MRL-04 — Maker-checker dwa ludzie
 
@@ -134,7 +134,7 @@ Pokrycie: designed UI; RA existing.
 ## UC-MRL-06 — Guest hosted vs dashboard
 
 Nowy context bez storage → hosted 200; `/admin/session-lab` → login.  
-Pokrycie: existing-pw hosted; existing-pom guest.
+Pokrycie: existing-pom hosted; existing-pom guest.
 
 ## PWISE (P2)
 
@@ -147,7 +147,7 @@ Tylko jeśli flakuje — nie na start.
 | ID | Hipoteza | Oracle | Pokrycie |
 |---|---|---|---|
 | EG-MRL-01 | Unlock bez clear() bounce na merchants | URL login trwały | existing-pom częściowo |
-| EG-MRL-02 | PDF jako `responseType: text` | `%PDF-` w pliku | existing-pw mocked |
+| EG-MRL-02 | PDF jako `responseType: text` | `%PDF-` w pliku | existing-pom mocked |
 | EG-MRL-03 | Location `?lang=` psuje UUID | sessionIdFromLocation | existing-ra |
 | EG-MRL-04 | Repeat refund = dwa eventy | COUNT=1 | existing-ra |
 | EG-MRL-05 | BFF bez requireMirrorLab | 404 gdy flag off | designed |

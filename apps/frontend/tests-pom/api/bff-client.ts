@@ -293,9 +293,36 @@ export class BffClient {
     return { status: response.status(), headers: response.headers(), body: await response.json().catch(() => undefined) }
   }
 
-  async listUsers() {
-    const response = await this.context.get('/api/users')
-    return { status: response.status(), body: await response.json() }
+  async listUsers(query?: { search?: string, status?: 'enabled' | 'disabled' }) {
+    const response = await this.context.get('/api/users', { params: query })
+    const body = await parseJson<{
+      users?: Array<{ id?: string, username?: string, enabled?: boolean, roles?: string[] }>
+    }>(response)
+    return { status: response.status(), body }
+  }
+
+  async createUser(payload: {
+    username: string
+    email: string
+    temporaryPassword: string
+    tenantId?: string
+    roles: string[]
+  }) {
+    const response = await this.context.post('/api/users', { data: payload })
+    const body = await parseJson<{ id?: string, username?: string, enabled?: boolean, roles?: string[] }>(response)
+    return { status: response.status(), body }
+  }
+
+  async updateUser(userId: string, payload: { enabled?: boolean, email?: string }) {
+    const response = await this.context.patch(`/api/users/${encodeURIComponent(userId)}`, { data: payload })
+    const body = await parseJson<{ id?: string, username?: string, enabled?: boolean, roles?: string[] }>(response)
+    return { status: response.status(), body }
+  }
+
+  async assignUserRoles(userId: string, payload: { assign: string[], remove: string[] }) {
+    const response = await this.context.post(`/api/users/${encodeURIComponent(userId)}/roles`, { data: payload })
+    const body = await parseJson<{ id?: string, username?: string, roles?: string[] }>(response)
+    return { status: response.status(), body }
   }
 
   static isProblem(body: unknown): body is ProblemDetails {

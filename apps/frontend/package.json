@@ -11,6 +11,7 @@
     "typecheck": "nuxt typecheck",
     "lint": "oxlint --config oxlint.config.ts .",
     "test:e2e": "PLAYWRIGHT_SKIP_WEBSERVER=1 PLAYWRIGHT_BASE_URL=http://localhost:3000 playwright test --config playwright.pom.config.ts",
+    "test:e2e:app": "PLAYWRIGHT_SKIP_WEBSERVER=1 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 playwright test --config playwright.pom.config.ts",
     "test:unit": "vitest run"
   },
   "dependencies": {

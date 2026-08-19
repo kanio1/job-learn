@@ -98,7 +98,7 @@ GET /api/merchants
 - **Pre:** zalogowany `platform.admin`.
 - **Kroki UI:** UserMenu Sign out → ponownie `/admin/merchants`.
 - **Oracle:** znowu login. Sesja Keycloak **może** żyć.
-- **Nie mylić** z End OIDC (`session-lab-end-oidc`) — UC-W2-18 **designed**.
+- **Nie mylić** z End OIDC (`session-lab-end-oidc`) — UC-W2-18 **existing-pom**.
 
 ### EXC-OP-01c Cookie vs JWT w Bruno
 

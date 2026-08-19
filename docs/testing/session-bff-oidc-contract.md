@@ -26,8 +26,8 @@ Powiązane: [live-pom-wave-2](live-pom-wave-2/), [payu-bank-mirror-labs](payu-ba
 
 | Ścieżka | UI | Kod | BFF cookie | SSO Keycloak | TC dziś |
 |---|---|---|---|---|---|
-| A — aplikacja | menu Sign out, idle Unlock | `auth.logout()` → `session.clear()` + `/login` | czyszczona | **zostaje** | existing-pom E2E-010, E2E-012, MRL E2E-021 |
-| B — RP OIDC | `session-lab-end-oidc` | POST `/api/session-lab/end-session` → `clearUserSession` + URL `…/logout?client_id=&post_logout_redirect_uri=` | czyszczona | hop `end_session` (bez `id_token_hint`) | existing-pom `session.spec.ts` E2E-013 |
+| A — aplikacja | menu Sign out, idle Unlock | `auth.logout()` → `session.clear()` + `/login` | **puste** `nuxt-session` (as-built; nie RFC delete) | **zostaje** | existing-pom E2E-010, E2E-012, MRL E2E-021; oracle `expectSessionCookieCleared` |
+| B — RP OIDC | `session-lab-end-oidc` | POST `/api/session-lab/end-session` → `clearUserSession` + URL `…/logout?client_id=&post_logout_redirect_uri=` | puste (`expectSessionCookieCleared`) | hop `end_session` (bez `id_token_hint`) | existing-pom `session.spec.ts` E2E-013 |
 
 Idle Unlock = ścieżka A. FR „logout BFF + OIDC” dotyczy **tylko** ścieżki B.
 
@@ -42,7 +42,7 @@ Nazwa lekcji „OIDC revoke” w learning-map = **end_session** (RP logout), nie
 - **Aktor:** platform admin.
 - **Precondition:** `nuxt-session` HttpOnly; SSO Keycloak może istnieć.
 - **Kroki:** registry → `logout-control` → Sign out → `goto /admin/merchants`.
-- **Oracle:** oba razy `/login`; brak JWT w Web Storage.
+- **Oracle:** oba razy `/login`; brak JWT w Web Storage; `nuxt-session` puste (`expectSessionCookieCleared` — as-built, nie `expectSessionCookieDeleted`).
 - **Nie-oracle:** request do Keycloak `end_session` (tego **nie** ma).
 - **TC:** PW-W2-E2E-010, UC-W2-02.
 
@@ -58,7 +58,7 @@ Nazwa lekcji „OIDC revoke” w learning-map = **end_session** (RP logout), nie
 
 - **Aktor:** platform admin na Session Lab.
 - **Kroki:** POST `/api/session-lab/end-session` (JSON przez `page.request`, hop przez klik UI). CDP nie oddaje body po `window.location` — JSON i hop są dwoma testami w `session.spec.ts`.
-- **Oracle:** body `{ ended: true, endSessionUrl }`; URL (body i hop) zawiera `client_id=` i `post_logout_redirect_uri=`; **brak** `id_token_hint`; po confirm (jeśli jest) `/login`; ponowny `/admin/merchants` → `/login`; Web Storage bez JWT.
+- **Oracle:** body `{ ended: true, endSessionUrl }`; URL (body i hop) zawiera `client_id=` i `post_logout_redirect_uri=`; **brak** `id_token_hint`; po confirm (jeśli jest) `/login`; ponowny `/admin/merchants` → `/login`; Web Storage bez JWT; `expectSessionCookieCleared`.
 - **Uwaga lab:** Keycloak **może** pokazać confirm (brak `id_token_hint`). Realm JSON ma additive `post.logout.redirect.uris` (HTTP `:3000/login` + HTTPS app vhost). Istniejący volume: `python3 scripts/provision-keycloak-logout-uris.py` (`--import-realm` nie aktualizuje).
 - **TC:** PW-W2-E2E-013, PW-MRL-E2E-026, PW-MRL-API-024 — existing-pom `session.spec.ts`.
 
@@ -81,7 +81,7 @@ Bez zmian: pusty `storageState` → `/login`; `/psp/checkout` bez `nuxt-session`
 
 ### UC-SESS-07 — Revoke lab device — P1
 
-Dwa contexty, ten sam `storageState`. Click revoke jest w `session.spec.ts` (E2E-122, project `chromium-session`) — **nie** w `session-lab.spec.ts`. Click **nie** jest oraclem HTTP. Designed: A 401 / B nadal 200 (E1-S4, MRL E2E-030).
+Dwa contexty, ten sam `storageState`. HTTP oracle w `session.spec.ts` (E2E-122, project `chromium-session`): POST revoke **200**, GET devices obu kontekstów nadal **200**, revoked id usunięty. As-built **nie** invaliduje `nuxt-session` (brak 401). Product session-kill poza zakresem.
 
 ---
 
@@ -127,6 +127,6 @@ Dwa contexty, ten sam `storageState`. Click revoke jest w `session.spec.ts` (E2E
 |---|---|
 | FR-W2-02 | tylko ścieżka A |
 | FR-S04 (historyczne „BFF + OIDC”) | rozszczepione: FR-S04a = A, FR-S04b = B |
-| FR-OIDC | produkt ścieżki B **DONE**; testy **designed** |
+| FR-OIDC | produkt ścieżki B **DONE**; testy **existing-pom** `session.spec.ts` |
 | PW-RS-08 | UI/BFF DONE; brak Playwright oracle hopu |
 | Lekcja 59 „OIDC revoke” | end_session, nie token revocation |

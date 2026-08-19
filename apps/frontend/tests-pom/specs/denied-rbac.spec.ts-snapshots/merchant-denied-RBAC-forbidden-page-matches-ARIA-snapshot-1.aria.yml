@@ -1,0 +1,5 @@
+- heading "Access Denied" [level=1]
+- paragraph: You are signed in but do not have permission to access this page. This is not a sign-in issue — your account does not have the required role.
+- paragraph: Signed in as merchant.denied
+- link "Go to Overview":
+  - /url: /

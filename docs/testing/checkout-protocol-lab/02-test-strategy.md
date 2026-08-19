@@ -120,13 +120,13 @@ Kolumna **Pokrycie** w katalogach 03–05. Skrót tego, co **już jest** (nie pr
 
 `CheckoutLabSecurityChainTest`: OAuth public; notify 400 nie 401; GET oauth 401 (main chain); POST sessions 401; OPTIONS sessions bez Bearer; correlation echo.
 
-### Playwright UI (existing-pw)
+### Playwright UI (existing-pom)
 
 Hub copy + booking; sidebar; Error Lab via **sidebar** (SSR); cash (mock `CASH-*`); multi-tab approve + return CONFIRMED; inspector processStatus+Lab-Signature; lie return; hosted bez dashboard session.
 
 ### Luki (designed — ten pakiet)
 
-Tabela ID + GAP: [README](README.md), [01](01-business-gap-analysis.md) GAP-01…07. Najwyższy P0: Decline/CANCELLED, simulate 403 w UI, **PW-E2E-043 / PW-API-075** pay_no_return, BVA amount, unknown scenario, hosted fulfillment 404 empty vs Bearer 404 problem, Bearer na bookings/ops, BFF forward token, **PW-API-071** `RETURN_LIE_SUCCESS` przez `Lab-Force-Scenario`, **PW-API-026** replay przy samym `validitySeconds`.
+Tabela ID + GAP: [README](README.md), [01](01-business-gap-analysis.md) GAP-01…07. Najwyższy P0: Decline/CANCELLED, simulate 403 w UI, **PW-E2E-043 / PW-API-075** pay_no_return, BVA amount, unknown scenario, hosted fulfillment 404 empty vs Bearer 404 problem, Bearer na bookings/ops, BFF forward token, **PW-API-071** `RETURN_LIE_SUCCESS` przez `Lab-Force-Scenario`. **PW-API-026** replay przy samym `validitySeconds` jest **existing-ra**.
 
 ## 9. Playwright — ograniczenia implementacyjne (gdy przyjdzie czas)
 

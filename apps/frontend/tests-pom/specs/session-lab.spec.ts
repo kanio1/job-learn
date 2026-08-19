@@ -27,11 +27,32 @@ test('idle lock uses page.clock without waitForTimeout', { tag: ['@security'] },
   await app.sessionLab.goto()
   await app.sessionLab.expectLoaded()
   await app.page.clock.fastForward(121_000)
-  await expect(app.page.getByTestId('session-lab-idle-lock')).toBeVisible()
-  await app.page.getByTestId('session-lab-idle-unlock').click()
+  await expect(app.idle.lock()).toBeVisible()
+  await app.idle.unlock()
   await expect(app.page).toHaveURL(/\/login/)
   await app.page.goto('/admin/merchants')
   await expect(app.page).toHaveURL(/\/login/)
+})
+
+test('idle lock stays hidden at TTL-1s then appears after +2s', { tag: ['@security'] }, async ({ app }) => {
+  await app.page.clock.install()
+  await app.sessionLab.goto()
+  await app.sessionLab.expectLoaded()
+  await app.page.clock.fastForward(119_000)
+  await expect(app.idle.lock()).toHaveCount(0)
+  await app.page.clock.fastForward(2_000)
+  await expect(app.idle.lock()).toBeVisible()
+})
+
+test('idle overlay appears on merchants then Unlock returns to login', { tag: ['@security'] }, async ({ app }) => {
+  await app.page.clock.install()
+  await app.merchants.goto()
+  await app.merchants.expectLoaded()
+  await app.page.clock.fastForward(121_000)
+  await expect(app.idle.lock()).toBeVisible()
+  await app.idle.unlock()
+  await expect(app.page).toHaveURL(/\/login/)
+  await app.login.expectLoaded()
 })
 
 test('csrf demo without token returns 403 csrf_failed', { tag: ['@security'] }, async ({ app }) => {
@@ -39,7 +60,7 @@ test('csrf demo without token returns 403 csrf_failed', { tag: ['@security'] }, 
   await app.sessionLab.expectLoaded()
   const responsePromise = app.page.waitForResponse(response =>
     response.url().includes('/api/session-lab/csrf-demo') && response.request().method() === 'POST')
-  await app.page.getByTestId('session-lab-csrf-fail').click()
+  await app.sessionLab.csrfFail()
   const response = await responsePromise
   expect(response.status()).toBe(403)
   const body = await response.json()
@@ -57,5 +78,31 @@ test('csrf demo with token returns ok', { tag: ['@security'] }, async ({ app }) 
   const body = await parseJson<{ status?: string, error?: string }>(response)
   expect(body?.error).not.toBe('csrf_failed')
   expect(body?.status).toBe('ok')
+})
+
+test('csrf demo with a wrong X-CSRF-Token returns 403 csrf_failed', { tag: ['@security'] }, async ({ app, page }) => {
+  await app.sessionLab.goto()
+  await app.sessionLab.expectLoaded()
+  const issued = await page.request.get('/api/session-lab/csrf')
+  expect(issued.status()).toBe(200)
+  const mismatched = await page.request.post('/api/session-lab/csrf-demo', {
+    headers: { 'X-CSRF-Token': 'not-the-cookie-token' },
+  })
+  expect(mismatched.status()).toBe(403)
+  const body = await parseJson<{ error?: string }>(mismatched)
+  expect(body?.error).toBe('csrf_failed')
+})
+
+test('mrl-csrf is visible on document.cookie after GET csrf', { tag: ['@security'] }, async ({ app, page }) => {
+  await app.sessionLab.goto()
+  await app.sessionLab.expectLoaded()
+  const issued = await page.request.get('/api/session-lab/csrf')
+  expect(issued.status()).toBe(200)
+  const token = (await parseJson<{ token?: string }>(issued))?.token
+  expect(token).toBeTruthy()
+  await page.reload()
+  await app.sessionLab.expectLoaded()
+  const jsCookies = await page.getByTestId('session-lab-js-cookies').innerText()
+  expect(jsCookies.includes('mrl-csrf'), 'non-HttpOnly mrl-csrf must appear in document.cookie').toBe(true)
 })
 

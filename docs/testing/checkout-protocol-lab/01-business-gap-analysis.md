@@ -82,9 +82,9 @@ C-03: `CheckoutLabEndpointsDisabledIT` istnieje — PW flaga `NUXT_PUBLIC_CHECKO
 
 | Scenario | Planowane zachowanie | Implementacja | Test | GAP |
 |---|---|---|---|---|
-| `HAPPY_COMPLETED` | Approve → completed → CONFIRMED | Default path | existing-ra, existing-pw | — |
+| `HAPPY_COMPLETED` | Approve → completed → CONFIRMED | Default path | existing-ra, existing-pom | — |
 | `USER_CANCEL` | Decline → fulfillment `CANCELLED` | Decline emituje `checkout.session.canceled`; **enum nic nie zmienia** | **brak** dedykowanego | Partial — dodać TC Decline; header opcjonalny |
-| `RETURN_LIE_SUCCESS` | hint success, **brak** notify | `skipNotify()` | existing-pw (bez header); **brak RA** | Partial |
+| `RETURN_LIE_SUCCESS` | hint success, **brak** notify | `skipNotify()` | existing-pom (bez header); **brak RA** | Partial |
 | `BAD_SIGNATURE` | zły HMAC → 400, 0 insert | `shouldSignIncorrectly()` | existing-ra | — |
 | `NOTIFY_5XX_RETRY` | 503 potem 202 | `consumeForced503()` | existing-ra | — |
 | `OOO_EVENTS` | odwrócona kolejność eventów | **Tylko enum** — brak emit/reorder | brak | **Missing (GAP-01)** |
@@ -98,12 +98,12 @@ Unknown header → 400 `validation` (`UnknownCheckoutScenarioException`) — **b
 | ID | Finding | Priorytet | Działanie |
 |---|---|---|---|
 | GAP-01 | `OOO_EVENTS` obiecane w AC, nie działa | High | Zaimplementować reorder **albo** usunąć z katalogu i hops |
-| GAP-02 | E4-S4 close-tab nie ma PW | Medium | Test: Approve, nie otwieraj return, poll fulfillment → CONFIRMED |
+| GAP-02 | E4-S4 close-tab nie ma PW | Medium | **zamknięty** — PW-E2E-043 existing-pom `approve without return still confirms fulfillment (PAY_NO_RETURN)` |
 | GAP-03 | `USER_CANCEL` jako named scenario jest no-op | Low | Albo spiąć z default Decline, albo dokument „użyj outcome CANCELED” |
 | GAP-04 | Brak Ops UI | Low | Zostawić API (SDET-first) — nie blocker |
 | GAP-05 | Copy booking wspomina 302 debug na „direct session create”, UI go nie ma | Low | Usunąć zdanie albo dodać mini-form 302 |
 | GAP-06 | AC per-scenario test | Medium | Katalog 03–05 zamyka lukę testową bez czekania na GAP-01 (blocked) |
-| GAP-07 | Idempotency: zmiana tylko `validitySeconds` | Low (test) | PW-API-026 / EP-113 **designed** — produkt już replay (fingerprint bez TTL) |
+| GAP-07 | Idempotency: zmiana tylko `validitySeconds` | Low (test) | PW-API-026 / EP-113 **existing-ra** — produkt już replay (fingerprint bez TTL) |
 
 Mapa UC / „już zapłacone” / dwa światy: [README](README.md). Śledzenie ID: [08](08-traceability-matrix.md).
 
@@ -114,9 +114,9 @@ Nie mylić z luką produktową GAP-01. Poniższe zachowanie **jest** w kodzie (a
 | ID testu | Scenariusz | Status |
 |---|---|---|
 | PW-API-071 | `RETURN_LIE_SUCCESS` przez header → 0 eventów, fulfillment AWAITING | designed (UI: PW-E2E-040 existing) |
-| PW-E2E-043 | PAY_NO_RETURN: Approve, nie return, poll fulfillment CONFIRMED | designed |
+| PW-E2E-043 | PAY_NO_RETURN: Approve, nie return, poll fulfillment CONFIRMED | existing-pom |
 | PW-API-075 | to samo REST (simulate + GET fulfillment, bez GET return) | designed |
-| PW-API-026 | ten sam `Idempotency-Key`, inny tylko `validitySeconds` → 302 replay | designed |
+| PW-API-026 | ten sam `Idempotency-Key`, inny tylko `validitySeconds` → 302 replay | existing-ra |
 | PW-API-076 | `OOO_EVENTS` | **blocked** GAP-01 |
 
 ---

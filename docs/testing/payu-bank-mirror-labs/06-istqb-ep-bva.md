@@ -10,7 +10,7 @@ Design only dla wierszy `designed`. Wartości **z kodu** 2026-08-13.
 | EP-MRL-002 | Spring flag | true / false | 200 vs 404 + brak beana | existing-it |
 | EP-MRL-010 | CSRF token | absent / valid match / invalid / empty header | 403 / 2xx / 403 / 403 | fail existing-pom |
 | EP-MRL-011 | Auth cookie BFF | none / valid / cleared po Unlock | 401 / 200 / 401 | Unlock existing-pom |
-| EP-MRL-012 | Page class | `/admin/**` / `/psp/checkout/**` / `/login` | idle applies / **nie** / n/a | hosted existing-pw |
+| EP-MRL-012 | Page class | `/admin/**` / `/psp/checkout/**` / `/login` | idle applies / **nie** / n/a | hosted existing-pom |
 | EP-MRL-013 | storageState | Keycloak / empty / other role | admin / login / 403 UI | guest existing-pom |
 | EP-MRL-014 | JS cookie view | HttpOnly `nuxt-session` vs non-HttpOnly `mrl-csrf` | invisible / visible | partial POM |
 | EP-MRL-015 | Unlock action | logout+clear vs sam navigate `/login` | `/login` trwałe / bounce na admin | existing-pom logout |
@@ -21,7 +21,7 @@ Design only dla wierszy `designed`. Wartości **z kodu** 2026-08-13.
 
 | ID | Parametr | Granice | Expect | Pokrycie |
 |---|---|---|---|---|
-| BVA-MRL-010 | idle 120s | 119s / 120s / 121s | no lock / lock (tick 1s) / lock | 121 existing-pom; 119 designed |
+| BVA-MRL-010 | idle 120s | 119s / 120s / 121s | no lock / lock (tick 1s) / lock | existing-pom 119 + 121 |
 | BVA-MRL-011 | step-up amount | 9999 / 10000 / 10001 | 200 no header / 403 / 403 | 10000 existing-ra; 9999 designed |
 | BVA-MRL-012 | `stepUpUntil` na approval | 9999 / 10000 | pole absent / ISO now+300s | 10000 existing-ra |
 | BVA-MRL-020 | evidence size | 2 MiB / 2 MiB+1 / 5MB+ (servlet) | 200 / 413 app / 413 servlet | +1 existing-ra |
@@ -48,7 +48,7 @@ Clock: `fastForward(ttlMs)`, nie `sleep(ttl)`.
 | ID | Parametr | Partycje | Expect | Pokrycie |
 |---|---|---|---|---|
 | EP-MRL-200 | color scheme | light / dark tile | dwa goldens | dark tile existing |
-| EP-MRL-201 | break toggle | off / on | pass / fail tagged | existing-pw |
+| EP-MRL-201 | break toggle | off / on | pass / fail tagged | existing-pom |
 | EP-MRL-210 | 503 counter | 1st / 2nd / 3rd same TTL | 503 / 200 / 200 | 1–2 existing |
 | EP-MRL-211 | route mode | fulfill mocked / live wait | oba UI | existing both |
 | EP-MRL-212 | CORS Origin | `http://localhost:3000` / other / `*` | credentials OK / fail / invalid | designed |

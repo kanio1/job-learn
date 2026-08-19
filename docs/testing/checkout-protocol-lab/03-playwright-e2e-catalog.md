@@ -1,6 +1,6 @@
 # 03 — Katalog Playwright E2E (UI)
 
-Warstwa: przeglądarka Chromium, live POM (`tests-pom/specs/checkout-lab.spec.ts`). Zero `fulfill`. Kolumna Pokrycie: `existing-pom` | `designed`. Historyczne `existing-pw` (`tests/e2e`) nie obowiązuje.
+Warstwa: przeglądarka Chromium, live POM (`tests-pom/specs/checkout-lab.spec.ts`). Zero `fulfill`. Kolumna Pokrycie: `existing-pom` | `designed`. Historyczne `existing-pom` (`tests/e2e`) nie obowiązuje.
 
 **Stałe selektory:** patrz tabele.  
 **SSR:** `/error-lab` tylko przez sidebar po SPA `/admin/*` — nigdy `page.goto('/error-lab')` przy mocku sesji.  
@@ -19,7 +19,7 @@ Skrót continueUrl / UC-03 / UC-05: [README](README.md). PAY_NO_RETURN = PW-E2E-
 
 | | |
 |---|---|
-| Pokrycie | existing-pw |
+| Pokrycie | existing-pom |
 | Prio | P0 |
 | Auth | Keycloak mock |
 | Preconditions | `mockAuthenticatedSession`; `mockCheckoutLab` |
@@ -31,7 +31,7 @@ Skrót continueUrl / UC-03 / UC-05: [README](README.md). PAY_NO_RETURN = PW-E2E-
 
 | | |
 |---|---|
-| Pokrycie | existing-pw |
+| Pokrycie | existing-pom |
 | Prio | P0 |
 | Kroki | `goto /admin/merchants` → `nav-link-checkout-lab` |
 | Asercje | tekst „Three identity worlds” |
@@ -40,7 +40,7 @@ Skrót continueUrl / UC-03 / UC-05: [README](README.md). PAY_NO_RETURN = PW-E2E-
 
 | | |
 |---|---|
-| Pokrycie | existing-pw |
+| Pokrycie | existing-pom |
 | Prio | P1 |
 | Kroki | `goto /admin/merchants` → `nav-link-error-lab` → `checkout-lab-from-error-lab` |
 | Asercje | „Hosted capability”; heading Error Lab przed click |
@@ -103,7 +103,7 @@ Learning copy (asertuj tekst alertu): **POST /bookings = 200 JSON `redirectUri`*
 
 | | |
 |---|---|
-| Pokrycie | existing-pw (część multi-tab) |
+| Pokrycie | existing-pom (część multi-tab) |
 | Prio | P0 |
 | Kroki | booking → submit (default ONLINE) |
 | Asercje | `fulfillment-status` = `AWAITING_PAYMENT`; `checkout-open-hosted` visible; debug panel nie pokazuje pustego `Location` jako sukcesu 302 |
@@ -113,7 +113,7 @@ Learning copy (asertuj tekst alertu): **POST /bookings = 200 JSON `redirectUri`*
 
 | | |
 |---|---|
-| Pokrycie | existing-pw (mock `CASH-*`) **+ existing-pom** `checkout-lab.spec.ts` · `cash booking confirms fulfillment without hosted checkout` (`chooseMode('CASH')`) |
+| Pokrycie | existing-pom (mock `CASH-*`) **+ existing-pom** `checkout-lab.spec.ts` · `cash booking confirms fulfillment without hosted checkout` (`chooseMode('CASH')`) |
 | Prio | P0 |
 | Kroki | ustaw `checkout-booking-mode` = CASH → submit |
 | Asercje | `fulfillment-status` = `CONFIRMED`; `checkout-open-hosted` count 0; body `sessionId` null, `redirectUri` null, `validityUntil` null |
@@ -123,7 +123,7 @@ Learning copy (asertuj tekst alertu): **POST /bookings = 200 JSON `redirectUri`*
 
 | | |
 |---|---|
-| Pokrycie | existing-pw |
+| Pokrycie | existing-pom |
 | Prio | P1 |
 | Kroki | `extOrderId` `CASH-{ts}` → submit |
 | Asercje | CONFIRMED, brak hosted button |
@@ -199,7 +199,7 @@ Selectory: `psp-hosted-checkout`, `psp-approve`, `psp-decline`, `psp-outcome`. L
 
 | | |
 |---|---|
-| Pokrycie | existing-pw |
+| Pokrycie | existing-pom |
 | Prio | P0 |
 | Auth | `browser.newContext()` bez storage |
 | Kroki | `goto /psp/checkout/{SESSION_ID}` |
@@ -209,7 +209,7 @@ Selectory: `psp-hosted-checkout`, `psp-approve`, `psp-decline`, `psp-outcome`. L
 
 | | |
 |---|---|
-| Pokrycie | existing-pw (assert header w mocku multi-tab) |
+| Pokrycie | existing-pom (assert header w mocku multi-tab) |
 | Prio | P0 |
 | Network | POST `**/simulate` header `lab-simulate-token` = token z GET |
 | Asercje | 200; `psp-outcome` visible; Approve/Decline **ukryte** (`!outcome`) |
@@ -299,7 +299,7 @@ Selectory: `checkout-return`, `return-hint`, `fulfillment-status`.
 
 | | |
 |---|---|
-| Pokrycie | existing-pw **+ existing-pom** `lie return keeps fulfillment unconfirmed` |
+| Pokrycie | existing-pom **+ existing-pom** `lie return keeps fulfillment unconfirmed` |
 | Prio | P0 |
 | Auth | public context / admin POM po bookingu |
 | Kroki | `goto /checkout-lab/return?sessionId={id}&status=success` bez simulate |
@@ -309,7 +309,7 @@ Selectory: `checkout-return`, `return-hint`, `fulfillment-status`.
 
 | | |
 |---|---|
-| Pokrycie | existing-pw **+ existing-pom** `hub opens booking; online pay uses hosted tab and fulfillment oracle` |
+| Pokrycie | existing-pom **+ existing-pom** `hub opens booking; online pay uses hosted tab and fulfillment oracle` |
 | Prio | P0 |
 | Asercje | CONFIRMED; hint może być success — oracle i tak fulfillment |
 
@@ -365,7 +365,7 @@ Selectory: `checkout-return`, `return-hint`, `fulfillment-status`.
 
 | | |
 |---|---|
-| Pokrycie | existing-pw |
+| Pokrycie | existing-pom |
 | Prio | P0 |
 | Kroki | `waitForEvent('page')` **przed** click `checkout-open-hosted` → Approve → goto return |
 | Asercje | CONFIRMED na return |
@@ -397,7 +397,7 @@ Selectory: `inspector-session-id`, `inspector-load`, `inspector-process-status`,
 
 | | |
 |---|---|
-| Pokrycie | existing-pw |
+| Pokrycie | existing-pom |
 | Prio | P0 |
 | Mock | events array z `signatureHeader`, `processStatus: DONE` |
 | Asercje | `inspector-process-status` = DONE; tekst Lab-Signature |
@@ -489,7 +489,7 @@ Selectory: `inspector-session-id`, `inspector-load`, `inspector-process-status`,
 
 | | |
 |---|---|
-| Pokrycie | existing-pw (karta Hosted capability) |
+| Pokrycie | existing-pom (karta Hosted capability) |
 | Prio | P2 |
 | Asercje | tekst o Lab-Simulate-Token / public bez Keycloak |
 

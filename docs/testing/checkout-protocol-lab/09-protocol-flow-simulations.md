@@ -297,7 +297,7 @@ Fingerprint = `extOrderId|amountMinor|currency|continueUrl|notifyUrl` (**bez** `
 | 1 | nowy key | **302** nowy sessionId | `Idempotency-Replayed: false`/brak | PW-API-020 |
 | 2 | ten sam key + ten sam fp | **302** to samo id | `Idempotency-Replayed: true` | PW-API-024 existing-ra |
 | 3 | ten sam key + inny `amountMinor` | **409** | `error: idempotency_conflict` | PW-API-025 |
-| 4 | ten sam key + tylko inny `validitySeconds` | **302** replay | Replayed | PW-API-026 **designed** (GAP-07) |
+| 4 | ten sam key + tylko inny `validitySeconds` | **302** replay | Replayed | PW-API-026 **existing-ra** (GAP-07) |
 | 5 | brak key | **302** zawsze nowy id | — | PW-API-027 |
 
 To **nie** jest replay `payment_orders` (tam drugi POST = **200**). Tu create session zawsze semantyka redirect **302**.

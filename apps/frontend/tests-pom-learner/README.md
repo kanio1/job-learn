@@ -21,4 +21,4 @@ PLAYWRIGHT_SKIP_WEBSERVER=1 PLAYWRIGHT_BASE_URL=http://localhost:3000 \
   corepack pnpm exec playwright test --config playwright.pom-learner.config.ts
 ```
 
-Against `scripts/dev-stack.sh --app`, `PLAYWRIGHT_SKIP_WEBSERVER=1` is required (Playwright must not start host `pnpm dev`). Browser origin is `http://localhost:3000`, not `127.0.0.1`. Preflight: [`../tests-pom/README.md`](../tests-pom/README.md).
+Against `scripts/dev-stack.sh --app`, `PLAYWRIGHT_SKIP_WEBSERVER=1` is required (Playwright must not start host `pnpm dev`). Host DX uses `PLAYWRIGHT_BASE_URL=http://localhost:3000`; `--app` uses `http://127.0.0.1:3000` (OIDC redirect). Canon: [`docs/setup/run-stack-and-pom.md`](../../../docs/setup/run-stack-and-pom.md) §3.3. Preflight: [`../tests-pom/README.md`](../tests-pom/README.md).

@@ -16,8 +16,8 @@ Symulacje hop-by-hop: [09](09-protocol-flow-simulations.md). Brzeg Caddy/TLS: [l
 |---|---|---|---|---|
 | FR-01 OAuth | EP | PW-API-010–016 | existing-ra + designed | P1 designed |
 | FR-02 302 create | UC, BVA | PW-API-020–040, BVA-001–007 | existing-ra; BVA designed | P0 BVA |
-| FR-03 Hosted bind | UC | PW-E2E-020, PW-API-100 | existing-pw/ra | — |
-| FR-04 continueUrl kłamstwo | UC-03 | PW-E2E-040, PW-API-071 | existing-pw; RA designed | P0 RA |
+| FR-03 Hosted bind | UC | PW-E2E-020, PW-API-100 | existing-pom/ra | — |
+| FR-04 continueUrl kłamstwo | UC-03 | PW-E2E-040, PW-API-071 | existing-pom; RA designed | P0 RA |
 | FR-05/06 HMAC 202 | DT-NFY | PW-API-200–201 | existing-ra | — |
 | FR-07 Worker refetch | ST-EVT | PW-API-055, 200 | existing-ra | P2 PROCESSING race |
 | FR-08 Dedup 200 | DT-N02 | PW-API-208 | existing-ra | — |

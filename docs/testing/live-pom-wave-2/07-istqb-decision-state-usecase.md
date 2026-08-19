@@ -19,7 +19,7 @@ Implementacja = konkretny `test('…')` z **03**. `designed` tylko gdy spec nie 
 | admin | `/admin/support` | wyniki | E2E-071 |
 | `tenant.admin` | `GET /api/merchants/{BETA_001}` | **404** (nie 200 Beta) | UC-W2-20, existing-ra |
 | `merchant.manager` | `POST …/{ALPHA_002}/payment-orders` | **403** | UC-W2-21, existing-ra |
-| `merchant.denied` | `GET /api/merchants` | **403** | UC-W2-21, existing-ra |
+| `merchant.denied` | `GET /api/merchants` | **403** | UC-W2-21, existing-pom `denied-rbac.spec.ts` |
 
 Pełna macierz 11 kombinacji: [09 BC-OP-03](09-core-domain-flows.md).
 
@@ -297,7 +297,7 @@ TC: E2E-095 / RFC E2E-020–023.
 | EG-W2-02 | `localhost` → `::1` ECONNREFUSED | `BffClient` `127.0.0.1`; browser `localhost` | API |
 | EG-W2-03 | Sealed cookie zawiera `eyJ` | skan tylko `origins` | E2E-011 |
 | EG-W2-11 | Menu logout mylony z `end_session` | E2E-010 ≠ E2E-013 | UC-W2-02 / 18 |
-| EG-W2-12 | `id_token` w cookie → drop sesji | nie zapisywać `id_token`; SEC-005 | designed |
+| EG-W2-12 | `id_token` w cookie → drop sesji | nie zapisywać `id_token`; SEC-005 | existing-pom |
 | EG-W2-04 | `payments-internal-notes.spec.ts` wpadnie w manager project | plik `internal-notes.spec.ts` | E2E-040 |
 | EG-W2-05 | Double `status` na continueUrl | `toContainText('failure')` nie exact | E2E-063 |
 | EG-W2-06 | `page.selectOption` na USelect | `getByRole('option')` | E2E-096 |

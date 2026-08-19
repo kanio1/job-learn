@@ -54,6 +54,11 @@ test('guest BFF merchants GET and POST return 401', { tag: ['@security'] }, asyn
   expect(postResponse.status()).toBe(401)
 })
 
+test('guest POST session-lab csrf-demo returns 401', { tag: ['@security'] }, async ({ app }) => {
+  const response = await app.page.request.post('/api/session-lab/csrf-demo')
+  expect(response.status()).toBe(401)
+})
+
 test('login with redirectTo returns to the intended admin path', { tag: ['@security'] }, async ({ app }) => {
   test.setTimeout(60_000)
   const account = platformAdminAccount()

@@ -17,4 +17,20 @@ export class SessionLabPage extends BasePage {
   async csrfOk(): Promise<void> {
     await this.byTestId('session-lab-csrf-ok').click()
   }
+
+  async csrfFail(): Promise<void> {
+    await this.byTestId('session-lab-csrf-fail').click()
+  }
+
+  deviceList() {
+    return this.byTestId('session-lab-device-list')
+  }
+
+  revokeButton(deviceId: string) {
+    return this.byTestId(`session-lab-revoke-${deviceId}`)
+  }
+
+  async revoke(deviceId: string): Promise<void> {
+    await this.revokeButton(deviceId).click()
+  }
 }

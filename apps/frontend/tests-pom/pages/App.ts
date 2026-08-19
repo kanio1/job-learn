@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar'
 import { ProblemDetailsCard } from './components/ProblemDetailsCard'
 import { UserMenu } from './components/UserMenu'
 import { CommandPalette } from './components/CommandPalette'
+import { IdleOverlay } from './components/IdleOverlay'
 import { LoginPage } from './LoginPage'
 import { MerchantsListPage } from './MerchantsListPage'
 import { MerchantDetailPage } from './MerchantDetailPage'
@@ -16,6 +17,7 @@ import { ErrorLabPage } from './ErrorLabPage'
 import { CheckoutLabHubPage } from './CheckoutLabHubPage'
 import { CheckoutLabBookingPage } from './CheckoutLabBookingPage'
 import { CheckoutLabInspectorPage } from './CheckoutLabInspectorPage'
+import { CheckoutLabWidgetPage } from './CheckoutLabWidgetPage'
 import { HostedCheckoutPage } from './HostedCheckoutPage'
 import { CheckoutReturnPage } from './CheckoutReturnPage'
 import { SupportPage } from './SupportPage'
@@ -33,6 +35,7 @@ export class App {
   readonly problem: ProblemDetailsCard
   readonly userMenu: UserMenu
   readonly commandPalette: CommandPalette
+  readonly idle: IdleOverlay
   readonly login: LoginPage
   readonly merchants: MerchantsListPage
   readonly merchantDetail: MerchantDetailPage
@@ -46,6 +49,7 @@ export class App {
   readonly checkoutHub: CheckoutLabHubPage
   readonly checkoutBooking: CheckoutLabBookingPage
   readonly checkoutInspector: CheckoutLabInspectorPage
+  readonly checkoutWidget: CheckoutLabWidgetPage
   readonly hostedCheckout: HostedCheckoutPage
   readonly checkoutReturn: CheckoutReturnPage
   readonly support: SupportPage
@@ -62,6 +66,7 @@ export class App {
     this.problem = new ProblemDetailsCard(page)
     this.userMenu = new UserMenu(page)
     this.commandPalette = new CommandPalette(page)
+    this.idle = new IdleOverlay(page)
     this.login = new LoginPage(page)
     this.merchants = new MerchantsListPage(page)
     this.merchantDetail = new MerchantDetailPage(page)
@@ -75,6 +80,7 @@ export class App {
     this.checkoutHub = new CheckoutLabHubPage(page)
     this.checkoutBooking = new CheckoutLabBookingPage(page)
     this.checkoutInspector = new CheckoutLabInspectorPage(page)
+    this.checkoutWidget = new CheckoutLabWidgetPage(page)
     this.hostedCheckout = new HostedCheckoutPage(page)
     this.checkoutReturn = new CheckoutReturnPage(page)
     this.support = new SupportPage(page)

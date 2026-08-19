@@ -12,7 +12,7 @@ Cel edukacyjny przy każdym TC: 2–4 zdania.
 
 | | |
 |---|---|
-| Pokrycie | existing-pw (`rls-lab.spec.ts`) |
+| Pokrycie | existing-pom (`rls-lab.spec.ts`) |
 | Prio | P0 |
 | Kroki | `/admin/merchants` → `nav-link-rls-lab` |
 | Asercje | tekst „Java WHERE is not RLS”; `rls-lab-items-table` |
@@ -52,7 +52,7 @@ Cel edukacyjny przy każdym TC: 2–4 zdania.
 
 | | |
 |---|---|
-| Pokrycie | existing-pw (MERCHANT_MANAGER) + existing-pom |
+| Pokrycie | existing-pom (MERCHANT_MANAGER) + existing-pom |
 | Prio | P1 |
 | Asercje | brak `rls-lab-compare-panel`; BFF `GET /api/rls-lab/compare` **403** (brak `platform:payments:read`; body **nie** jest `rls_forbidden`) |
 | Uczy | UI chowa panel (`canReadPlatformPayments`). API odrzuca authority zanim serwis rzuci `rls_forbidden`. |
@@ -61,7 +61,7 @@ Cel edukacyjny przy każdym TC: 2–4 zdania.
 
 | | |
 |---|---|
-| Pokrycie | existing-pw `playwright.rls-flag-off.config.ts` |
+| Pokrycie | existing-pom `playwright.rls-flag-off.config.ts` |
 | Prio | P1 |
 | Asercje | `nav-link-rls-lab` count 0; `/admin/rls-lab` bez table (client 404 copy); BFF `/api/rls-lab/items` 404 |
 
@@ -82,7 +82,7 @@ Cel edukacyjny przy każdym TC: 2–4 zdania.
 
 | | |
 |---|---|
-| Pokrycie | existing-pw + existing-pom |
+| Pokrycie | existing-pom + existing-pom |
 | Prio | P0 |
 | Uczy | Amount w minor units; UI number input vs query int. |
 
@@ -99,7 +99,7 @@ Cel edukacyjny przy każdym TC: 2–4 zdania.
 
 | | |
 |---|---|
-| Pokrycie | existing-pw + existing-pom (`?page=1` then Apply) **DONE_VERIFIED** live HTTP 2026-08-13 |
+| Pokrycie | existing-pom + existing-pom (`?page=1` then Apply) **DONE_VERIFIED** live HTTP 2026-08-13 |
 | Prio | P0 |
 | Asercje | URL bez `page=1`; BFF list `page` = `0` lub absent |
 | Uczy | Stale page index to check-then-act w UI: filtr bez resetu pokazuje pustą stronę. |
@@ -108,7 +108,7 @@ Cel edukacyjny przy każdym TC: 2–4 zdania.
 
 | | |
 |---|---|
-| Pokrycie | existing-pw |
+| Pokrycie | existing-pom |
 | Prio | P1 |
 | Uczy | Widget 1-based, backend 0-based. Off-by-one w testach paginacji. |
 
@@ -116,7 +116,7 @@ Cel edukacyjny przy każdym TC: 2–4 zdania.
 
 | | |
 |---|---|
-| Pokrycie | existing-pw analog `payment-date-filter.spec.ts` |
+| Pokrycie | existing-pom analog `payments-filters.spec.ts` |
 | Prio | P1 |
 
 ### PW-RFC-E2E-044 — BFF composition origin 3000
@@ -143,7 +143,7 @@ Cel edukacyjny przy każdym TC: 2–4 zdania.
 
 | | |
 |---|---|
-| Pokrycie | existing-pw + existing-pom |
+| Pokrycie | existing-pom + existing-pom |
 | Prio | P1 |
 | Asercje | `payment-status-badge` w wierszu z `clientOrderReference`, nie `status-badge.first()` |
 | Uczy | Kolor nie jest oracle; `data-status` + visible label. Globalny `status-badge` łapie dashboard. |
@@ -163,5 +163,5 @@ Cel edukacyjny przy każdym TC: 2–4 zdania.
 
 | | |
 |---|---|
-| Pokrycie | existing-pw (to samo co 024) |
+| Pokrycie | existing-pom (to samo co 024) |
 | Prio | P1 |

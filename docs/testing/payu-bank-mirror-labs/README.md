@@ -50,7 +50,7 @@ Unit (designed)      idle TTL, CSRF compare     — bez Spring
 
 | Wartość | Znaczenie |
 |---|---|
-| `existing-pw` | Historyczne — drzewo `tests/e2e` usunięte; ślad = `existing-pom` |
+| `existing-pom` | Historyczne — drzewo `tests/e2e` usunięte; ślad = `existing-pom` |
 | `existing-pom` | Jest w `tests-pom` |
 | `existing-ra` | Jest w REST Assured `*Test.java` |
 | `existing-it` | Jest w `*IT.java` (Failsafe / Surefire IT) |

@@ -111,7 +111,7 @@ Hosted hops, HMAC, `Idempotency-Key` na **sesji** CPL, PAY_NO_RETURN: [CPL 08](.
 | Nazwa spec notes | EG-04 | `internal-notes.spec.ts` |
 | Double status query | EG-05 | E2E-063 |
 | USelect / Confirm testid | EG-06/07 | E2E-096 |
-| CSRF happy vs merchant POST | SEC-031 | existing-pom lab csrf-ok; merchant POST CSRF N/A |
+| CSRF happy vs merchant POST | SEC-031 | existing-pom lab csrf-ok; merchant POST bez CSRF 201 `admin-bff.spec.ts` |
 | Learner | README | `tests-pom-learner` |
 
 ## Heatmapa
@@ -120,11 +120,12 @@ Hosted hops, HMAC, `Idempotency-Key` na **sesji** CPL, PAY_NO_RETURN: [CPL 08](.
 |---|---|---|
 | Guest / logout / cookie / idle unlock + re-goto | tak | — |
 | Merchant persist / 409 API / Zod / ST / UI+tenant / UI 409 | tak | — |
-| Palette ARIA Error Lab + destynacje + login snapshot | tak | ARIA forbidden |
+| Palette ARIA Error Lab + destynacje + login snapshot + `/forbidden` | tak | — |
 | Notes / risk | 201\|403 | realm roles (E2E-041 existing) |
 | Payments idempotency / ETag / cancel | tak | — |
 | Dual-control refund | RA + `payments-refund-dual-control.spec.ts` | — |
-| Tenant.admin / ALPHA_002 BOLA | RA + `tenant-scope.spec.ts` | `merchant.denied` GET 403 (RA) |
+| Tenant.admin / ALPHA_002 BOLA | RA + `tenant-scope.spec.ts` | — |
+| merchant.denied GET merchants 403 + UI deny | `denied-rbac.spec.ts` | — |
 | CASH / decline / lie / expired hosted / PAY_NO_RETURN | tak | — |
 | Support IDOR | tak | — |
 | Error Lab 400/401/412 + remaining BFF | tak | 429 mock |

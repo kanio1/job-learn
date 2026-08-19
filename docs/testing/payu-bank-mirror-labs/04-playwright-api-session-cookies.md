@@ -17,8 +17,8 @@ O ile nie napisano: Target A. Problem+json: pola `type`, `title`, `status`, `det
 | PW-MRL-API-001 | GET `/api/mirror-lab/statements?format=csv` + JWT, `app.mirror-lab.enabled=false` | **404** + `X-Correlation-ID` | existing-it DisabledIT | C-03 | P0 |
 | PW-MRL-API-002 | bean `mirrorLabController` przy flag off | `NoSuchBeanDefinitionException` | existing-it | C-03 | P0 |
 | PW-MRL-API-003 | GET statements flag on + JWT | **200** CSV | existing-it EnabledIT | — | P0 |
-| PW-MRL-API-004 | Target B `GET /api/mirror-lab/statements` gdy FE flag **false** | Nitro **404** (bez Spring) | designed · GAP-T01 | C-03 | P0 |
-| PW-MRL-API-005 | Target B `GET /api/session-lab/csrf` flag false | 404 | designed | C-03 | P0 |
+| PW-MRL-API-004 | Target B `GET /api/mirror-lab/statements` gdy FE flag **false** | Nitro **404** (bez Spring) | existing-pom `mirror-lab-flag-off.spec.ts` | C-03 | P0 |
+| PW-MRL-API-005 | Target B `GET /api/session-lab/csrf` flag false | 404 | existing-pom `mirror-lab-flag-off.spec.ts` | C-03 | P0 |
 | PW-MRL-API-006 | Target B `GET /api/network-lab/slow` flag false | 404 | designed | C-03 | P0 |
 | PW-MRL-API-007 | Target B `GET /api/mirror-lab/tpp/accounts` flag false | 404 (nawet z tokenem) | designed | C-03 | P0 |
 | PW-MRL-API-008 | GET `/api/status` | 200 existing platform | existing-ra analog | — | — |
@@ -34,13 +34,13 @@ Wszystkie session-lab: `requireMirrorLabSession` = flaga **i** `requireUserSessi
 |---|---|---|---|---|---|
 | PW-MRL-API-010 | GET `/api/session-lab/csrf` z sesją | 200 `{ token }`; `Set-Cookie: mrl-csrf` **nie** HttpOnly | designed | S06 | P1 |
 | PW-MRL-API-011 | POST `/api/session-lab/csrf-demo` sesja, **bez** `X-Csrf-Token` | 403 `csrf_failed` problem+json | existing-pom (UI) / designed request | S06 | P1 |
-| PW-MRL-API-012 | POST csrf-demo zły header | 403 `csrf_failed` | designed | S06 | P1 |
-| PW-MRL-API-013 | POST csrf-demo header == cookie | 200 `{ status: ok }` | designed | S06 | P1 |
+| PW-MRL-API-012 | POST csrf-demo zły header | 403 `csrf_failed` | existing-pom `session-lab.spec.ts` | S06 | P1 |
+| PW-MRL-API-013 | POST csrf-demo header == cookie | 200 `{ status: ok }` | existing-pom `session-lab.spec.ts` | S06 | P1 |
 | PW-MRL-API-014 | POST merchant payment-order Bearer, **bez** CSRF | istniejący 201/200 — CSRF **nie** na merchant BFF | designed kontrast | S06 | P1 |
-| PW-MRL-API-015 | GET csrf **bez** sesji | 401 | designed | S04 | P0 |
-| PW-MRL-API-020 | GET `/api/session-lab/devices` z sesją | 200 lista | designed | S05 | P1 |
-| PW-MRL-API-021 | POST devices | 200 rekord | designed | S05 | P1 |
-| PW-MRL-API-022 | POST `devices/{id}/revoke` | 200/204; GET lista bez id | designed | S05 | P1 |
+| PW-MRL-API-015 | GET csrf **bez** sesji | 401 | existing-pom `session-guest.spec.ts` (POST csrf-demo 401; ten sam `requireUserSession`) | S04 | P0 |
+| PW-MRL-API-020 | GET `/api/session-lab/devices` z sesją | 200 lista | existing-pom `session.spec.ts` | S05 | P1 |
+| PW-MRL-API-021 | POST devices | 200 rekord | existing-pom (UI `loadDevices` w session-lab) | S05 | P1 |
+| PW-MRL-API-022 | POST `devices/{id}/revoke` | 200 `{ revoked: true }`; GET lista bez id | existing-pom `session.spec.ts` | S05 | P1 |
 | PW-MRL-API-023 | GET `/api/session-lab/cookie-policy` | 200 opis HttpOnly `nuxt-session` (**statyczny** `secure: false`) | designed | S01 | P1 |
 | PW-MRL-API-024 | POST `/api/session-lab/end-session` z sesją | 200 `{ ended, endSessionUrl }`; URL `client_id` + `post_logout_redirect_uri`; **bez** `id_token_hint` | existing-pom `session.spec.ts` | S04b | P0 |
 | PW-MRL-API-025 | POST end-session bez sesji | 401 | designed | S04b | P0 |
@@ -51,7 +51,7 @@ Wszystkie session-lab: `requireMirrorLabSession` = flaga **i** `requireUserSessi
 |---|---|---|---|---|
 | PW-MRL-API-030 | BFF GET bank/statements z Cookie sesji | 200 (flag on, backend up) | designed | S01 |
 | PW-MRL-API-031 | BFF GET statements bez Cookie | 401 | designed | S04 |
-| PW-MRL-API-032 | Hosted GET `/psp/checkout/{id}` bez Cookie | 200 HTML public | existing-pw | S02 |
+| PW-MRL-API-032 | Hosted GET `/psp/checkout/{id}` bez Cookie | 200 HTML public | existing-pom | S02 |
 | PW-MRL-API-033 | GET `/api/checkout-lab/hosted/sessions/{id}` bez Keycloak | 200 JSON (CPL) | existing-ra | S02 |
 
 ---
@@ -77,8 +77,8 @@ GET-with-body: filtr na **GET** z `Content-Length>0` lub `Transfer-Encoding`. RA
 | PW-MRL-API-130 | simulate po `validityUntil` | 409 `expired_link` | existing-ra CPL | P04 | P1 |
 | PW-MRL-API-131 | POST sessions `language=pl` | Location zawiera `?lang=pl` | existing-ra | P02 | P1 |
 | PW-MRL-API-132 | `language=xx` | Location **bez** query lang | designed | P02 | P2 |
-| PW-MRL-API-140 | OPTIONS `/api/network-lab/cors-cookie` Origin `http://localhost:3000` | 204; `Allow-Credentials: true`; ACAO origin | designed | N06 | P1 |
-| PW-MRL-API-141 | GET cors-cookie inny Origin | brak cookie credentialed | designed | N06 | P1 |
+| PW-MRL-API-140 | OPTIONS `/api/network-lab/cors-cookie` Origin `http://localhost:3000` | 204; `Allow-Credentials: true`; ACAO origin | existing-pom | N06 | P1 |
+| PW-MRL-API-141 | GET cors-cookie inny Origin | 200 JSON; ACAO nadal lab origin | existing-pom | N06 | P1 |
 
 ---
 
@@ -86,11 +86,11 @@ GET-with-body: filtr na **GET** z `Content-Length>0` lub `Transfer-Encoding`. RA
 
 | ID | Call | Expect | Pokrycie | FR | Prio |
 |---|---|---|---|---|---|
-| PW-MRL-API-150 | POST `/api/network-lab/trigger-503-retry` 1st | 503 + `Retry-After: 1` | existing-pom/pw | N01 | P0 |
-| PW-MRL-API-151 | 2nd same session key | 200 `{ status: ok }` | existing | N01 | P0 |
-| PW-MRL-API-152 | po >10s znowu 1st=503 | izolacja TTL | designed | N01 | P1 |
-| PW-MRL-API-153 | GET `/api/network-lab/lie-fulfillment` | lab JSON (UI może kłamać przez route) | designed raw | N03 | P2 |
-| PW-MRL-API-154 | GET `/api/network-lab/har-replay` | `{ source: har }` | existing-pw | N05 | P1 |
+| PW-MRL-API-150 | POST `/api/network-lab/trigger-503-retry` 1st | 503 + `Retry-After` = TTL s | existing-pom | N01 | P0 |
+| PW-MRL-API-151 | 2nd same session key | 200 `{ status: ok }` | existing-pom | N01 | P0 |
+| PW-MRL-API-152 | po TTL znowu 1st=503 | GET `/api/network-lab/retry-window` `remainingMs` → 0, potem POST 503 | existing-pom | N01 | P1 |
+| PW-MRL-API-153 | GET `/api/network-lab/lie-fulfillment` | lab JSON `success` (nie persistence) | existing-pom | N03 | P2 |
+| PW-MRL-API-154 | GET `/api/network-lab/har-replay` | `{ source: har }` | existing-pom | N05 | P1 |
 
 ---
 
@@ -116,7 +116,7 @@ Step-up: header `X-Lab-Step-Up: confirmed` (lab, nie ACR).
 |---|---|---|---|---|---|
 | PW-MRL-API-210 | GET `?format=csv` | 200 `text/csv`; `Content-Disposition` filename statement.csv | existing-it / designed full headers | B02 | P1 |
 | PW-MRL-API-211 | GET `?format=pdf` | 200 `application/pdf`; body starts `%PDF-` | designed RA bytes | B02 | P0 |
-| PW-MRL-API-212 | BFF GET pdf `arrayBuffer` | bajty nieutf8-zepsute | existing-pw mocked; designed live | B02 | P0 |
+| PW-MRL-API-212 | BFF GET pdf `arrayBuffer` | bajty nieutf8-zepsute | existing-pom `mirror-lab.spec.ts` live `%PDF-` | B02 | P0 |
 | PW-MRL-API-213 | `?format=xml` | 400 albo csv default — **ustalić z kodem** (`statement()` tylko pdf vs else csv) | designed: **200 csv** (else branch) | B02 | P2 |
 
 ### Disputes / evidence

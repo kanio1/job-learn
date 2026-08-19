@@ -90,12 +90,11 @@ Playwright `webServer` = Nuxt `--host 127.0.0.1`. Browser `baseURL` = `http://lo
 | Wartość | Znaczenie |
 |---|---|
 | `existing-pom` | Jest w `tests-pom` (Wave 2 lub wcześniejszy live spec) |
-| `existing-pw` | Historyczne (drzewo `tests/e2e` usunięte). Nowy ślad = `existing-pom` |
 | `existing-ra` | REST Assured — oracle kontraktu, nie implementować drugi raz w PW |
-| `designed` | Nadal brak specu (P2 ARIA forbidden; CPL `USER_CANCEL` header no-op) |
+| `designed` | Nadal brak specu (CPL `USER_CANCEL` header no-op; pairwise UX) |
 | `blocked` | Zależny od luki produktowej / realm (admin notes/risk 201\|403). UI `tenantReference` **nie** jest blocked |
 
-Wave 3 zamknęło P1 gość (003/SEC-011/030), Error Lab 083 (exact status; canary 401), admin Support 071 (tabela), API-003/004/011, notes 041. HTTPS: [wave-3-compose-tls-pom](../wave-3-compose-tls-pom/). GAP-W2-01 (UI tenant) **zamknięty** (E2E-024). Pozostałe designed: **P2** pairwise UX / ARIA login; **P1** UI 409 (E2E-025).
+Wave 3 zamknęło P1 gość (003/SEC-011/030), Error Lab 083 (exact status; canary 401), admin Support 071 (tabela), API-003/004/011, notes 041. HTTPS: [wave-3-compose-tls-pom](../wave-3-compose-tls-pom/). GAP-W2-01 (UI tenant) **zamknięty** (E2E-024). E2E-025 UI 409 **existing-pom**. ARIA `/forbidden`: **existing-pom** `denied-rbac.spec.ts`. Pozostałe designed: **P2** pairwise UX / CPL header no-op.
 
 ---
 
