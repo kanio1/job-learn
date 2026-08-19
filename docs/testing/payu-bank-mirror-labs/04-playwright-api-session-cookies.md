@@ -42,7 +42,7 @@ Wszystkie session-lab: `requireMirrorLabSession` = flaga **i** `requireUserSessi
 | PW-MRL-API-021 | POST devices | 200 rekord | designed | S05 | P1 |
 | PW-MRL-API-022 | POST `devices/{id}/revoke` | 200/204; GET lista bez id | designed | S05 | P1 |
 | PW-MRL-API-023 | GET `/api/session-lab/cookie-policy` | 200 opis HttpOnly `nuxt-session` (**statyczny** `secure: false`) | designed | S01 | P1 |
-| PW-MRL-API-024 | POST `/api/session-lab/end-session` z sesją | 200 `{ ended, endSessionUrl }`; URL `client_id` + `post_logout_redirect_uri`; **bez** `id_token_hint` | designed | S04b | P0 |
+| PW-MRL-API-024 | POST `/api/session-lab/end-session` z sesją | 200 `{ ended, endSessionUrl }`; URL `client_id` + `post_logout_redirect_uri`; **bez** `id_token_hint` | existing-pom `session.spec.ts` | S04b | P0 |
 | PW-MRL-API-025 | POST end-session bez sesji | 401 | designed | S04b | P0 |
 
 ## Cookies (request)

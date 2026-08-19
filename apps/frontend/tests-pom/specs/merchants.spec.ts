@@ -122,6 +122,25 @@ test('merchant reference length BVA stays on BFF REST (SCN-MER-07/08/10/11)', as
   }
 })
 
+test('duplicate merchant reference shows 409 on the create form', async ({ app, api, page }, testInfo) => {
+  const client = requireApi(api)
+  const reference = uniqueMerchantReference(testInfo)
+  const created = await client.createMerchant(reference, `Dup UI ${reference}`)
+  expect(created.status).toBe(201)
+
+  await app.merchants.goto()
+  await app.merchants.expectLoaded()
+  await app.merchants.openCreateForm()
+  await app.merchants.fillCreateForm(reference, `Dup UI again ${reference}`, 'TENANT_ALPHA')
+  const posted = page.waitForResponse(response =>
+    response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/merchants')
+  await app.merchants.submitCreate()
+  const response = await posted
+  expect(response.status()).toBe(409)
+  await expect(app.page.getByRole('alert').filter({ hasText: /already exists/i })).toBeVisible()
+  await expect(app.page.getByLabel('Merchant reference')).toHaveValue(reference)
+})
+
 test('empty create merchant form shows field errors and does not POST', async ({ app, page }) => {
   await app.merchants.goto()
   await app.merchants.expectLoaded()

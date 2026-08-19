@@ -35,9 +35,8 @@ CPL (nie duplikować 1:1): [docs/testing/checkout-protocol-lab/](../checkout-pro
 ## Warstwy wykonania
 
 ```text
-Learner POM          tests-pom-learner          — puste / skip
+Learner POM          tests-pom-learner          — copy-map; bez importu z tests-pom
 Live POM             tests-pom, zero fulfill    — Keycloak, cookies, clock, download, dual role
-Mocked Chromium      tests/e2e + page.route     — CI, visual, iframe, PDF bytes, HAR
 PW request / BFF     APIRequestContext :3000    — CSRF, flag 404, TPP header
 REST Assured         *Test.java / *IT.java      — Spring flag, multipart, refund, TPP
 Modulith             ModulithArchitectureTest   — granica mirrorlab
@@ -45,13 +44,13 @@ Flyway / JPA         Schema IT                  — V15 mrl_*, V16 REFUNDED
 Unit (designed)      idle TTL, CSRF compare     — bez Spring
 ```
 
-Playwright `webServer` = Nuxt. HMAC / refund / TPP / multipart **needs-backend**. Visual golden = CI Docker (C-06).
+`tests/e2e` (mocked Chromium) **nie istnieje**. Visual goldens i ARIA są w live POM (`PLAYWRIGHT_VISUAL=1`). HMAC / refund / TPP / multipart **needs-backend**.
 
 ## Pokrycie (kolumna w katalogach)
 
 | Wartość | Znaczenie |
 |---|---|
-| `existing-pw` | Jest w `tests/e2e` (mocked) |
+| `existing-pw` | Historyczne — drzewo `tests/e2e` usunięte; ślad = `existing-pom` |
 | `existing-pom` | Jest w `tests-pom` |
 | `existing-ra` | Jest w REST Assured `*Test.java` |
 | `existing-it` | Jest w `*IT.java` (Failsafe / Surefire IT) |

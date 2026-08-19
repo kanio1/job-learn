@@ -107,12 +107,12 @@ Format: aktor · precondition · kroki · oracle · spec.
 - **Aktor:** platform admin.
 - **Kroki:** `/admin/session-lab` → `session-lab-end-oidc`.
 - **Oracle:** `endSessionUrl` z `client_id`, bez `id_token_hint`; cookie BFF znika.
-- **TC:** E2E-013 **designed**. Szczegół: [session-bff-oidc-contract](../session-bff-oidc-contract.md) UC-SESS-03.
+- **TC:** E2E-013 existing-pom `session.spec.ts`. Szczegół: [session-bff-oidc-contract](../session-bff-oidc-contract.md) UC-SESS-03.
 
 ### UC-W2-19 — Sesja cookie mieści się w limicie UA — P0
 
 - **Oracle:** `nuxt-session` &lt; 4096 B; brak `id_token` w sealed session.
-- **TC:** SEC-005 **designed**.
+- **TC:** SEC-005 existing-pom (`expectSessionCookieUnderUaLimit`).
 
 ### UC-W2-03 — Rejestracja merchantu — P0
 
@@ -122,9 +122,9 @@ Skrypt HTTP (201 + `tenantReference`, 400 bez tenanta, 409 duplikat, ST activate
 - **Happy:** unique POST 201 → detail pokazuje reference (E2E-020). Body: `merchantReference`, `displayName`, `tenantReference`.
 - **Persist:** GET 200 po create (E2E-022).
 - **Walidacja:** pusty form, 0 POST (E2E-023).
-- **Unikalność:** drugi POST 409 (E2E-026).
+- **Unikalność:** drugi POST 409 (E2E-026); UI 409 na formularzu (E2E-025).
 - **Lifecycle:** Draft → Active → Suspended (E2E-021).
-- **Blocked:** UI POST z tenantem (E2E-024).
+- **UI tenant:** pole `tenantReference` dla platform admin (E2E-024, GAP-W2-01 zamknięty).
 - **Negatyw:** `merchant.manager` POST merchants **403**.
 
 ### UC-W2-04 — Notatka na żywej płatności — P0
@@ -218,7 +218,7 @@ Skrypt (`If-Match: "v0"`, 412/428/400/422): [09 BC-OP-05](09-core-domain-flows.m
 
 - **Kroki:** `session-lab-csrf-fail` bez headera.
 - **Oracle:** 403 `csrf_failed`.
-- **TC:** E2E-121. Happy CSRF = designed (MRL).
+- **TC:** E2E-121 fail; `csrf demo with token returns ok` happy.
 
 ### UC-W2-17 — Admin BFF RBAC / walidacja — P1
 
@@ -233,7 +233,7 @@ Skrypt (`If-Match: "v0"`, 412/428/400/422): [09 BC-OP-05](09-core-domain-flows.m
 - **Aktor:** `tenant.admin` (`TENANT_ALPHA`).
 - **Happy:** `POST /api/merchants` bez `tenantReference` → **201** w Alpha; `GET {ALPHA_001}` → **200**.
 - **Negatyw:** `GET {BETA_001}` → **404** (mask); activate Beta → **403**.
-- **Pokrycie:** existing-ra `TenantIsolationIT`; POM **designed**.
+- **Pokrycie:** existing-ra `TenantIsolationIT`; existing-pom `tenant-scope.spec.ts` (SCN-ISO-01/02/03).
 - **Skrypt:** [09 BC-OP-03](09-core-domain-flows.md).
 
 ### UC-W2-21 — BOLA ten sam tenant (001 vs 002) i denied — P0
@@ -242,7 +242,7 @@ Skrypt (`If-Match: "v0"`, 412/428/400/422): [09 BC-OP-05](09-core-domain-flows.m
 - **Negatyw create:** `POST …/{ALPHA_002}/payment-orders` + Idempotency-Key + body kwoty → **403**.
 - **Negatyw read:** GET obcego orderu → **404**.
 - **Denied:** `merchant.denied` `GET /api/merchants` → **403** (nie 401).
-- **Pokrycie:** existing-ra security; POM Support/RBAC E2E-070/100 (Beta), nie 002 CRUD.
+- **Pokrycie:** existing-ra security; existing-pom `tenant-scope.spec.ts` (SCN-ISO-10 ALPHA_002 403) + Support/RBAC E2E-070/100 (Beta). `merchant.denied` GET 403 zostaje RA.
 - **Skrypt:** [09 EXC-OP-03e](09-core-domain-flows.md).
 
 ### UC-W2-22 — Dual-control refund — P0

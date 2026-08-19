@@ -15,7 +15,7 @@ Kroki UI/HTTP: [live-pom-wave-2](../live-pom-wave-2/) (03/04/05/07). Domena: [09
 | TLS hybrid | `scripts/dev-stack.sh --tls` | host | `host.docker.internal` | `playwright.pom.tls.config.ts` |
 | Full compose | `scripts/dev-stack.sh --full` | kontenery | `payment-quality-frontend` / `backend` | ten sam TLS config |
 
-Canonical HTTP: `http://127.0.0.1:3000`. Canonical TLS: `https://app.payment-quality.local:8443` (rootless, nie :443). Keycloak HTTP issuer: `http://localhost:8081` (oracle przy starcie). HTTPS issuer: `https://auth.payment-quality.local:8443`.
+Canonical HTTP curl/health: `http://127.0.0.1:3000`. Canonical HTTP Playwright `PLAYWRIGHT_BASE_URL`: `http://localhost:3000` (OIDC; nie `127.0.0.1`). Canonical TLS: `https://app.payment-quality.local:8443` (rootless, nie :443). Keycloak HTTP issuer: `http://localhost:8081` (oracle przy starcie). HTTPS issuer: `https://auth.payment-quality.local:8443`.
 
 `--full` OIDC: przeglądarka HTTPS (`issuer` / `authorization_endpoint` na `auth…:8443`); BFF token/JWKS/userinfo HTTP do `payment-quality-keycloak:8080` przez Nitro `/__oidc/openid-configuration` **tylko z loopback**. Caddy `GET /__oidc*` → 404. **Bez** `extra_hosts` hairpin przez Caddy. Hybrid `--tls` zostaje: host Nuxt discovery `http://localhost:8081/...`.
 

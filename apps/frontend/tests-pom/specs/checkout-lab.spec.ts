@@ -1,6 +1,7 @@
 import { App } from '../pages/App'
 import { uniqueExtOrderId } from '../data/factories'
 import { test, expect } from '../fixtures'
+import { parseJson } from '../utils/http'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 
 async function requireCheckoutLab(app: App): Promise<void> {
@@ -56,6 +57,37 @@ test('hub opens booking; online pay uses hosted tab and fulfillment oracle', asy
     await expect(app.page.getByTestId('inspector-process-status')).toBeVisible()
   }).toPass({ timeout: 45_000 })
   await expectNoTokenInBrowserStorage(app.page)
+})
+
+test('approve without return still confirms fulfillment (PAY_NO_RETURN)', async ({ app, context }, testInfo) => {
+  await requireCheckoutLab(app)
+  await app.checkoutBooking.goto()
+  await app.checkoutBooking.expectLoaded()
+  await app.checkoutBooking.fillExtOrderId(uniqueExtOrderId(testInfo))
+  await app.checkoutBooking.submit()
+  await expect(app.page.getByTestId('checkout-open-hosted')).toBeVisible()
+
+  const sessionId = sessionIdFromHostedHref(await app.checkoutBooking.hostedCheckoutHref())
+  expect(sessionId).toBeTruthy()
+
+  const hostedPromise = context.waitForEvent('page')
+  await app.checkoutBooking.openHostedCheckout()
+  const hostedPage = await hostedPromise
+  const hosted = new App(hostedPage)
+  await hosted.hostedCheckout.expectLoaded()
+  await hosted.hostedCheckout.approve()
+  await hosted.hostedCheckout.expectOutcome()
+  await hostedPage.close()
+  await expect(app.page).not.toHaveURL(/\/checkout-lab\/return/)
+
+  await expect.poll(async () => {
+    const fulfillment = await app.page.request.get(`/api/checkout-lab/hosted/sessions/${sessionId}/fulfillment`)
+    if (fulfillment.status() !== 200) {
+      return fulfillment.status()
+    }
+    const body = await parseJson<{ status?: string }>(fulfillment)
+    return body?.status
+  }, { timeout: 45_000 }).toBe('CONFIRMED')
 })
 
 test('lie return keeps fulfillment unconfirmed', async ({ app }, testInfo) => {

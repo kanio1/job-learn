@@ -18,6 +18,12 @@ test('BffClient default host is IPv4 loopback (EG-W2-02)', { tag: ['@security'] 
   expect(isIpv4LoopbackUrl(BffClient.DEFAULT_BASE_URL)).toBe(true)
 })
 
+test('login page matches ARIA snapshot', { tag: ['@a11y'] }, async ({ app }) => {
+  await app.login.goto()
+  await app.login.expectLoaded()
+  await expect(app.page.getByTestId('auth-required-surface')).toMatchAriaSnapshot()
+})
+
 test('unauthenticated visit to merchants lands on login', { tag: ['@security'] }, async ({ app }) => {
   expect(guestToLoginPaths[0].path).toBe('/admin/merchants')
   await app.page.goto('/admin/merchants')

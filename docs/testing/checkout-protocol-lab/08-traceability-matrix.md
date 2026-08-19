@@ -23,7 +23,7 @@ Symulacje hop-by-hop: [09](09-protocol-flow-simulations.md). Brzeg Caddy/TLS: [l
 | FR-08 Dedup 200 | DT-N02 | PW-API-208 | existing-ra | — |
 | FR-09 400 vs 503 | DT-N03/N04 | PW-API-203, 213 | existing-ra | P1 HMAC BVA |
 | FR-10 validityUntil | ST-004, BVA clock | PW-API-130, PW-E2E-024 | existing-ra; PW designed | P0 UI expiry |
-| FR-11 Idempotency | EP-110–114 | PW-API-024–026 | existing-ra; validitySeconds designed | P1 |
+| FR-11 Idempotency | EP-110–114 | PW-API-024–026 | existing-ra (validitySeconds replay included) | P1 |
 | FR-12 Booking cash/online | DT-MODE, EP-050 | PW-E2E-010–012, PW-API-300–302 | existing; mode select designed | P0 UI mode |
 | FR-13 Inspector | UC-07 | PW-E2E-060–068 | existing cienkie | P1 deliveries/anomalies |
 | FR-14 Scenarios | EP-100, PWISE | PW-API-070–077 | partial | P0 lie RA; blocked OOO |
@@ -41,12 +41,12 @@ Symulacje hop-by-hop: [09](09-protocol-flow-simulations.md). Brzeg Caddy/TLS: [l
 |---|---|---|---|---|
 | HAPPY_COMPLETED | PW-E2E-050, PW-API-113, 200 | existing | — | |
 | USER_CANCEL | PW-E2E-022, 042, DT-S02 | **existing-pom** decline + fulfillment CANCELLED | P0 | header no-op nadal RA |
-| RETURN_LIE_SUCCESS | PW-E2E-040, PW-API-071 | pw + pom yes; API designed | P0 | |
+| RETURN_LIE_SUCCESS | PW-E2E-040, PW-API-071 | existing-pom UI; existing-ra header | P0 | |
 | BAD_SIGNATURE | PW-API-072, 204 | existing-ra | — | |
 | NOTIFY_5XX_RETRY | PW-API-073, 213, 057 | existing-ra | — | |
 | OOO_EVENTS | PW-API-076, PWISE-10 | **blocked** | — | GAP-01 |
 | EXPIRED_LINK | PW-API-030, 130, PW-E2E-024 | ra clock; POM `psp-link-expired`; Approve-block designed | P1 | |
-| PAY_NO_RETURN | PW-E2E-043, PW-API-075 | **designed** | P0 | |
+| PAY_NO_RETURN | PW-E2E-043, PW-API-075 | existing-pom (UI close-tab + GET fulfillment) | P0 | |
 
 Unknown scenario: PW-API-029 P1.
 
@@ -106,13 +106,13 @@ Nie część tego dokumentu wykonawczego — kolejka **sugerowana**:
 ### P0 (pierwsza fala PW-API + 3 E2E)
 
 1. PW-API-022 KC JWT na sessions → 401  
-2. PW-API-071 RETURN_LIE_SUCCESS 0 eventów  
+2. PW-API-071 RETURN_LIE_SUCCESS 0 eventów — **existing-ra**  
 3. PW-API-111/112 invalid simulate token  
 4. PW-API-115 Decline aliases + fulfillment CANCELLED  
 5. PW-API-130 już jest RA — E2E-024 expired UI  
 6. PW-E2E-011 CASH przez **mode select**  
 7. PW-E2E-022/042 Decline flow  
-8. PW-E2E-043 pay_no_return  
+8. PW-E2E-043 pay_no_return — **existing-pom**  
 9. PW-API-304/401/404/407 Bearer na bookings/ops  
 10. BVA-001/002/006/007 amount granice  
 

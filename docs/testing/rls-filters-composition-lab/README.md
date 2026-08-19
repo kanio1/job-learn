@@ -1,7 +1,7 @@
 # Mapa testów — RLS Lab, filtry, composition (Wave A)
 
 Dokumentacja **task-force** (PM + test architect + test analyst).  
-Cel: kompletna mapa przypadków dla **zaimplementowanego** pakietu Wave A (2026-08-13): edukacyjny RLS Lab, testowalność listy płatności, Playwright (mocked + POM) oraz REST Assured na filtrach i JDBC. Wave B (stos HTTP + TLS overlay + live POM) jest w **09**. **Nie jest to implementacja** HTTP QUERY, Spring API versioning ani `@Retryable`.
+Cel: kompletna mapa przypadków dla **zaimplementowanego** pakietu Wave A (2026-08-13): edukacyjny RLS Lab, testowalność listy płatności, Playwright live POM oraz REST Assured na filtrach i JDBC. Wave B (stos HTTP + TLS overlay + live POM) jest w **09**. **Nie jest to implementacja** HTTP QUERY, Spring API versioning ani `@Retryable`.
 
 Źródła: `apps/backend` modulith `rlslab` (Flyway V17 + V18 BYPASSRLS), `apps/frontend` `/admin/rls-lab` + `data-testid` na filtrach, katalog ten.  
 Analog: [docs/testing/payu-bank-mirror-labs/](../payu-bank-mirror-labs/), [docs/testing/checkout-protocol-lab/](../checkout-protocol-lab/).
@@ -39,7 +39,6 @@ Analog: [docs/testing/payu-bank-mirror-labs/](../payu-bank-mirror-labs/), [docs/
 Learner POM          tests-pom-learner          — poza Wave A
 Live POM TLS         playwright.pom.tls.config.ts — HTTPS :8443 hybrid **albo** `--full`
 Live POM             tests-pom, zero fulfill    — Keycloak, filtry, RLS dual role
-Mocked Chromium      tests/e2e + page.route     — paginacja, hub RLS, amount URL
 FE flag-off          playwright.rls-flag-off.config.ts — Nuxt :3010
 REST Assured         *Test.java                 — list date/amount, RLS JDBC, forwarded Location
 IT Failsafe          *IT.java                   — Spring flag on/off
@@ -48,11 +47,13 @@ Flyway               V17–V18 rls_lab_*          — FORCE RLS + rls_lab_app + 
 Stack                scripts/dev-stack.sh       — compose + Spring dev,seed + Nuxt
 ```
 
+`tests/e2e` (mocked Chromium) **nie istnieje**. Paginacja / hub RLS / amount URL są w `tests-pom`.
+
 ## Pokrycie
 
 | Wartość | Znaczenie |
 |---|---|
-| `existing-pw` | Jest w `tests/e2e` |
+| `existing-pw` | Historyczne — drzewo `tests/e2e` usunięte; ślad = `existing-pom` |
 | `existing-pom` | Jest w `tests-pom` |
 | `existing-ra` | REST Assured `*Test.java` |
 | `existing-it` | `*IT.java` |

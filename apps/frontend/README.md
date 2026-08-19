@@ -37,7 +37,7 @@ corepack pnpm test:e2e              # live POM (`tests-pom`), needs --app stack
 
 ## Dashboard Shell
 
-The authenticated app layout follows the Nuxt UI Dashboard Template direction without adding out-of-scope business widgets. It uses `UDashboardGroup`, `UDashboardSidebar`, `UDashboardPanel`, `UDashboardNavbar`, and vertical `UNavigationMenu` composition with a single user/session menu in the sidebar footer. Phase 1 exposes only the Merchants navigation item.
+The authenticated app layout follows the Nuxt UI Dashboard Template direction without adding out-of-scope business widgets. It uses `UDashboardGroup`, `UDashboardSidebar`, `UDashboardPanel`, `UDashboardNavbar`, and vertical `UNavigationMenu` composition with a single user/session menu in the sidebar footer. Role-gated nav covers merchants, payments, users, audit, labs (error/checkout/session/mirror/RLS), and support.
 
 ## Backend Proxy
 
@@ -112,4 +112,4 @@ Vitest + fast-check unit/component/property tests run via `corepack pnpm test:un
 
 ## Playwright
 
-Playwright specs cover create, validation, duplicate feedback, lifecycle, unauthenticated redirect, insufficient authority, loading, and error states. The default fast UI suite mocks Nuxt session/API routes; set `PLAYWRIGHT_USE_REAL_KEYCLOAK=true` to exercise the real Keycloak setup in the auth setup project.
+Product Playwright is live POM only (`tests-pom`): real Keycloak + Nuxt BFF + Spring. `corepack pnpm test:e2e` sets `PLAYWRIGHT_SKIP_WEBSERVER=1` and `PLAYWRIGHT_BASE_URL=http://localhost:3000`. There is no mocked `tests/e2e` suite. Against compose `--app` use `scripts/run-app-stack-tests.sh`. Learner copies live in `tests-pom-learner/`.

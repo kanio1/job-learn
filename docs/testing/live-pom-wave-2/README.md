@@ -75,7 +75,7 @@ Istniejące `test('…')` (tytuł, spec, HTTP) są w **03** i **07** (UC). Nie d
 ```text
 Learner POM          tests-pom-learner          — copy-map; guest project; bez importu z tests-pom
 Live POM             tests-pom, zero fulfill    — Keycloak, BffClient, guest, persistence GET
-Mocked Chromium      tests/e2e + page.route     — poza tą mapą (HAR, visual, 429 mock)
+Mocked Chromium      usunięte (`tests/e2e` nie istnieje) — 429 Error Lab = BFF mock, poza live POM
 PW request / BFF     APIRequestContext :3000    — 127.0.0.1 (IPv4); cookie sesji, nie Bearer w teście
 REST Assured         *Test.java                 — kontrakt Spring; nie powielać 1:1 w PW
 IT Failsafe          *IT.java                   — flagi labów; nie SQL z Node
@@ -90,12 +90,12 @@ Playwright `webServer` = Nuxt `--host 127.0.0.1`. Browser `baseURL` = `http://lo
 | Wartość | Znaczenie |
 |---|---|
 | `existing-pom` | Jest w `tests-pom` (Wave 2 lub wcześniejszy live spec) |
-| `existing-pw` | Jest w `tests/e2e` (mocked) — tylko odniesienie, nie cel tej mapy |
+| `existing-pw` | Historyczne (drzewo `tests/e2e` usunięte). Nowy ślad = `existing-pom` |
 | `existing-ra` | REST Assured — oracle kontraktu, nie implementować drugi raz w PW |
-| `designed` | Nadal brak specu (OIDC hop E2E-013, cookie 4 KB, SameSite, P2 palette/ARIA, UI 409, MRL idle re-goto, CSRF happy) |
-| `blocked` | Zależny od luki produktowej / realm (np. UI `tenantReference`, fine-grained notes/risk) |
+| `designed` | Nadal brak specu (P2 ARIA forbidden; CPL `USER_CANCEL` header no-op) |
+| `blocked` | Zależny od luki produktowej / realm (admin notes/risk 201\|403). UI `tenantReference` **nie** jest blocked |
 
-Wave 3 zamknęło P1 gość (003/SEC-011/030), Error Lab 083 (exact status; canary 401), admin Support 071 (tabela), API-003/004/011, notes 041. HTTPS: [wave-3-compose-tls-pom](../wave-3-compose-tls-pom/). Pozostałe designed: **P2** pairwise UX / ARIA login, UI 409 (blocked GAP-W2-01).
+Wave 3 zamknęło P1 gość (003/SEC-011/030), Error Lab 083 (exact status; canary 401), admin Support 071 (tabela), API-003/004/011, notes 041. HTTPS: [wave-3-compose-tls-pom](../wave-3-compose-tls-pom/). GAP-W2-01 (UI tenant) **zamknięty** (E2E-024). Pozostałe designed: **P2** pairwise UX / ARIA login; **P1** UI 409 (E2E-025).
 
 ---
 

@@ -10,7 +10,7 @@ Cel: kompletna mapa przypadków testowych dla CPL. **Nie jest to implementacja**
 | Test analyst | Katalogi TC (E2E, REST, EP/BVA, DT/ST) — pliki 03–08 |
 
 Źródła wymagań: [status/roadmaps/checkout-protocol-lab/](../../status/roadmaps/checkout-protocol-lab/), [docs/implementation/checkout-protocol-lab-hops.md](../../implementation/checkout-protocol-lab-hops.md).  
-Istniejące wykonanie (odniesienie, nie duplikat): RA w `CheckoutLabProtocolRestAssuredTest` + `CheckoutLabSecurityChainTest`; PW w `apps/frontend/tests/e2e/checkout-lab.spec.ts`.
+Istniejące wykonanie (odniesienie, nie duplikat): RA w `CheckoutLabProtocolRestAssuredTest` + `CheckoutLabSecurityChainTest`; PW w `apps/frontend/tests-pom/specs/checkout-lab.spec.ts`.
 
 ---
 
@@ -40,12 +40,12 @@ Analogia PayU/Stripe w tym labie: `POST /sessions` → **302** + `Location` (hos
 |---|---|---|---|
 | Create session, ten sam `Idempotency-Key` + ten sam fingerprint → replay 302 | FR-11, EP-111 | PW-API-024 | existing-ra |
 | Ten sam key, inny fingerprint → 409 `idempotency_conflict` | EP-112 | PW-API-025 | existing-ra |
-| Ten sam key, zmiana **tylko** `validitySeconds` → replay (pole poza fingerprint) | EP-113 | [PW-API-026](04-playwright-api-auth-sessions.md) | **designed** |
+| Ten sam key, zmiana **tylko** `validitySeconds` → replay (pole poza fingerprint) | EP-113 | [PW-API-026](04-playwright-api-auth-sessions.md) | existing-ra |
 | Duplicate notify HMAC → 200 `{duplicate:true}`, 0 drugi event | FR-08, ST-024 | PW-API-208 | existing-ra |
 | Simulate na sesji COMPLETED → noop | ST hosted | PW-API-114 | existing-ra (cienko) |
-| Happy: hosted Approve → return, fulfillment CONFIRMED | [UC-01](07-istqb-decision-state-usecase.md) | PW-E2E-050 | existing-pw / pom |
-| Return z `status=success` **bez** Approve | [UC-03](07-istqb-decision-state-usecase.md) | PW-E2E-040; [PW-API-071](04-playwright-api-auth-sessions.md) header `RETURN_LIE_SUCCESS` | UI existing; **API designed** |
-| Approve, nie odwiedzaj return | [UC-05](07-istqb-decision-state-usecase.md) | [PW-E2E-043](03-playwright-e2e-catalog.md), PW-API-075 | **designed** (GAP-02) |
+| Happy: hosted Approve → return, fulfillment CONFIRMED | [UC-01](07-istqb-decision-state-usecase.md) | PW-E2E-050 | existing-pom |
+| Return z `status=success` **bez** Approve | [UC-03](07-istqb-decision-state-usecase.md) | PW-E2E-040; [PW-API-071](04-playwright-api-auth-sessions.md) header `RETURN_LIE_SUCCESS` | UI existing-pom; API existing-ra |
+| Approve, nie odwiedzaj return | [UC-05](07-istqb-decision-state-usecase.md) | [PW-E2E-043](03-playwright-e2e-catalog.md), PW-API-075 | existing-pom `checkout-lab.spec.ts` |
 | Decline → CANCELLED | UC-04 | PW-E2E-022/042 | existing-pom |
 
 Nie mylić z `POST /api/merchants/{id}/payment-orders` + replay 200/409 — to [E2E-091](../live-pom-wave-2/03-playwright-e2e-catalog.md), nie `continueUrl`.
@@ -57,8 +57,8 @@ Nie mylić z `POST /api/merchants/{id}/payment-orders` + replay 200/409 — to [
 | ID | Co brakuje | Gdzie |
 |---|---|---|
 | GAP-01 | `OOO_EVENTS` — enum bez reorder | [01](01-business-gap-analysis.md); TC **blocked** |
-| GAP-02 | Close-tab / PAY_NO_RETURN | PW-E2E-043, PW-API-075 **designed** |
-| FR-04 test | `Lab-Force-Scenario: RETURN_LIE_SUCCESS` w RA/PW-API | PW-API-071 **designed**; UI lie jest |
+| GAP-02 | Close-tab / PAY_NO_RETURN | PW-E2E-043 existing-pom (fulfillment GET, bez return) |
+| FR-04 test | `Lab-Force-Scenario: RETURN_LIE_SUCCESS` w RA | PW-API-071 existing-ra; UI lie existing-pom |
 | FR-11 test | Replay przy zmianie samego TTL | PW-API-026 **designed** |
 
 Pełna kolejka P0: [08-traceability-matrix.md](08-traceability-matrix.md).
@@ -138,7 +138,7 @@ Priorytet implementacji (gdy przyjdzie kolej): **P0** protokół/pieniądze/auth
 - Kafka, real PayU/Stripe, PAN/3DS/PCI, settlement, KYC.
 - Zmiana realm Keycloak; uczenie „JWT dashboard = token PSP”.
 - `payment_orders`, `MockPspClient`, `idempotency_records` payment.
-- F-D2 (`tests/e2e/psp-redirect-simulator.spec.ts`) — ten sam wzorzec multi-tab, **inne** wiązanie; nie mylić `psp-approve` na dwóch stronach.
+- F-D2 (`tests-pom/specs/psp-redirect.spec.ts`) — ten sam wzorzec multi-tab, **inne** wiązanie; nie mylić `psp-approve` na dwóch stronach.
 - Implementacja kodu testów ani poprawek `OOO_EVENTS`.
 
 ---

@@ -13,8 +13,12 @@ Do not import page objects from `tests-pom` — the point is to type them yourse
 ```bash
 cd apps/frontend
 export PLAYWRIGHT_PLATFORM_ADMIN_PASSWORD=platform.admin
+export PLAYWRIGHT_TENANT_ADMIN_PASSWORD=tenant.admin
 export PLAYWRIGHT_MERCHANT_MANAGER_PASSWORD=merchant.manager
-corepack pnpm exec playwright test --config playwright.pom-learner.config.ts
+export PLAYWRIGHT_SUPPORT_AGENT_PASSWORD=support.agent
+export PLAYWRIGHT_READ_ONLY_PASSWORD=readonly.user
+PLAYWRIGHT_SKIP_WEBSERVER=1 PLAYWRIGHT_BASE_URL=http://localhost:3000 \
+  corepack pnpm exec playwright test --config playwright.pom-learner.config.ts
 ```
 
-Preflight (Compose + Spring `dev`) is in [`../tests-pom/README.md`](../tests-pom/README.md).
+Against `scripts/dev-stack.sh --app`, `PLAYWRIGHT_SKIP_WEBSERVER=1` is required (Playwright must not start host `pnpm dev`). Browser origin is `http://localhost:3000`, not `127.0.0.1`. Preflight: [`../tests-pom/README.md`](../tests-pom/README.md).

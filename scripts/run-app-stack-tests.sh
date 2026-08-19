@@ -13,7 +13,9 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FRONTEND="$REPO_ROOT/apps/frontend"
 BACKEND="$REPO_ROOT/apps/backend"
-BASE_URL="${PLAYWRIGHT_BASE_URL:-http://localhost:3000}"
+# --app compose sets NUXT_OAUTH_OIDC_REDIRECT_URL to 127.0.0.1 (not localhost).
+# Host DX Playwright stays on localhost; this script is --app only.
+BASE_URL="${PLAYWRIGHT_BASE_URL:-http://127.0.0.1:3000}"
 RUN_BACKEND=0
 RUN_VISUAL=0
 RUN_RLS_OFF=0
@@ -82,8 +84,15 @@ fi
 spring_code="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/api/status)"
 nuxt_code="$(curl -sS -o /dev/null -w '%{http_code}' "$BASE_URL")"
 echo "issuer=$issuer spring=$spring_code nuxt=$nuxt_code"
+if [[ "$nuxt_code" == "500" ]]; then
+  echo "Nuxt returned 500 at $BASE_URL (compose frontend on --app, not host .nuxt/dev)." >&2
+  echo "Fix: scripts/dev-stack.sh --stop  (if host pnpm dev holds :3000)" >&2
+  echo "Then: scripts/dev-stack.sh --down && scripts/dev-stack.sh --app" >&2
+  exit 1
+fi
 if [[ "$spring_code" != "200" || "$nuxt_code" != "302" ]]; then
-  echo "Stack is not healthy. Start with: scripts/dev-stack.sh --app" >&2
+  echo "Stack is not healthy (spring=$spring_code nuxt=$nuxt_code). Start with: scripts/dev-stack.sh --app" >&2
+  echo "Host nuxt.dev on :3000 collides with --app — run scripts/dev-stack.sh --stop first." >&2
   exit 1
 fi
 

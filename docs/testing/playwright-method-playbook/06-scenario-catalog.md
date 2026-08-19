@@ -29,4 +29,4 @@ Pełne tabele SCN: plan sesji §O–P oraz `docs/testing/live-pom-wave-2/`. Tu t
 
 Żaden SCN nie woła `seed-learning` / ETL.
 
-M7 (kasacja `tests/e2e/**`) czeka na potwierdzenie, że learner nie potrzebuje kopii mocków.
+M7 **done**: `apps/frontend/tests/e2e/**` nie istnieje. Product Playwright = `tests-pom`. Learner = `tests-pom-learner` (bez mocków, bez importu z `tests-pom`).

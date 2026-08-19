@@ -18,11 +18,29 @@ export async function expectNoTokenInBrowserStorage(page: Page): Promise<void> {
   expect(sessionHasJwt, 'sessionStorage must not contain a JWT or Bearer token').toBe(false)
 }
 
+function sessionCookie(page: Page) {
+  return page.context().cookies().then(cookies => cookies.find(cookie => cookie.name === 'nuxt-session'))
+}
+
 export async function expectSessionCookieHttpOnly(page: Page): Promise<void> {
-  const cookies = await page.context().cookies()
-  const session = cookies.find(cookie => cookie.name === 'nuxt-session')
+  const session = await sessionCookie(page)
   expect(session, 'nuxt-session cookie must be present').toBeTruthy()
   expect(session!.httpOnly, 'nuxt-session must be HttpOnly').toBe(true)
+}
+
+/** RFC 6265 §6.1 — UA may drop cookies ≥ 4096 bytes. Do not decode the sealed blob. */
+export async function expectSessionCookieUnderUaLimit(page: Page): Promise<void> {
+  const session = await sessionCookie(page)
+  expect(session, 'nuxt-session cookie must be present').toBeTruthy()
+  expect(session!.name.length + session!.value.length, 'nuxt-session must fit under the 4 KB UA limit').toBeLessThan(4096)
+  expect(session!.value.includes('id_token'), 'sealed session must not store id_token').toBe(false)
+}
+
+/** Playwright 1.61 cookies().sameSite is "Lax" | "Strict" | "None", not the cookie-policy JSON. */
+export async function expectSessionCookieSameSiteLax(page: Page): Promise<void> {
+  const session = await sessionCookie(page)
+  expect(session, 'nuxt-session cookie must be present').toBeTruthy()
+  expect(session!.sameSite, 'nuxt-session SameSite must come from the live cookie').toBe('Lax')
 }
 
 export async function expectSessionCookieSecure(page: Page, secure: boolean): Promise<void> {

@@ -129,6 +129,46 @@ class CheckoutLabProtocolRestAssuredTest extends PostgresContainerSupport {
     }
 
     @Test
+    void returnLieSuccessHeaderSkipsNotifyAndLeavesFulfillmentUnconfirmed() {
+        String token = CheckoutLabTestSupport.obtainLabAccessToken(port);
+        String location = given().port(port)
+                .redirects().follow(false)
+                .header("Authorization", "Bearer " + token)
+                .header("Lab-Force-Scenario", "RETURN_LIE_SUCCESS")
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .body("""
+                        {
+                          "extOrderId": "BOOK-LIE-HEADER",
+                          "amountMinor": 1999,
+                          "currency": "PLN",
+                          "continueUrl": "http://localhost:3000/checkout-lab/return?status=success",
+                          "notifyUrl": "%s",
+                          "validitySeconds": 900
+                        }
+                        """.formatted(notifyUrl()))
+                .when().post("/api/checkout-lab/sessions")
+                .then()
+                .statusCode(302)
+                .extract()
+                .header(HttpHeaders.LOCATION);
+        String sessionId = CheckoutLabTestSupport.sessionIdFromLocation(location);
+
+        CheckoutLabTestSupport.simulateCompleted(port, sessionId);
+
+        Integer events = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM checkout_event WHERE session_id = CAST(? AS uuid)",
+                Integer.class,
+                sessionId);
+        assertThat(events).isZero();
+
+        given().port(port)
+                .when().get("/api/checkout-lab/hosted/sessions/" + sessionId + "/fulfillment")
+                .then()
+                .statusCode(200)
+                .body("status", equalTo("AWAITING_PAYMENT"));
+    }
+
+    @Test
     void notifyFiveXxRetryScenarioEventuallyQueuesEvent() {
         String token = CheckoutLabTestSupport.obtainLabAccessToken(port);
         String location = given().port(port)
@@ -330,6 +370,56 @@ class CheckoutLabProtocolRestAssuredTest extends PostgresContainerSupport {
                 .header("Idempotency-Key", "idem-1")
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .body(body)
+                .when().post("/api/checkout-lab/sessions")
+                .then()
+                .statusCode(302)
+                .header("Idempotency-Replayed", equalTo("true"))
+                .extract()
+                .header(HttpHeaders.LOCATION);
+        assertThat(second).isEqualTo(first);
+    }
+
+    @Test
+    void idempotencyReplayIgnoresValiditySecondsOutsideFingerprint() {
+        String token = CheckoutLabTestSupport.obtainLabAccessToken(port);
+        String key = "idem-ttl-fingerprint";
+        String firstBody = """
+                {
+                  "extOrderId": "BOOK-TTL",
+                  "amountMinor": 1999,
+                  "currency": "PLN",
+                  "continueUrl": "http://localhost:3000/checkout-lab/return",
+                  "notifyUrl": "%s",
+                  "validitySeconds": 900
+                }
+                """.formatted(notifyUrl());
+        String secondBody = """
+                {
+                  "extOrderId": "BOOK-TTL",
+                  "amountMinor": 1999,
+                  "currency": "PLN",
+                  "continueUrl": "http://localhost:3000/checkout-lab/return",
+                  "notifyUrl": "%s",
+                  "validitySeconds": 60
+                }
+                """.formatted(notifyUrl());
+        String first = given().port(port)
+                .redirects().follow(false)
+                .header("Authorization", "Bearer " + token)
+                .header("Idempotency-Key", key)
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .body(firstBody)
+                .when().post("/api/checkout-lab/sessions")
+                .then()
+                .statusCode(302)
+                .extract()
+                .header(HttpHeaders.LOCATION);
+        String second = given().port(port)
+                .redirects().follow(false)
+                .header("Authorization", "Bearer " + token)
+                .header("Idempotency-Key", key)
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .body(secondBody)
                 .when().post("/api/checkout-lab/sessions")
                 .then()
                 .statusCode(302)

@@ -35,7 +35,7 @@ The script waits for Postgres, then **Keycloak OIDC issuer** (`scripts/keycloak-
 
 Rootless Podman on Fedora uses pasta. `podman-compose` sometimes records published ports without starting `rootlessport`. `dev-stack.sh --app` / `--full` stop/start the app (and Caddy) containers after they are healthy so `:3000`, `:8080`, and `:8443` actually bind on the host.
 
-Canonical Playwright POM origin on HTTP is `http://127.0.0.1:3000` (`PLAYWRIGHT_SKIP_WEBSERVER=1` when using `--app`). HTTP host Nuxt binds `127.0.0.1`. The TLS overlay binds `0.0.0.0` so Caddy can reach the host — see [tls-lab.md](tls-lab.md).
+HTTP origins: curl/health/Node `BffClient` use `http://127.0.0.1:3000`; Playwright `PLAYWRIGHT_BASE_URL` is `http://localhost:3000` (OIDC redirect). Do not point Playwright at `127.0.0.1`. Against `--app` set `PLAYWRIGHT_SKIP_WEBSERVER=1`. HTTP host Nuxt binds `127.0.0.1`. The TLS overlay binds `0.0.0.0` so Caddy can reach the host — see [tls-lab.md](tls-lab.md).
 
 Stop host apps with `scripts/dev-stack.sh --stop`. Tear down Compose with `scripts/dev-stack.sh --down`.
 
@@ -56,7 +56,7 @@ docker compose --env-file infra/compose/.env -f infra/compose/compose.yml up -d
 docker compose --env-file infra/compose/.env -f infra/compose/compose.yml ps
 ```
 
-PostgreSQL readiness is checked with `pg_isready`. Keycloak starts in development mode and may take longer than PostgreSQL.
+PostgreSQL readiness is checked with `pg_isready`. Keycloak uses `start` (production profile) with `hostname-backchannel-dynamic`, not `start-dev`, and may take longer than PostgreSQL. Issuer oracle: [run-stack-and-pom.md](run-stack-and-pom.md).
 
 ## Stop Services
 

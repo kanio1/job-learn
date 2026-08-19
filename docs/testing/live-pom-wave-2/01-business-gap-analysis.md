@@ -22,13 +22,13 @@ Wave 2 nie dodaje domeny płatniczej. Dodaje **sposób testowania** żywego dash
 | FR-W2-01 | Niezalogowany `/admin/*` → `/login?redirectTo=` | Done |
 | FR-W2-02 | Sign out niszczy sesję **UI/BFF** (nie SSO) | Done |
 | FR-W2-03 | Sesja HttpOnly; JWT nie w Web Storage | Done (cookie `nuxt-session`) |
-| FR-W2-04 | Merchant unikalny persystuje (GET po create) | Done (API create; UI POST admin bez tenanta → 400) |
+| FR-W2-04 | Merchant unikalny persystuje (GET po create) | Done (API create **oraz** UI POST platform admin z polem `tenantReference`) |
 | FR-W2-05 | Duplikat `reference` → 409 | Done (BFF) |
 | FR-W2-06 | Pusty formularz: Zod, **brak** POST | Done |
 | FR-W2-07 | Draft → Active → Suspended | Done (UI na merchancie z API) |
 | FR-W2-08 | Command palette → Error Lab + drzewo ARIA | Done |
-| FR-W2-09 | Notatka na żywym orderze Alpha | Partial: UI jest; realm może nie mieć `platform:payments:notes:*` → 403 |
-| FR-W2-10 | Risk flag + badge listy | Partial: analogiczny 403 `update-risk-flag` |
+| FR-W2-09 | Notatka na żywym orderze Alpha | Partial: SUPPORT_AGENT notes POST **201** (`support-rbac.spec.ts`). Platform admin UI nadal 201\|403. |
+| FR-W2-10 | Risk flag + badge listy | Partial: toggle UI; PATCH nadal 200 **albo** 403 (`merchant-risk.spec.ts`) |
 | FR-W2-11 | CASH booking → CONFIRMED, bez hosted | Done (`chooseMode('CASH')`) |
 | FR-W2-12 | Hosted Decline → fulfillment `CANCELLED` | Done (oracle fulfillment, nie query-only) |
 | FR-W2-13 | Manager: brak nav Support; deep-link Beta → problem, brak tabeli | Done |
@@ -44,8 +44,8 @@ Wave 2 nie dodaje domeny płatniczej. Dodaje **sposób testowania** żywego dash
 
 | ID | Luka | Typ | Wpływ na TC |
 |---|---|---|---|
-| GAP-W2-01 | Formularz create merchant **bez** `tenantReference` | produkt | UI POST platform admin = 400 `MissingTenantReferenceException`. Persist TC używa API. |
-| GAP-W2-02 | PLATFORM_ADMIN bez fine-grained notes / risk-flag | realm | TC tolerują 201\|200 **albo** 403 — to drift, nie silent skip. |
+| GAP-W2-01 | ~~Formularz create merchant bez `tenantReference`~~ | **zamknięty** | Pole `create-merchant-tenant-reference` + E2E-024 / SCN-MER-13. API bez tenanta nadal 400 (API-003). |
+| GAP-W2-02 | PLATFORM_ADMIN notes / risk-flag 201\|403 | realm | Support notes **201**. Admin notes i risk toggle nadal dual oracle (nie silent skip). |
 | GAP-W2-03 | Hosted decline dokleja drugi `status` do `continueUrl` | produkt | Query może być tablicą (`success,failure`); asercja `toContainText('failure')`. |
 | GAP-W2-04 | Overlay Vite potrafi przejąć click | test infra | `addLocatorHandler` w fixtures; nie `element.click()` (Vue `@click` nie wstaje). |
 | GAP-W2-05 | `localhost` vs `::1` vs `127.0.0.1` | infra | Node → IPv4; browser → localhost (OIDC). |
@@ -53,7 +53,7 @@ Wave 2 nie dodaje domeny płatniczej. Dodaje **sposób testowania** żywego dash
 | GAP-W2-07 | Brak TC rozmiaru cookie / `id_token` | test | designed SEC-005. |
 | GAP-W2-08 | PAY_NO_RETURN / close-tab po Approve | **CPL**, nie Wave 2 | Nie dodawać tu E2E — [CPL GAP-02](../checkout-protocol-lab/01-business-gap-analysis.md), PW-E2E-043 designed. Lie return **jest** (E2E-061). |
 | GAP-W2-09 | `payment_orders` vs CPL `continueUrl` | dokumentacja | Operator nie ma hosted return URL. Idempotencja create = E2E-091, nie UC-03 CPL. Mapa: [README](README.md). |
-| GAP-W2-10 | Brak UC `tenant.admin` / ALPHA_002 / dual-control w Wave 2 07 | katalog | **Zamknięte dokumentacyjnie** w [09](09-core-domain-flows.md) + UC-W2-20…22. POM tenant.admin nadal designed. |
+| GAP-W2-10 | Brak UC `tenant.admin` / ALPHA_002 / dual-control w Wave 2 07 | katalog | **Zamknięte.** POM: `tenant-scope.spec.ts` (UC-W2-20/21); dual-control: `payments-refund-dual-control.spec.ts`. |
 | GAP-W2-11 | Katalogi 09 były host-only (`:8080`) | katalog | **Iteracja 2:** [10](10-full-stack-edge-flows.md) + UC-W2-23. Brak vhosta `psp.`; hosted na `app.` z `X-Frame-Options: DENY`. |
 
 ## Scenariusze biznesowe odblokowane

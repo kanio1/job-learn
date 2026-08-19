@@ -15,4 +15,8 @@ export class CommandPalette {
   async search(text: string): Promise<void> {
     await this.page.keyboard.type(text)
   }
+
+  async selectOption(name: string): Promise<void> {
+    await this.dialog().getByRole('option', { name, exact: true }).first().click()
+  }
 }

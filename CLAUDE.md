@@ -114,7 +114,7 @@ Nuxt 4 app-directory layout. All browser-to-backend traffic is proxied through `
 
 ### Auth flow
 
-`/login` → Keycloak PKCE Authorization Code Flow via `server/routes/auth/keycloak.get.ts` (uses `defineOAuthOidcEventHandler`) → sealed server-side session stores `secure.accessToken`. The frontend Playwright default suite mocks Nuxt session/API routes; set `PLAYWRIGHT_USE_REAL_KEYCLOAK=true` for live Keycloak.
+`/login` → Keycloak PKCE Authorization Code Flow via `server/routes/auth/keycloak.get.ts` (uses `defineOAuthOidcEventHandler`) → sealed server-side session stores `secure.accessToken`. Product Playwright is live POM (`apps/frontend/tests-pom`) against real Keycloak; `corepack pnpm test:e2e` does not mock session/API routes.
 
 ## Testing Conventions
 

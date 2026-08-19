@@ -34,7 +34,7 @@ Sesja vs OIDC: [docs/testing/session-bff-oidc-contract.md](../../../docs/testing
 
 - Bez GraphQL, WebSocket, passkeys, geolocation, native `window.confirm`, Kafki, prawdziwego PSP/PCI, i18n packs, mobile device matrix, fake rate limiter, BasePage.
 - REST Assured (`apps/api-tests` + `apps/backend` RA) zostaje ownerem pełnej macierzy; Playwright REST = ta sama semantyka przez cookie BFF.
-- Mocked `tests/e2e` tylko jako kopia dydaktyczna po kontrakcie live/RA.
+- Brak mocked `tests/e2e`. Product Playwright = `tests-pom`.
 - Labi checkout / mirror / RLS / error zostają; dual-control na `payment_orders` jest osobny od mirror lab.
 
 ## Testy
@@ -42,6 +42,6 @@ Sesja vs OIDC: [docs/testing/session-bff-oidc-contract.md](../../../docs/testing
 | Warstwa | Gdzie |
 |---|---|
 | REST Assured | `PlaywrightLearningStackRestAssuredTest`, evidence RA |
-| Playwright REST (live) | `tests/live/http/bff-rest-contract.spec.ts`, `conditional-get-and-head.spec.ts` |
-| Live POM | `tests-pom/specs/payments-refund-dual-control.spec.ts` |
-| Mocked Chromium | `tests/e2e/evidence-upload.spec.ts`, `payments-offline.spec.ts`, `payment-order-read.spec.ts`, `payments-async-export.spec.ts`, `a11y-axe.spec.ts` |
+| Playwright REST (live BFF) | `tests-pom/specs/payments-conditional.spec.ts`, `payments-evidence-export.spec.ts`, `payments-async-export.spec.ts`, `admin-bff.spec.ts` |
+| Live POM | `tests-pom/specs/payments-refund-dual-control.spec.ts` plus evidence/offline/axe w tym samym drzewie |
+| Learner | `tests-pom-learner/` |

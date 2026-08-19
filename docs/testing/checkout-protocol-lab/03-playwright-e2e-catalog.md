@@ -1,15 +1,15 @@
 # 03 — Katalog Playwright E2E (UI)
 
-Warstwa: przeglądarka Chromium. Domyślnie obecny spec **mockuje** BFF (`context.route`). Kolumna Pokrycie: `existing-pw` | `designed`.
+Warstwa: przeglądarka Chromium, live POM (`tests-pom/specs/checkout-lab.spec.ts`). Zero `fulfill`. Kolumna Pokrycie: `existing-pom` | `designed`. Historyczne `existing-pw` (`tests/e2e`) nie obowiązuje.
 
 **Stałe selektory:** patrz tabele.  
 **SSR:** `/error-lab` tylko przez sidebar po SPA `/admin/*` — nigdy `page.goto('/error-lab')` przy mocku sesji.  
 **Oracle pieniędzy:** `data-testid="fulfillment-status"` na booking/return **albo** odpowiedź BFF fulfillment — nie sam `return-hint`.  
 **F-D2:** poza tym katalogiem. Te same `psp-approve` / `psp-decline` na `/psp-redirect-simulator` — asertuj URL `/psp/checkout/`.
 
-Legenda kolumn TC: Priorytet P0–P2; Auth = Keycloak mock / public / none.
+Legenda kolumn TC: Priorytet P0–P2; Auth = live Keycloak `storageState` / public / none. Wiersze z `mockAuthenticatedSession` w krokach są historyczne — wykonanie to live POM.
 
-Skrót continueUrl / UC-03 / UC-05 / luki designed: [README](README.md). PAY_NO_RETURN = PW-E2E-043 (**designed**). Lie UI = PW-E2E-040; header API = PW-API-071 w [04](04-playwright-api-auth-sessions.md).
+Skrót continueUrl / UC-03 / UC-05: [README](README.md). PAY_NO_RETURN = PW-E2E-043 existing-pom. Lie UI = PW-E2E-040; header API = PW-API-071 existing-ra.
 
 ---
 
@@ -324,9 +324,9 @@ Selectory: `checkout-return`, `return-hint`, `fulfillment-status`.
 
 | | |
 |---|---|
-| Pokrycie | designed (GAP-02) |
+| Pokrycie | existing-pom `approve without return still confirms fulfillment (PAY_NO_RETURN)` |
 | Prio | P0 |
-| Kroki | Approve na hosted → **zamknij tab** → z booking/inspector lub `request.get` hosted fulfillment |
+| Kroki | Approve na hosted → **zamknij tab** → `request.get` hosted fulfillment |
 | Asercje | fulfillment `CONFIRMED` bez wizyty `/checkout-lab/return` |
 | Oracle | API, nie UI return |
 

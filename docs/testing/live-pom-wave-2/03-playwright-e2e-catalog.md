@@ -48,15 +48,15 @@ Skrypty HTTP + kombinacje person (tenant.admin, ALPHA_002, dual-control): [09](0
 | Asercje | URL `/login` po sign-out **i** po drugim goto |
 | Nie asertuje | Keycloak `end_session` (to jest E2E-013). Kontrakt: [session-bff-oidc-contract](../session-bff-oidc-contract.md) UC-SESS-01 |
 
-### PW-W2-E2E-013 — End OIDC session (Session Lab) — **designed**
+### PW-W2-E2E-013 — End OIDC session (Session Lab)
 
 | | |
 |---|---|
-| Pokrycie | designed · FR-OIDC / FR-S04b |
-| Spec | `session-lab.spec.ts` (brak) · klik `session-lab-end-oidc` |
-| Kroki | POST `/api/session-lab/end-session` → nawigacja `endSessionUrl` |
-| Asercje | URL zawiera `client_id=` i `post_logout_redirect_uri=`; **brak** `id_token_hint`; `nuxt-session` znika; brak JWT w Web Storage |
-| Uwaga | IdP może pokazać confirm. Realm bez `post.logout.redirect.uris` (GAP-SESS-01) |
+| Pokrycie | existing-pom · FR-OIDC / FR-S04b |
+| Spec | `session.spec.ts` · hop: `Session Lab end OIDC…`; JSON: `Session Lab end-session JSON…` · `chromium-session` |
+| Kroki | JSON: `page.request.post` (to samo cookie, bez hopu CDP). Hop: klik `session-lab-end-oidc` → nawigacja |
+| Asercje | POST 200 `{ ended: true, endSessionUrl }` z `page.request`; hop URL `client_id` + `post_logout_redirect_uri`; **brak** `id_token_hint`; po confirm (jeśli jest) `/login`; ponowny `/admin/merchants` → `/login`; brak JWT w Web Storage |
+| Uwaga | IdP może pokazać confirm. Realm JSON ma `post.logout.redirect.uris`; stary volume = `provision-keycloak-logout-uris.py`. |
 
 ### PW-W2-E2E-011 — Cookie HttpOnly + brak JWT w storage
 
@@ -74,7 +74,7 @@ Skrypty HTTP + kombinacje person (tenant.admin, ALPHA_002, dual-control): [09](0
 | Spec | `session-lab.spec.ts` · `idle lock uses page.clock without waitForTimeout` |
 | Kroki | `clock.install` → session-lab → `fastForward(121_000)` → `session-lab-idle-unlock` |
 | Asercje | `session-lab-idle-lock` visible; URL `/login` |
-| Brak | ponowny `goto /admin/merchants` po unlock → nadal designed (MRL E2E-022) |
+| Po unlock | `goto /admin/merchants` nadal `/login` (MRL E2E-022) |
 
 ---
 
@@ -119,14 +119,22 @@ Skrypty HTTP + kombinacje person (tenant.admin, ALPHA_002, dual-control): [09](0
 
 | | |
 |---|---|
-| Pokrycie | blocked GAP-W2-01 |
+| Pokrycie | existing-pom |
+| Tytuł | `platform admin create form requires tenant reference and persists` |
+| Spec | `merchants.spec.ts` |
+| Kroki | open create → `create-merchant-tenant-reference` visible → fill reference/name/`TENANT_ALPHA` → submit |
+| Asercje | wiersz listy; `listMerchants` zawiera `merchantReference` |
 | Prio | P1 |
 
 ### PW-W2-E2E-025 — 409 duplikat w formularzu UI
 
 | | |
 |---|---|
-| Pokrycie | designed (409 jest `BffClient`, E2E-026) |
+| Pokrycie | existing-pom |
+| Tytuł | `duplicate merchant reference shows 409 on the create form` |
+| Spec | `merchants.spec.ts` |
+| Kroki | API create → UI ten sam `merchantReference` + tenant → submit |
+| Asercje | POST 409; `alert` z `already exists`; pole reference zachowane |
 | Prio | P1 |
 
 ### PW-W2-E2E-026 — Duplikat reference 409 z BFF (bez UI)
@@ -155,15 +163,16 @@ Skrypty HTTP + kombinacje person (tenant.admin, ALPHA_002, dual-control): [09](0
 
 | | |
 |---|---|
-| Pokrycie | designed |
+| Pokrycie | existing-pom `command-palette.spec.ts` (`test.for` destynacje) |
 | Prio | P2 |
 
-### PW-W2-E2E-032 — ARIA snapshot login / forbidden
+### PW-W2-E2E-032 — ARIA snapshot login
 
 | | |
 |---|---|
-| Pokrycie | designed |
+| Pokrycie | existing-pom `session-guest.spec.ts` · `login page matches ARIA snapshot` |
 | Prio | P2 |
+| Forbidden | poza zakresem (inna persona) |
 
 ---
 
@@ -452,8 +461,8 @@ Szczegóły filtrów/kontrolek: [../rls-filters-composition-lab/03-playwright-e2
 
 | | |
 |---|---|
-| Pokrycie | existing-pom `session-lab.spec.ts` · `two contexts sharing storageState can revoke a device` |
-| Asercje | oba `session-lab-device-list`; click `session-lab-revoke-*` (brak asercji 401 na drugim — MRL designed) |
+| Pokrycie | existing-pom `session.spec.ts` · `two contexts sharing storageState can revoke a device` · project `chromium-session` |
+| Asercje | oba `session-lab-device-list`; click Revoke (brak asercji 401 na drugim — MRL designed) |
 
 ### PW-W2-E2E-123 — Network Lab 503 → 200 bez `fulfill`
 
@@ -482,3 +491,24 @@ Szczegóły filtrów/kontrolek: [../rls-filters-composition-lab/03-playwright-e2
 |---|---|
 | Pokrycie | existing-pom `tls-lab.spec.ts` · `playwright.pom.tls.config.ts` |
 | Katalog | [../rls-filters-composition-lab/09-wave-b-stack-tls-catalog.md](../rls-filters-composition-lab/09-wave-b-stack-tls-catalog.md) |
+
+---
+
+## J. Poza Wave 2 (indeks, bez nowych ID)
+
+Live POM ma specy, których ten katalog nie numeruje. Ślad: [playbook 06](../playwright-method-playbook/06-scenario-catalog.md), [real-stack](../../status/roadmaps/playwright-real-stack-learning/).
+
+| Spec | Co asertuje |
+|---|---|
+| `payments-offline.spec.ts` | banner offline (`context.setOffline`) |
+| `payments-expiration.spec.ts` | countdown `expiresAt` na AUTHORIZED |
+| `payments-polling.spec.ts` | manual/auto refresh GET, nie mock status |
+| `payments-async-export.spec.ts` | export-jobs 202 + poll READY + CSV |
+| `payments-conditional.spec.ts` | If-None-Match 304; HEAD 200 + ETag; PATCH bez If-Match 428 |
+| `payments-illegal-transitions.spec.ts` | SCN-ILL / SCN-IFM REST |
+| `payments-metamorphic.spec.ts` | MR-IDEM / MR-UNIQ / MR-ETAG / MR-FILTER |
+| `worker-world.spec.ts` | `MERCHANT-Wn` 201 vs Alpha 403 |
+| `readonly-rbac.spec.ts` | lista tak, create/lifecycle/notes nie |
+| `tenant-scope.spec.ts` | SCN-ISO + UC-W2-20/21 |
+| `visual-lab.spec.ts` / `aria-snapshots.spec.ts` | `PLAYWRIGHT_VISUAL=1` |
+| `a11y-axe.spec.ts` | login + registry, brak serious axe | |

@@ -4,8 +4,10 @@
 E2E live POM     tests-pom          UI + waitForBff / waitForRequest
 PW REST / BFF    BffClient          cookie sesji, IPv4
 REST Assured     apps/backend + api-tests   pełna macierz — nie dubluj 1:1
-Mocked e2e       tests/e2e          page.route — poza live POM
+Learner POM      tests-pom-learner  copy-map; zero fulfill
 ```
+
+`tests/e2e` (mocked `page.route`) nie istnieje.
 
 Stop-gate: modal / badge / deep-link = E2E. Status+header+body = REST lub RA. Playwright nie woła SQL.
 

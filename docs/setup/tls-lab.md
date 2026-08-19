@@ -34,8 +34,8 @@ This starts Postgres + Keycloak (`start` behind Caddy) + Caddy, then Spring `dev
 
 | Command | What runs | Ingress | POM origin |
 |---|---|---|---|
-| `scripts/dev-stack.sh` | host Spring/Nuxt | HTTP `:3000` | `http://127.0.0.1:3000` |
-| `scripts/dev-stack.sh --app` | Spring/Nuxt images | HTTP `:3000` | same, `PLAYWRIGHT_SKIP_WEBSERVER=1` |
+| `scripts/dev-stack.sh` | host Spring/Nuxt | HTTP `:3000` | Playwright `http://localhost:3000` (curl `127.0.0.1`) |
+| `scripts/dev-stack.sh --app` | Spring/Nuxt images | HTTP `:3000` | same + `PLAYWRIGHT_SKIP_WEBSERVER=1` |
 | `scripts/dev-stack.sh --tls` | host + Caddy | HTTPS `:8443` | `playwright.pom.tls.config.ts` |
 | `scripts/dev-stack.sh --full` | images + Caddy | HTTPS `:8443` | TLS config + `PLAYWRIGHT_SKIP_WEBSERVER=1` |
 

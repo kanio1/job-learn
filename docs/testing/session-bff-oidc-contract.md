@@ -27,7 +27,7 @@ Powiązane: [live-pom-wave-2](live-pom-wave-2/), [payu-bank-mirror-labs](payu-ba
 | Ścieżka | UI | Kod | BFF cookie | SSO Keycloak | TC dziś |
 |---|---|---|---|---|---|
 | A — aplikacja | menu Sign out, idle Unlock | `auth.logout()` → `session.clear()` + `/login` | czyszczona | **zostaje** | existing-pom E2E-010, E2E-012, MRL E2E-021 |
-| B — RP OIDC | `session-lab-end-oidc` | POST `/api/session-lab/end-session` → `clearUserSession` + URL `…/logout?client_id=&post_logout_redirect_uri=` | czyszczona | hop `end_session` (bez `id_token_hint`) | **brak specu** (designed E2E-013 / MRL E2E-026) |
+| B — RP OIDC | `session-lab-end-oidc` | POST `/api/session-lab/end-session` → `clearUserSession` + URL `…/logout?client_id=&post_logout_redirect_uri=` | czyszczona | hop `end_session` (bez `id_token_hint`) | existing-pom `session.spec.ts` E2E-013 |
 
 Idle Unlock = ścieżka A. FR „logout BFF + OIDC” dotyczy **tylko** ścieżki B.
 
@@ -51,29 +51,29 @@ Nazwa lekcji „OIDC revoke” w learning-map = **end_session** (RP logout), nie
 - **Aktor:** platform admin na `/admin/session-lab`.
 - **Kroki:** `page.clock` + `fastForward(121_000)` → Unlock.
 - **Oracle:** `/login`; sesja BFF pusta.
-- **Nie-oracle:** SSO wygaszone; ponowny `/admin` (designed MRL E2E-022).
-- **TC:** PW-W2-E2E-012, UC-MRL-01.
+- **Nie-oracle:** SSO wygaszone.
+- **TC:** PW-W2-E2E-012, MRL E2E-022 (ponowny `/admin/merchants` → `/login`), UC-MRL-01.
 
 ### UC-SESS-03 — End OIDC session (świat SSO) — P0
 
 - **Aktor:** platform admin na Session Lab.
-- **Kroki:** `session-lab-end-oidc` → POST `/api/session-lab/end-session`.
-- **Oracle:** body `{ ended: true, endSessionUrl }`; URL zawiera `client_id=` i `post_logout_redirect_uri=`; **brak** `id_token_hint`; po nawigacji na URL — brak `nuxt-session` na `:3000`; Web Storage bez JWT.
-- **Uwaga lab:** Keycloak **może** pokazać confirm (brak `id_token_hint`). Realm JSON **nie** ma `post.logout.redirect.uris` (C-07 freeze) — redirect po confirm może nie wrócić na `/login`.
-- **TC:** PW-W2-E2E-013, PW-MRL-E2E-026, PW-MRL-API-024 — **designed**.
+- **Kroki:** POST `/api/session-lab/end-session` (JSON przez `page.request`, hop przez klik UI). CDP nie oddaje body po `window.location` — JSON i hop są dwoma testami w `session.spec.ts`.
+- **Oracle:** body `{ ended: true, endSessionUrl }`; URL (body i hop) zawiera `client_id=` i `post_logout_redirect_uri=`; **brak** `id_token_hint`; po confirm (jeśli jest) `/login`; ponowny `/admin/merchants` → `/login`; Web Storage bez JWT.
+- **Uwaga lab:** Keycloak **może** pokazać confirm (brak `id_token_hint`). Realm JSON ma additive `post.logout.redirect.uris` (HTTP `:3000/login` + HTTPS app vhost). Istniejący volume: `python3 scripts/provision-keycloak-logout-uris.py` (`--import-realm` nie aktualizuje).
+- **TC:** PW-W2-E2E-013, PW-MRL-E2E-026, PW-MRL-API-024 — existing-pom `session.spec.ts`.
 
 ### UC-SESS-04 — Cookie poniżej limitu UA — P0
 
 - **Aktor:** po OIDC callback.
 - **Oracle:** `nuxt-session` value length + overhead **&lt; 4096**; sealed session **nie** zawiera drugiego JWT (`id_token`). Testy **nie** dekodują sealed blobu do ról; asercja rozmiaru + kontrakt `SecureSessionData` (tylko `accessToken`).
-- **TC:** PW-W2-SEC-005, PW-MRL-E2E-028 — **designed**.
+- **TC:** PW-W2-SEC-005, PW-MRL-E2E-028 — existing-pom (`expectSessionCookieUnderUaLimit`).
 
 ### UC-SESS-05 — Atrybuty cookie z Playwright, nie z policy JSON — P1
 
 - **Kroki:** `page.context().cookies()` dla `nuxt-session`.
-- **Oracle HTTP:** `httpOnly=true`, `sameSite=Lax` (lub `lax`), `secure=false`, `path=/`.
+- **Oracle HTTP:** `httpOnly=true`, Playwright `sameSite: "Lax"`, `secure=false`, `path=/`.
 - **Oracle TLS:** `secure=true` (E2E-056). Policy JSON nadal `secure: false` — **nie** używać jako oracle TLS.
-- **TC:** PW-W2-SEC-006, PW-MRL-E2E-013 — **designed** (HttpOnly existing).
+- **TC:** PW-W2-SEC-006, PW-MRL-E2E-013 — existing-pom (`expectSessionCookieSameSiteLax`; TLS Secure = E2E-056).
 
 ### UC-SESS-06 — Guest / hosted — P0
 
@@ -81,7 +81,7 @@ Bez zmian: pusty `storageState` → `/login`; `/psp/checkout` bez `nuxt-session`
 
 ### UC-SESS-07 — Revoke lab device — P1
 
-Dwa contexty, ten sam `storageState`. Click revoke **nie** jest oraclem HTTP. Designed: A 401 / B nadal 200 (E1-S4, MRL E2E-030).
+Dwa contexty, ten sam `storageState`. Click revoke jest w `session.spec.ts` (E2E-122, project `chromium-session`) — **nie** w `session-lab.spec.ts`. Click **nie** jest oraclem HTTP. Designed: A 401 / B nadal 200 (E1-S4, MRL E2E-030).
 
 ---
 
@@ -89,21 +89,21 @@ Dwa contexty, ten sam `storageState`. Click revoke **nie** jest oraclem HTTP. De
 
 | ID | Pokrycie | Oracle |
 |---|---|---|
-| PW-W2-E2E-010 | existing-pom | ścieżka A |
+| PW-W2-E2E-010 | existing-pom `session.spec.ts` | ścieżka A |
 | PW-W2-E2E-011 | existing-pom | HttpOnly + brak JWT w storage/`origins` |
 | PW-W2-E2E-012 | existing-pom | idle → Unlock = A |
-| PW-W2-E2E-013 | designed | ścieżka B + query `client_id`, bez `id_token_hint` |
+| PW-W2-E2E-013 | existing-pom `session.spec.ts` | ścieżka B + query `client_id`, bez `id_token_hint` |
 | PW-W2-SEC-001–003 | existing-pom | HttpOnly; token w cookie nie w Web Storage; nie skanować blobu |
-| PW-W2-SEC-005 | designed | cookie &lt; 4 KB; brak `id_token` w sesji |
-| PW-W2-SEC-006 | designed | `sameSite` + `secure` z `context.cookies()` |
+| PW-W2-SEC-005 | existing-pom | cookie &lt; 4 KB; brak `id_token` w sesji |
+| PW-W2-SEC-006 | existing-pom | `sameSite` `"Lax"` z `context.cookies()` |
 | PW-MRL-E2E-010/011 | existing-pom | policy tekst + HttpOnly |
-| PW-MRL-E2E-013 | designed | SameSite Lax z prawdziwego cookie |
+| PW-MRL-E2E-013 | existing-pom | SameSite Lax z prawdziwego cookie |
 | PW-MRL-E2E-014 | designed / docs-only | policy JSON `secure:false` **≠** TLS cookie |
-| PW-MRL-E2E-026 | designed | `session-lab-end-oidc` |
-| PW-MRL-E2E-027 | designed | Sign out **nie** woła `/protocol/openid-connect/logout` |
-| PW-MRL-E2E-028 | designed | rozmiar cookie |
-| PW-MRL-API-023 | designed | GET cookie-policy 200 (edukacja, nie TLS) |
-| PW-MRL-API-024 | designed | POST end-session URL |
+| PW-MRL-E2E-026 | existing-pom | `session-lab-end-oidc` |
+| PW-MRL-E2E-027 | existing-pom `session.spec.ts` | Sign out **nie** woła `/protocol/openid-connect/logout` |
+| PW-MRL-E2E-028 | existing-pom | rozmiar cookie |
+| PW-MRL-API-023 | existing-pom `session-lab.spec.ts` | GET cookie-policy 200 (edukacja, nie TLS) |
+| PW-MRL-API-024 | existing-pom `session.spec.ts` | POST end-session URL |
 | PW-RFC-E2E-055/056 | existing-pom TLS | brak JWT w storage; Secure true |
 
 ---
@@ -112,7 +112,7 @@ Dwa contexty, ten sam `storageState`. Click revoke **nie** jest oraclem HTTP. De
 
 | ID | Fakt | Dlaczego nie TC teraz |
 |---|---|---|
-| GAP-SESS-01 | Brak `post.logout.redirect.uris` w `payment-quality-realm.json` | C-07 / INFRA-KC-00 realm freeze E1 |
+| GAP-SESS-01 | stary volume Keycloak bez `post.logout.redirect.uris` | Additive w realm JSON; E2E-013 asertuje hop + `/login`. Volume: `python3 scripts/provision-keycloak-logout-uris.py` |
 | GAP-SESS-02 | Access token nadal w cookie (fat JWT może znów zabić 4 KB) | UC-SESS-04 łapie rozmiar, nie przenosi tokena do store serwerowego |
 | GAP-SESS-03 | Brak refresh token / RFC 7009 revoke | non-goal lab |
 | GAP-SESS-04 | `cookie-policy` hardcode `secure: false` | produkt; TC-014 dokumentuje drift |

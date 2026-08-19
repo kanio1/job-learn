@@ -16,7 +16,7 @@ Warstwa: Nuxt `:3000` z ciasteczkiem sesji. **Nie** nowy suite REST Assured. Czy
 | Method / path | `POST /api/merchants` → `GET /api/merchants/{id}` |
 | Body | `merchantReference`, `displayName`, `tenantReference=TENANT_ALPHA` |
 | Status | 201 potem 200 |
-| Uczy | Platform create **wymaga** tenanta (GAP-W2-01). |
+| Uczy | Platform create **wymaga** tenanta (API-003 gdy brak; UI = E2E-024). |
 
 ### PW-W2-API-002 — POST duplikat reference 409
 
@@ -34,7 +34,7 @@ Warstwa: Nuxt `:3000` z ciasteczkiem sesji. **Nie** nowy suite REST Assured. Czy
 | Prio | P0 |
 | Method / path | `POST /api/merchants` body bez `tenantReference` (JSON `null`) |
 | Status | 400 problem+json |
-| Uczy | Wyjaśnia, czemu Wave 2 nie robi UI POST jako admin (GAP-W2-01). |
+| Uczy | BFF/Spring odrzuca platform create bez `tenantReference`. UI admin **ma** pole (E2E-024). |
 
 ### PW-W2-API-004 — GET nieistniejący merchant 404
 
@@ -84,7 +84,7 @@ Warstwa: Nuxt `:3000` z ciasteczkiem sesji. **Nie** nowy suite REST Assured. Czy
 
 | | |
 |---|---|
-| Pokrycie | existing-ra `TenantIsolationIT`; POM **designed** |
+| Pokrycie | existing-ra `TenantIsolationIT`; existing-pom `tenant-scope.spec.ts` SCN-ISO-02/03 |
 | Method / path | `GET /api/merchants/{BETA_001}` token `tenant.admin` |
 | Status | **404** problem+json |
 | UC | UC-W2-20, [09 EXC-OP-03a](09-core-domain-flows.md) |
@@ -93,7 +93,7 @@ Warstwa: Nuxt `:3000` z ciasteczkiem sesji. **Nie** nowy suite REST Assured. Czy
 
 | | |
 |---|---|
-| Pokrycie | existing-ra; POM **designed** |
+| Pokrycie | existing-ra; existing-pom `tenant-scope.spec.ts` SCN-ISO-10 |
 | Headers | `Authorization` manager, `Idempotency-Key`, `Content-Type: application/json` |
 | Body | `{ "amountMinor": 1000, "currency": "PLN", "clientOrderReference": "BOLA-002" }` |
 | Status | **403** |

@@ -132,8 +132,8 @@ X-Correlation-ID: bc-op-02
 | Status | **201** |
 | Body | `merchantId` UUID, `merchantReference` znormalizowany, `status: DRAFT`, `riskFlagged` |
 | Oracle persist | `GET /api/merchants/{merchantId}` → **200** ten sam reference |
-| UI analog | formularz `merchantReference` + `displayName`; **Wave 2 UI nie wysyła tenanta** (GAP-W2-01) → użyj `BffClient.createMerchant` (E2E-020/022) |
-| Pokrycie | existing-pom API-001; existing-ra |
+| UI analog | formularz `merchantReference` + `displayName` + `tenantReference` (`create-merchant-tenant-reference`) — E2E-024 |
+| Pokrycie | existing-pom E2E-020/022/024; existing-ra |
 
 `POST` bez `tenantReference` jako platform:
 
@@ -145,7 +145,7 @@ Content-Type: application/json
 { "merchantReference": "NO-TENANT", "displayName": "No Tenant" }
 ```
 
-→ **400** `MissingTenantReferenceException` (API-003, GAP-W2-01).
+→ **400** `MissingTenantReferenceException` (API-003). UI wymaga pola (GAP-W2-01 zamknięty).
 
 ### UC-OP-02 ALT — Activate potem suspend
 
@@ -207,7 +207,7 @@ Content-Type: application/json
 - **Bez** `tenantReference` w body: Spring bierze tenant z JWT → **201**, `tenantId` = Alpha.
 - `GET /api/merchants` → lista **tylko** Alpha (w tym seed `ALPHA_001` / `ALPHA_002`).
 - `GET /api/merchants/{ALPHA_001}` → **200**.
-- Pokrycie: existing-ra `TenantIsolationIT`; **brak** live POM (designed UI).
+- Pokrycie: existing-ra `TenantIsolationIT`; existing-pom `tenant-scope.spec.ts` (SCN-ISO-01 UI, SCN-ISO-02/03 GET, MER-12 UI create bez pola tenant).
 
 ### EXC-OP-03a — Tenant admin czyta Beta (maskowanie)
 
@@ -266,7 +266,7 @@ Authorization: Bearer {merchant.manager}
 → **403** list / **404** GET id (zależnie od matchera) — UI Support: problem, 0 rows (E2E-070).  
 Platform `support.agent` / admin: GET Beta **200** (`platform:payments:read`).
 
-Pokrycie: existing-ra security; POM E2E-070/100; CRUD 002 **designed** w Wave 2.
+Pokrycie: existing-ra security; existing-pom `tenant-scope.spec.ts` SCN-ISO-10 (POST ALPHA_002 403) + E2E-070/100 (Beta). GET obcego orderu 404 zostaje RA.
 
 ---
 

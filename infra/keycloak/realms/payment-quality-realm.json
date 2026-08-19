@@ -177,7 +177,8 @@
         "https://app.payment-quality.local:8443"
       ],
       "attributes": {
-        "pkce.code.challenge.method": "S256"
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3000/login##http://127.0.0.1:3000/login##https://app.payment-quality.local:8443/login##https://app.payment-quality.local/login"
       },
       "protocolMappers": [
         {

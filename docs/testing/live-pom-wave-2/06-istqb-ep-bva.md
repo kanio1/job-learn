@@ -21,7 +21,7 @@ Każda partycja mapuje na `PW-W2-E2E-*` / `PW-W2-API-*` / `PW-W2-SEC-*`.
 | BVA-W2-021 | reference 3 znaki | unique ≥3 | API 201 | existing-pom API-001 |
 | EP-W2-022 | name &lt; 2 | `""` | field error | existing-pom |
 | EP-W2-023 | duplikat reference | drugi POST | 409 | existing-pom E2E-026 |
-| EP-W2-024 | brak tenant (admin UI) | form bez pola | 400 | blocked GAP-W2-01 / existing-pom API-003 |
+| EP-W2-024 | brak tenant (admin API) | body bez `tenantReference` | 400 | existing-pom API-003; UI ma pole (E2E-024) |
 
 ## Merchant status
 

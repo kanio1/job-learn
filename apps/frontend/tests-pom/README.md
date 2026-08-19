@@ -33,18 +33,14 @@ Runbook: [`docs/setup/run-stack-and-pom.md`](../../../docs/setup/run-stack-and-p
 
 ## Preflight
 
-From the repository root:
+Canonical HTTP learning path (containers, no Caddy) — from the repository root:
 
 ```bash
-cp infra/compose/.env.example infra/compose/.env   # once
-docker compose --env-file infra/compose/.env -f infra/compose/compose.yml up -d
+cp infra/compose/.env.example infra/compose/.env   # once; NUXT_SESSION_PASSWORD ≥32
+scripts/dev-stack.sh --app
 ```
 
-Backend (`apps/backend`):
-
-```bash
-SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
-```
+Host hybrid (hot reload) is `scripts/dev-stack.sh` without `--app`: Compose Postgres+Keycloak, then Spring `dev,seed` and Nuxt on the host. Runbook: [`docs/setup/run-stack-and-pom.md`](../../../docs/setup/run-stack-and-pom.md).
 
 Passwords (realm defaults match usernames; still do not commit them):
 
@@ -74,7 +70,7 @@ Worker world (seed + realm; empty payment lists):
 
 `merchant.manager` stays on Alpha (`MERCHANT_ALPHA_001`) for serial ISO. Contract seed (~104 orders) is unchanged.
 
-Keycloak `--import-realm` does **not** update an existing realm. After this seed/realm change either recreate the Keycloak volume or run `python3 scripts/provision-pom-worker-keycloak-users.py` (declares `tenant_id` / `merchant_id` on the user profile, then upserts `merchant.manager.w0`–`w3`). Spring `dev,seed` re-seeds merchants on startup.
+Keycloak `--import-realm` does **not** update an existing realm. After this seed/realm change either recreate the Keycloak volume or run `python3 scripts/provision-pom-worker-keycloak-users.py` (declares `tenant_id` / `merchant_id` on the user profile, then upserts `merchant.manager.w0`–`w3`). RP logout URIs: `python3 scripts/provision-keycloak-logout-uris.py`. Spring `dev,seed` re-seeds merchants on startup.
 
 Do **not** call `POST /api/test/seed-learning` or `/api/test/etl/payments/*` from this suite. Contract world is `dev,seed` (~104) plus unique factories.
 

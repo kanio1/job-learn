@@ -91,11 +91,17 @@ curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3000
 
 Jeśli issuer to `https://auth.payment-quality.local:8443/...`, został stary Keycloak z `--full`. Skrypt powinien go odtworzyć sam; w razie czego: `scripts/dev-stack.sh --down` i znowu `--app`.
 
-### 3.3 Przeglądarka
+### 3.3 Przeglądarka vs Playwright (dwa originy)
 
-Otwórz **`http://127.0.0.1:3000`** (nie `https://`, nie `:8443`). Zaloguj się przez Keycloak (`localhost:8081`).
+| Kto | URL | Dlaczego |
+|---|---|---|
+| `curl` / health / Node `BffClient` | `http://127.0.0.1:3000` | IPv4; hostowy Nuxt binduje tylko `127.0.0.1` |
+| Playwright na **host DX** | `http://localhost:3000` | musi zgadzać się z hostowym `NUXT_OAUTH_OIDC_REDIRECT_URL` (`localhost`) |
+| Playwright na **`--app`** | `http://127.0.0.1:3000` | compose ustawia redirect na `127.0.0.1`; `localhost` → OIDC **state mismatch** |
 
-`http://localhost:3000` bywa IPv6 (`::1`); hostowy Nuxt binduje tylko `127.0.0.1`. `--app` publikuje `0.0.0.0:3000`, więc oba mogą działać — POM i tak ustawiaj na `127.0.0.1`.
+Ręczny login: otwórz **`http://127.0.0.1:3000`** (albo `http://localhost:3000` na host DX). Nie `https://`, nie `:8443`. Keycloak issuer: `localhost:8081`.
+
+`http://localhost:3000` bywa IPv6 (`::1`). Hostowy Nuxt wtedy nie słucha — użyj `127.0.0.1` w przeglądarce albo `--app` (publikuje `0.0.0.0:3000`).
 
 ### 3.4 Playwright POM (E2E na żywym stosie)
 
@@ -112,7 +118,7 @@ Ręcznie:
 
 ```bash
 PLAYWRIGHT_SKIP_WEBSERVER=1 \
-PLAYWRIGHT_BASE_URL=http://localhost:3000 \
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 \
   corepack pnpm --dir apps/frontend exec playwright test --config playwright.pom.config.ts
 ```
 
@@ -217,7 +223,7 @@ Dlatego **nie ma** `scripts/dev-stack.sh --caddy-http`:
 
 - Produkcja kończy TLS na brzegu. `--full` uczy ten sam kształt (Caddy → kontenery, trzy vhosty, Secure cookie). Różnica to tylko CA (mkcert vs Let’s Encrypt).
 - HTTP Caddy na `.local` i tak wymaga `/etc/hosts` i **trzeciego** issuer Keycloak (`http://auth.payment-quality.local:8082`). Rootless Podman nie zbindowałby `:80`; byłoby `:8082`. To ten sam problem sticky hostname, który psuł HTTP POM.
-- Nauka POM bez DNS i certów zostaje na `--app` (`127.0.0.1:3000`).
+- Nauka POM bez DNS i certów zostaje na `--app` (curl `127.0.0.1:3000`, Playwright `localhost:3000`).
 
 Jeśli kiedyś dodamy tryb HTTP+Caddy, będzie to osobna flaga z własnym oracle issuer — nie mieszaj go z `--app`.
 
@@ -234,7 +240,7 @@ Kontener Keycloak używa `start` (profil produkcyjny), nie `start-dev`.
 
 Nitro na `--app` / `--full` serwuje przepisane discovery pod `/__oidc/openid-configuration` tylko z loopback. Caddy na `--full` zwraca 404 na `/__oidc*`.
 
-Oracle: `scripts/keycloak-issuer-oracle.sh`.
+Oracle: `scripts/keycloak-issuer-oracle.sh`. Istniejący volume nie bierze zmian z realm JSON — `python3 scripts/provision-keycloak-logout-uris.py` (post-logout URIs) i `python3 scripts/provision-pom-worker-keycloak-users.py` (worker users).
 
 ---
 

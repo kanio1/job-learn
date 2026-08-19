@@ -192,7 +192,7 @@ Sukces: **302 Found**, `Location: {hostedBase}/psp/checkout/{sessionId}`, body `
 
 | | |
 |---|---|
-| Pokrycie | designed |
+| Pokrycie | existing-ra `idempotencyReplayIgnoresValiditySecondsOutsideFingerprint` |
 | Body 2 | ten sam fingerprint, `validitySeconds: 60` vs 900 |
 | Status | **302** replay, **nie** 409 |
 | Headers out | `Idempotency-Replayed: true` |
@@ -431,16 +431,16 @@ Wszystkie: `Authorization: Bearer lab.*`. 404 sesji = problem+json `not_found`.
 
 ## 4.5 Scenariusze na create (header) — mostek do 05
 
-Luki designed w tej tabeli (071, 075) oraz PW-API-026: [README](README.md) i [01 GAP](01-business-gap-analysis.md).
+PW-API-026 (`validitySeconds` replay) existing-ra. PW-API-071/075: [README](README.md).
 
 | ID | Header `Lab-Force-Scenario` | Oczekiwane po łańcuchu | Pokrycie |
 |---|---|---|---|
 | PW-API-070 | (brak) / `HAPPY_COMPLETED` | notify po COMPLETED simulate | existing-ra |
-| PW-API-071 | `RETURN_LIE_SUCCESS` | simulate COMPLETED → **0** eventów, fulfillment AWAITING | designed |
+| PW-API-071 | `RETURN_LIE_SUCCESS` | simulate COMPLETED → **0** eventów, fulfillment `AWAITING_PAYMENT` | existing-ra `returnLieSuccessHeaderSkipsNotifyAndLeavesFulfillmentUnconfirmed` |
 | PW-API-072 | `BAD_SIGNATURE` | delivery 400, 0 inbox insert | existing-ra |
 | PW-API-073 | `NOTIFY_5XX_RETRY` | 503 potem 202 | existing-ra |
 | PW-API-074 | `USER_CANCEL` | brak specjalnej logiki; Decline nadal CANCELED | designed (dokumentuj no-op) |
-| PW-API-075 | `PAY_NO_RETURN` | jak happy; fulfillment CONFIRMED bez GET return | designed |
+| PW-API-075 | `PAY_NO_RETURN` | jak happy; fulfillment CONFIRMED bez GET return | existing-pom close-tab + GET fulfillment |
 | PW-API-076 | `OOO_EVENTS` | **blocked** GAP-01 — dziś jak happy | blocked |
 | PW-API-077 | lowercase `expired_link` | `valueOf(upper)` → działa jak EXPIRED_LINK | designed |
 

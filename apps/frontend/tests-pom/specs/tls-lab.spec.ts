@@ -1,7 +1,7 @@
 import { merchantAlphaId } from '../auth/accounts'
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
-import { expectNoTokenInBrowserStorage, expectSessionCookieSecure } from '../utils/storage-safety'
+import { expectNoTokenInBrowserStorage, expectSessionCookieSameSiteLax, expectSessionCookieSecure } from '../utils/storage-safety'
 import { pomAuthFiles } from '../utils/env'
 import { App } from '../pages/App'
 import { BffClient } from '../api/bff-client'
@@ -35,6 +35,7 @@ test('platform admin has a Secure session cookie on the TLS origin', async ({ ap
   await app.merchants.goto()
   await app.merchants.expectLoaded()
   await expectSessionCookieSecure(app.page, true)
+  await expectSessionCookieSameSiteLax(app.page)
   await expectNoTokenInBrowserStorage(app.page)
 })
 

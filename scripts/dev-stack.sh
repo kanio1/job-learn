@@ -48,10 +48,10 @@ TLS URLs:   https://app.payment-quality.local:8443
             https://auth.payment-quality.local:8443
             (CADDY_HTTPS_PORT, default 8443 for rootless Podman)
 
-Playwright live/POM on HTTP (--app or default):
-  PLAYWRIGHT_BASE_URL=http://localhost:3000 \
-  PLAYWRIGHT_PLATFORM_ADMIN_PASSWORD=... PLAYWRIGHT_MERCHANT_MANAGER_PASSWORD=... \
-    corepack pnpm --dir apps/frontend exec playwright test --config playwright.pom.config.ts
+Playwright live/POM origin must match NUXT_OAUTH_OIDC_REDIRECT_URL:
+  host DX   PLAYWRIGHT_BASE_URL=http://localhost:3000
+  --app     PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000  + PLAYWRIGHT_SKIP_WEBSERVER=1
+            (or scripts/run-app-stack-tests.sh)
 EOF
 }
 
@@ -145,6 +145,51 @@ wait_http() {
     fi
     if (( $(date +%s) - start > timeout_s )); then
       echo "Timed out waiting for $url" >&2
+      return 1
+    fi
+    sleep 2
+  done
+}
+
+# Nuxt health: 2xx/3xx only. HTTP 500 is retried until timeout — first-boot and
+# pasta rebind can 500 briefly. A stuck 500 is diagnosed only after timeout.
+# Host `.nuxt/dev` is the host `pnpm dev` bundle, not the --app/--full image.
+wait_nuxt() {
+  local url="$1"
+  local timeout_s="$2"
+  local start code last_code=000
+  local nitro="$REPO_ROOT/apps/frontend/.nuxt/dev/index.mjs"
+  start="$(date +%s)"
+  while true; do
+    code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "$url" 2>/dev/null || echo 000)"
+    last_code="$code"
+    case "$code" in
+      200|301|302|303|307|308)
+        echo "nuxt $url -> $code"
+        return 0
+        ;;
+    esac
+    if (( $(date +%s) - start > timeout_s )); then
+      echo "Timed out waiting for Nuxt $url (last HTTP $last_code)" >&2
+      if [[ "$APP" == "1" || "$FULL" == "1" ]]; then
+        echo "Compose frontend, not host .nuxt/dev." >&2
+        docker logs --tail 40 payment-quality-frontend >&2 || true
+        if [[ "$last_code" == "500" && "$APP" == "1" ]]; then
+          echo "Fix: scripts/dev-stack.sh --down && scripts/dev-stack.sh --app" >&2
+          echo "Host pnpm dev on :3000? scripts/dev-stack.sh --stop first." >&2
+        elif [[ "$last_code" == "500" ]]; then
+          echo "Fix: scripts/dev-stack.sh --down && scripts/dev-stack.sh --full" >&2
+        fi
+      else
+        if [[ "$last_code" == "500" && -f "$nitro" ]]; then
+          echo "Host Nitro bundle is not valid ESM (or still booting past timeout)." >&2
+          node --check "$nitro" >&2 || true
+        fi
+        tail -n 40 "$FRONTEND_LOG" >&2 || true
+        if [[ "$last_code" == "500" ]]; then
+          echo "Fix: scripts/dev-stack.sh --stop && rm -rf apps/frontend/.nuxt/dev && scripts/dev-stack.sh" >&2
+        fi
+      fi
       return 1
     fi
     sleep 2
@@ -395,9 +440,10 @@ if [[ "$APP" == "1" ]]; then
     fi
     sleep 2
   done
-  if ! wait_http "http://127.0.0.1:8080/api/status" 45 || ! wait_http "http://127.0.0.1:3000" 45; then
-    echo "Containers are healthy but host :3000/:8080 are not reachable (rootless pasta)." >&2
+  if ! wait_http "http://127.0.0.1:8080/api/status" 45 || ! wait_nuxt "http://127.0.0.1:3000" 45; then
+    echo "Containers are healthy but host :3000/:8080 are not reachable (rootless pasta) or Nuxt is 500." >&2
     echo "Check: ss -tlnp | grep -E ':3000|:8080' — rootlessport must listen." >&2
+    echo "Host nuxt.dev holding :3000? scripts/dev-stack.sh --stop first." >&2
     echo "Retry: scripts/dev-stack.sh --down && scripts/dev-stack.sh --app" >&2
     exit 1
   fi
@@ -409,7 +455,7 @@ HTTP compose stack is up (Spring and Nuxt in Podman).
   Rebuild  scripts/dev-stack.sh --app
   Stop     scripts/dev-stack.sh --down
   POM HTTP PLAYWRIGHT_SKIP_WEBSERVER=1 \\
-             PLAYWRIGHT_BASE_URL=http://localhost:3000 \\
+             PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 \\
              corepack pnpm --dir apps/frontend exec playwright test --config playwright.pom.config.ts
 EOF
   exit 0
@@ -461,6 +507,8 @@ fi
 NUXT_ENV+=(NUXT_TYPECHECK=false)
 
 echo "Starting Nuxt…"
+# Disposable Nitro output: a crashed HMR rewrite leaves Unexpected token ')' on GET /.
+rm -rf "$REPO_ROOT/apps/frontend/.nuxt/dev"
 # HTTP stack binds loopback. TLS overlay binds 0.0.0.0 so Caddy in rootless
 # Podman (pasta / host.docker.internal) can reach the host process. That
 # exposes the dashboard on the LAN — lab-only, never a production pattern.
@@ -478,7 +526,7 @@ fi
 echo $! >"$FRONTEND_PID_FILE"
 
 echo "Waiting for Nuxt…"
-wait_http "http://127.0.0.1:3000" 120
+wait_nuxt "http://127.0.0.1:3000" 120
 
 if [[ "$TLS" == "1" ]]; then
   echo "Waiting for Caddy HTTPS…"

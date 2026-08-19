@@ -267,7 +267,7 @@ GET /api/checkout-lab/hosted/sessions/{id}/fulfillment
 ```
 
 lub GET booking fulfillment → **CONFIRMED**.  
-TC: PW-E2E-043, PW-API-075 **designed** (GAP-02). Header `PAY_NO_RETURN` nie zmienia logiki (to happy minus return).
+TC: PW-E2E-043 existing-pom (`approve without return still confirms fulfillment`). Header `PAY_NO_RETURN` nie zmienia logiki (to happy minus return).
 
 ---
 

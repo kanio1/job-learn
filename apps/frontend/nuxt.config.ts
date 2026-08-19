@@ -18,8 +18,24 @@ export default defineNuxtConfig({
     '/admin/**': { ssr: false }
   },
   typescript: {
-    typeCheck: process.env.NUXT_TYPECHECK !== 'false'
+    typeCheck: process.env.NUXT_TYPECHECK !== 'false',
+    tsConfig: {
+      exclude: [
+        '../app/**/*.test.ts',
+        '../**/*.spec.ts',
+        '../tests/**',
+        '../tests-pom/**',
+        '../tests-pom-learner/**',
+      ],
+    },
   },
+  ignore: [
+    '**/*.test.ts',
+    '**/*.spec.ts',
+    'tests/**',
+    'tests-pom/**',
+    'tests-pom-learner/**',
+  ],
   runtimeConfig: {
     oauth: {
       oidc: {
