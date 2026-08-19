@@ -42,12 +42,21 @@
         <LoadingState v-if="summaryLoading" message="Loading summary…" />
 
         <!-- Error state for summary — Req 1.6 -->
-        <ErrorState
-          v-else-if="summaryError"
-          :problem="summaryProblem"
-          :message="summaryError"
-          :on-retry="fetchSummary"
-        />
+        <div v-else-if="summaryError" class="space-y-2">
+          <ErrorState
+            :problem="summaryProblem"
+            :message="summaryError"
+            :on-retry="fetchSummary"
+          />
+          <p
+            v-if="summaryProblem?.status === 403"
+            class="text-sm text-muted"
+            data-testid="overview-merchant-forbidden-hint"
+          >
+            Overview is visible from the session role, but GET /api/merchants was forbidden.
+            Sign out and sign in again (HTTP compose: http://127.0.0.1:3000).
+          </p>
+        </div>
 
         <!-- Summary cards from backend data only — Req 1.1, 1.7 -->
         <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -159,6 +168,10 @@ import type { ProblemDetails } from '~/types/api'
 import type { PaymentOrderResponse } from '~/schemas/payment-order.schema'
 import type { TableColumn } from '@nuxt/ui'
 import { h, resolveComponent } from 'vue'
+
+definePageMeta({
+  layout: 'dashboard',
+})
 
 const { listMerchants } = useMerchantsApi()
 const { getOrderSummary, listOrders } = usePaymentOrdersApi()

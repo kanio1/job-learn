@@ -12,6 +12,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -23,9 +25,23 @@ class TenantResolverService implements TenantResolver {
         this.repository = repository;
     }
 
+    private static final String PLATFORM_TENANT_REFERENCE = "PLATFORM_TENANT";
+    private static final String PLATFORM_ADMIN_ROLE = "PLATFORM_ADMIN";
+
     @Override
     @Transactional(readOnly = true)
     public TenantContext resolve(Jwt jwt) {
+        if (hasPlatformAdminRole(jwt)) {
+            Tenant platform = repository.findByTenantReference(PLATFORM_TENANT_REFERENCE)
+                    .orElseThrow(() ->
+                            new TenantResolutionException("Tenant claim could not be resolved"));
+            return new TenantContext(
+                    platform.getTenantId(),
+                    TenantReference.of(platform.getTenantReference()),
+                    true
+            );
+        }
+
         String claim = jwt.getClaimAsString("tenant_id");
         if (claim == null || claim.isBlank()) {
             throw new TenantResolutionException("JWT does not carry a tenant_id claim");
@@ -46,6 +62,21 @@ class TenantResolverService implements TenantResolver {
                 TenantReference.of(tenant.getTenantReference()),
                 isPlatform
         );
+    }
+
+    private static boolean hasPlatformAdminRole(Jwt jwt) {
+        Object realmAccessClaim = jwt.getClaims().get("realm_access");
+        if (!(realmAccessClaim instanceof Map<?, ?> realmAccess)) {
+            return false;
+        }
+        Object rolesClaim = realmAccess.get("roles");
+        if (!(rolesClaim instanceof Collection<?> roles)) {
+            return false;
+        }
+        return roles.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .anyMatch(PLATFORM_ADMIN_ROLE::equals);
     }
 
     @Override

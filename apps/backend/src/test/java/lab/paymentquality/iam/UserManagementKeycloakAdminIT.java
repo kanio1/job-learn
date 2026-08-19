@@ -64,7 +64,7 @@ class UserManagementKeycloakAdminIT extends PostgresContainerSupport {
         registry.add("payment-quality.keycloak.admin.base-url", keycloak::getBaseUrl);
         registry.add("payment-quality.keycloak.admin.realm", () -> "payment-quality");
         registry.add("payment-quality.keycloak.admin.client-id", () -> "payment-quality-admin");
-        registry.add("payment-quality.keycloak.admin.client-secret", () -> "test-admin-secret");
+        registry.add("payment-quality.keycloak.admin.client-secret", () -> "dev-admin-client-secret");
     }
 
     @BeforeEach
@@ -126,7 +126,7 @@ class UserManagementKeycloakAdminIT extends PostgresContainerSupport {
             .contentType("application/x-www-form-urlencoded")
             .formParam("grant_type", "client_credentials")
             .formParam("client_id", "payment-quality-admin")
-            .formParam("client_secret", "test-admin-secret")
+            .formParam("client_secret", "dev-admin-client-secret")
         .when()
             .post("/realms/payment-quality/protocol/openid-connect/token")
         .then()

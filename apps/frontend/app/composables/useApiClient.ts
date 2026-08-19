@@ -51,6 +51,38 @@ function isProblemContentType(headers: Headers | undefined): boolean {
   return ct.includes('application/problem+json')
 }
 
+/** ofetch sometimes leaves 4xx bodies as a JSON string instead of an object. */
+function problemPayload(errorData: unknown, status: number): unknown {
+  let payload: unknown = errorData
+  if (typeof errorData === 'string') {
+    const trimmed = errorData.trim()
+    if (trimmed.startsWith('{')) {
+      try {
+        // SAFETY: JSON.parse is untyped; Zod problemDetailsSchema parses the result next.
+        payload = JSON.parse(trimmed) as unknown
+      }
+      catch {
+        payload = errorData
+      }
+    }
+  }
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    const record = payload as Record<string, unknown>
+    if (typeof record.details === 'string' && record.detail === undefined) {
+      return {
+        type: typeof record.type === 'string' ? record.type : 'about:blank',
+        title: typeof record.title === 'string'
+          ? record.title
+          : (typeof record.message === 'string' ? record.message : 'Forbidden'),
+        status: typeof record.status === 'number' ? record.status : status,
+        detail: record.details,
+        error: record.error,
+      }
+    }
+  }
+  return payload
+}
+
 export function useApiClient() {
   async function request<T>(
     path: string,
@@ -106,7 +138,7 @@ export function useApiClient() {
     } catch (err: any) {
       // $fetch.raw throws on network errors and non-2xx status codes
       const status: number = err?.statusCode ?? err?.response?.status ?? 0
-      const errorData = err?.data ?? err?.response?._data
+      const errorData = problemPayload(err?.data ?? err?.response?._data, status)
       const apiHeaders = extractHeaders(err?.response?.headers as Headers | undefined)
       const raw = toRawString(errorData)
 

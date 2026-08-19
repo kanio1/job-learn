@@ -220,7 +220,7 @@
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": true,
       "authorizationServicesEnabled": false,
-      "secret": "${PAYMENT_QUALITY_KEYCLOAK_ADMIN_CLIENT_SECRET}"
+      "secret": "dev-admin-client-secret"
     }
   ],
   "users": [

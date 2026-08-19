@@ -76,12 +76,35 @@ export async function backendApi(
     }
 
     const contentType = error?.response?.headers?.get?.('content-type') ?? ''
+    let data = error?.data
+    if (typeof data === 'string' && data.trim().startsWith('{')) {
+      try {
+        data = JSON.parse(data)
+      }
+      catch {
+        // keep the original string
+      }
+    }
     const springJson = contentType.includes('application/problem+json')
       || contentType.includes('application/json')
-    if (springJson && error?.data) {
+      || (data !== null && typeof data === 'object')
+    if (springJson && data) {
       setResponseStatus(event, statusCode || 503)
-      setHeader(event, 'Content-Type', contentType)
-      return error.data
+      setHeader(event, 'Content-Type', contentType.includes('json') ? contentType : 'application/problem+json')
+      return data
+    }
+    if (statusCode === 401 || statusCode === 403) {
+      setResponseStatus(event, statusCode)
+      setHeader(event, 'Content-Type', 'application/problem+json')
+      return {
+        type: statusCode === 401
+          ? 'https://api.payment-quality.local/problems/unauthorized'
+          : 'https://api.payment-quality.local/problems/forbidden',
+        title: statusCode === 401 ? 'Unauthorized' : 'Forbidden',
+        status: statusCode,
+        detail: typeof data === 'string' ? data : 'Access denied',
+        error: statusCode === 401 ? 'unauthorized' : 'forbidden',
+      }
     }
 
     throw createError({

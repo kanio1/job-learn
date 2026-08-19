@@ -294,7 +294,11 @@ remove_stale_app_containers
 if [[ "$FULL" == "1" || "$APP" == "1" ]]; then
   compose build
 fi
-compose up -d --remove-orphans
+if [[ "$APP" == "1" || "$FULL" == "1" ]]; then
+  compose up -d --force-recreate --remove-orphans
+else
+  compose up -d --remove-orphans
+fi
 
 echo "Waiting for Postgres…"
 pg_start="$(date +%s)"

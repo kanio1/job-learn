@@ -11,6 +11,27 @@ import {
 } from '../methods/ep-bva/MerchantReferencePartitions'
 import { createMerchantJourney } from '../methods/use-case/CreateMerchantJourney'
 
+test('platform admin overview lists merchants without a problem card', async ({ app, page }) => {
+  const listed = page.waitForResponse(response => {
+    if (response.request().method() !== 'GET') {
+      return false
+    }
+    try {
+      return new URL(response.url()).pathname === '/api/merchants'
+    }
+    catch {
+      return false
+    }
+  })
+  await app.page.goto('/')
+  expect((await listed).status()).toBe(200)
+  await expect(app.page.getByRole('heading', { name: 'Platform Summary' })).toBeVisible()
+  await expect(app.page.getByTestId('nav-link-overview')).toBeVisible()
+  await expect(app.page.getByTestId('nav-link-users')).toBeVisible()
+  await expect(app.problem.root()).toHaveCount(0)
+  await expect(app.page.getByTestId('overview-merchant-forbidden-hint')).toHaveCount(0)
+})
+
 test('creates a unique merchant that appears in the registry', async ({ app, api }, testInfo) => {
   const client = requireApi(api)
   const reference = uniqueMerchantReference(testInfo)

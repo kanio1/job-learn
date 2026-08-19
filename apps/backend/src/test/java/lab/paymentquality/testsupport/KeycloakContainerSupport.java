@@ -35,7 +35,7 @@ public class KeycloakContainerSupport {
                 .withEnv("KC_BOOTSTRAP_ADMIN_USERNAME", "admin")
                 .withEnv("KC_BOOTSTRAP_ADMIN_PASSWORD", "admin")
                 .withEnv("KC_HTTP_PORT", String.valueOf(KEYCLOAK_PORT))
-                .withEnv("PAYMENT_QUALITY_KEYCLOAK_ADMIN_CLIENT_SECRET", "test-admin-secret")
+                .withEnv("PAYMENT_QUALITY_KEYCLOAK_ADMIN_CLIENT_SECRET", "dev-admin-client-secret")
                 .withExposedPorts(KEYCLOAK_PORT)
                 .waitingFor(Wait.forHttp("/realms/payment-quality/.well-known/openid-configuration")
                         .forStatusCode(200)

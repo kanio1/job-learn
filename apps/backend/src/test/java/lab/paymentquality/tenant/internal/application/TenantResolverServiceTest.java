@@ -69,6 +69,22 @@ class TenantResolverServiceTest {
     }
 
     @Test
+    void platformAdminOnSuspendedPlaceholderTenantResolvesPlatformTenant() {
+        UUID platformId = UUID.randomUUID();
+        when(repository.findByTenantReference("PLATFORM_TENANT"))
+                .thenReturn(Optional.of(tenant(platformId, "PLATFORM_TENANT", TenantStatus.ACTIVE, TenantType.PLATFORM)));
+        var service = new TenantResolverService(repository);
+
+        var context = service.resolve(jwtWithTenantAndRoles(
+                "PLACEHOLDER_TENANT_ID",
+                java.util.List.of("PLATFORM_ADMIN", "merchants:read")));
+
+        assertThat(context.tenantId()).isEqualTo(platformId);
+        assertThat(context.tenantReference().value()).isEqualTo("PLATFORM_TENANT");
+        assertThat(context.isPlatformScoped()).isTrue();
+    }
+
+    @Test
     void suspendedPlatformTenantClaimStillResolves() {
         UUID tenantId = UUID.randomUUID();
         when(repository.findByTenantReference("PLATFORM_TENANT"))
@@ -110,6 +126,14 @@ class TenantResolverServiceTest {
         return Jwt.withTokenValue("token")
                 .header("alg", "none")
                 .claim("tenant_id", tenantReference)
+                .build();
+    }
+
+    private static Jwt jwtWithTenantAndRoles(String tenantReference, java.util.List<String> roles) {
+        return Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .claim("tenant_id", tenantReference)
+                .claim("realm_access", Map.of("roles", roles))
                 .build();
     }
 

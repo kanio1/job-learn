@@ -15,7 +15,9 @@ export default defineNuxtConfig({
   },
   compatibilityDate: '2026-05-18',
   routeRules: {
-    '/admin/**': { ssr: false }
+    '/': { ssr: false },
+    '/error-lab': { ssr: false },
+    '/admin/**': { ssr: false },
   },
   typescript: {
     typeCheck: process.env.NUXT_TYPECHECK !== 'false',

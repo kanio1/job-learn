@@ -168,6 +168,62 @@ describe('Property 10: Displayed status equals proxied backend status', () => {
     expect(result.problem?.detail).toBe('A merchant with this reference already exists')
   })
 
+  it('maps merchant ErrorResponse details string to problem.detail', async () => {
+    vi.stubGlobal('$fetch', Object.assign(
+      () => {},
+      {
+        raw: vi.fn().mockRejectedValue(
+          makeErrorThrow(
+            403,
+            { error: 'forbidden', message: 'Forbidden', details: 'Access denied' },
+            'application/problem+json',
+          ),
+        ),
+      },
+    ))
+
+    const { request } = useApiClient()
+    const result = await request('/api/merchants', anySchema)
+
+    expect(result.status).toBe(403)
+    expect(result.problem?.title).toBe('Forbidden')
+    expect(result.problem?.detail).toBe('Access denied')
+    expect(result.problem?.error).toBe('forbidden')
+    expect(result.problem?.detail).not.toMatch(/\[GET\]/)
+  })
+
+  it('parses a JSON-string 403 body instead of the ofetch GET message', async () => {
+    const springForbidden = {
+      type: 'https://api.payment-quality.local/problems/forbidden',
+      title: 'Forbidden',
+      status: 403,
+      detail: 'Access denied',
+      error: 'forbidden',
+      correlationId: 'corr-403',
+    }
+    vi.stubGlobal('$fetch', Object.assign(
+      () => {},
+      {
+        raw: vi.fn().mockRejectedValue(
+          makeErrorThrow(
+            403,
+            JSON.stringify(springForbidden),
+            'text/plain',
+          ),
+        ),
+      },
+    ))
+
+    const { request } = useApiClient()
+    const result = await request('/api/merchants', anySchema)
+
+    expect(result.status).toBe(403)
+    expect(result.problem?.type).toBe(springForbidden.type)
+    expect(result.problem?.detail).toBe('Access denied')
+    expect(result.problem?.error).toBe('forbidden')
+    expect(result.problem?.correlationId).toBe('corr-403')
+  })
+
   it('full status range — ApiResponse.status equals proxied status across all backend codes', async () => {
     await fc.assert(
       fc.asyncProperty(

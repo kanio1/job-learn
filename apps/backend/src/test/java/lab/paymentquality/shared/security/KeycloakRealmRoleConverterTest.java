@@ -192,9 +192,27 @@ class KeycloakRealmRoleConverterTest {
     // --- Example-based companion tests (updated for fail-closed behavior) ---
 
     @Test
-    void unknown_role_PLATFORM_ADMIN_produces_no_authority() {
+    void composite_PLATFORM_ADMIN_expands_to_leaf_merchant_read_authority() {
         Collection<GrantedAuthority> result = CONVERTER.convert(jwtWithRoles(List.of("PLATFORM_ADMIN")));
-        assertThat(result).isEmpty();
+        assertThat(result)
+                .extracting(GrantedAuthority::getAuthority)
+                .contains(
+                        Authorities.MERCHANTS_READ,
+                        Authorities.MERCHANTS_CREATE,
+                        Authorities.MERCHANTS_UPDATE_STATUS,
+                        Authorities.MERCHANTS_UPDATE_RISK_FLAG,
+                        Authorities.PLATFORM_PAYMENTS_READ);
+    }
+
+    @Test
+    void composite_and_leaf_roles_do_not_duplicate_authorities() {
+        Collection<GrantedAuthority> result = CONVERTER.convert(
+                jwtWithRoles(List.of("PLATFORM_ADMIN", "merchants:read")));
+        long merchantRead = result.stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(Authorities.MERCHANTS_READ::equals)
+                .count();
+        assertThat(merchantRead).isEqualTo(1);
     }
 
     @Test

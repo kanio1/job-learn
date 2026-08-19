@@ -8,7 +8,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
 
@@ -44,6 +43,55 @@ public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<Gra
         Map.entry("tenant:users:update",         Authorities.TENANT_USERS_UPDATE),
         Map.entry("tenant:users:assign-roles",   Authorities.TENANT_USERS_ASSIGN_ROLES));
 
+    /**
+     * Keycloak may put only the composite name on the access token. Expand to the
+     * same leaf authorities as {@code payment-quality-realm.json}.
+     */
+    private static final Map<String, List<String>> COMPOSITE_AUTHORITIES = Map.ofEntries(
+        Map.entry("PLATFORM_ADMIN", List.of(
+                Authorities.MERCHANTS_CREATE,
+                Authorities.MERCHANTS_READ,
+                Authorities.MERCHANTS_UPDATE_STATUS,
+                Authorities.MERCHANTS_UPDATE_RISK_FLAG,
+                Authorities.PLATFORM_PAYMENTS_READ,
+                Authorities.PLATFORM_PAYMENTS_LIFECYCLE,
+                Authorities.PLATFORM_PAYMENTS_AUDIT,
+                Authorities.PLATFORM_AUDIT_READ,
+                Authorities.PLATFORM_USERS_READ,
+                Authorities.PLATFORM_USERS_CREATE,
+                Authorities.PLATFORM_USERS_UPDATE,
+                Authorities.PLATFORM_USERS_ASSIGN_ROLES,
+                Authorities.TENANT_SETTINGS_READ,
+                Authorities.TENANT_SETTINGS_UPDATE,
+                Authorities.PLATFORM_PAYMENT_NOTES_READ,
+                Authorities.PLATFORM_PAYMENT_NOTES_CREATE)),
+        Map.entry("TENANT_ADMIN", List.of(
+                Authorities.MERCHANTS_CREATE,
+                Authorities.MERCHANTS_READ,
+                Authorities.MERCHANTS_UPDATE_STATUS,
+                Authorities.MERCHANT_PAYMENTS_READ,
+                Authorities.TENANT_AUDIT_READ,
+                Authorities.TENANT_USERS_READ,
+                Authorities.TENANT_USERS_CREATE,
+                Authorities.TENANT_USERS_UPDATE,
+                Authorities.TENANT_USERS_ASSIGN_ROLES,
+                Authorities.TENANT_SETTINGS_READ,
+                Authorities.TENANT_SETTINGS_UPDATE)),
+        Map.entry("MERCHANT_MANAGER", List.of(
+                Authorities.MERCHANT_PAYMENTS_CREATE,
+                Authorities.MERCHANT_PAYMENTS_READ,
+                Authorities.MERCHANT_PAYMENTS_LIFECYCLE)),
+        Map.entry("SUPPORT_AGENT", List.of(
+                Authorities.MERCHANTS_READ,
+                Authorities.PLATFORM_PAYMENTS_READ,
+                Authorities.PLATFORM_PAYMENTS_AUDIT,
+                Authorities.PLATFORM_AUDIT_READ,
+                Authorities.PLATFORM_PAYMENT_NOTES_READ,
+                Authorities.PLATFORM_PAYMENT_NOTES_CREATE)),
+        Map.entry("READ_ONLY_USER", List.of(
+                Authorities.MERCHANTS_READ,
+                Authorities.PLATFORM_PAYMENTS_READ)));
+
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {
         var realmAccessClaim = jwt.getClaims().get("realm_access");
@@ -57,10 +105,18 @@ public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<Gra
         return roles.stream()
                 .filter(String.class::isInstance)
                 .map(String.class::cast)
-                .map(KNOWN_ROLES::get)
-                .filter(Objects::nonNull)
+                .flatMap(role -> authoritiesFor(role).stream())
                 .distinct()
                 .<GrantedAuthority>map(SimpleGrantedAuthority::new)
                 .toList();
+    }
+
+    private static List<String> authoritiesFor(String role) {
+        List<String> composite = COMPOSITE_AUTHORITIES.get(role);
+        if (composite != null) {
+            return composite;
+        }
+        String mapped = KNOWN_ROLES.get(role);
+        return mapped == null ? List.of() : List.of(mapped);
     }
 }
