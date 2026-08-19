@@ -60,6 +60,17 @@ describe('merchantListBackendSchema', () => {
     expect(result.success).toBe(true)
   })
 
+  it('accepts deterministic seed merchant ids that are not RFC-4122 version 4', () => {
+    const result = merchantListBackendSchema.safeParse({
+      merchants: [{
+        ...validMerchant,
+        merchantId: '00000000-0000-0000-0000-0000000000b1',
+        merchantReference: 'MERCHANT_ALPHA_001',
+      }],
+    })
+    expect(result.success).toBe(true)
+  })
+
   it('accepts a non-empty merchants array', () => {
     const result = merchantListBackendSchema.safeParse({ merchants: [validMerchant] })
     expect(result.success).toBe(true)

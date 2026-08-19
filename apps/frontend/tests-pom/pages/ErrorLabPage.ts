@@ -24,7 +24,9 @@ export class ErrorLabPage extends BasePage {
 
   async trigger(status: 400 | 401 | 403 | 404 | 406 | 409 | 412 | 415 | 428 | 304): Promise<void> {
     await this.assertNoDevErrorOverlay()
-    await this.triggerButton(status).scrollIntoViewIfNeeded()
-    await this.triggerButton(status).click({ force: true })
+    const button = this.triggerButton(status)
+    await button.scrollIntoViewIfNeeded()
+    await expect(button).toBeEnabled()
+    await button.click()
   }
 }

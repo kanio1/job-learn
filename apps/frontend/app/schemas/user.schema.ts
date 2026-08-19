@@ -13,7 +13,7 @@ export const userSummarySchema = z.object({
   username: z.string(),
   email: z.email(),
   enabled: z.boolean(),
-  tenantId: z.string(),
+  tenantId: z.string().nullable(),
   merchantId: z.string().nullable().optional(),
   roles: z.array(compositeRoleSchema),
 })

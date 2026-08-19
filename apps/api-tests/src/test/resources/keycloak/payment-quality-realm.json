@@ -66,6 +66,12 @@
         "name": "tenant:users:assign-roles"
       },
       {
+        "name": "platform:tenant:settings:read"
+      },
+      {
+        "name": "platform:tenant:settings:update"
+      },
+      {
         "name": "PLATFORM_ADMIN",
         "composite": true,
         "composites": {
@@ -80,7 +86,9 @@
             "platform:users:read",
             "platform:users:create",
             "platform:users:update",
-            "platform:users:assign-roles"
+            "platform:users:assign-roles",
+            "platform:tenant:settings:read",
+            "platform:tenant:settings:update"
           ]
         }
       },
@@ -97,7 +105,9 @@
             "tenant:users:read",
             "tenant:users:create",
             "tenant:users:update",
-            "tenant:users:assign-roles"
+            "tenant:users:assign-roles",
+            "platform:tenant:settings:read",
+            "platform:tenant:settings:update"
           ]
         }
       },
@@ -437,6 +447,94 @@
       ],
       "attributes": {
         "merchant_id": "MERCHANT_ALPHA_001",
+        "tenant_id": "TENANT_ALPHA"
+      },
+      "realmRoles": [
+        "MERCHANT_MANAGER"
+      ]
+    },
+    {
+      "username": "merchant.manager.w0",
+      "enabled": true,
+      "firstName": "Merchant",
+      "lastName": "Manager W0",
+      "email": "merchant.manager.w0@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.manager.w0",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "00000000-0000-0000-0000-0000000000d0",
+        "tenant_id": "TENANT_ALPHA"
+      },
+      "realmRoles": [
+        "MERCHANT_MANAGER"
+      ]
+    },
+    {
+      "username": "merchant.manager.w1",
+      "enabled": true,
+      "firstName": "Merchant",
+      "lastName": "Manager W1",
+      "email": "merchant.manager.w1@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.manager.w1",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "00000000-0000-0000-0000-0000000000d1",
+        "tenant_id": "TENANT_ALPHA"
+      },
+      "realmRoles": [
+        "MERCHANT_MANAGER"
+      ]
+    },
+    {
+      "username": "merchant.manager.w2",
+      "enabled": true,
+      "firstName": "Merchant",
+      "lastName": "Manager W2",
+      "email": "merchant.manager.w2@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.manager.w2",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "00000000-0000-0000-0000-0000000000d2",
+        "tenant_id": "TENANT_ALPHA"
+      },
+      "realmRoles": [
+        "MERCHANT_MANAGER"
+      ]
+    },
+    {
+      "username": "merchant.manager.w3",
+      "enabled": true,
+      "firstName": "Merchant",
+      "lastName": "Manager W3",
+      "email": "merchant.manager.w3@example.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "merchant.manager.w3",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "merchant_id": "00000000-0000-0000-0000-0000000000d3",
         "tenant_id": "TENANT_ALPHA"
       },
       "realmRoles": [

@@ -58,7 +58,8 @@ public class PaymentExpirationService {
 
             PaymentOrderStatusHistory entry = PaymentOrderStatusHistory.lifecycleEntry(
                     order.getPaymentOrderId(), previousStatus, order.getStatus(),
-                    PaymentLifecycleAction.EXPIRE, null, null, null, null, null, null);
+                    PaymentLifecycleAction.EXPIRE, "expiration-sweep", "expiration-sweep",
+                    null, null, null, null);
             statusHistoryRepository.saveAndFlush(entry);
 
             eventPublisher.publishEvent(AuditableActionEventFactory.success(

@@ -25,10 +25,21 @@ final class Fixtures {
     static final UUID MERCHANT_BETA_001_ID = uuid("00000000-0000-0000-0000-0000000000b3");
     static final UUID MERCHANT_SUSPENDED_DEMO_ID = uuid("33333333-3333-3333-3333-333333333333");
 
+    /** Empty merchants for Playwright worker isolation (no payment-order rows). */
+    static final int WORKER_MERCHANT_COUNT = 4;
+    static final UUID MERCHANT_W0_ID = uuid("00000000-0000-0000-0000-0000000000d0");
+    static final UUID MERCHANT_W1_ID = uuid("00000000-0000-0000-0000-0000000000d1");
+    static final UUID MERCHANT_W2_ID = uuid("00000000-0000-0000-0000-0000000000d2");
+    static final UUID MERCHANT_W3_ID = uuid("00000000-0000-0000-0000-0000000000d3");
+
     static final String MERCHANT_ALPHA_001 = "MERCHANT_ALPHA_001";
     static final String MERCHANT_ALPHA_002 = "MERCHANT_ALPHA_002";
     static final String MERCHANT_BETA_001 = "MERCHANT_BETA_001";
     static final String MERCHANT_SUSPENDED_DEMO = "SUSPENDED-DEMO-MERCHANT";
+    static final String MERCHANT_W0 = "MERCHANT-W0";
+    static final String MERCHANT_W1 = "MERCHANT-W1";
+    static final String MERCHANT_W2 = "MERCHANT-W2";
+    static final String MERCHANT_W3 = "MERCHANT-W3";
 
     private static final Instant BASE_ORDER_TIME = Instant.parse("2026-01-15T09:30:00Z");
     private static final Instant PAGINATION_ORDER_TIME = Instant.parse("2026-01-15T10:00:00Z");
@@ -55,7 +66,11 @@ final class Fixtures {
                         "Beta Merchant 001", "ACTIVE", PLATFORM_TENANT_ID),
                 // Merchant under the SUSPENDED demo tenant (SEED-MVP-001)
                 new MerchantSeed(MERCHANT_SUSPENDED_DEMO_ID, MERCHANT_SUSPENDED_DEMO,
-                        "Suspended Demo Merchant", "ACTIVE", PLACEHOLDER_TENANT_ID)
+                        "Suspended Demo Merchant", "ACTIVE", PLACEHOLDER_TENANT_ID),
+                new MerchantSeed(MERCHANT_W0_ID, MERCHANT_W0, "Playwright Worker 0", "ACTIVE", TENANT_ALPHA_ID),
+                new MerchantSeed(MERCHANT_W1_ID, MERCHANT_W1, "Playwright Worker 1", "ACTIVE", TENANT_ALPHA_ID),
+                new MerchantSeed(MERCHANT_W2_ID, MERCHANT_W2, "Playwright Worker 2", "ACTIVE", TENANT_ALPHA_ID),
+                new MerchantSeed(MERCHANT_W3_ID, MERCHANT_W3, "Playwright Worker 3", "ACTIVE", TENANT_ALPHA_ID)
         );
     }
 

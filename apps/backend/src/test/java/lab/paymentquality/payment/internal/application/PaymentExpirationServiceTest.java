@@ -1,6 +1,7 @@
 package lab.paymentquality.payment.internal.application;
 
 import lab.paymentquality.payment.internal.domain.PaymentOrder;
+import lab.paymentquality.payment.internal.domain.PaymentOrderStatusHistory;
 import lab.paymentquality.payment.internal.domain.PaymentStatus;
 import lab.paymentquality.payment.internal.infrastructure.JpaPaymentOrderRepository;
 import lab.paymentquality.payment.internal.infrastructure.JpaPaymentOrderStatusHistoryRepository;
@@ -55,7 +56,10 @@ class PaymentExpirationServiceTest {
         assertThat(expiredCount).isEqualTo(1);
         assertThat(overdueOrder.getStatus()).isEqualTo(PaymentStatus.EXPIRED);
         verify(paymentOrderRepository).saveAndFlush(overdueOrder);
-        verify(statusHistoryRepository).saveAndFlush(any());
+        ArgumentCaptor<PaymentOrderStatusHistory> historyCaptor = ArgumentCaptor.forClass(PaymentOrderStatusHistory.class);
+        verify(statusHistoryRepository).saveAndFlush(historyCaptor.capture());
+        assertThat(historyCaptor.getValue().getActorSubject()).isEqualTo("expiration-sweep");
+        assertThat(historyCaptor.getValue().getCorrelationId()).isEqualTo("expiration-sweep");
 
         ArgumentCaptor<AuditableActionOccurred> captor = ArgumentCaptor.forClass(AuditableActionOccurred.class);
         verify(eventPublisher).publishEvent(captor.capture());

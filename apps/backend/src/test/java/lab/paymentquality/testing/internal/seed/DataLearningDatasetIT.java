@@ -49,7 +49,7 @@ class DataLearningDatasetIT extends PostgresContainerSupport {
         DataLearningTruth truth = dataset.seed(DataLearningProfile.SMALL);
 
         assertThat(truth.tenants()).isEqualTo(5);
-        assertThat(truth.merchants()).isEqualTo(20);
+        assertThat(truth.merchants()).isEqualTo(24);
         assertThat(truth.payments()).isEqualTo(10_000);
         assertThat(truth.paymentHistoryRows()).isEqualTo(28_000);
         assertThat(truth.capturedPayments()).isEqualTo(6_000);
@@ -61,7 +61,7 @@ class DataLearningDatasetIT extends PostgresContainerSupport {
         assertThat(truth.tenantAlphaPayments()).isEqualTo(5_500);
 
         assertThat(count("SELECT COUNT(*) FROM tenants")).isEqualTo(5);
-        assertThat(count("SELECT COUNT(*) FROM merchants")).isEqualTo(20);
+        assertThat(count("SELECT COUNT(*) FROM merchants")).isEqualTo(24);
         assertThat(count("SELECT COUNT(*) FROM payment_orders")).isEqualTo(10_000);
         assertThat(count("SELECT COUNT(*) FROM payment_order_status_history")).isEqualTo(28_000);
         assertThat(truth.checkoutSessions()).isEqualTo(2_000);

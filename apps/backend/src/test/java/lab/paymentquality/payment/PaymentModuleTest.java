@@ -26,11 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PaymentModuleTest extends PostgresContainerSupport {
 
     @Container
-    static PostgreSQLContainer postgres = newPostgresContainer("payment_module_test");
-
-    static {
-        postgres.start();
-    }
+    static PostgreSQLContainer postgres = startPostgres("payment_module_test");
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {

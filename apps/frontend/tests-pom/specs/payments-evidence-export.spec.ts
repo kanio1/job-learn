@@ -1,17 +1,17 @@
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
-import { merchantAlphaId } from '../auth/accounts'
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
-import { test, expect } from '../fixtures'
+import { test, expect, requireApi } from '../fixtures'
 import { expectNoAuthorizationInNetworkResponse, expectNoTokenInText } from '../utils/network'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 
 const evidenceFile = fileURLToPath(new URL('../data/files/sample-evidence.txt', import.meta.url))
 
-test('uploads evidence on a live payment order', async ({ app, api }, testInfo) => {
+test('uploads evidence on a live payment order', async ({ app, api, ownedMerchantId }, testInfo) => {
+  const client = requireApi(api)
   const reference = uniqueOrderReference(testInfo, 'EVD')
-  const created = await api.createPaymentOrder(
-    merchantAlphaId,
+  const created = await client.createPaymentOrder(
+    ownedMerchantId,
     { amountMinor: 800, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'EVD'),
   )
@@ -19,7 +19,7 @@ test('uploads evidence on a live payment order', async ({ app, api }, testInfo) 
   const paymentOrderId = created.body.paymentOrderId
   expect(paymentOrderId).toBeTruthy()
 
-  await app.paymentDetail.gotoOrder(merchantAlphaId, paymentOrderId!)
+  await app.paymentDetail.gotoOrder(ownedMerchantId, paymentOrderId!)
   await app.paymentDetail.expectLoaded()
   await app.paymentDetail.uploadEvidence(evidenceFile)
 
@@ -27,13 +27,44 @@ test('uploads evidence on a live payment order', async ({ app, api }, testInfo) 
   await expectNoTokenInBrowserStorage(app.page)
 })
 
-test('exports payment orders CSV from the list toolbar', async ({ app, page }) => {
-  await app.payments.gotoForMerchant(merchantAlphaId)
+test('BFF multipart evidence upload is 201 RECEIPT', async ({ api, ownedMerchantId }, testInfo) => {
+  const client = requireApi(api)
+  const created = await client.createPaymentOrder(
+    ownedMerchantId,
+    {
+      amountMinor: 850,
+      currency: 'PLN',
+      clientOrderReference: uniqueOrderReference(testInfo, 'EVREST'),
+    },
+    uniqueIdempotencyKey(testInfo, 'EVREST'),
+  )
+  expect(created.status).toBe(201)
+  const uploaded = await client.uploadEvidence(
+    ownedMerchantId,
+    created.body.paymentOrderId!,
+    { name: 'live-proof.txt', mimeType: 'text/plain', buffer: Buffer.from('playwright-rest-evidence') },
+    'RECEIPT',
+  )
+  expect(uploaded.status).toBe(201)
+  expect(uploaded.body?.evidenceId).toBeTruthy()
+  expect(uploaded.body?.category).toBe('RECEIPT')
+})
+
+test('exports payment orders CSV from the list toolbar', async ({ app, api, page, ownedMerchantId }, testInfo) => {
+  const client = requireApi(api)
+  const reference = uniqueOrderReference(testInfo, 'CSV')
+  expect((await client.createPaymentOrder(
+    ownedMerchantId,
+    { amountMinor: 900, currency: 'PLN', clientOrderReference: reference },
+    uniqueIdempotencyKey(testInfo, 'CSV'),
+  )).status).toBe(201)
+
+  await app.payments.gotoForMerchant(ownedMerchantId)
   await app.payments.expectLoaded()
 
   const exportResponsePromise = page.waitForResponse(response =>
     response.request().method() === 'GET'
-    && response.url().includes(`/api/merchants/${merchantAlphaId}/payment-orders/export`),
+    && response.url().includes(`/api/merchants/${ownedMerchantId}/payment-orders/export`),
   )
   const downloadPromise = page.waitForEvent('download')
   await app.payments.exportCsv()
@@ -46,5 +77,6 @@ test('exports payment orders CSV from the list toolbar', async ({ app, page }) =
   expect(filePath).toBeTruthy()
   const content = await readFile(filePath!, 'utf-8')
   expect(content).toMatch(/paymentOrderId|clientOrderReference/i)
+  expect(content).toContain(reference)
   expectNoTokenInText(content, 'payment CSV export')
 })

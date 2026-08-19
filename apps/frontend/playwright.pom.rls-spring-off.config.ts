@@ -1,12 +1,16 @@
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * PW-RFC-E2E-060 — FE RLS lab on, Spring `app.rls-lab.enabled=false`.
- * Requires HTTP stack with RLS_LAB_ENABLED=false on Spring, then:
- *   PLAYWRIGHT_RLS_SPRING_OFF=1 PLAYWRIGHT_PLATFORM_ADMIN_PASSWORD=... \
- *     corepack pnpm exec playwright test --config playwright.pom.rls-spring-off.config.ts
+ * FE RLS hub on, Spring `RLS_LAB_ENABLED=false` on a second backend (:8082)
+ * and Nuxt on :3011. Login stays on :3000 (OIDC).
+ *
+ *   scripts/run-app-stack-tests.sh --rls-spring-off
  */
 process.env.PLAYWRIGHT_POM_AUTH_DIR ??= 'tests-pom/.auth'
+process.env.PLAYWRIGHT_RLS_SPRING_OFF = '1'
+const loginOrigin = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000'
+const springOffOrigin = process.env.PLAYWRIGHT_RLS_SPRING_OFF_BASE_URL || 'http://127.0.0.1:3011'
+
 export default defineConfig({
   testDir: './tests-pom',
   fullyParallel: false,
@@ -14,11 +18,8 @@ export default defineConfig({
   retries: 0,
   workers: 1,
   reporter: 'list',
-  expect: {
-    timeout: 15_000,
-  },
+  expect: { timeout: 15_000 },
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -26,6 +27,7 @@ export default defineConfig({
     {
       name: 'setup-platform-admin',
       testMatch: /auth\/platform-admin\.setup\.ts/,
+      use: { baseURL: loginOrigin },
     },
     {
       name: 'chromium-rls-spring-off',
@@ -33,14 +35,9 @@ export default defineConfig({
       dependencies: ['setup-platform-admin'],
       use: {
         ...devices['Desktop Chrome'],
+        baseURL: springOffOrigin,
         storageState: './tests-pom/.auth/platform-admin.json',
       },
     },
   ],
-  webServer: {
-    command: 'NUXT_TYPECHECK=false corepack pnpm dev --host 127.0.0.1 --port 3000',
-    url: 'http://localhost:3000',
-    reuseExistingServer: true,
-    timeout: 120_000,
-  },
 })

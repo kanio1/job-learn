@@ -73,7 +73,9 @@ export async function backendApi(
     }
 
     const contentType = error?.response?.headers?.get?.('content-type') ?? ''
-    if (contentType.includes('application/problem+json') && error?.data) {
+    const springJson = contentType.includes('application/problem+json')
+      || contentType.includes('application/json')
+    if (springJson && error?.data) {
       setResponseStatus(event, statusCode || 503)
       setHeader(event, 'Content-Type', contentType)
       return error.data

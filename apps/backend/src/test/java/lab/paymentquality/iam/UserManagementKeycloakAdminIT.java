@@ -36,11 +36,7 @@ import static org.hamcrest.Matchers.notNullValue;
 class UserManagementKeycloakAdminIT extends PostgresContainerSupport {
 
     @Container
-    static PostgreSQLContainer postgres = newPostgresContainer("user_mgmt_it");
-
-    static {
-        postgres.start();
-    }
+    static PostgreSQLContainer postgres = startPostgres("user_mgmt_it");
 
     static KeycloakContainerSupport keycloak;
 

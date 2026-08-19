@@ -8,7 +8,7 @@
  * Requires: BE-MVP-001 (If-None-Match support) and BFF-MVP-002 (forward If-None-Match).
  * Requirements: 6.1, Error Lab MVP
  */
-import { labUnavailableBody, merchantIdForLabTrigger } from '../../utils/errorLabBackend'
+import { labUnavailableBody, merchantIdForLabTrigger, sessionMerchantId } from '../../utils/errorLabBackend'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const merchantsResult = await callBackend('/api/merchants', { headers: authHeaders() })
-  const merchantId = merchantIdForLabTrigger(merchantsResult.data)
+  const merchantId = merchantIdForLabTrigger(merchantsResult.data, sessionMerchantId(session))
 
   let paymentOrderId: string | null = null
   const ordersResult = await callBackend(`/api/merchants/${merchantId}/payment-orders`, {

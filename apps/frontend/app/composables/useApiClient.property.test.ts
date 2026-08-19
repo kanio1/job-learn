@@ -36,10 +36,9 @@ const anySchema = z.unknown()
  * Build a Headers-like object with a minimal get() method.
  */
 function makeHeaders(contentType = 'application/json'): Headers {
-  const map = new Map<string, string>([['content-type', contentType]])
-  return {
-    get: (k: string) => map.get(k.toLowerCase()) ?? null,
-  } as unknown as Headers
+  const headers = new Headers()
+  headers.set('content-type', contentType)
+  return headers
 }
 
 /**

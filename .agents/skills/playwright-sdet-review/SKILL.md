@@ -5,13 +5,12 @@ description: Use to review Playwright E2E and Playwright REST/BFF tests for merc
 
 # Playwright SDET Review
 
-Use this skill for frontend/E2E and Playwright REST review. When **writing** tests test-first, follow `tdd`. Product Vue/Nitro placement is `nuxt-frontend`. This skill owns locators, auth/session, isolation, and flake review.
+Use this skill for frontend/E2E and Playwright REST review. When **writing** tests test-first, follow `tdd` then `playwright-pom`. Product Vue/Nitro placement is `nuxt-frontend`. This skill owns locators, auth/session, isolation, and flake review.
 
 Suites:
 
-- E2E UI: `apps/frontend/tests/e2e`
-- Playwright REST / live HTTP: `apps/frontend/tests/live/http`
-- POM live: `apps/frontend/tests-pom`
+- Live POM (UI + BFF REST): `apps/frontend/tests-pom` — the only product Playwright tree
+- Learner copies: `apps/frontend/tests-pom-learner`
 
 ## Review Focus
 

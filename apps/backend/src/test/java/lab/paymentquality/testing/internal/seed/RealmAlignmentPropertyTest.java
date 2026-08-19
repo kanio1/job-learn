@@ -37,6 +37,10 @@ class RealmAlignmentPropertyTest {
             "platform.admin",
             "tenant.admin",
             "merchant.manager",
+            "merchant.manager.w0",
+            "merchant.manager.w1",
+            "merchant.manager.w2",
+            "merchant.manager.w3",
             "support.agent",
             "readonly.user"
     );
@@ -126,7 +130,8 @@ class RealmAlignmentPropertyTest {
 
     private static MerchantSeed merchantByReference(String merchantReference) {
         return Fixtures.merchants().stream()
-                .filter(merchant -> merchant.merchantReference().equals(merchantReference))
+                .filter(merchant -> merchant.merchantReference().equals(merchantReference)
+                        || merchant.merchantId().toString().equals(merchantReference))
                 .findFirst()
                 .orElse(null);
     }

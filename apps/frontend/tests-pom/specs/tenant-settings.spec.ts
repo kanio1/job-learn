@@ -1,13 +1,17 @@
 import { uniqueToken } from '../data/factories'
-import { test, expect } from '../fixtures'
+import { test, expect, requireApi } from '../fixtures'
+import { pomAuthFiles } from '../utils/env'
 import { requestHeader } from '../utils/network'
 import type { TenantSettingsBody } from '../api/bff-client'
+
+test.use({ storageState: pomAuthFiles.platformAdmin })
 
 let snapshot: { settings: TenantSettingsBody, etag: string } | undefined
 
 test.beforeEach(async ({ api }) => {
-  const get = await api.getTenantSettings()
-  expect(get.status).toBe(200)
+  const client = requireApi(api)
+  const get = await client.getTenantSettings()
+  expect(get.status, 'PLATFORM_ADMIN must have platform:tenant:settings:read').toBe(200)
   snapshot = {
     settings: get.body,
     etag: get.headers['etag'] || '',
@@ -18,9 +22,10 @@ test.afterEach(async ({ api }) => {
   if (!snapshot) {
     return
   }
-  const fresh = await api.getTenantSettings()
+  const client = requireApi(api)
+  const fresh = await client.getTenantSettings()
   const etag = fresh.headers['etag'] || snapshot.etag
-  await api.updateTenantSettings(
+  await client.updateTenantSettings(
     {
       contactEmail: snapshot.settings.contactEmail ?? undefined,
       timezone: snapshot.settings.timezone,
@@ -56,5 +61,5 @@ test('PATCH tenant settings forwards GET ETag as If-Match', async ({ app, page }
   expect(requestHeader(posted, 'If-Match')).toBe(etag)
   expect(patch.status()).toBe(200)
   expect(patch.headers()['etag']).toBeTruthy()
-  await expect(app.page.getByText('Settings saved')).toBeVisible()
+  await expect(app.page.getByText('Settings saved', { exact: true })).toBeVisible()
 })

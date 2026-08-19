@@ -20,7 +20,7 @@ corepack pnpm dev
 corepack pnpm typecheck
 corepack pnpm build
 corepack pnpm test:unit          # Vitest unit/component/property tests
-corepack pnpm exec playwright test
+corepack pnpm test:e2e              # live POM (`tests-pom`), needs --app stack
 ```
 
 ## Phase 1 Auth Spike Result

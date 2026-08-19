@@ -23,6 +23,19 @@
       />
     </UFormField>
 
+    <UFormField
+      v-if="needsTenantReference"
+      label="Tenant reference"
+      name="tenantReference"
+    >
+      <UInput
+        v-model="formState.tenantReference"
+        placeholder="e.g. TENANT_ALPHA"
+        aria-label="Tenant reference"
+        data-testid="create-merchant-tenant-reference"
+      />
+    </UFormField>
+
     <UAlert
       v-if="!canCreateMerchant"
       color="warning"
@@ -82,17 +95,27 @@ const emit = defineEmits<{
 }>()
 
 const { can } = useAuthorization()
+const { user } = useUserSession()
 const canCreateMerchant = computed(() => can.value.canCreateMerchant)
+const needsTenantReference = computed(() => user.value?.tenantId === 'PLATFORM_TENANT')
 
 const formState = reactive<Partial<CreateMerchantForm>>({
   merchantReference: '',
   displayName: '',
+  tenantReference: '',
 })
 
 function onSubmit() {
   if (!canCreateMerchant.value) return
+  if (needsTenantReference.value && !formState.tenantReference?.trim()) {
+    return
+  }
   // UForm validates against `createMerchantSchema` before calling this handler.
   // If validation fails, UForm shows field-level messages and does not call onSubmit.
-  emit('submit', formState as CreateMerchantForm)
+  const payload = { ...formState } as CreateMerchantForm
+  if (!needsTenantReference.value) {
+    delete payload.tenantReference
+  }
+  emit('submit', payload)
 }
 </script>

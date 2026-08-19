@@ -43,7 +43,7 @@ Client: `useApiClient` + `$fetch.raw` so those headers survive. Plain `$fetch` i
 
 ## Errors
 
-If Spring returns `application/problem+json`, preserve status + body (see `backendApi` catch). Client maps that through `problemDetailsSchema` (`.passthrough()` for extensions).
+If Spring returns `application/problem+json` **or** `application/json` error bodies (`ErrorResponse`), preserve status + body (see `backendApi` catch). Do not wrap those in Nitro `{ error: true }`. Client maps problem+json through `problemDetailsSchema` (`.passthrough()` for extensions).
 
 Backend down → user-visible backend-unavailable, not a fake 403.
 

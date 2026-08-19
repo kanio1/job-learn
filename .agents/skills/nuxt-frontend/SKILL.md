@@ -5,7 +5,7 @@ description: >-
   code in this lab: app/ vs server/, server/api proxy, $fetch.raw, Zod-before-render,
   Pinia only for shared state, Nuxt UI first. Use when adding or editing Vue pages,
   components, composables, schemas, stores, or Nitro handlers. Do not use as a generic
-  Nuxt tutorial, Playwright framework skill (that is tdd / playwright-sdet-review),
+  Nuxt tutorial, Playwright framework skill (that is playwright-pom / playwright-sdet-review),
   or a dashboard-taste pass (that is nuxt-dashboard-zod-pinia-frontend-engineering).
 ---
 
@@ -34,6 +34,7 @@ Pinned from `apps/frontend/package.json` — do not bump:
 | Job | Skill |
 |---|---|
 | Red-green at UI / BFF HTTP seams | `tdd` then `implement` |
+| Playwright POM / fixtures | `playwright-pom` |
 | Playwright locators / auth / flake | `playwright-sdet-review` |
 | Dashboard visual taste, density, a11y polish | `nuxt-dashboard-zod-pinia-frontend-engineering` + `.kiro/steering/frontend-nuxt-ui.md` |
 | Deep-module vocabulary | `codebase-design` |
@@ -46,7 +47,7 @@ Pinned from `apps/frontend/package.json` — do not bump:
 3. Client transport goes through `useApiClient` (`$fetch.raw` on `/api/**`) and a Zod schema in `app/schemas/`. On parse failure: `ErrorState`, no unvalidated data.
 4. Pinia only when two surfaces share state (see [layout.md](layout.md)). Otherwise composable + local state.
 5. Prefer existing Nuxt UI / `app/components/shared/` widgets. Do not invent KPI tiles.
-6. After TS/Vue changes: `corepack pnpm typecheck` in `apps/frontend`. Then the agreed `tdd` seam.
+6. After TS/Vue changes: `corepack pnpm typecheck` and `corepack pnpm lint` in `apps/frontend`. Then the agreed `tdd` seam.
 
 Package map: [layout.md](layout.md). BFF and headers: [bff.md](bff.md). Language/runtime: [typescript-node.md](typescript-node.md).
 
@@ -66,11 +67,11 @@ Package map: [layout.md](layout.md). BFF and headers: [bff.md](bff.md). Language
 - `/admin/**` is CSR (`routeRules` `ssr: false`). Do not flip that for dashboard screens.
 - Token stays in the sealed server session. Never in Pinia, `localStorage`, DOM, or debug panels (mask `Authorization`).
 - Forward only the allowlist in `forwardBackendHeaders` (`ETag`, `Location`, `Vary`, `Cache-Control`, `X-Correlation-ID`, …). Never forward `Authorization`.
-- Commands from `apps/frontend` via Corepack: `corepack pnpm typecheck`, `corepack pnpm test:unit`, `corepack pnpm dev`.
+- Commands from `apps/frontend` via Corepack: `corepack pnpm typecheck`, `corepack pnpm lint`, `corepack pnpm test:unit`, `corepack pnpm dev`.
 
 ## When not to use
 
 - Backend Java/Spring (`spring-modulith`).
-- Playwright suite design (`tdd`, `playwright-sdet-review`).
+- Playwright suite design (`tdd`, `playwright-pom`, `playwright-sdet-review`). After TS edits in `apps/frontend`: `corepack pnpm lint` (vendored anti-slop).
 - Inventing a SPA that talks to `localhost:8080` from the browser.
 - Upgrading to Nuxt 5, setting `future.compatibilityVersion: 5`, or adding TypeScript 7 native preview.

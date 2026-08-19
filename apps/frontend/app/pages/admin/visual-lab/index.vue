@@ -13,7 +13,7 @@
           color="info"
           variant="subtle"
           title="Stable tiles"
-          description="No UUIDs or live clocks in tile text. prefers-reduced-motion is respected. Mask CSS hides [data-dynamic]. Goldens are mocked Chromium only."
+          description="No UUIDs or live clocks in tile text. prefers-reduced-motion is respected. Mask CSS hides [data-dynamic]. Goldens come from live POM on --app."
         />
         <div class="flex gap-2">
           <UButton data-testid="visual-lab-break" variant="outline" @click="broken = !broken">

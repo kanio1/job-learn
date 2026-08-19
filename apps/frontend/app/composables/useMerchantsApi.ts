@@ -18,8 +18,14 @@ import { createMerchantSchema, type CreateMerchantForm } from '~/schemas/merchan
 
 export const merchantStatusSchema = z.enum(['DRAFT', 'ACTIVE', 'SUSPENDED'])
 
+// Seed merchants use Java UUID strings that fail Zod 4 RFC-4122 uuid() (nil version).
+const backendMerchantIdSchema = z.string().regex(
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  'Expected UUID',
+)
+
 const merchantResponseSchema = z.object({
-  merchantId: z.string().uuid(),
+  merchantId: backendMerchantIdSchema,
   merchantReference: z.string(),
   displayName: z.string(),
   status: merchantStatusSchema,

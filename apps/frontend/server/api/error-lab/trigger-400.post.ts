@@ -7,6 +7,7 @@ import {
   LAB_ALPHA_MERCHANT_ID,
   labUnavailableBody,
   merchantIdForLabTrigger,
+  sessionMerchantId,
 } from '../../utils/errorLabBackend'
 
 export default defineEventHandler(async (event) => {
@@ -29,10 +30,10 @@ export default defineEventHandler(async (event) => {
       method: 'GET',
       headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
     })
-    merchantId = merchantIdForLabTrigger(list._data)
+    merchantId = merchantIdForLabTrigger(list._data, sessionMerchantId(session))
   }
   catch {
-    merchantId = LAB_ALPHA_MERCHANT_ID
+    merchantId = sessionMerchantId(session) ?? LAB_ALPHA_MERCHANT_ID
   }
 
   if (!merchantId) {

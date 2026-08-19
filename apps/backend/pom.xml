@@ -238,6 +238,11 @@
                     <includes>
                         <include>**/*Test.java</include>
                     </includes>
+                    <!-- Ryuk on rootless Podman can reap compose HTTP-app containers
+                         that share the same docker.sock. JUnit @Container still stops. -->
+                    <environmentVariables>
+                        <TESTCONTAINERS_RYUK_DISABLED>true</TESTCONTAINERS_RYUK_DISABLED>
+                    </environmentVariables>
                 </configuration>
             </plugin>
             <plugin>
@@ -256,6 +261,9 @@
                     <includes>
                         <include>**/*IT.java</include>
                     </includes>
+                    <environmentVariables>
+                        <TESTCONTAINERS_RYUK_DISABLED>true</TESTCONTAINERS_RYUK_DISABLED>
+                    </environmentVariables>
                 </configuration>
             </plugin>
             <plugin>

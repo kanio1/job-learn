@@ -88,6 +88,10 @@ async function load() {
   if (response.data?.status === 'EXPIRED') {
     expired.value = true
   }
+  const validityMs = response.data?.validityUntil ? Date.parse(response.data.validityUntil) : Number.NaN
+  if (Number.isFinite(validityMs) && validityMs <= Date.now()) {
+    expired.value = true
+  }
 }
 
 async function choose(next: string) {

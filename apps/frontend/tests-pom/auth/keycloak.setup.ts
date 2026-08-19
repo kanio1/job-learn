@@ -1,6 +1,7 @@
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { expect, type Page } from '@playwright/test'
+import '../utils/ipv4-first'
 import type { PomAccount } from './accounts'
 import { LoginPage } from '../pages/LoginPage'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
@@ -30,7 +31,7 @@ export async function saveKeycloakStorageState(page: Page, account: PomAccount, 
   })
   expect(session.user?.roles).toContain(account.role)
   expect(session.user?.tenantId).toBe(account.tenantId)
-  expect(session.user?.merchantId).toBe(account.merchantId)
+  expect(session.user?.merchantId ?? undefined).toBe(account.merchantId)
   await expectNoTokenInBrowserStorage(page)
   await page.context().storageState({ path })
 }

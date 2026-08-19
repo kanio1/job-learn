@@ -55,7 +55,7 @@ const columns: TableColumn<UserSummary>[] = [
   {
     accessorKey: 'tenantId',
     header: 'Tenant',
-    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.tenantId),
+    cell: ({ row }) => h('span', { class: 'text-sm' }, row.original.tenantId || '—'),
   },
   {
     accessorKey: 'merchantId',

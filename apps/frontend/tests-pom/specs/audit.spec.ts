@@ -26,7 +26,7 @@ test('audit log filters load and export downloads JSON', async ({ app, api, page
   const content = await readFile(filePath!, 'utf-8')
   expectNoTokenInText(content, 'audit JSON export')
   const parsed = JSON.parse(content) as { content?: unknown[] }
-  expect(Array.isArray(parsed.content) || Array.isArray(parsed as unknown as unknown[])).toBe(true)
+  expect(Array.isArray(parsed.content) || Array.isArray(parsed)).toBe(true)
 })
 
 test('opening an audit row shows the entry drawer', async ({ app }) => {

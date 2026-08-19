@@ -103,7 +103,12 @@ async function mountPage(route = '/admin/users') {
         UserTable: UserTableStub,
         UTooltip: { template: '<div><slot /></div>' },
         UFormField: { template: '<label><slot /></label>' },
-        UInput: true,
+        UInput: {
+          name: 'UInput',
+          props: ['modelValue'],
+          emits: ['update:modelValue'],
+          template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', ($event.target).value)">',
+        },
         USelect: true,
       },
     },
@@ -164,9 +169,9 @@ describe('/admin/users UI states', () => {
 
     const wrapper = await mountPage()
     await flushPromises()
-    const page = wrapper.vm as unknown as { search: string }
-    page.search = 'missing-user'
+    await wrapper.get('input').setValue('missing-user')
     await wrapper.vm.$nextTick()
+    await flushPromises()
 
     expect(wrapper.find('[data-testid="filtered-empty-state"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('No users match the active filters')

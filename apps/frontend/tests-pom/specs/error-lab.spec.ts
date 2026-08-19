@@ -33,15 +33,18 @@ test.describe('Error Lab live triggers (platform admin)', () => {
     await app.errorLab.expectLoaded()
     await expect(app.errorLab.triggerButton(401)).toBeVisible()
     await expect(app.page.getByTestId('error-lab-trigger-429')).toBeVisible()
-    const responsePromise = page.waitForResponse(
-      res => res.url().includes('/api/error-lab/trigger-401') && res.request().method() === 'GET',
-    )
-    await app.errorLab.triggerButton(401).click()
-    const response = await responsePromise
-    expect(response.status()).toBe(401)
+    const response = await liveTrigger(page, 401)
+    await expectProblemStatus(response, 401)
+    await expect(async () => {
+      const responsePromise = page.waitForResponse(
+        res => res.url().includes('/api/error-lab/trigger-401') && res.request().method() === 'GET',
+        { timeout: 5_000 },
+      )
+      await app.errorLab.trigger(401)
+      const uiResponse = await responsePromise
+      expect(uiResponse.status()).toBe(401)
+    }).toPass({ timeout: 20_000 })
     await app.errorLab.problem.expectVisible()
-    expect(response.headers()['content-type'] ?? '').toMatch(/application\/problem\+json/)
-    expectNoAuthorizationInNetworkResponse(response)
   })
 
   test('Error Lab remaining live statuses without create come from the backend', async ({ app, page }) => {

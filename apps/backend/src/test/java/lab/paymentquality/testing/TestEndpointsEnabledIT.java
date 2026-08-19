@@ -100,7 +100,7 @@ class TestEndpointsEnabledIT extends PostgresContainerSupport {
         RestAssured.given().port(port).post("/api/test/seed").then().statusCode(200);
 
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tenants", Integer.class)).isEqualTo(3);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM merchants", Integer.class)).isEqualTo(4);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM merchants", Integer.class)).isEqualTo(8);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_orders", Integer.class)).isEqualTo(104);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_session", Integer.class)).isEqualTo(0);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_event", Integer.class)).isEqualTo(0);
@@ -118,7 +118,7 @@ class TestEndpointsEnabledIT extends PostgresContainerSupport {
                 .body("operation", equalTo("seed-learning"))
                 .body("status", equalTo("completed"))
                 .body("truth.tenants", equalTo(5))
-                .body("truth.merchants", equalTo(20))
+                .body("truth.merchants", equalTo(24))
                 .body("truth.payments", equalTo(10_000))
                 .body("truth.paymentHistoryRows", equalTo(28_000))
                 .body("truth.capturedPayments", equalTo(6_000))
@@ -173,7 +173,7 @@ class TestEndpointsEnabledIT extends PostgresContainerSupport {
 
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_orders", Integer.class)).isEqualTo(104);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tenants", Integer.class)).isEqualTo(3);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM merchants", Integer.class)).isEqualTo(4);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM merchants", Integer.class)).isEqualTo(8);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_session", Integer.class)).isEqualTo(0);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_event", Integer.class)).isEqualTo(0);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM checkout_fulfillment", Integer.class)).isEqualTo(0);
@@ -254,7 +254,7 @@ class TestEndpointsEnabledIT extends PostgresContainerSupport {
         RestAssured.given().port(port).post("/api/test/seed").then().statusCode(200);
 
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tenants", Integer.class)).isEqualTo(3);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM merchants", Integer.class)).isEqualTo(4);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM merchants", Integer.class)).isEqualTo(8);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_orders", Integer.class)).isEqualTo(104);
     }
 

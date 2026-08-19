@@ -7,7 +7,24 @@ export class MerchantsListPage extends BasePage {
   }
 
   async expectLoaded(): Promise<void> {
-    await expect(this.byTestId('action-create-merchant')).toBeVisible()
+    await this.expectHeading('Merchants')
+  }
+
+  /** SCN-ISO-09: merchants:read is false — alert, no registry table. */
+  async expectAccessDenied(): Promise<void> {
+    await expect(this.page.getByRole('alert').filter({
+      hasText: 'You do not have permission to view merchants',
+    })).toBeVisible()
+    await expect(this.page.getByRole('table')).toHaveCount(0)
+  }
+
+  /** SCN-ISO-01/06: table is the registry, not the create button (tenant.admin also has create). */
+  async expectRegistryTable(): Promise<void> {
+    await expect(this.page.getByRole('table')).toBeVisible()
+  }
+
+  async expectRowAbsent(text: string): Promise<void> {
+    await expect(this.page.getByRole('table').getByText(text, { exact: true })).toHaveCount(0)
   }
 
   async openCreateForm(): Promise<void> {
@@ -15,9 +32,12 @@ export class MerchantsListPage extends BasePage {
     await expect(this.byTestId('create-merchant-form')).toBeVisible()
   }
 
-  async fillCreateForm(reference: string, displayName: string): Promise<void> {
+  async fillCreateForm(reference: string, displayName: string, tenantReference?: string): Promise<void> {
     await this.page.getByLabel('Merchant reference').fill(reference)
     await this.page.getByLabel('Display name').fill(displayName)
+    if (tenantReference) {
+      await this.page.getByLabel('Tenant reference').fill(tenantReference)
+    }
   }
 
   async submitCreate(): Promise<void> {
@@ -38,7 +58,7 @@ export class MerchantsListPage extends BasePage {
   }
 
   async expectRowVisible(text: string): Promise<void> {
-    await expect(this.page.getByRole('table').getByText(text)).toBeVisible()
+    await expect(this.page.getByRole('table').getByRole('cell', { name: text, exact: true })).toBeVisible()
   }
 
   async openMerchantByDisplayName(displayName: string): Promise<void> {

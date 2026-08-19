@@ -49,7 +49,7 @@ TLS URLs:   https://app.payment-quality.local:8443
             (CADDY_HTTPS_PORT, default 8443 for rootless Podman)
 
 Playwright live/POM on HTTP (--app or default):
-  PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 \
+  PLAYWRIGHT_BASE_URL=http://localhost:3000 \
   PLAYWRIGHT_PLATFORM_ADMIN_PASSWORD=... PLAYWRIGHT_MERCHANT_MANAGER_PASSWORD=... \
     corepack pnpm --dir apps/frontend exec playwright test --config playwright.pom.config.ts
 EOF
@@ -409,7 +409,7 @@ HTTP compose stack is up (Spring and Nuxt in Podman).
   Rebuild  scripts/dev-stack.sh --app
   Stop     scripts/dev-stack.sh --down
   POM HTTP PLAYWRIGHT_SKIP_WEBSERVER=1 \\
-             PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 \\
+             PLAYWRIGHT_BASE_URL=http://localhost:3000 \\
              corepack pnpm --dir apps/frontend exec playwright test --config playwright.pom.config.ts
 EOF
   exit 0

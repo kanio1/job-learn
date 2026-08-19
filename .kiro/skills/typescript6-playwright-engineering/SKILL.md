@@ -1,17 +1,12 @@
 ---
 name: typescript6-playwright-engineering
-description: Use when designing, reviewing, or implementing a Playwright 1.60 + TypeScript 6 test architecture with fixtures, role-aware flows, business-level page objects, API-assisted setup, and worker-aware parallel execution.
+description: Use when designing, reviewing, or implementing a Playwright 1.61 + TypeScript 6 test architecture with fixtures, role-aware flows, business-level page objects, API-assisted setup, and worker-aware parallel execution. Lab placement lives in playwright-pom.
 ---
 
-# TypeScript 6 and Playwright 1.60 Engineering
+# TypeScript 6 and Playwright Engineering
 
-## Use when
-- designing E2E framework structure,
-- creating fixtures/auth setup,
-- reviewing page objects and selectors,
-- planning parallel browser workers and data isolation.
+Superseded as a placement skill. Follow `.agents/skills/playwright-pom` (write) and `.agents/skills/playwright-sdet-review` (review).
 
-## When Not to Use
-Do not use this for frontend product architecture, backend API contracts or low-level database strategy.
+Do not use this file for frontend product architecture. Do not install a public Playwright skill pack (TestDino, LambdaTest, on-the-fly MCP) into this repo.
 
-See `.kilocode/skills/typescript6-playwright-engineering/references/parallel-playwright-notes.md`.
+Parallel isolation notes stay one line: unique references per worker, `storageState` per role, no file-order dependence. See `tests-pom/data/factories.ts`.

@@ -27,6 +27,7 @@ These skills own **process**. Domain knowledge stays in `.kiro/skills/` (REST As
 | Module interface, seam, testability | `codebase-design` |
 | Java 25 / Spring Boot 4 / Modulith 2.0.6 production code | `spring-modulith` |
 | Nuxt 4 / TypeScript 6 / Node 22+ production frontend | `nuxt-frontend` |
+| Playwright 1.61 POM / fixtures / live tests-pom | `playwright-pom` |
 | Hand off to another session | `handoff` |
 | Confirm tracker layout | `setup-lab-engineering-skills` |
 
@@ -37,11 +38,11 @@ These skills own **process**. Domain knowledge stays in `.kiro/skills/` (REST As
 | Java/Spring production code | `implement`, `spring-modulith`, `codebase-design` | `java-spring-review` |
 | Nuxt / TypeScript / Nitro BFF | `implement`, `nuxt-frontend`, `codebase-design` | `nuxt-dashboard-zod-pinia-frontend-engineering` |
 | REST Assured | `tdd` | `rest-api-test-design`, `junit6-assertj-restassured-testcraft` |
-| Playwright E2E | `tdd` | `playwright-sdet-review`, `typescript6-playwright-engineering` |
-| Playwright REST / BFF HTTP | `tdd` | `rest-api-test-design`, `playwright-sdet-review` |
+| Playwright E2E / live POM | `tdd`, `playwright-pom` | `playwright-sdet-review` |
+| Playwright REST / BFF HTTP | `tdd`, `playwright-pom` | `rest-api-test-design`, `playwright-sdet-review` |
 | Test conditions / data | `to-spec` Testing Decisions | `test-analysis-design-and-data` |
 | Versioned stack facts | `research` | `official-docs-and-versioned-research` |
 
 User-invoked: `ask-engineering-flow`, `grill-me`, `grill-with-docs`, `wayfinder`, `triage`, `to-spec`, `to-tickets`, `implement`, `teach`, `handoff`, `setup-lab-engineering-skills`.
 
-Model-invoked: `grilling`, `tdd`, `code-review`, `codebase-design`, `spring-modulith`, `nuxt-frontend`, `diagnosing-bugs`, `prototype`, `research`, `wizard`.
+Model-invoked: `grilling`, `tdd`, `code-review`, `codebase-design`, `spring-modulith`, `nuxt-frontend`, `playwright-pom`, `diagnosing-bugs`, `prototype`, `research`, `wizard`.

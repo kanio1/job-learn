@@ -1,5 +1,8 @@
 import { merchantAlphaId, platformAdminAccount } from '../auth/accounts'
 import { test, expect } from '../fixtures'
+import { BffClient } from '../api/bff-client'
+import { isIpv4LoopbackUrl } from '../methods/error-guessing/OverlayAndIpv6'
+import { guestToLoginPaths } from '../methods/use-case/GuestToLoginJourney'
 
 async function expectLoginRedirect(
   app: { page: import('@playwright/test').Page, login: { expectLoaded: () => Promise<void> } },
@@ -11,7 +14,12 @@ async function expectLoginRedirect(
   await app.login.expectLoaded()
 }
 
+test('BffClient default host is IPv4 loopback (EG-W2-02)', { tag: ['@security'] }, async () => {
+  expect(isIpv4LoopbackUrl(BffClient.DEFAULT_BASE_URL)).toBe(true)
+})
+
 test('unauthenticated visit to merchants lands on login', { tag: ['@security'] }, async ({ app }) => {
+  expect(guestToLoginPaths[0].path).toBe('/admin/merchants')
   await app.page.goto('/admin/merchants')
   await expect(app.page).toHaveURL(/\/login\?redirectTo=/)
   await app.login.expectLoaded()

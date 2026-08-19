@@ -28,9 +28,10 @@ SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run  # dev profile required — ac
 corepack pnpm install
 corepack pnpm dev
 corepack pnpm typecheck
+corepack pnpm lint               # Oxlint + vendored anti-slop
 corepack pnpm build
 corepack pnpm test:unit          # Vitest unit/component/property tests
-corepack pnpm exec playwright test
+corepack pnpm test:e2e
 ```
 
 ### Infrastructure (from repo root)
@@ -122,7 +123,7 @@ Nuxt 4 app-directory layout. All browser-to-backend traffic is proxied through `
 - Security tests go in `apps/backend/src/test/java/lab/paymentquality/security/` and import `TestJwtConfiguration`.
 - Architecture boundary tests: `ModulithArchitectureTest`, `MerchantModuleTest`, `TenantModuleTest`, `PaymentModuleTest`.
 - Frontend unit/property tests: Vitest + fast-check, colocated with source. Property tests are tagged `Feature: <spec>, Property {n}: ...` and run ≥ 100 iterations.
-- Playwright E2E: `apps/frontend/tests/e2e`. Playwright REST / live HTTP: `apps/frontend/tests/live/http` and `apps/frontend/tests-pom`.
+- Playwright E2E + BFF REST: `apps/frontend/tests-pom`. Vitest: `apps/frontend/tests/unit` and colocated `app/**/*.test.ts`.
 - Ignore `My*` and `Lesson*` test files — they are learner practice copies.
 
 ## Active Implementation Context

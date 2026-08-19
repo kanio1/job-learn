@@ -80,4 +80,16 @@ export class PaymentDetailPage extends BasePage {
   async expectNoteVisible(text: string): Promise<void> {
     await expect(this.byTestId('payment-note-item').filter({ hasText: text })).toBeVisible()
   }
+
+  currentStatus() {
+    return this.page.locator('[data-testid="payment-status-polling"] [data-status], [data-testid="payment-status-current"]').first()
+  }
+
+  async refreshStatus(): Promise<void> {
+    await this.byTestId('payment-status-refresh').click()
+  }
+
+  async enableAutoRefresh(): Promise<void> {
+    await this.page.getByLabel('Auto refresh').click()
+  }
 }

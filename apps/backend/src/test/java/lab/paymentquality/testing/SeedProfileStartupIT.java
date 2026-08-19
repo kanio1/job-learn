@@ -52,7 +52,7 @@ class SeedProfileStartupIT extends PostgresContainerSupport {
     @Test
     void seedRunnerPopulatedMerchantsOnStartup() {
         Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM merchants", Integer.class);
-        assertThat(count).isEqualTo(4);
+        assertThat(count).isEqualTo(8);
     }
 
     @Test
@@ -80,6 +80,10 @@ class SeedProfileStartupIT extends PostgresContainerSupport {
         assertMerchantExists("00000000-0000-0000-0000-0000000000b2");
         assertMerchantExists("00000000-0000-0000-0000-0000000000b3");
         assertMerchantExists("33333333-3333-3333-3333-333333333333");
+        assertMerchantExists("00000000-0000-0000-0000-0000000000d0");
+        assertMerchantExists("00000000-0000-0000-0000-0000000000d1");
+        assertMerchantExists("00000000-0000-0000-0000-0000000000d2");
+        assertMerchantExists("00000000-0000-0000-0000-0000000000d3");
     }
 
     @Test
@@ -96,7 +100,7 @@ class SeedProfileStartupIT extends PostgresContainerSupport {
         dataset.seed();
 
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM tenants", Integer.class)).isEqualTo(3);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM merchants", Integer.class)).isEqualTo(4);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM merchants", Integer.class)).isEqualTo(8);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_orders", Integer.class)).isEqualTo(104);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM payment_order_status_history", Integer.class)).isEqualTo(104);
     }

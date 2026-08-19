@@ -31,11 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 class IamModuleTest extends PostgresContainerSupport {
 
     @Container
-    static PostgreSQLContainer postgres = newPostgresContainer("iam_module_test");
-
-    static {
-        postgres.start();
-    }
+    static PostgreSQLContainer postgres = startPostgres("iam_module_test");
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {

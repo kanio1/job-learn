@@ -14,7 +14,7 @@ export default defineVitestConfig({
       'tests/unit/**/*.{test,spec}.ts',
     ],
     exclude: [
-      'tests/e2e/**',
+      'tests-pom/**',
       'node_modules/**',
       '.nuxt/**',
     ],

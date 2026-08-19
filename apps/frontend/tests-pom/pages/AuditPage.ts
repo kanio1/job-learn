@@ -7,7 +7,7 @@ export class AuditPage extends BasePage {
   }
 
   async expectLoaded(): Promise<void> {
-    await expect(this.page.getByRole('heading', { name: 'Audit log' })).toBeVisible()
+    await expect(this.page.getByRole('heading', { name: 'Audit log' }).first()).toBeVisible()
     await expect(this.byTestId('audit-filters')).toBeVisible()
   }
 

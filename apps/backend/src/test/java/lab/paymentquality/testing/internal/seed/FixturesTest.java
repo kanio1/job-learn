@@ -25,6 +25,10 @@ class FixturesTest {
     private static final UUID MERCHANT_ALPHA_002_ID = UUID.fromString("00000000-0000-0000-0000-0000000000b2");
     private static final UUID MERCHANT_BETA_001_ID = UUID.fromString("00000000-0000-0000-0000-0000000000b3");
     private static final UUID MERCHANT_SUSPENDED_DEMO_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    private static final UUID MERCHANT_W0_ID = UUID.fromString("00000000-0000-0000-0000-0000000000d0");
+    private static final UUID MERCHANT_W1_ID = UUID.fromString("00000000-0000-0000-0000-0000000000d1");
+    private static final UUID MERCHANT_W2_ID = UUID.fromString("00000000-0000-0000-0000-0000000000d2");
+    private static final UUID MERCHANT_W3_ID = UUID.fromString("00000000-0000-0000-0000-0000000000d3");
 
     // --- Tenant assertions ---
 
@@ -79,24 +83,36 @@ class FixturesTest {
     // --- Merchant assertions ---
 
     @Test
-    void merchantsContainsExactlyFourWithExpectedUuids() {
+    void merchantsContainsContractAndWorkerWorlds() {
         List<MerchantSeed> merchants = Fixtures.merchants();
 
-        assertThat(merchants).hasSize(4);
+        assertThat(merchants).hasSize(8);
         Set<UUID> ids = merchants.stream().map(MerchantSeed::merchantId).collect(Collectors.toSet());
         assertThat(ids).containsExactlyInAnyOrder(
                 MERCHANT_ALPHA_001_ID, MERCHANT_ALPHA_002_ID,
-                MERCHANT_BETA_001_ID, MERCHANT_SUSPENDED_DEMO_ID);
+                MERCHANT_BETA_001_ID, MERCHANT_SUSPENDED_DEMO_ID,
+                MERCHANT_W0_ID, MERCHANT_W1_ID, MERCHANT_W2_ID, MERCHANT_W3_ID);
     }
 
     @Test
     void merchantReferencesAreUnique() {
         List<MerchantSeed> merchants = Fixtures.merchants();
         Set<String> refs = merchants.stream().map(MerchantSeed::merchantReference).collect(Collectors.toSet());
-        assertThat(refs).hasSize(4)
+        assertThat(refs).hasSize(8)
                 .containsExactlyInAnyOrder(
                         "MERCHANT_ALPHA_001", "MERCHANT_ALPHA_002",
-                        "MERCHANT_BETA_001", "SUSPENDED-DEMO-MERCHANT");
+                        "MERCHANT_BETA_001", "SUSPENDED-DEMO-MERCHANT",
+                        "MERCHANT-W0", "MERCHANT-W1", "MERCHANT-W2", "MERCHANT-W3");
+    }
+
+    @Test
+    void workerMerchantsBelongToTenantAlphaAndHaveNoSeedOrders() {
+        Set<UUID> workerIds = Set.of(MERCHANT_W0_ID, MERCHANT_W1_ID, MERCHANT_W2_ID, MERCHANT_W3_ID);
+        Fixtures.merchants().stream()
+                .filter(merchant -> workerIds.contains(merchant.merchantId()))
+                .forEach(merchant -> assertThat(merchant.tenantId()).isEqualTo(TENANT_ALPHA_ID));
+        assertThat(Fixtures.paymentOrders())
+                .noneMatch(order -> workerIds.contains(order.merchantId()));
     }
 
     @Test

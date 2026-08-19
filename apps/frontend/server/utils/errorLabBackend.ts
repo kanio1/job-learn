@@ -21,8 +21,13 @@ export function merchantIdFromListPayload(data: unknown): string | null {
   return active?.id ?? active?.merchantId ?? null
 }
 
-export function merchantIdForLabTrigger(listData: unknown): string {
-  return merchantIdFromListPayload(listData) ?? LAB_ALPHA_MERCHANT_ID
+export function sessionMerchantId(session: { user?: { merchantId?: string } } | null | undefined): string | undefined {
+  const id = session?.user?.merchantId
+  return typeof id === 'string' && id.length > 0 ? id : undefined
+}
+
+export function merchantIdForLabTrigger(listData: unknown, ownedMerchantId?: string): string {
+  return merchantIdFromListPayload(listData) ?? ownedMerchantId ?? LAB_ALPHA_MERCHANT_ID
 }
 
 export function labUnavailableBody(detail: string) {

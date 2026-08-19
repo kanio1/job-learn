@@ -30,11 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AuditEventListenerModuleTest extends PostgresContainerSupport {
 
     @Container
-    static PostgreSQLContainer postgres = newPostgresContainer("audit_listener_module_test");
-
-    static {
-        postgres.start();
-    }
+    static PostgreSQLContainer postgres = startPostgres("audit_listener_module_test");
 
     @DynamicPropertySource
     static void postgresProperties(DynamicPropertyRegistry registry) {

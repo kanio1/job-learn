@@ -1,0 +1,39 @@
+# Second Nuxt on :3010 with RLS lab flag off. Same image/session password as --app.
+# Login stays on :3000 (OIDC redirect). Reuse platform-admin storageState against :3010.
+# Usage (with --app already up):
+#   docker compose --env-file infra/compose/.env \
+#     -f infra/compose/compose.yml -f infra/compose/compose.app.http.yml \
+#     -f infra/compose/compose.app.rls-flag-off.yml up -d payment-quality-frontend-rls-off
+services:
+  payment-quality-frontend-rls-off:
+    image: localhost/payment-quality-frontend:dev
+    container_name: payment-quality-frontend-rls-off
+    environment:
+      NUXT_PUBLIC_API_BASE_URL: http://payment-quality-backend:8080
+      NUXT_OAUTH_OIDC_OPENID_CONFIG: http://127.0.0.1:3000/__oidc/openid-configuration
+      NUXT_OAUTH_OIDC_REDIRECT_URL: http://127.0.0.1:3000/auth/keycloak
+      NUXT_PUBLIC_KEYCLOAK_URL: http://localhost:${KEYCLOAK_PORT:-8081}
+      KEYCLOAK_INTERNAL_BASE_URL: http://payment-quality-keycloak:8080
+      NUXT_KEYCLOAK_INTERNAL_BASE_URL: http://payment-quality-keycloak:8080
+      NUXT_SESSION_COOKIE_SECURE: "false"
+      NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD}
+      NUXT_PUBLIC_RLS_LAB_ENABLED: "false"
+      HOST: 0.0.0.0
+      PORT: "3000"
+    ports:
+      - "3010:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then((r)=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+    depends_on:
+      payment-quality-backend:
+        condition: service_healthy

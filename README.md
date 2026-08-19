@@ -173,9 +173,7 @@ Broad Codex/agent validation skips `lab.paymentquality.restkit/**` and `lab.paym
 | Layer | Command / config | Focus |
 |---|---|---|
 | Unit / component / property | `corepack pnpm test:unit` (Vitest + fast-check) | Zod contracts, RBAC, HTTP presentation, colocated UI states |
-| Mocked E2E | `corepack pnpm exec playwright test` | merchants, payments, RBAC, labs, a11y (axe), visual; sessions mocked |
-| Live Keycloak | `playwright.live.config.ts` | real OIDC, multi-role, worker-owned data, BFF idempotency / 304 |
-| Live POM | `playwright.pom.config.ts` (+ TLS / RLS-off variants) | page-object journeys against the running stack |
+| Live POM + BFF REST | `playwright.pom.config.ts` (`tests-pom`, + TLS / RLS-off variants) | real Keycloak, UI journeys, BFF 304/HEAD/idempotency |
 
 Live Playwright needs a running backend/Keycloak and passwords from the environment. Do not commit storage-state files.
 
@@ -262,8 +260,7 @@ corepack pnpm dev
 corepack pnpm typecheck
 corepack pnpm test:unit
 corepack pnpm build
-corepack pnpm exec playwright test
-corepack pnpm exec playwright test --config playwright.live.config.ts
+corepack pnpm test:e2e
 corepack pnpm exec playwright test --config playwright.pom.config.ts
 ```
 

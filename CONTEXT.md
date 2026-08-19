@@ -17,7 +17,7 @@ Payment Quality Engineering Lab is a modular monolith learning project for payme
 - Unit/domain/service tests with JUnit, AssertJ, and Mockito.
 - Repository and integration tests with Spring Boot and Testcontainers PostgreSQL.
 - REST Assured API tests in `apps/backend/src/test/java/lab/paymentquality/rest`.
-- Playwright E2E in `apps/frontend/tests/e2e`; Playwright REST / live HTTP in `apps/frontend/tests/live/http` and `apps/frontend/tests-pom`.
+- Playwright E2E + BFF REST in `apps/frontend/tests-pom` (live stack). Vitest in `apps/frontend/tests/unit` and colocated `app/**/*.test.ts`.
 - Security tests in `apps/backend/src/test/java/lab/paymentquality/security`.
 - Spring Modulith architecture/module tests.
 
@@ -27,7 +27,7 @@ Payment Quality Engineering Lab is a modular monolith learning project for payme
 - Backend verify: `cd apps/backend && ./mvnw verify`
 - Frontend typecheck: `cd apps/frontend && corepack pnpm typecheck`
 - Frontend build: `cd apps/frontend && corepack pnpm build`
-- Playwright: `cd apps/frontend && corepack pnpm exec playwright test`
+- Playwright: `cd apps/frontend && corepack pnpm test:e2e` (`playwright.pom.config.ts`, `tests-pom` only)
 - Infra up: `docker compose --env-file infra/compose/.env -f infra/compose/compose.yml up -d`
 
 ## Active Non-Goals

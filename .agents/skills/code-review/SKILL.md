@@ -58,7 +58,7 @@ Run Standards and Spec as separate passes (sub-agents if available) so neither p
 |---|---|
 | `apps/backend/**` production | `java-spring-review` (placement rules: `spring-modulith`) |
 | `apps/backend/**/rest/**` or new HTTP behavior | `rest-api-test-design` |
-| `apps/frontend/tests/**`, `tests-pom/**` | `playwright-sdet-review` |
+| `apps/frontend/tests/**`, `tests-pom/**` | `playwright-pom` (placement) then `playwright-sdet-review` |
 | Vue/Nuxt product files | `nuxt-frontend` then `.kiro/steering/frontend-nuxt-ui.md` |
 
 These layer reviews add findings; they do not rerank Standards vs Spec.

@@ -31,6 +31,8 @@ Hasła do POM **tylko w środowisku**, nigdy w gicie:
 ```bash
 export PLAYWRIGHT_PLATFORM_ADMIN_PASSWORD='…'   # lab: platform.admin
 export PLAYWRIGHT_MERCHANT_MANAGER_PASSWORD='…' # lab: merchant.manager
+# Worker managers (empty MERCHANT-W0..W3): PLAYWRIGHT_MERCHANT_MANAGER_W{0-3}_PASSWORD
+# defaults to merchant.manager.w{n} if unset.
 ```
 
 Na Fedorze/RHEL używasz Podmana; `docker compose` w skryptach to ten sam provider (`podman-compose`).
@@ -97,13 +99,24 @@ Otwórz **`http://127.0.0.1:3000`** (nie `https://`, nie `:8443`). Zaloguj się 
 
 ### 3.4 Playwright POM (E2E na żywym stosie)
 
+Jedna komenda (oracles + POM + BFF REST, bez Caddy). **Jedyny katalog Playwright to `tests-pom`.**
+
+```bash
+scripts/run-app-stack-tests.sh            # Playwright
+scripts/run-app-stack-tests.sh --visual     # screenshoty Visual Lab + ARIA
+scripts/run-app-stack-tests.sh --rls-off    # drugi Nuxt :3010, RLS flag off
+scripts/run-app-stack-tests.sh --backend  # plus ./mvnw test (bez restkit/, Ryuk off)
+```
+
+Ręcznie:
+
 ```bash
 PLAYWRIGHT_SKIP_WEBSERVER=1 \
-PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 \
+PLAYWRIGHT_BASE_URL=http://localhost:3000 \
   corepack pnpm --dir apps/frontend exec playwright test --config playwright.pom.config.ts
 ```
 
-`PLAYWRIGHT_SKIP_WEBSERVER=1` jest obowiązkowe przy `--app`: Playwright **nie** ma odpalać hostowego `pnpm dev`.
+`PLAYWRIGHT_SKIP_WEBSERVER=1` jest obowiązkowe przy `--app`: Playwright **nie** ma odpalać hostowego `pnpm dev`. `playwright.config.ts` re-eksportuje ten sam POM.
 
 Własne specy ucz się w `apps/frontend/tests-pom-learner/` (wzorzec: `apps/frontend/tests-pom/`). Nie używaj `page.route` / `route.fulfill` w live POM.
 

@@ -96,12 +96,13 @@ Run from `apps/frontend`:
 ```bash
 corepack pnpm dev
 corepack pnpm typecheck
+corepack pnpm lint
 corepack pnpm build
-corepack pnpm exec playwright test
-corepack pnpm exec playwright test --config playwright.live.config.ts
+corepack pnpm test:e2e
+corepack pnpm exec playwright test --config playwright.pom.config.ts
 ```
 
-Use `pnpm` directly only if it is already available in the shell. The live config uses real Keycloak setup/storage states and must receive passwords only through environment variables; never track generated state files.
+Use `pnpm` directly only if it is already available in the shell. Live POM uses real Keycloak storage states and must receive passwords only through environment variables; never track generated state files.
 
 ## Infrastructure Commands
 
@@ -152,9 +153,8 @@ Payment orders:
 - Do not run backend tests from `apps/backend/src/test/java/lab/paymentquality/restkit/` or `apps/backend/src/test/java/lab/paymentquality/paymentsupport/` unless the user explicitly asks for those suites. This is a standing rule for Codex validation, including broad backend test requests.
 - Security tests belong in `security` and import `TestJwtConfiguration`.
 - Architecture/module boundaries are checked by `ModulithArchitectureTest`, `MerchantModuleTest`, and `PaymentModuleTest`.
-- Playwright E2E tests live under `apps/frontend/tests/e2e` and use the existing auth setup/storage state pattern.
-- Playwright REST / live HTTP tests live under `apps/frontend/tests/live/http` and `apps/frontend/tests-pom`.
-- When writing tests test-first, follow `.agents/skills/tdd`. When changing Spring/Java production code, follow `.agents/skills/spring-modulith`. When changing Nuxt/TypeScript/Nitro production code, follow `.agents/skills/nuxt-frontend`. When reviewing a diff, follow `.agents/skills/code-review` plus the layer skills `java-spring-review`, `rest-api-test-design`, and `playwright-sdet-review`.
+- Playwright E2E and BFF REST live under `apps/frontend/tests-pom` (real Keycloak + stack). Vitest is `apps/frontend/tests/unit` and colocated `app/**/*.test.ts`.
+- When writing tests test-first, follow `.agents/skills/tdd`. When changing Spring/Java production code, follow `.agents/skills/spring-modulith`. When changing Nuxt/TypeScript/Nitro production code, follow `.agents/skills/nuxt-frontend`. When writing Playwright POM / live `tests-pom` tests, follow `.agents/skills/playwright-pom`. When reviewing a diff, follow `.agents/skills/code-review` plus the layer skills `java-spring-review`, `rest-api-test-design`, and `playwright-sdet-review`.
 - Ignore learner copies such as `My*` and `Lesson*` unless the task explicitly concerns learning files.
 
 ## Implementation Rules

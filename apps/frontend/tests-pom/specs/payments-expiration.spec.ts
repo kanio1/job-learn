@@ -1,0 +1,44 @@
+import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
+import { test, expect, requireApi } from '../fixtures'
+import { etagOf } from '../utils/http'
+
+/**
+ * Live authorization window display. Server expiry (sweep / lazy capture) is
+ * Java-only — this spec does not page.clock a mocked expiresAt and does not
+ * wait for the scheduler.
+ */
+test('CREATED has no countdown; AUTHORIZED shows a live expiresAt countdown', async ({ app, api, ownedMerchantId }, testInfo) => {
+  const client = requireApi(api)
+  const created = await client.createPaymentOrder(
+    ownedMerchantId,
+    {
+      amountMinor: 2200,
+      currency: 'PLN',
+      clientOrderReference: uniqueOrderReference(testInfo, 'EXP'),
+    },
+    uniqueIdempotencyKey(testInfo, 'EXP'),
+  )
+  expect(created.status).toBe(201)
+  const paymentOrderId = created.body.paymentOrderId
+  expect(paymentOrderId).toBeTruthy()
+
+  await app.paymentDetail.gotoOrder(ownedMerchantId, paymentOrderId!)
+  await app.paymentDetail.expectLoaded()
+  await expect(app.page.getByTestId('expiration-countdown')).toHaveCount(0)
+
+  const before = await client.getPaymentOrder(ownedMerchantId, paymentOrderId!)
+  const authorized = await client.authorizePayment(
+    ownedMerchantId,
+    paymentOrderId!,
+    etagOf(before.headers),
+    uniqueIdempotencyKey(testInfo, 'EXPAUTH'),
+  )
+  expect(authorized.status).toBe(200)
+
+  await app.paymentDetail.refreshStatus()
+  await expect(app.paymentDetail.statusInDetail('Authorized')).toBeVisible()
+  const after = await client.getPaymentOrder(ownedMerchantId, paymentOrderId!)
+  expect(after.body?.expiresAt).toBeTruthy()
+  await expect(app.page.getByTestId('expiration-countdown')).toBeVisible()
+  await expect(app.page.getByTestId('expiration-countdown-remaining')).toBeVisible()
+})

@@ -28,8 +28,8 @@ If the interface shape itself is in question, follow `codebase-design`.
 | Seam | Location | Proves |
 |---|---|---|
 | REST Assured HTTP | `apps/backend/src/test/java/lab/paymentquality/rest` | Status, body, headers, auth, persistence oracle for writes |
-| Playwright REST / BFF | `apps/frontend/tests/live/http`, `apps/frontend/tests-pom` | Browser-session HTTP against Nuxt BFF / live stack |
-| Playwright E2E | `apps/frontend/tests/e2e` | User-visible journeys, locators, UI states |
+| Playwright REST / BFF | `apps/frontend/tests-pom` | Browser-session HTTP against Nuxt BFF / live stack |
+| Playwright E2E | `apps/frontend/tests-pom` | User-visible journeys, locators, UI states |
 | Security | `apps/backend/src/test/java/lab/paymentquality/security` | Authorities, tenant masking, JWT |
 | Domain unit | `*Test.java` next to production | Pure domain rules, no Spring unless needed |
 
@@ -78,24 +78,24 @@ Follow `rest-api-test-design` for coverage matrix and `junit6-assertj-restassure
 
 ### Playwright REST
 
-1. Use existing BFF client / live helpers (`tests-pom/api/bff-client.ts`, `tests/live/support`).
+1. Use existing BFF client / live helpers (`tests-pom/api/bff-client.ts`).
 2. Auth via storage state or the live helper — do not invent a new login flow.
 3. Assert status, JSON shape (Zod where the suite already does), headers, and no token leak.
 4. Run:
 
 ```bash
-corepack pnpm exec playwright test --config playwright.live.config.ts tests/live/http/<file>
+corepack pnpm exec playwright test --config playwright.pom.config.ts tests-pom/specs/<file>
 ```
 
 ### Playwright E2E
 
 1. Stable locators: role, label, visible name. Isolation via unique merchant/payment references.
 2. Cover the UI state under test (loading, empty, validation, forbidden, success) — not the full HTTP matrix.
-3. Follow `playwright-sdet-review`.
+3. Follow `playwright-pom` for placement, then `playwright-sdet-review` for locators/flake.
 4. Run:
 
 ```bash
-corepack pnpm exec playwright test tests/e2e/<file>
+corepack pnpm exec playwright test --config playwright.pom.config.ts tests-pom/specs/<file>
 ```
 
 ## Done when

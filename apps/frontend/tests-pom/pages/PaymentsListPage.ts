@@ -75,4 +75,8 @@ export class PaymentsListPage extends BasePage {
   async exportCsv(): Promise<void> {
     await this.byTestId('export-payment-orders-csv').click()
   }
+
+  async exportAsync(): Promise<void> {
+    await this.byTestId('export-payment-orders-async').click()
+  }
 }

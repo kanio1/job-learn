@@ -1,6 +1,7 @@
 import { merchantAlphaId } from '../auth/accounts'
 import { uniqueIdempotencyKey, uniqueOrderReference, uniqueToken } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectMerchantError, expectProblem } from '../utils/http'
 
 test('platform admin POST payment-order is 403', async ({ api }, testInfo) => {
   const client = requireApi(api)
@@ -14,16 +15,19 @@ test('platform admin POST payment-order is 403', async ({ api }, testInfo) => {
     uniqueIdempotencyKey(testInfo, 'ADM403'),
   )
   expect(created.status).toBe(403)
+  expectProblem(created.body, 403)
 })
 
 test('POST merchant without tenantReference is 400', async ({ api }) => {
   const client = requireApi(api)
   const created = await client.createMerchant(`NO-TENANT-${uniqueToken()}`, 'Missing tenant', null)
   expect(created.status).toBe(400)
+  expectMerchantError(created.body, 'validation')
 })
 
 test('GET unknown merchant is 404', async ({ api }) => {
   const client = requireApi(api)
   const missing = await client.getMerchant('00000000-0000-0000-0000-000000000000')
   expect(missing.status).toBe(404)
+  expectProblem(missing.body, 404)
 })

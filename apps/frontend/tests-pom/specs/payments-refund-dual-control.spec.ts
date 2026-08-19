@@ -3,8 +3,11 @@ import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect } from '../fixtures'
 import { pomAuthFiles } from '../utils/env'
 import { App } from '../pages/App'
+import { dualControlSteps } from '../methods/combinations/DualControlStDt'
 
-test('maker cannot self-approve a real payment refund; platform checker can', async ({
+test.use({ storageState: pomAuthFiles.merchantManager })
+
+test('maker cannot self-approve a real payment refund; platform checker can', { tag: ['@serial'] }, async ({
   api,
   app,
   browser,
@@ -12,6 +15,7 @@ test('maker cannot self-approve a real payment refund; platform checker can', as
   if (!api) {
     throw new Error('BffClient required')
   }
+  expect(dualControlSteps[0].expectStatus).toBe(409)
   const reference = uniqueOrderReference(testInfo, 'DC')
   const created = await api.createPaymentOrder(
     merchantAlphaId,

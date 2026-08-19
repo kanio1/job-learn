@@ -5,7 +5,7 @@
 let storedIdempotencyKey: string | null = null
 let storedMerchantId: string | null = null
 
-import { labUnavailableBody, merchantIdForLabTrigger } from '../../utils/errorLabBackend'
+import { labUnavailableBody, merchantIdForLabTrigger, sessionMerchantId } from '../../utils/errorLabBackend'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
     method: 'GET',
     headers: authHeaders(),
   })
-  const merchantId = merchantIdForLabTrigger(merchantsResult.data)
+  const merchantId = merchantIdForLabTrigger(merchantsResult.data, sessionMerchantId(session))
 
   if (!storedIdempotencyKey || storedMerchantId !== merchantId) {
     const newKey = `error-lab-409-${Date.now()}`

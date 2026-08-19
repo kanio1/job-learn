@@ -1,33 +1,70 @@
 import { test as base, expect } from '@playwright/test'
-import { setDefaultResultOrder } from 'node:dns'
+import '../utils/ipv4-first'
 import { App } from '../pages/App'
 import { BffClient } from '../api/bff-client'
-
-setDefaultResultOrder('ipv4first')
+import { POM_WORKER_COUNT, workerMerchant } from '../auth/accounts'
+import { pomBrowserBaseURL, pomNodeBaseURL, workerManagerAuthFile } from '../utils/env'
+import { ensureWorkerWorld, type WorkerWorld } from './worker-session'
 
 /** Live POM suite: never use page.route / route.fulfill. */
+
+export type { WorkerWorld }
 
 type PomFixtures = {
   app: App
   api: BffClient | undefined
+  workerApp: App
+  ownedMerchantId: string
+  storageState: string | { cookies: [], origins: [] }
 }
 
-export const test = base.extend<PomFixtures>({
+type PomWorkerFixtures = {
+  workerWorld: WorkerWorld
+}
+
+export const test = base.extend<PomFixtures, PomWorkerFixtures>({
+  storageState: async ({}, use, testInfo) => {
+    if (testInfo.project.name === 'chromium-manager') {
+      const index = testInfo.parallelIndex % POM_WORKER_COUNT
+      await use(workerManagerAuthFile(index))
+      return
+    }
+    const configured = testInfo.project.use.storageState
+    if (typeof configured === 'string') {
+      await use(configured)
+      return
+    }
+    await use({ cookies: [], origins: [] })
+  },
+  ownedMerchantId: async ({}, use, testInfo) => {
+    const index = testInfo.parallelIndex % POM_WORKER_COUNT
+    await use(workerMerchant(index).merchantId)
+  },
   app: async ({ page }, use) => {
-    await page.addLocatorHandler(page.locator('vite-plugin-checker-error-overlay'), async (overlay) => {
-      await overlay.evaluate((element) => element.remove())
-    })
     await use(new App(page))
   },
-  api: async ({ playwright }, use, testInfo) => {
-    const storageState = testInfo.project.use.storageState
+  api: async ({ playwright, storageState }, use) => {
     if (typeof storageState !== 'string') {
       await use(undefined)
       return
     }
-    const client = await BffClient.create(playwright, storageState)
+    const client = await BffClient.create(playwright, storageState, pomNodeBaseURL())
     await use(client)
     await client.dispose()
+  },
+  workerWorld: [async ({ browser, playwright }, use, testInfo) => {
+    const world = await ensureWorkerWorld(browser, playwright, testInfo)
+    await use(world)
+    await world.api.dispose()
+  }, { scope: 'worker' }],
+  workerApp: async ({ browser, workerWorld }, use) => {
+    const context = await browser.newContext({
+      storageState: workerWorld.storageState,
+      baseURL: pomBrowserBaseURL(),
+    })
+    const page = await context.newPage()
+    await use(new App(page))
+    await context.close()
   },
 })
 

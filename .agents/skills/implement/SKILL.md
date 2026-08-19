@@ -18,7 +18,7 @@ Build the work described by the spec, tickets, or the current conversation.
 
 1. Follow `tdd` at the pre-agreed seams. Vertical slices only.
 2. Run the **single** failing test, then the focused class/file, regularly.
-3. Typecheck frontend when Vue/TS changed (`corepack pnpm typecheck` in `apps/frontend`).
+3. Typecheck frontend when Vue/TS changed (`corepack pnpm typecheck` in `apps/frontend`). Lint TS with `corepack pnpm lint` (vendored anti-slop).
 4. Backend: `./mvnw -Dtest=ClassName test` from `apps/backend`. Skip `restkit/` and `paymentsupport/`.
 5. When the slice is done, follow `code-review` on the diff.
 6. Do **not** commit unless the user explicitly asks.
@@ -28,7 +28,7 @@ Build the work described by the spec, tickets, or the current conversation.
 - Java/Spring production: follow `spring-modulith` (public/internal, Flyway, `@ApplicationModuleTest`, JDK 25 allow/deny).
 - Nuxt/TypeScript/Nitro production: follow `nuxt-frontend` (app vs server, BFF proxy, Zod, Pinia).
 - REST Assured design details: `rest-api-test-design`.
-- Playwright E2E details: `playwright-sdet-review`.
+- Playwright E2E / live POM placement: `playwright-pom`. Review: `playwright-sdet-review`.
 - Learning explanation after a slice: `implementation-learning-loop` (explain, do not re-implement).
 
 ## Done when

@@ -10,6 +10,7 @@ export const createMerchantSchema = z.object({
     .trim()
     .min(2, 'Name must be at least 2 characters')
     .max(120, 'Name must be at most 120 characters'),
+  tenantReference: z.string().trim().max(64).optional(),
 })
 
 export type CreateMerchantForm = z.infer<typeof createMerchantSchema>

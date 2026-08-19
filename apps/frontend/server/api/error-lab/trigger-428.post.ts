@@ -2,7 +2,7 @@
  * Error Lab — 428 Precondition Required.
  * Create a real order, then authorize without If-Match.
  */
-import { labUnavailableBody, merchantIdForLabTrigger } from '../../utils/errorLabBackend'
+import { labUnavailableBody, merchantIdForLabTrigger, sessionMerchantId } from '../../utils/errorLabBackend'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
     method: 'GET',
     headers: authHeaders(),
   })
-  const merchantId = merchantIdForLabTrigger(merchantsResult.data)
+  const merchantId = merchantIdForLabTrigger(merchantsResult.data, sessionMerchantId(session))
 
   const createResult = await callBackend(
     `/api/merchants/${merchantId}/payment-orders`,
