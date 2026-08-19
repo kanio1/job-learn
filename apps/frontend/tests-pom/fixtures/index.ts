@@ -23,7 +23,7 @@ type PomWorkerFixtures = {
 }
 
 export const test = base.extend<PomFixtures, PomWorkerFixtures>({
-  storageState: async ({}, use, testInfo) => {
+  storageState: async (_fixtures, use, testInfo) => {
     if (testInfo.project.name === 'chromium-manager') {
       const index = testInfo.parallelIndex % POM_WORKER_COUNT
       await use(workerManagerAuthFile(index))
@@ -36,7 +36,7 @@ export const test = base.extend<PomFixtures, PomWorkerFixtures>({
     }
     await use({ cookies: [], origins: [] })
   },
-  ownedMerchantId: async ({}, use, testInfo) => {
+  ownedMerchantId: async (_fixtures, use, testInfo) => {
     const index = testInfo.parallelIndex % POM_WORKER_COUNT
     await use(workerMerchant(index).merchantId)
   },

@@ -29,7 +29,7 @@ import type { PaymentOrderResponse } from '~/schemas/payment-order.schema'
 // ---------------------------------------------------------------------------
 
 // Capture the If-Match value actually passed to each lifecycle call
-const capturedIfMatchValues: Record<string, string | undefined> = {}
+
 
 const mockAuthorizeOrder = vi.fn()
 const mockCaptureOrder = vi.fn()

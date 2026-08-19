@@ -243,48 +243,6 @@ const ACTION_TEST_ID: Record<string, string> = {
 
 const ALL_ACTION_TEST_IDS = Object.values(ACTION_TEST_ID)
 
-/**
- * Mount PaymentOrderLifecycleActions with a mocked store that reports the
- * given status as the currentOrder status.
- */
-async function mountWithStatus(status: string | undefined) {
-  const pinia = createPinia()
-  setActivePinia(pinia)
-
-  const wrapper = await mountSuspended(PaymentOrderLifecycleActions, {
-    props: {
-      paymentOrderId: 'order-123',
-      merchantId: 'merchant-abc',
-    },
-  })
-
-  // Reach into the store and set the order state after mount
-  const store = usePaymentOrdersStore()
-  if (status !== undefined) {
-    store.currentOrder = {
-      paymentOrderId: 'order-123',
-      merchantId: 'merchant-abc',
-      status,
-      amountMinor: 1000,
-      currency: 'PLN',
-      clientOrderReference: 'ref-1',
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-      versionMarker: '"1"',
-    } as any
-  }
-
-  // Re-mount so that computed re-evaluates with the updated store state
-  const wrapper2 = await mountSuspended(PaymentOrderLifecycleActions, {
-    props: {
-      paymentOrderId: 'order-123',
-      merchantId: 'merchant-abc',
-    },
-  })
-
-  return wrapper2
-}
-
 describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one per available action', () => {
   beforeEach(() => {
     lifecycleAuth.canRunLifecycle = true
@@ -317,7 +275,7 @@ describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one
     it(`GIVEN status=${status}: renders exactly ${expected.length} control(s) [${expected.join(', ') || 'none'}]`, async () => {
       setActivePinia(createPinia())
 
-      const wrapper = await mountSuspended(PaymentOrderLifecycleActions, {
+      await mountSuspended(PaymentOrderLifecycleActions, {
         props: { paymentOrderId: 'order-123', merchantId: 'merchant-abc' },
       })
 
@@ -361,7 +319,7 @@ describe('PaymentOrderLifecycleActions — lifecycle controls render exactly one
     // For AUTHORIZED: capture + cancel should be present
     setActivePinia(createPinia())
 
-    const wrapper = await mountSuspended(PaymentOrderLifecycleActions, {
+    await mountSuspended(PaymentOrderLifecycleActions, {
       props: { paymentOrderId: 'order-auth', merchantId: 'merchant-abc' },
     })
 

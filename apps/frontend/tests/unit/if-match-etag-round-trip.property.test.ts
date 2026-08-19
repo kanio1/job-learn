@@ -22,7 +22,7 @@
  * `submitLifecycleAction`, and `saveMetadata`.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import * as fc from 'fast-check'
 import type { ApiResponse, ApiHeaders, ProblemDetails } from '../../app/types/api'
 import type { PaymentOrderResponse } from '../../app/schemas/payment-order.schema'

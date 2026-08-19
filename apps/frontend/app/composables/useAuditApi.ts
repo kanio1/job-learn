@@ -14,7 +14,7 @@ export function useAuditApi() {
   async function list(query?: AuditQuery): Promise<ApiResponse<AuditListResponse>> {
     const safeQuery = auditQuerySchema.parse(query ?? {})
     return request('/api/audit', auditListResponseSchema, {
-      query: safeQuery as Record<string, unknown>,
+      query: safeQuery,
     })
   }
 

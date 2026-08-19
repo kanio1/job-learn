@@ -17,8 +17,11 @@ export async function backendApi(
   const config = useRuntimeConfig()
   const backendUrl = config.public.apiBaseUrl || 'http://localhost:8080'
   const method = (opts.method || 'GET').toUpperCase()
-  const headers: Record<string, string> = {
-    ...(opts.headers || {}),
+  const headers: Record<string, string> = {}
+  if (opts.headers) {
+    for (const [key, value] of Object.entries(opts.headers)) {
+      headers[key] = value
+    }
   }
   if (method !== 'HEAD' && !headers['Content-Type'] && !headers['content-type']) {
     headers['Content-Type'] = 'application/json'

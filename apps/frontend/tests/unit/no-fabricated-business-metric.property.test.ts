@@ -35,7 +35,6 @@
 
 import { describe, it, expect } from 'vitest'
 import * as fc from 'fast-check'
-import type { ApiHeaders } from '../../app/types/api'
 import type {
   PaymentOrderSummaryResponse,
 } from '../../app/schemas/payment-order.schema'
@@ -144,9 +143,6 @@ const countArb = fc.integer({ min: 0, max: 10_000 })
 
 /** Generates a valid amount in minor units (0 to 100,000,000) */
 const amountArb = fc.integer({ min: 0, max: 100_000_000 })
-
-/** Generates one of the valid Payment_Status enum values */
-const paymentStatusArb: fc.Arbitrary<PaymentStatus> = fc.constantFrom(...ALL_PAYMENT_STATUSES)
 
 /** Generates a non-empty UUID string for IDs */
 const uuidArb = fc.uuid()

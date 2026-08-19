@@ -17,15 +17,6 @@ import { merchantListBackendSchema, merchantStatusSchema } from '~/composables/u
 // schema needed to test the adapter separately.
 // ---------------------------------------------------------------------------
 
-const merchantResponseSchema = z.object({
-  merchantId: z.string().uuid(),
-  merchantReference: z.string(),
-  displayName: z.string(),
-  status: merchantStatusSchema,
-  createdAt: z.string(),
-  updatedAt: z.string(),
-})
-
 function adapt(backend: z.infer<typeof merchantListBackendSchema>) {
   const { merchants } = backend
   return {
@@ -81,14 +72,14 @@ describe('merchantListBackendSchema', () => {
   })
 
   it('rejects the old paginated shape { content, page, size, totalElements, totalPages }', () => {
-    const paginatedShape = {
+    const paginatedListPayload = {
       content: [validMerchant],
       page: 0,
       size: 20,
       totalElements: 1,
       totalPages: 1,
     }
-    const result = merchantListBackendSchema.safeParse(paginatedShape)
+    const result = merchantListBackendSchema.safeParse(paginatedListPayload)
     // merchants field is missing — should fail or return empty merchants
     // (Zod strict would fail; default Zod strips extra keys)
     if (result.success) {

@@ -36,11 +36,15 @@ const isSuspended = computed(() => tenantRef.value !== null && SUSPENDED_REFEREN
 
 const displayName = computed(() => {
   if (!tenantRef.value) return ''
-  const map: Record<string, string> = {
+  const map = {
     PLATFORM_TENANT: 'Platform',
     TENANT_ALPHA: 'Alpha Tenant',
     PLACEHOLDER_TENANT_ID: 'Suspended Demo Tenant',
+  } as const
+  const key = tenantRef.value
+  if (key === 'PLATFORM_TENANT' || key === 'TENANT_ALPHA' || key === 'PLACEHOLDER_TENANT_ID') {
+    return map[key]
   }
-  return map[tenantRef.value] ?? tenantRef.value
+  return key
 })
 </script>

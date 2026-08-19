@@ -35,9 +35,13 @@ function extractHeaders(headers: Headers | undefined): ApiHeaders {
   }
 }
 
+function isRawString(value: unknown): value is string {
+  return typeof value === 'string'
+}
+
 function toRawString(data: unknown): string {
   if (data === undefined || data === null) return ''
-  if (typeof data === 'string') return data
+  if (isRawString(data)) return data
   return JSON.stringify(data)
 }
 
@@ -52,17 +56,18 @@ export function useApiClient() {
     path: string,
     schema: ZodType<T>,
     opts?: {
-      method?: string
+      method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD'
       body?: unknown
       headers?: Record<string, string>
-      query?: Record<string, unknown>
+      query?: Record<string, string | number | boolean | null | undefined>
       redirect?: RequestRedirect
     }
   ): Promise<ApiResponse<T>> {
     try {
       const response = await $fetch.raw(path, {
-        method: (opts?.method ?? 'GET') as any,
-        body: opts?.body as any,
+        method: opts?.method ?? 'GET',
+        // SAFETY: ofetch JSON-encodes the request body; the response is Zod-parsed.
+        body: opts?.body as BodyInit | Record<string, string | number | boolean | null> | undefined,
         headers: opts?.headers,
         query: opts?.query,
         redirect: opts?.redirect,

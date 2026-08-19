@@ -7,11 +7,10 @@
  * Security: intentionally omits the token — that is the point of this scenario.
  * Requirements: 6.1, 6.5
  */
-import { forwardLabBackendError } from '../../utils/errorLabBackend'
+import { forwardLabBackendError, labBackendUrl } from '../../utils/errorLabBackend'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-  const backendUrl = (config.public.apiBaseUrl as string) || 'http://localhost:8080'
+  const backendUrl = labBackendUrl()
 
   // Deliberately NO Authorization header — triggers 401
   const headers: Record<string, string> = {

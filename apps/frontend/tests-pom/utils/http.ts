@@ -5,17 +5,21 @@
 import { expect } from '@playwright/test'
 import { isProblemDetails, type ProblemDetails } from './problem'
 
-export async function parseJson<T>(response: { text(): Promise<string> }): Promise<T | undefined> {
-  const text = await response.text()
+export function parseJsonText<T>(text: string): T | undefined {
   if (!text) {
     return undefined
   }
   try {
+    // SAFETY: caller names T; invalid JSON is rejected in catch.
     return JSON.parse(text) as T
   }
   catch {
     return undefined
   }
+}
+
+export async function parseJson<T>(response: { text(): Promise<string> }): Promise<T | undefined> {
+  return parseJsonText<T>(await response.text())
 }
 
 export function headerOf(headers: Record<string, string>, name: string): string | undefined {

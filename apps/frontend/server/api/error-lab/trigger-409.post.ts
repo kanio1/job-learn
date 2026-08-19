@@ -5,42 +5,11 @@
 let storedIdempotencyKey: string | null = null
 let storedMerchantId: string | null = null
 
-import { labUnavailableBody, merchantIdForLabTrigger, sessionMerchantId } from '../../utils/errorLabBackend'
+import { createLabBackendClient, labUnavailableBody, merchantIdForLabTrigger, sessionMerchantId } from '../../utils/errorLabBackend'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-  const backendUrl = (config.public.apiBaseUrl as string) || 'http://localhost:8080'
   const session = await getUserSession(event)
-  const accessToken = session?.secure?.accessToken as string | undefined
-
-  function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
-    return {
-      'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...extra,
-    }
-  }
-
-  async function callBackend(
-    path: string,
-    opts: { method?: string, headers?: Record<string, string>, body?: unknown },
-  ): Promise<{ status: number, headers: Headers, data: unknown }> {
-    try {
-      const res = await $fetch.raw(`${backendUrl}${path}`, {
-        method: (opts.method ?? 'POST') as 'GET' | 'POST',
-        headers: opts.headers,
-        body: opts.body as Record<string, unknown>,
-      })
-      return { status: res.status, headers: res.headers, data: res._data }
-    }
-    catch (err: any) {
-      return {
-        status: err?.response?.status ?? err?.statusCode ?? 503,
-        headers: err?.response?.headers ?? new Headers(),
-        data: err?.response?._data ?? err?.data,
-      }
-    }
-  }
+  const { callBackend, authHeaders } = createLabBackendClient(session)
 
   const merchantsResult = await callBackend('/api/merchants', {
     method: 'GET',

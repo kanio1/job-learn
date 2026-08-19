@@ -30,7 +30,7 @@ export function usePaymentOrdersApi() {
     return request(
       `/api/merchants/${merchantId}/payment-orders`,
       paymentOrderListResponseSchema,
-      { query: query as Record<string, unknown> | undefined }
+      { query }
     )
   }
 

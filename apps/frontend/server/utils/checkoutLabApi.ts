@@ -43,9 +43,14 @@ export async function checkoutLabApi(event: H3Event, path: string, opts: Checkou
   if (opts.requireDashboardSession !== false) {
     await requireUserSession(event)
   }
-  const headers: Record<string, string> = {
-    ...(opts.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-    ...(opts.headers || {}),
+  const headers: Record<string, string> = {}
+  if (opts.body !== undefined) {
+    headers['Content-Type'] = 'application/json'
+  }
+  if (opts.headers) {
+    for (const [key, value] of Object.entries(opts.headers)) {
+      headers[key] = value
+    }
   }
   if (opts.useLabBearer !== false && opts.requireDashboardSession !== false) {
     headers.Authorization = `Bearer ${await obtainLabToken(

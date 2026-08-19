@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { type Page } from '@playwright/test'
 
 export class UserMenu {
   constructor(private readonly page: Page) {}

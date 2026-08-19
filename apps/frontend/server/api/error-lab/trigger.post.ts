@@ -11,9 +11,14 @@
  */
 
 import type { H3Event } from 'h3'
+import { callLabBackend, labAuthHeaders, labBackendUrl, sessionAccessToken, type LabHttpMethod } from '../../utils/errorLabBackend'
 
 const SUPPORTED_SCENARIOS = ['400', '401', '403', '404', '406', '409', '412', '415', '428'] as const
 type Scenario = typeof SUPPORTED_SCENARIOS[number]
+
+function isScenario(value: unknown): value is Scenario {
+  return typeof value === 'string' && (SUPPORTED_SCENARIOS as readonly string[]).includes(value)
+}
 
 /** Forward relevant error-context headers from the backend response to the browser. */
 function forwardHeaders(event: H3Event, headers: Headers) {
@@ -25,9 +30,9 @@ function forwardHeaders(event: H3Event, headers: Headers) {
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ scenario?: string }>(event)
-  const scenario = body?.scenario as Scenario | undefined
+  const scenario = isScenario(body?.scenario) ? body.scenario : undefined
 
-  if (!scenario || !SUPPORTED_SCENARIOS.includes(scenario)) {
+  if (!scenario) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Unsupported or missing scenario',
@@ -35,55 +40,30 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const config = useRuntimeConfig()
-  const backendUrl = (config.public.apiBaseUrl as string) || 'http://localhost:8080'
+  const backendUrl = labBackendUrl()
 
   // Obtain the session token for scenarios that need auth
   let accessToken: string | undefined
   try {
     const session = await requireUserSession(event)
-    accessToken = session.secure?.accessToken
+    accessToken = sessionAccessToken(session)
   } catch {
     // 401 scenario intentionally has no valid session — that's fine
   }
 
-  /** Makes a raw backend call and returns { status, headers, body } */
-  async function callBackend(
-    path: string,
-    opts: {
-      method?: string
-      headers?: Record<string, string>
-      body?: unknown
-    } = {}
-  ): Promise<{ status: number; headers: Headers; data: unknown }> {
-    try {
-      const res = await $fetch.raw(`${backendUrl}${path}`, {
-        method: (opts.method ?? 'GET') as any,
-        headers: opts.headers,
-        body: opts.body as any,
-      })
-      return { status: res.status, headers: res.headers, data: res._data }
-    } catch (err: any) {
-      // $fetch.raw throws on non-2xx; we want to capture and return the error response
-      const status: number = err?.response?.status ?? err?.statusCode ?? 503
-      const headers: Headers = err?.response?.headers ?? new Headers()
-      const data: unknown = err?.response?._data ?? err?.data ?? {
-        type: 'about:blank',
-        title: 'Service Unavailable',
-        status,
-        detail: 'The backend could not be reached.',
-      }
-      return { status, headers, data }
-    }
+  function authHeaders(extra: Record<string, string> = {}) {
+    return labAuthHeaders(accessToken, extra)
   }
 
-  /** Authenticated headers helper */
-  function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
-    return {
-      'Content-Type': 'application/json',
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...extra,
-    }
+  function callBackend(
+    path: string,
+    opts: {
+      method?: LabHttpMethod
+      headers?: Record<string, string>
+      body?: Record<string, string | number | boolean | null>
+    } = {},
+  ) {
+    return callLabBackend(backendUrl, path, opts)
   }
 
   let result: { status: number; headers: Headers; data: unknown }
@@ -163,10 +143,7 @@ export default defineEventHandler(async (event) => {
         `/api/merchants`,
         {
           method: 'GET',
-          headers: {
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-            Accept: 'application/xml',
-          },
+          headers: labAuthHeaders(accessToken, { Accept: 'application/xml' }),
         }
       )
       break

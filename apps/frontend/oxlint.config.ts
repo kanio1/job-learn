@@ -27,7 +27,7 @@ export default defineConfig({
     'anti-slop/no-reflect-get': 'error',
     'anti-slop/no-object-parameters': 'error',
     'anti-slop/require-safety-comment-for-type-assertion': 'warn',
-    'anti-slop/no-shape-in-symbol-names': 'warn',
+    'anti-slop/no-shape-in-symbol-names': 'error',
     'anti-slop/no-conditional-empty-object-spread': 'warn',
     'anti-slop/no-known-value-widening': 'warn',
     'anti-slop/no-module-mocking': 'warn',
@@ -37,4 +37,20 @@ export default defineConfig({
     'anti-slop/no-unknown-type-aliases': 'warn',
     'anti-slop/no-unsafe-dictionary-type': 'warn',
   },
+  overrides: [
+    {
+      files: ['**/*.{test,spec}.ts', '**/*.property.test.ts'],
+      rules: {
+        // Vue SFC tests mock composables; live POM does not. New production seams stay unmocked.
+        'anti-slop/no-module-mocking': 'off',
+      },
+    },
+    {
+      files: ['server/api/**', 'server/routes/**'],
+      rules: {
+        // Nitro proxies Spring JSON without a second domain model. Client Zod is the contract oracle.
+        'anti-slop/no-unknown-returns': 'off',
+      },
+    },
+  ],
 })

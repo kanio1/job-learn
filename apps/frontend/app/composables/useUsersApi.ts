@@ -18,7 +18,8 @@ export function useUsersApi() {
 
   async function listUsers(query?: UsersQuery): Promise<ApiResponse<UserList>> {
     return request('/api/users', userListSchema, {
-      query: query as Record<string, unknown> | undefined,
+      // SAFETY: UsersQuery is page/size/search/role/status scalars, not nested JSON.
+      query: query as Record<string, string | number | boolean | null | undefined> | undefined,
     })
   }
 

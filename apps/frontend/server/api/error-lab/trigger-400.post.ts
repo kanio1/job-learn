@@ -2,19 +2,12 @@
  * Error Lab — 400 Bad Request.
  * POSTs a payment order with amountMinor -1 against a merchant from the session list.
  */
-import {
-  forwardLabBackendError,
-  LAB_ALPHA_MERCHANT_ID,
-  labUnavailableBody,
-  merchantIdForLabTrigger,
-  sessionMerchantId,
-} from '../../utils/errorLabBackend'
+import { forwardLabBackendError, LAB_ALPHA_MERCHANT_ID, labUnavailableBody, merchantIdForLabTrigger, sessionMerchantId, labBackendUrl, sessionAccessToken } from '../../utils/errorLabBackend'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-  const backendUrl = (config.public.apiBaseUrl as string) || 'http://localhost:8080'
+  const backendUrl = labBackendUrl()
   const session = await getUserSession(event)
-  const accessToken = session?.secure?.accessToken as string | undefined
+  const accessToken = sessionAccessToken(session)
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',

@@ -10,7 +10,7 @@
 
 import { z } from 'zod'
 import type { ApiResponse } from '~/types/api'
-import { createMerchantSchema, type CreateMerchantForm } from '~/schemas/merchant.schema'
+import { type CreateMerchantForm } from '~/schemas/merchant.schema'
 
 // ---------------------------------------------------------------------------
 // Inline response schemas (merchant API responses only)

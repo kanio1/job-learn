@@ -68,7 +68,7 @@ test('activates a DRAFT merchant then suspends it', async ({ app, api }, testInf
   await app.merchantDetail.expectStatus('Suspended')
 })
 
-test('UI create persist: unique merchant GET after API create and reload', async ({ app, api }, testInfo) => {
+test('UI create persist: unique merchant GET after API create and reload', async ({ api }, testInfo) => {
   const client = requireApi(api)
   const reference = uniqueMerchantReference(testInfo)
   const displayName = `Persist ${reference}`

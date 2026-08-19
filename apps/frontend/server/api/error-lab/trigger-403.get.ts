@@ -4,13 +4,12 @@
  * (create payment order). Invalid JWT is 401, not 403.
  * Fail-closed: 2xx on create means this actor can create → 503 lab_unavailable.
  */
-import { forwardLabBackendError, labUnavailableBody } from '../../utils/errorLabBackend'
+import { forwardLabBackendError, labUnavailableBody, labBackendUrl, sessionAccessToken } from '../../utils/errorLabBackend'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-  const backendUrl = (config.public.apiBaseUrl as string) || 'http://localhost:8080'
+  const backendUrl = labBackendUrl()
   const session = await getUserSession(event)
-  const accessToken = session?.secure?.accessToken as string | undefined
+  const accessToken = sessionAccessToken(session)
   const merchantId = '00000000-0000-0000-0000-0000000000b1'
 
   const headers: Record<string, string> = {

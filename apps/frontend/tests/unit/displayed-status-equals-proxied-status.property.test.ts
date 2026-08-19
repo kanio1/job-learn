@@ -27,8 +27,6 @@
 import { describe, it, expect } from 'vitest'
 import * as fc from 'fast-check'
 import type { ApiResponse } from '../../app/types/api'
-import type { ZodType } from 'zod'
-import { z } from 'zod'
 
 // ---------------------------------------------------------------------------
 // Status-capture logic extracted from useApiClient (the logic under test)
