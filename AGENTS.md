@@ -58,7 +58,7 @@ Implemented domain scope:
 - No Kafka, webhooks, outbox, settlement, payout, reconciliation, KYC, card/PAN/PCI, 3DS, or microservice split.
 - No complete OAuth/OIDC production integration; local Keycloak is for development and tests.
 - No fake KPI dashboard or broad business dashboard.
-- No introducing `.kilocode/` as the project organization target; use `.kilo/` where Kilo project config is referenced.
+- Do not recreate `.kilo/` or `.kilocode/`. Skills live in `.agents/skills/` (Cursor: `.cursor/skills/` symlinks).
 
 ## Tech Stack
 
@@ -192,5 +192,5 @@ review gate: `docs/ai/modern-web-guidance-spec-review-gate.md`.
 - Do not revert user changes.
 - Do not run destructive git commands unless explicitly requested.
 - Do not commit secrets, tokens, real credentials, or private Keycloak/client material.
-- Do not edit `.kilo` or create `.kilocode` unless the user explicitly asks.
+- Do not recreate `.kilo/` or `.kilocode/`.
 - For this Codex setup, only edit support files requested by the user; do not touch application source or existing tests.

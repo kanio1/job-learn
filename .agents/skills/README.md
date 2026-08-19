@@ -4,7 +4,7 @@ Adapted from [mattpocock/skills](https://github.com/mattpocock/skills). See [SOU
 
 Work lives as local markdown under `.codex/` — `docs/agents/issue-tracker.md`.
 
-These skills own **process**. Domain knowledge stays in `.kiro/skills/` (REST Assured, Playwright, Spring, test design).
+This directory is the **single skill home** for Grok Build, Codex CLI, and Cursor (Cursor loads it via `.cursor/skills/` symlinks). Process skills and lab domain skills both live here.
 
 ## When to reach for which
 
@@ -42,7 +42,11 @@ These skills own **process**. Domain knowledge stays in `.kiro/skills/` (REST As
 | Playwright REST / BFF HTTP | `tdd`, `playwright-pom` | `rest-api-test-design`, `playwright-sdet-review` |
 | Test conditions / data | `to-spec` Testing Decisions | `test-analysis-design-and-data` |
 | Versioned stack facts | `research` | `official-docs-and-versioned-research` |
+| BA / discovery before spec | `grill-me` | `business-analysis-and-product-discovery-for-payment-lab` |
+| Test conditions / ISTQB | `to-spec` | `test-analysis-design-and-data`, `rapid-software-testing-risk-thinking` |
+| REST security / Keycloak | `tdd` | `rest-api-security-oauth-testing` |
+| Dashboard taste / a11y polish | `nuxt-frontend` | `nuxt-dashboard-zod-pinia-frontend-engineering` |
 
 User-invoked: `ask-engineering-flow`, `grill-me`, `grill-with-docs`, `wayfinder`, `triage`, `to-spec`, `to-tickets`, `implement`, `teach`, `handoff`, `setup-lab-engineering-skills`.
 
-Model-invoked: `grilling`, `tdd`, `code-review`, `codebase-design`, `spring-modulith`, `nuxt-frontend`, `playwright-pom`, `diagnosing-bugs`, `prototype`, `research`, `wizard`.
+Model-invoked: `grilling`, `tdd`, `code-review`, `codebase-design`, `spring-modulith`, `nuxt-frontend`, `playwright-pom`, `diagnosing-bugs`, `prototype`, `research`, `wizard`, plus domain skills in this directory when their description matches.

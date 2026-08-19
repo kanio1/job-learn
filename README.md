@@ -57,12 +57,12 @@ docs/testing/          Test catalogs (POM, TLS, OpenAPI, labs)
 docs/data-learning/    SQL / ETL learning exercises
 docs/architecture/     Modular monolith and OpenAPI ownership notes
 .codex/                Live specs, tickets, ADRs, guides
-.agents/skills/        Engineering process skills
+.agents/skills/        Skills for Grok Build, Codex CLI, and Cursor
 knowledge-vault/       Obsidian learning system
 status/                Execution registry and validation evidence
 ```
 
-Historical specs live under `specs/` and `.kiro/specs/`. New work is tracked in `.codex/` — see `docs/agents/issue-tracker.md`. Do not introduce `.kilocode/` as a project-organization target; use `.kilo/` where Kilo config is referenced.
+Historical specs live under `specs/` and `.kiro/specs/`. New work is tracked in `.codex/` — see `docs/agents/issue-tracker.md`. Skills live in `.agents/skills/`. Do not recreate `.kilo/` or `.kilocode/`.
 
 ## Backend modules
 

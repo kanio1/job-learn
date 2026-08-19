@@ -14,15 +14,13 @@ job-learn/
 ├── knowledge-vault/      # Obsidian learning vault
 ├── references/           # External reference material
 ├── specs/                # Legacy spec files (pre-Kiro)
-├── .kiro/                # Kiro IDE configuration
-│   ├── specs/            # Kiro Feature Specs (requirements / design / tasks)
-│   ├── skills/           # Kiro workspace skills
-│   └── steering/         # Kiro persistent project context (this file)
-├── .kilocode/            # Kilo Code configuration (preserved, do not delete)
-│   ├── skills/           # Kilo Code skills (source of truth for Kilo)
-│   ├── rules/            # Kilo Code rules
-│   └── workflows/        # Kilo Code workflow definitions
-└── AGENTS.md             # Top-level agent rules (applies to Codex CLI)
+├── .agents/              # Single skill home (Grok / Codex / Cursor)
+│   └── skills/
+├── .cursor/skills/       # Symlinks into `.agents/skills/`
+├── .kiro/                # Historical Kiro specs + steering (prior art)
+│   ├── specs/
+│   └── steering/
+└── AGENTS.md             # Top-level agent rules
 ```
 
 ## Backend Structure (`apps/backend/src/main/java/lab/paymentquality/`)

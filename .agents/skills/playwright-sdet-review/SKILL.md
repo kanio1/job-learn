@@ -16,7 +16,7 @@ Suites:
 
 - Stable locators using roles, labels, and visible user-facing names.
 - Auth/session setup through the existing `auth-setup` project and storage state.
-- Route mocks versus real Keycloak/backend use; be explicit about which is under test.
+- Live POM: no `page.route` / `route.fulfill`. Learner copies must follow the same rule.
 - Test data isolation with unique merchant/payment references.
 - UI states: loading, empty, validation, duplicate/conflict, forbidden, backend unavailable, success, stale state.
 - Proxy/header behavior where payment lifecycle relies on `ETag`, `If-Match`, idempotency, or backend error preservation.

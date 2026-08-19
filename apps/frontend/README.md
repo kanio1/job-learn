@@ -10,7 +10,7 @@ This frontend is the Nuxt dashboard for the Payment Quality Engineering Lab. It 
 - Zod 4.4.3
 - Pinia via `@pinia/nuxt` 0.11.3
 - `nuxt-auth-utils` for sealed-cookie sessions and generic OIDC PKCE against Keycloak
-- Playwright 1.60.0 (journey tests), Vitest + fast-check (unit/component/property tests)
+- Playwright 1.61.0 (live `tests-pom`), Vitest + fast-check (unit/component/property tests)
 
 ## Commands
 

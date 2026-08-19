@@ -38,6 +38,10 @@ test-results/
 .vscode/
 *.iml
 
+# Historical Kilo clones — do not reintroduce as a project-organization target
+.kilocode/
+.kilo/
+
 # Docker/runtime
 *.pid
 tmp/

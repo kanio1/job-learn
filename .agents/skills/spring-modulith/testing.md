@@ -1,6 +1,6 @@
 # Modulith and Spring tests
 
-HTTP contracts belong to `tdd` (REST Assured). This file is **module bootstrap and architecture**.
+HTTP contracts belong to `tdd` (REST Assured). This file is **module bootstrap and architecture**. Checklists: [module-boundary-checklist.md](references/module-boundary-checklist.md), [modulith-test-strategy.md](references/modulith-test-strategy.md).
 
 ## Architecture
 

@@ -12,7 +12,7 @@ Use this skill for focused REST/API test design in the current repository. When 
 - Controller and exception handler for the endpoint.
 - `SecurityConfig` authorities and ownership checks.
 - Existing REST Assured support classes in `testsupport`.
-- Playwright REST / BFF suites under `apps/frontend/tests/live/http` and `apps/frontend/tests-pom` when the contract is consumed through the Nuxt BFF.
+- Playwright REST / BFF under `apps/frontend/tests-pom` (live POM is the only product Playwright tree).
 - Flyway migration and repository behavior if persistence is part of the oracle.
 - Current spec under `.codex/specs/` or `docs/testing/**`. Historical `specs/` is prior art only.
 
