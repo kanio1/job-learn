@@ -46,3 +46,10 @@ test('GET unknown merchant is 404', async ({ api }) => {
   expect(missing.status).toBe(404)
   expectProblem(missing.body, 404)
 })
+
+test('platform admin expiration sweep is 200 with expiredCount', async ({ api }) => {
+  const client = requireApi(api)
+  const sweep = await client.runExpirationSweep()
+  expect(sweep.status).toBe(200)
+  expect(typeof sweep.body?.expiredCount).toBe('number')
+})

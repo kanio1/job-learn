@@ -46,6 +46,20 @@ export class UsersPage extends BasePage {
     await this.page.getByRole('button', { name: 'Apply filters' }).click()
   }
 
+  async filterByRole(label: string): Promise<void> {
+    await this.page.getByLabel('Filter by role').click()
+    await this.page.getByRole('option', { name: label, exact: true }).click()
+    await this.page.keyboard.press('Escape')
+    await this.page.getByRole('button', { name: 'Apply filters' }).click()
+  }
+
+  async filterByStatus(label: string): Promise<void> {
+    await this.page.getByLabel('Filter by status').click()
+    await this.page.getByRole('option', { name: label, exact: true }).click()
+    await this.page.keyboard.press('Escape')
+    await this.page.getByRole('button', { name: 'Apply filters' }).click()
+  }
+
   rowByUsername(username: string): Locator {
     return this.page.getByRole('row').filter({ hasText: username })
   }

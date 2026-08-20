@@ -28,6 +28,8 @@ pnpm-debug.log*
 # Playwright
 playwright-report/
 test-results/
+.playwright-cli/
+.playwright/
 **/tests/.auth/
 **/tests-pom/.auth/
 **/tests-pom-learner/.auth/

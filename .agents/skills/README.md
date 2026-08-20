@@ -28,7 +28,9 @@ This directory is the **single skill home** for Grok Build, Codex CLI, and Curso
 | Java 25 / Spring Boot 4 / Modulith 2.0.6 production code | `spring-modulith` |
 | Nuxt 4 / TypeScript 6 / Node 22+ production frontend | `nuxt-frontend` |
 | Playwright 1.61 POM / fixtures / live tests-pom | `playwright-pom` |
+| Live browser exploration / locator discovery (`playwright-cli`) | `playwright-cli` |
 | Hand off to another session | `handoff` |
+| Implement Merchant 360 slices `PW-M360-T*` (Custom Mode) | `merchant-360-implement` |
 | Confirm tracker layout | `setup-lab-engineering-skills` |
 
 ## Compose with existing lab skills
@@ -39,6 +41,7 @@ This directory is the **single skill home** for Grok Build, Codex CLI, and Curso
 | Nuxt / TypeScript / Nitro BFF | `implement`, `nuxt-frontend`, `codebase-design` | `nuxt-dashboard-zod-pinia-frontend-engineering` |
 | REST Assured | `tdd` | `rest-api-test-design`, `junit6-assertj-restassured-testcraft` |
 | Playwright E2E / live POM | `tdd`, `playwright-pom` | `playwright-sdet-review` |
+| Live browser / locator discovery | `playwright-cli` | `playwright-sdet-review` |
 | Playwright REST / BFF HTTP | `tdd`, `playwright-pom` | `rest-api-test-design`, `playwright-sdet-review` |
 | Test conditions / data | `to-spec` Testing Decisions | `test-analysis-design-and-data` |
 | Versioned stack facts | `research` | `official-docs-and-versioned-research` |
@@ -47,6 +50,6 @@ This directory is the **single skill home** for Grok Build, Codex CLI, and Curso
 | REST security / Keycloak | `tdd` | `rest-api-security-oauth-testing` |
 | Dashboard taste / a11y polish | `nuxt-frontend` | `nuxt-dashboard-zod-pinia-frontend-engineering` |
 
-User-invoked: `ask-engineering-flow`, `grill-me`, `grill-with-docs`, `wayfinder`, `triage`, `to-spec`, `to-tickets`, `implement`, `teach`, `handoff`, `setup-lab-engineering-skills`.
+User-invoked: `ask-engineering-flow`, `grill-me`, `grill-with-docs`, `wayfinder`, `triage`, `to-spec`, `to-tickets`, `implement`, `merchant-360-implement`, `teach`, `handoff`, `setup-lab-engineering-skills`.
 
-Model-invoked: `grilling`, `tdd`, `code-review`, `codebase-design`, `spring-modulith`, `nuxt-frontend`, `playwright-pom`, `diagnosing-bugs`, `prototype`, `research`, `wizard`, plus domain skills in this directory when their description matches.
+Model-invoked: `grilling`, `tdd`, `code-review`, `codebase-design`, `spring-modulith`, `nuxt-frontend`, `playwright-pom`, `playwright-cli`, `diagnosing-bugs`, `prototype`, `research`, `wizard`, plus domain skills in this directory when their description matches.

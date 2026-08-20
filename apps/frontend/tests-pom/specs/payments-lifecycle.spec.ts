@@ -5,6 +5,7 @@ import { waitForBffRequest, waitForBffResponse } from '../utils/wait-bff'
 import { lifecycleStDtE2e } from '../methods/combinations/LifecycleStDt'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 import { utcToday } from '../utils/dates'
+import { etagOf } from '../utils/http'
 
 test('authorize then capture from the payment detail drawer with If-Match', async ({ app, api, page, ownedMerchantId }, testInfo) => {
   const client = requireApi(api)
@@ -43,6 +44,11 @@ test('authorize then capture from the payment detail drawer with If-Match', asyn
   await app.paymentDetail.submitLifecycle()
   expect(requestHeader(await captureIfMatch, 'If-Match')).toBe(drawerIfMatch)
   await expect(app.paymentDetail.statusInDetail('Captured')).toBeVisible()
+  await app.paymentDetail.openHistoryTab()
+  await expect(app.page.getByRole('tab', { name: 'History' })).toHaveAttribute('aria-selected', 'true')
+  await expect(app.page.getByText('No lifecycle history recorded.')).toHaveCount(0)
+  await expect(app.page.getByText('AUTHORIZE', { exact: true })).toBeVisible()
+  await expect(app.page.getByText('CAPTURE', { exact: true })).toBeVisible()
   await expectNoTokenInBrowserStorage(app.page)
 })
 
@@ -134,4 +140,59 @@ test('list filters by date, status, and client reference in the query string', a
   await app.payments.filterByClientReference(reference)
   await expect(app.page).toHaveURL(new RegExp(`clientOrderReference=${reference}`))
   await app.payments.expectReferenceVisible(reference)
+})
+
+test('copy payment reference writes the client order reference to the clipboard', async ({
+  app,
+  api,
+  context,
+  ownedMerchantId,
+}, testInfo) => {
+  const client = requireApi(api)
+  const reference = uniqueOrderReference(testInfo, 'CLIP')
+  const created = await client.createPaymentOrder(
+    ownedMerchantId,
+    { amountMinor: 600, currency: 'PLN', clientOrderReference: reference },
+    uniqueIdempotencyKey(testInfo, 'CLIP'),
+  )
+  expect(created.status).toBe(201)
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await app.paymentDetail.gotoOrder(ownedMerchantId, created.body.paymentOrderId!)
+  await app.paymentDetail.expectLoaded()
+  await app.paymentDetail.copyClientReference()
+  expect(await app.page.evaluate(() => navigator.clipboard.readText())).toBe(reference)
+})
+
+test('capture amount above authorized in the drawer is 422 and stays Authorized', async ({
+  app,
+  api,
+  page,
+  ownedMerchantId,
+}, testInfo) => {
+  const client = requireApi(api)
+  const created = await client.createPaymentOrder(
+    ownedMerchantId,
+    { amountMinor: 2100, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'CAPUI') },
+    uniqueIdempotencyKey(testInfo, 'CAPUI'),
+  )
+  expect(created.status).toBe(201)
+  const paymentOrderId = created.body.paymentOrderId!
+  const authorized = await client.authorizePayment(
+    ownedMerchantId,
+    paymentOrderId,
+    etagOf((await client.getPaymentOrder(ownedMerchantId, paymentOrderId)).headers),
+    uniqueIdempotencyKey(testInfo, 'CAPUI-A'),
+  )
+  expect(authorized.status).toBe(200)
+
+  await app.paymentDetail.gotoOrder(ownedMerchantId, paymentOrderId)
+  await app.paymentDetail.expectLoaded()
+  const captureResponse = page.waitForResponse(response =>
+    response.request().method() === 'POST'
+    && response.url().includes(`/payment-orders/${paymentOrderId}/capture`),
+  )
+  await app.paymentDetail.capture(2101)
+  expect((await captureResponse).status()).toBe(422)
+  await app.problem.expectVisible()
+  await expect(app.paymentDetail.statusInDetail('Authorized')).toBeVisible()
 })

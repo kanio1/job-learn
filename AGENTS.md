@@ -102,6 +102,12 @@ corepack pnpm test:e2e
 corepack pnpm exec playwright test --config playwright.pom.config.ts
 ```
 
+Agent live browser (not the 1.61 test runner) — skill `playwright-cli`, from repo root:
+
+```bash
+corepack pnpm --dir tools/playwright-cli exec playwright-cli --help
+```
+
 Use `pnpm` directly only if it is already available in the shell. Live POM uses real Keycloak storage states and must receive passwords only through environment variables; never track generated state files.
 
 ## Infrastructure Commands

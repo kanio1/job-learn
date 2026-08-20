@@ -94,6 +94,24 @@ test.describe('tenant scope vs RBAC @security', () => {
     }
   })
 
+  test('manager GET own order via ALPHA_002 path is masked 404', async ({ playwright }, testInfo) => {
+    const api = await BffClient.create(playwright, pomAuthFiles.merchantManager)
+    try {
+      const created = await api.createPaymentOrder(
+        merchantAlphaId,
+        PaymentOrderDraft.builder().amount(1000).pln().reference(uniqueOrderReference(testInfo, 'BOLA-GET')).build(),
+        uniqueIdempotencyKey(testInfo, 'BOLA-GET'),
+      )
+      expect(created.status).toBe(201)
+      const foreign = await api.getPaymentOrder(merchantAlphaTwoId, created.body.paymentOrderId!)
+      expect(foreign.status).toBe(404)
+      expectProblem(foreign.body, 404)
+    }
+    finally {
+      await api.dispose()
+    }
+  })
+
   test('manager POST order on ALPHA_002 is 403 BOLA (SCN-ISO-10)', async ({ playwright }, testInfo) => {
     const api = await BffClient.create(playwright, pomAuthFiles.merchantManager)
     try {
@@ -148,6 +166,22 @@ test.describe('tenant scope vs RBAC @security', () => {
     finally {
       await tenant.dispose()
       await platform.dispose()
+    }
+  })
+
+  test('tenant admin GET users is 200 scoped; manager GET users is 403', async ({ playwright }) => {
+    const tenant = await BffClient.create(playwright, pomAuthFiles.tenantAdmin)
+    const manager = await BffClient.create(playwright, pomAuthFiles.merchantManager)
+    try {
+      const listed = await tenant.listUsers()
+      expect(listed.status).toBe(200)
+      expect(Array.isArray(listed.body?.users)).toBe(true)
+      const denied = await manager.listUsers()
+      expect(denied.status).toBe(403)
+      expectProblem(denied.body, 403)
+    } finally {
+      await tenant.dispose()
+      await manager.dispose()
     }
   })
 })

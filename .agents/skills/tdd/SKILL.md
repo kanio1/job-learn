@@ -92,11 +92,13 @@ corepack pnpm exec playwright test --config playwright.pom.config.ts tests-pom/s
 1. Stable locators: role, label, visible name. Isolation via unique merchant/payment references.
 2. Cover the UI state under test (loading, empty, validation, forbidden, success) — not the full HTTP matrix.
 3. Follow `playwright-pom` for placement, then `playwright-sdet-review` for locators/flake.
-4. Run:
+4. Run (from `apps/frontend`, `@playwright/test` 1.61 — not `playwright-cli`):
 
 ```bash
 corepack pnpm exec playwright test --config playwright.pom.config.ts tests-pom/specs/<file>
 ```
+
+Live browser exploration before writing a spec is `playwright-cli`, not this loop.
 
 ## Done when
 

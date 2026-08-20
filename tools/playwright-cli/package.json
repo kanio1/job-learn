@@ -1,0 +1,9 @@
+{
+  "name": "lab-playwright-cli",
+  "private": true,
+  "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c",
+  "description": "Isolated Microsoft @playwright/cli for coding-agent browser work. Do not import this Playwright into apps/frontend — tests stay on @playwright/test 1.61.0.",
+  "dependencies": {
+    "@playwright/cli": "0.1.18"
+  }
+}

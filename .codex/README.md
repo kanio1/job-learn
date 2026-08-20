@@ -32,6 +32,8 @@ Tracker: `docs/agents/issue-tracker.md`.
 - Teach workspaces: `.codex/teach/`
 - ADRs: `.codex/adr/`
 - Guides: `.codex/guides/`
+- Prompts: `.codex/prompts/` (e.g. Merchant 360 cache-stable implement)
+- Merchant 360 slice overlay: `.codex/merchant-360-slice.md`
 - Rejected enhancements: `.codex/out-of-scope/`
 
 ## Source-of-Truth Rules

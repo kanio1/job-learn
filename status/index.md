@@ -1,9 +1,13 @@
 ---
 name: index
-last_updated: 2026-08-15
+last_updated: 2026-08-20
 ---
 
 ## Session log
+
+- **Ops Wave 2 milestone-PW (2026-08-20):** **DESIGNED_NOT_STARTED**. Drugi katalog obok Merchant 360: [status/roadmaps/playwright-ops-wave-2/](roadmaps/playwright-ops-wave-2/) (epiki E0–E12, taski `PW-OPS-T00`…`T22`) + mapa testów [docs/testing/ops-wave-2-interaction-lab/](../docs/testing/ops-wave-2-interaction-lab/) (`BC-OPS-*`, `UC-OPS-*`, `PW-OPS-E2E-*` / `API-*` / `SEC-*`, `RA-OPS-*`). Research: [.codex/research/ops-wave-2-versioned-stack.md](../.codex/research/ops-wave-2-versioned-stack.md) (Firecrawl + Context7). Zero kodu aplikacji. Live stack (`scripts/dev-stack.sh --app`); zakaz `page.route` **i** `routeWebSocket`. Flyway **V31+** (M360 rezerwuje V23–V30). `.kiro/**` unchanged.
+
+- **Merchant 360 milestone-PW (2026-08-20):** **DESIGNED_NOT_STARTED**. Katalog wykonawczy [status/roadmaps/playwright-merchant-360/](roadmaps/playwright-merchant-360/) (epiki E0–E7, taski `PW-M360-T00`…`T20`) + mapa testów [docs/testing/merchant-360-erp-lab/](../docs/testing/merchant-360-erp-lab/) (`BC-M360-*`, `UC-M360-*`, `BF-M360-*`, `EP-`/`BVA-`/`DT-`/`ST-`/`MR-`/`EG-M360-*`, `AT-M360-*`, `PW-M360-E2E-*` / `API-*` / `SEC-*`, `RA-M360-*`; plan plików POM w `09-agent-tests-pom-plan.md`). Research wersji: [.codex/research/merchant-360-versioned-stack.md](../.codex/research/merchant-360-versioned-stack.md) (Firecrawl; Context7 bez klucza). Zero kodu aplikacji. Live stack only (`scripts/dev-stack.sh --app`); zakaz `page.route`. Sibling: [playwright-ops-wave-2](roadmaps/playwright-ops-wave-2/). `.kiro/**` unchanged.
 
 - **Session BFF/OIDC catalog (2026-08-15):** Test/use-case docs aligned with two logout paths (BFF Sign out vs Session lab `end_session`), cookie 4 KB / no `id_token`, and policy JSON vs live `Secure`. Canonical: [docs/testing/session-bff-oidc-contract.md](../docs/testing/session-bff-oidc-contract.md). No Playwright spec added.
 

@@ -57,6 +57,11 @@ export class MerchantsListPage extends BasePage {
     await this.page.getByPlaceholder('Filter merchants...').fill(text)
   }
 
+  async filterByStatus(label: string): Promise<void> {
+    await this.page.getByLabel('Filter status').click()
+    await this.page.getByRole('option', { name: label }).click()
+  }
+
   async expectRowVisible(text: string): Promise<void> {
     await expect(this.page.getByRole('table').getByRole('cell', { name: text, exact: true })).toBeVisible()
   }

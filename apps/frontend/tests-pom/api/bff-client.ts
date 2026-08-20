@@ -195,8 +195,108 @@ export class BffClient {
     paymentOrderId: string,
     etag: string,
     idempotencyKey: string,
+    amountMinor = 1,
   ) {
-    return this.postLifecycle(merchantId, paymentOrderId, 'refund', etag, idempotencyKey, { amountMinor: 1 })
+    return this.postLifecycle(merchantId, paymentOrderId, 'refund', etag, idempotencyKey, { amountMinor })
+  }
+
+  async getPaymentOrdersSummary(
+    merchantId: string,
+    query: Record<string, string | undefined> = {},
+  ) {
+    const params = new URLSearchParams()
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== '') {
+        params.set(key, value)
+      }
+    }
+    const suffix = params.toString() ? `?${params.toString()}` : ''
+    const response = await this.context.get(`/api/merchants/${merchantId}/payment-orders/summary${suffix}`)
+    const body = parseJsonText<{
+      totalOrders?: number
+      totalAmountMinor?: number
+      byStatus?: Array<{ status?: string, orderCount?: number }>
+    }>(await response.text())
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async getPaymentOrderHistory(merchantId: string, paymentOrderId: string) {
+    const response = await this.context.get(
+      `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/history`,
+    )
+    const body = parseJsonText<{
+      content?: Array<{ fromStatus?: string | null, toStatus?: string, action?: string | null }>
+    }>(await response.text())
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async createRefundApproval(
+    merchantId: string,
+    paymentOrderId: string,
+    payload: { amountMinor?: number, reason?: string } = {},
+  ) {
+    const response = await this.context.post(
+      `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/refund-approvals`,
+      { data: payload },
+    )
+    const body = await parseJson<{ approvalId?: string, status?: string } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async approveRefundApproval(
+    merchantId: string,
+    paymentOrderId: string,
+    approvalId: string,
+    etag: string | undefined,
+    idempotencyKey: string,
+  ) {
+    const headers: Record<string, string> = { 'Idempotency-Key': idempotencyKey }
+    if (etag !== undefined) {
+      headers['If-Match'] = etag
+    }
+    const response = await this.context.post(
+      `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/refund-approvals/${approvalId}/approve`,
+      { data: {}, headers },
+    )
+    return { status: response.status(), headers: response.headers(), body: await response.json().catch(() => undefined) }
+  }
+
+  async postNote(merchantId: string, paymentOrderId: string, bodyText: string) {
+    const response = await this.context.post(
+      `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/notes`,
+      { data: { body: bodyText } },
+    )
+    const body = await parseJson<{ id?: string, body?: string } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async getEvidence(merchantId: string, paymentOrderId: string, evidenceId: string) {
+    const response = await this.context.get(
+      `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/evidence/${evidenceId}`,
+    )
+    const buffer = Buffer.from(await response.body())
+    return { status: response.status(), headers: response.headers(), raw: buffer }
+  }
+
+  async runExpirationSweep() {
+    const response = await this.context.post('/api/payment-ops/expiration-sweep', { data: {} })
+    const body = await parseJson<{ expiredCount?: number } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async listAudit(query: Record<string, string | number | undefined> = {}) {
+    const response = await this.context.get('/api/audit', { params: query })
+    const body = await parseJson<{
+      content?: Array<{ id?: string, action?: string, actorDisplay?: string, targetType?: string }>
+      totalElements?: number
+    }>(response)
+    return { status: response.status(), body }
+  }
+
+  async getAuditEntry(eventId: string) {
+    const response = await this.context.get(`/api/audit/${encodeURIComponent(eventId)}`)
+    const body = await parseJson<{ id?: string, action?: string } & ProblemDetails>(response)
+    return { status: response.status(), body }
   }
 
   async activateMerchant(merchantId: string) {
@@ -235,7 +335,7 @@ export class BffClient {
   async patchPaymentOrder(
     merchantId: string,
     paymentOrderId: string,
-    data: Record<string, string | number | boolean | null>,
+    data: Record<string, unknown>,
     ifMatch?: string,
   ) {
     const headers: Record<string, string> = { 'Content-Type': 'application/merge-patch+json' }
@@ -285,19 +385,23 @@ export class BffClient {
     return { status: response.status(), headers: response.headers(), body: await parseJson<TenantSettingsBody>(response) }
   }
 
-  async updateTenantSettings(settings: TenantSettingsBody, ifMatch: string) {
+  async updateTenantSettings(settings: TenantSettingsBody, ifMatch?: string) {
+    const headers: Record<string, string> = {}
+    if (ifMatch !== undefined) {
+      headers['If-Match'] = ifMatch
+    }
     const response = await this.context.patch('/api/tenants/current/settings', {
       data: settings,
-      headers: { 'If-Match': ifMatch },
+      headers,
     })
     return { status: response.status(), headers: response.headers(), body: await response.json().catch(() => undefined) }
   }
 
-  async listUsers(query?: { search?: string, status?: 'enabled' | 'disabled' }) {
+  async listUsers(query?: { search?: string, status?: 'enabled' | 'disabled', role?: string }) {
     const response = await this.context.get('/api/users', { params: query })
     const body = await parseJson<{
       users?: Array<{ id?: string, username?: string, enabled?: boolean, roles?: string[] }>
-    }>(response)
+    } & ProblemDetails>(response)
     return { status: response.status(), body }
   }
 

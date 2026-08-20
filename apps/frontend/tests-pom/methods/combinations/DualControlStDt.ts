@@ -3,7 +3,7 @@
  *
  * Why together: “refund works” hides dual-control. Direct refund 409 is expected.
  * Self-approve 409. Other subject + If-Match → REFUNDED.
- * Layer: existing payments-refund-dual-control.spec.ts. Never seed-learning.
+ * Layer: REST SCN-DC-01…04 plus UI maker/checker. Never seed-learning.
  */
 
 export const dualControlSteps = [

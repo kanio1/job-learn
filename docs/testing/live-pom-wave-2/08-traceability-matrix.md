@@ -30,6 +30,7 @@ UC = [07](07-istqb-decision-state-usecase.md). Spec = konkretny `test('…')` w 
 | FR-W2-06 Zod empty | E2E-023, BVA-020 | existing-pom | P0 |
 | FR-W2-07 lifecycle | E2E-021, ST-01 | existing-pom | P0 |
 | UI create + tenant | E2E-024 | existing-pom `merchants.spec.ts` | P1 |
+| Status filter DRAFT/ACTIVE | MER-ST-FLT | existing-pom `merchants.spec.ts` | P1 |
 | POST without tenant | API-003 | existing-pom `admin-bff` | P1 |
 | GET 404 | API-004 | existing-pom `admin-bff` | P1 |
 
@@ -65,7 +66,19 @@ UC = [07](07-istqb-decision-state-usecase.md). Spec = konkretny `test('…')` w 
 | Evidence + CSV no token | E2E-097, UC-14 | existing-pom | P1 |
 | Tenant If-Match | E2E-112, UC-15 | existing-pom | P1 |
 | Users / audit | E2E-110/111 | existing-pom | P1 |
-| Dual-control refund | UC-W2-22, [09 BC-OP-07](09-core-domain-flows.md) | existing-ra + `payments-refund-dual-control.spec.ts` | P0 |
+| Dual-control refund | UC-W2-22, [09 BC-OP-07](09-core-domain-flows.md) | existing-ra + `payments-refund-dual-control.spec.ts` HTTP SCN-DC-01…04 + UI hint | P0 |
+| Summary cards / GET summary | MR-SUMMARY | existing-pom `payments-summary.spec.ts` | P0 |
+| History after lifecycle | HIST-01 | existing-pom REST + History tab | P0 |
+| PATCH metadata If-Match | SCN-IFM-05/06 | existing-pom `payments-conditional.spec.ts` | P0 |
+| Capture over-amount | SCN-CAP-OVER | existing-pom REST + drawer 422 | P0 |
+| Create on DRAFT/SUSPENDED | INEL-01 | existing-ra DRAFT 409 (`merchant_not_payment_eligible`); SUSPENDED is terminal — not existing-pom | P0 |
+| Evidence GET bytes | EVD-GET | existing-pom `payments-evidence-export.spec.ts` | P1 |
+| Clipboard copy reference | CLIP-01 | existing-pom `payments-lifecycle.spec.ts` | P2 |
+| Expiration sweep | SWEEP-01 | existing-pom admin 200 / manager 403 / UI toast | P1 |
+| GET order via ALPHA_002 | ISO-GET-002 | existing-pom `tenant-scope.spec.ts` 404 | P0 |
+| Users role/status + 400 | USR-FLT | existing-pom `users.spec.ts` | P1 |
+| Audit filter + GET id | AUD-FLT | existing-pom `audit.spec.ts` | P1 |
+| Tenant settings 428/412 | TEN-428 | existing-pom `tenant-settings.spec.ts` | P1 |
 | Tenant admin vs Beta 404 | UC-W2-20 | existing-ra + existing-pom `tenant-scope.spec.ts` | P0 |
 | Manager vs ALPHA_002 create | UC-W2-21 | existing-ra + existing-pom SCN-ISO-10 | P0 |
 | Caddy / TLS / Location względny | UC-W2-23, UC-W3-09 | existing-ra + setup oracle | P0 |
@@ -123,7 +136,9 @@ Hosted hops, HMAC, `Idempotency-Key` na **sesji** CPL, PAY_NO_RETURN: [CPL 08](.
 | Palette ARIA Error Lab + destynacje + login snapshot + `/forbidden` | tak | — |
 | Notes / risk | 201\|403 | realm roles (E2E-041 existing) |
 | Payments idempotency / ETag / cancel | tak | — |
-| Dual-control refund | RA + `payments-refund-dual-control.spec.ts` | — |
+| Dual-control refund | RA + HTTP SCN-DC-01…04 + UI hint | — |
+| Summary / history / metadata PATCH / capture BVA / sweep | tak | — |
+| Users role/status + audit filter/GET id + merchant status filter | tak | — |
 | Tenant.admin / ALPHA_002 BOLA | RA + `tenant-scope.spec.ts` | — |
 | merchant.denied GET merchants 403 + UI deny | `denied-rbac.spec.ts` | — |
 | CASH / decline / lie / expired hosted / PAY_NO_RETURN | tak | — |

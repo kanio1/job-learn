@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
       if (value) setHeader(event, name, value)
     }
     setResponseStatus(event, response.status)
-    return response._data
+    return new Uint8Array(response._data as ArrayBuffer)
   }
   catch (error: any) {
     const statusCode = error?.response?.status || error?.statusCode || 503

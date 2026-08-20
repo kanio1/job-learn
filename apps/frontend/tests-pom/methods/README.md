@@ -12,7 +12,7 @@ Do **not** call `POST /api/test/seed-learning` or `/api/test/etl/payments/*` fro
 | `use-case/` | actor steps + oracle | guest, create order, create merchant |
 | `pairwise/` | checkout mode × outcome | **other world** (CPL) |
 | `error-guessing/` | overlay, IPv6, two logouts | — |
-| `metamorphic/` | relacje dwóch wykonań | `MetamorphicListFilter` |
+| `metamorphic/` | relacje dwóch wykonań | `MetamorphicListFilter`, `SummaryInclusion` |
 | `combinations/` | why techniques pair | import these from specs |
 
 Copy map for learner: same folder names, prefix `My`.

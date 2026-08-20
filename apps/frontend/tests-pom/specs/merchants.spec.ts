@@ -1,4 +1,5 @@
 import { uniqueMerchantReference } from '../data/factories'
+import { merchantAlphaId } from '../auth/accounts'
 import { test, expect, requireApi } from '../fixtures'
 import { expectMerchantError, expectProblem } from '../utils/http'
 import { merchantIllegalReactivate } from '../methods/state/MerchantStatusMachine'
@@ -11,7 +12,8 @@ import {
 } from '../methods/ep-bva/MerchantReferencePartitions'
 import { createMerchantJourney } from '../methods/use-case/CreateMerchantJourney'
 
-test('platform admin overview lists merchants without a problem card', async ({ app, page }) => {
+test('platform admin overview lists merchants without a problem card', async ({ app, page, api }) => {
+  const client = requireApi(api)
   const listed = page.waitForResponse(response => {
     if (response.request().method() !== 'GET') {
       return false
@@ -23,9 +25,33 @@ test('platform admin overview lists merchants without a problem card', async ({ 
       return false
     }
   })
+  const summary = page.waitForResponse(response => {
+    if (response.request().method() !== 'GET') {
+      return false
+    }
+    try {
+      return new URL(response.url()).pathname.endsWith('/payment-orders/summary')
+    }
+    catch {
+      return false
+    }
+  })
   await app.page.goto('/')
   expect((await listed).status()).toBe(200)
+  const merchants = await client.listMerchants()
+  expect(merchants.status).toBe(200)
+  const merchantCount = merchants.body?.merchants?.length ?? 0
+  const summaryResponse = await summary
+  expect(summaryResponse.status()).toBe(200)
+  const summaryBody = await summaryResponse.json() as { totalOrders?: number }
+  const summarySection = app.page.getByRole('region', { name: 'Summary' })
   await expect(app.page.getByRole('heading', { name: 'Platform Summary' })).toBeVisible()
+  await expect(summarySection.getByText('Merchants')).toBeVisible()
+  await expect(summarySection.getByText(String(merchantCount), { exact: true })).toBeVisible()
+  if (summaryBody.totalOrders !== undefined) {
+    await expect(summarySection.getByText('Payment Orders')).toBeVisible()
+    await expect(summarySection.getByText(String(summaryBody.totalOrders), { exact: true })).toBeVisible()
+  }
   await expect(app.page.getByTestId('nav-link-overview')).toBeVisible()
   await expect(app.page.getByTestId('nav-link-users')).toBeVisible()
   await expect(app.problem.root()).toHaveCount(0)
@@ -182,4 +208,37 @@ test('empty create merchant form shows field errors and does not POST', async ({
   await app.merchants.expectCreateFieldError('Reference must be at least 3 characters')
   await app.merchants.expectCreateFieldError('Name must be at least 2 characters')
   expect(posted).toBe(false)
+})
+
+test('merchant status filter keeps DRAFT rows and hides them on Active', async ({ app, api }, testInfo) => {
+  const client = requireApi(api)
+  const reference = uniqueMerchantReference(testInfo)
+  const created = await client.createMerchant(reference, `Draft filter ${reference}`)
+  expect(created.status).toBe(201)
+
+  await app.merchants.goto()
+  await app.merchants.expectLoaded()
+  await app.merchants.filterByStatus('Draft')
+  await app.merchants.expectRowVisible(reference)
+  await app.merchants.filterByStatus('Active')
+  await app.merchants.expectRowAbsent(reference)
+})
+
+test('platform admin expiration sweep is 200 and the payments toolbar shows expiredCount', async ({ app, api, page }) => {
+  const client = requireApi(api)
+  const rest = await client.runExpirationSweep()
+  expect(rest.status).toBe(200)
+  expect(typeof rest.body?.expiredCount).toBe('number')
+
+  await app.payments.gotoForMerchant(merchantAlphaId)
+  await app.payments.expectLoaded()
+  const posted = page.waitForResponse(response =>
+    response.request().method() === 'POST' && response.url().includes('/api/payment-ops/expiration-sweep'),
+  )
+  await app.payments.runExpirationSweep()
+  const response = await posted
+  expect(response.status()).toBe(200)
+  const body = await response.json() as { expiredCount?: number }
+  await expect(app.page.getByText('Expiration sweep complete', { exact: true })).toBeVisible()
+  await expect(app.page.getByText(`${body.expiredCount} order(s) expired`, { exact: true })).toBeVisible()
 })

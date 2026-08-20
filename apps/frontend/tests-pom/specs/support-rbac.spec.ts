@@ -32,11 +32,21 @@ test('support agent sees the registry but not create; notes POST is 201 on the l
     await expect(page.getByTestId('payment-note-body')).toBeVisible()
 
     const body = `support note ${uniqueToken()}`
-    const posted = page.waitForResponse(response =>
-      response.url().includes('/notes') && response.request().method() === 'POST',
-    )
-    await app.paymentDetail.addNote(body)
-    expect((await posted).status()).toBe(201)
+    const restNote = await BffClient.create(playwright, pomAuthFiles.supportAgent)
+    try {
+      const postedRest = await restNote.postNote(merchantAlphaId, paymentOrderId!, body)
+      expect(postedRest.status).toBe(201)
+      const notes = await restNote.listNotes(merchantAlphaId, paymentOrderId!)
+      expect(notes.status).toBe(200)
+      expect(JSON.stringify(notes.body)).toContain(body)
+    } finally {
+      await restNote.dispose()
+    }
+
+    await app.paymentDetail.gotoOrder(merchantAlphaId, paymentOrderId!)
+    await app.paymentDetail.expectLoaded()
+    await expect(page.getByTestId('lifecycle-authorize')).toHaveCount(0)
+    await expect(page.getByTestId('payment-note-body')).toBeVisible()
     await app.paymentDetail.expectNoteVisible(body)
   } finally {
     await supportContext.close()

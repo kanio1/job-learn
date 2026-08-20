@@ -1,6 +1,7 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
 import { etagOf, expectNoAuthTokenLeak, expectProblem, headerOf } from '../utils/http'
+import { ifMatchPatchMatrix } from '../methods/decision-table/IfMatchActionMatrix'
 
 test('GET If-None-Match is 304 empty; HEAD is 200 empty with ETag', async ({ api, ownedMerchantId }, testInfo) => {
   const client = requireApi(api)
@@ -40,8 +41,9 @@ test('GET If-None-Match is 304 empty; HEAD is 200 empty with ETag', async ({ api
   expectNoAuthTokenLeak(head.headers, head.raw)
 })
 
-test('PATCH metadata without If-Match is 428 problem+json', async ({ api, ownedMerchantId }, testInfo) => {
+test('PATCH metadata without If-Match is 428; stale If-Match is 412; fresh If-Match is 200', async ({ api, ownedMerchantId }, testInfo) => {
   const client = requireApi(api)
+  expect(ifMatchPatchMatrix.map(row => row.id)).toEqual(['SCN-IFM-05', 'SCN-IFM-06'])
   const created = await client.createPaymentOrder(
     ownedMerchantId,
     {
@@ -52,11 +54,35 @@ test('PATCH metadata without If-Match is 428 problem+json', async ({ api, ownedM
     uniqueIdempotencyKey(testInfo, 'P428'),
   )
   expect(created.status).toBe(201)
-  const patched = await client.patchPaymentOrder(
+  const paymentOrderId = created.body.paymentOrderId!
+  const missing = await client.patchPaymentOrder(
     ownedMerchantId,
-    created.body.paymentOrderId!,
+    paymentOrderId,
     { metadata: { note: 'pom-rest' } },
   )
-  expect(patched.status).toBe(428)
-  expectProblem(patched.body, 428)
+  expect(missing.status).toBe(428)
+  expectProblem(missing.body, 428)
+
+  const stale = await client.patchPaymentOrder(
+    ownedMerchantId,
+    paymentOrderId,
+    { metadata: { note: 'pom-stale' } },
+    '"v99"',
+  )
+  expect(stale.status).toBe(412)
+  expectProblem(stale.body, 412)
+
+  const before = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
+  const etag = etagOf(before.headers)
+  expect(etag).toBeTruthy()
+  const patched = await client.patchPaymentOrder(
+    ownedMerchantId,
+    paymentOrderId,
+    { metadata: { note: 'pom-ok' } },
+    etag,
+  )
+  expect(patched.status).toBe(200)
+  const after = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
+  expect(etagOf(after.headers)).toBeTruthy()
+  expect(etagOf(after.headers)).not.toBe(etag)
 })

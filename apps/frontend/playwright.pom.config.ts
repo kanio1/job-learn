@@ -112,6 +112,7 @@ export default defineConfig({
       name: 'chromium-serial',
       testMatch: /specs\/(tenant-settings|payments-refund-dual-control)\.spec\.ts/,
       fullyParallel: false,
+      workers: 1,
       dependencies: ['setup-platform-admin', 'setup-merchant-manager'],
       use: {
         ...devices['Desktop Chrome'],

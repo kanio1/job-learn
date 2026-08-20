@@ -84,3 +84,45 @@ test('platform admin assigns an extra role on a created user', async ({ app, api
   const match = listed.body?.users?.find(entry => entry.username === user.username)
   expect(match?.roles).toEqual(expect.arrayContaining(['READ_ONLY_USER', 'SUPPORT_AGENT']))
 })
+
+test('platform admin create user with a short password is 400', async ({ api }, testInfo) => {
+  const client = requireApi(api)
+  const user = uniqueLabUser(testInfo)
+  const created = await client.createUser({
+    ...user,
+    temporaryPassword: 'short',
+    tenantId: 'TENANT_ALPHA',
+    roles: ['READ_ONLY_USER'],
+  })
+  expect(created.status).toBe(400)
+})
+
+test('platform admin filters users by role and disabled status', async ({ app, api }, testInfo) => {
+  const client = requireApi(api)
+  const user = uniqueLabUser(testInfo)
+  const created = await client.createUser({
+    ...user,
+    tenantId: 'TENANT_ALPHA',
+    roles: ['READ_ONLY_USER'],
+  })
+  expect(created.status).toBe(201)
+  expect(created.body?.id).toBeTruthy()
+  expect((await client.updateUser(created.body!.id!, { enabled: false })).status).toBe(200)
+
+  await app.users.goto()
+  await app.users.expectLoaded()
+  await app.users.search(user.username)
+  await app.users.filterByRole('READ ONLY USER')
+  await expect(app.users.rowByUsername(user.username)).toBeVisible()
+  await app.users.filterByRole('SUPPORT AGENT')
+  await expect(app.users.rowByUsername(user.username)).toHaveCount(0)
+
+  await app.users.goto()
+  await app.users.expectLoaded()
+  await app.users.search(user.username)
+  await app.users.filterByStatus('Disabled')
+  await expect(app.users.rowByUsername(user.username)).toBeVisible()
+  const listed = await client.listUsers({ search: user.username, status: 'disabled', role: 'READ_ONLY_USER' })
+  expect(listed.status).toBe(200)
+  expect(listed.body?.users?.some(entry => entry.username === user.username)).toBe(true)
+})

@@ -92,4 +92,12 @@ export class PaymentDetailPage extends BasePage {
   async enableAutoRefresh(): Promise<void> {
     await this.page.getByLabel('Auto refresh').click()
   }
+
+  async openHistoryTab(): Promise<void> {
+    await this.page.getByRole('tab', { name: 'History' }).click()
+  }
+
+  async copyClientReference(): Promise<void> {
+    await this.byTestId('copy-payment-reference').click()
+  }
 }

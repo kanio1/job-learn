@@ -7,7 +7,7 @@ import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 
 const evidenceFile = fileURLToPath(new URL('../data/files/sample-evidence.txt', import.meta.url))
 
-test('uploads evidence on a live payment order', async ({ app, api, ownedMerchantId }, testInfo) => {
+test('uploads evidence on a live payment order', async ({ app, api, page, ownedMerchantId }, testInfo) => {
   const client = requireApi(api)
   const reference = uniqueOrderReference(testInfo, 'EVD')
   const created = await client.createPaymentOrder(
@@ -24,6 +24,16 @@ test('uploads evidence on a live payment order', async ({ app, api, ownedMerchan
   await app.paymentDetail.uploadEvidence(evidenceFile)
 
   await expect(app.page.getByTestId('evidence-file-name')).toHaveText('sample-evidence.txt')
+  const download = app.page.getByTestId('evidence-download')
+  await expect(download).toBeVisible()
+  const href = await download.getAttribute('href')
+  expect(href).toMatch(/\/evidence\/[0-9a-f-]+$/i)
+  const downloaded = await page.request.get(href!)
+  expect(downloaded.status()).toBe(200)
+  expectNoAuthorizationInNetworkResponse(downloaded)
+  const text = await downloaded.text()
+  expect(text).toContain('Accepted evidence for live POM upload.')
+  expectNoTokenInText(text, 'evidence download')
   await expectNoTokenInBrowserStorage(app.page)
 })
 
@@ -48,6 +58,16 @@ test('BFF multipart evidence upload is 201 RECEIPT', async ({ api, ownedMerchant
   expect(uploaded.status).toBe(201)
   expect(uploaded.body?.evidenceId).toBeTruthy()
   expect(uploaded.body?.category).toBe('RECEIPT')
+
+  const downloaded = await client.getEvidence(
+    ownedMerchantId,
+    created.body.paymentOrderId!,
+    uploaded.body!.evidenceId!,
+  )
+  expect(downloaded.status).toBe(200)
+  expect(downloaded.headers['authorization']).toBeUndefined()
+  expect(downloaded.raw.toString('utf8')).toContain('playwright-rest-evidence')
+  expect(downloaded.raw.toString('utf8').includes('Bearer eyJ')).toBe(false)
 })
 
 test('exports payment orders CSV from the list toolbar', async ({ app, api, page, ownedMerchantId }, testInfo) => {

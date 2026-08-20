@@ -35,6 +35,16 @@ test.afterEach(async ({ api }) => {
   )
 })
 
+test('PATCH tenant settings without If-Match is 428; stale If-Match is 412', async ({ api }) => {
+  const client = requireApi(api)
+  const get = await client.getTenantSettings()
+  expect(get.status).toBe(200)
+  const missing = await client.updateTenantSettings({ timezone: get.body?.timezone })
+  expect(missing.status).toBe(428)
+  const stale = await client.updateTenantSettings({ timezone: get.body?.timezone }, '"v99"')
+  expect(stale.status).toBe(412)
+})
+
 test('PATCH tenant settings forwards GET ETag as If-Match', async ({ app, page }) => {
   const getPromise = page.waitForResponse(response =>
     response.url().includes('/api/tenants/current/settings') && response.request().method() === 'GET',

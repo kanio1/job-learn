@@ -28,6 +28,7 @@ Canon: `apps/frontend/tests-pom/`. Learner copies live in `tests-pom-learner/` (
 | Job | Skill |
 |---|---|
 | Red-green at the Playwright seam | `tdd` then this skill |
+| Live browser / locator discovery | `playwright-cli` |
 | Locator / auth / flake review | `playwright-sdet-review` |
 | Product Vue / Nitro | `nuxt-frontend` |
 | TypeScript evidence (`as unknown as T`) | Oxlint anti-slop — `corepack pnpm lint` in `apps/frontend` |
@@ -69,6 +70,7 @@ Patterns and anti-patterns: [patterns.md](patterns.md). Lab rules of the tree: `
 ## When not to use
 
 - Reviewing a diff without writing tests (`playwright-sdet-review`).
+- Live browser exploration or locator discovery (`playwright-cli`). Do not run the POM suite through that CLI.
 - Installing a public 70-guide Playwright skill pack (TestDino, LambdaTest cloud, on-the-fly MCP replacements).
 - Screenplay, fat BasePage, god `AppPage`, assertions-only locator bags.
 - Cross-browser / mobile / cloud grids — this lab is Chromium + live stack.

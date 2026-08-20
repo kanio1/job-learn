@@ -79,4 +79,8 @@ export class PaymentsListPage extends BasePage {
   async exportAsync(): Promise<void> {
     await this.byTestId('export-payment-orders-async').click()
   }
+
+  async runExpirationSweep(): Promise<void> {
+    await this.byTestId('run-expiration-sweep').click()
+  }
 }

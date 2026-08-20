@@ -104,7 +104,8 @@
               v-if="item.hasContent"
               size="xs"
               variant="outline"
-              :to="contentUrl(item.evidenceId)"
+              :href="contentUrl(item.evidenceId)"
+              :download="item.originalFilename"
               data-testid="evidence-download"
             >
               Download
