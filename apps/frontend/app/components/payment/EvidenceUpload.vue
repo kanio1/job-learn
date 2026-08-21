@@ -78,6 +78,12 @@
         Selected: {{ selectedFile.name }} ({{ formatBytes(selectedFile.size) }})
       </p>
 
+      <EvidenceGallery
+        :merchant-id="merchantId"
+        :payment-order-id="paymentOrderId"
+        :evidence="evidence"
+      />
+
       <div data-testid="evidence-list" class="space-y-2">
         <p v-if="!loading && evidence.length === 0" class="text-sm text-gray-400 italic">
           No evidence uploaded.

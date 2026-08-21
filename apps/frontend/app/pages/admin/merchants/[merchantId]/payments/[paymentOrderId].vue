@@ -1,8 +1,11 @@
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <h2 class="text-lg font-semibold">Payment Order Detail</h2>
-      <UButton variant="ghost" :to="`/admin/merchants/${merchantId}/payments`" label="Back to payment orders" />
+    <div class="flex items-center justify-between gap-3">
+      <h2 class="text-lg font-semibold">{{ $t('payments.detailTitle') }}</h2>
+      <div class="flex items-center gap-2">
+        <AppLocaleSelect />
+        <UButton variant="ghost" :to="`/admin/merchants/${merchantId}/payments`" label="Back to payment orders" />
+      </div>
     </div>
 
     <UAlert
@@ -110,6 +113,7 @@
         :payment-order-id="paymentOrderId"
         :etag="store.versionMarker"
         :order-status="store.currentOrder.status"
+        :amount-minor="store.currentOrder.amountMinor"
         @approved="handleRetry"
       />
 

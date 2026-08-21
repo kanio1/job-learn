@@ -30,6 +30,7 @@ test.afterEach(async ({ api }) => {
       contactEmail: snapshot.settings.contactEmail ?? undefined,
       timezone: snapshot.settings.timezone,
       webhookBaseUrl: snapshot.settings.webhookBaseUrl ?? undefined,
+      paymentPolicy: snapshot.settings.paymentPolicy,
     },
     etag,
   )

@@ -1,6 +1,9 @@
 package lab.paymentquality.tenant.internal.domain;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -41,6 +44,10 @@ public class Tenant {
     @Column(name = "settings_version", nullable = false)
     private long settingsVersion = 0;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "payment_policy", nullable = false, columnDefinition = "jsonb")
+    private PaymentPolicy paymentPolicy = PaymentPolicy.defaults();
+
     protected Tenant() {}
 
     public static Tenant seeded(UUID tenantId, String tenantReference, String name,
@@ -63,9 +70,17 @@ public class Tenant {
     }
 
     public void updateSettings(String contactEmail, String timezone, String webhookBaseUrl) {
+        updateSettings(contactEmail, timezone, webhookBaseUrl, null);
+    }
+
+    public void updateSettings(
+            String contactEmail, String timezone, String webhookBaseUrl, PaymentPolicy nextPolicy) {
         this.contactEmail = contactEmail;
         this.timezone = timezone != null ? timezone : "UTC";
         this.webhookBaseUrl = webhookBaseUrl;
+        if (nextPolicy != null) {
+            this.paymentPolicy = nextPolicy;
+        }
         this.settingsVersion++;
     }
 
@@ -79,4 +94,7 @@ public class Tenant {
     public String getTimezone() { return timezone; }
     public String getWebhookBaseUrl() { return webhookBaseUrl; }
     public long getSettingsVersion() { return settingsVersion; }
+    public PaymentPolicy getPaymentPolicy() {
+        return paymentPolicy != null ? paymentPolicy : PaymentPolicy.defaults();
+    }
 }

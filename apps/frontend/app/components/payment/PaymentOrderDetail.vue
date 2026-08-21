@@ -9,30 +9,30 @@
           <UCard v-if="order && !problem">
             <template #header>
               <div class="flex items-center justify-between">
-                <h3 class="text-base font-semibold">Payment Order</h3>
+                <h3 class="text-base font-semibold">{{ $t('payments.detailTitle') }}</h3>
                 <BusinessStatusBadge :status="order.status" type="payment" />
               </div>
             </template>
 
             <dl class="space-y-3 text-sm">
               <div class="flex justify-between">
-                <dt class="text-gray-500">Payment Order ID</dt>
+                <dt class="text-gray-500">{{ $t('payments.paymentOrderId') }}</dt>
                 <dd class="font-mono">{{ order.paymentOrderId }}</dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Merchant ID</dt>
+                <dt class="text-gray-500">{{ $t('payments.merchantId') }}</dt>
                 <dd class="font-mono">{{ order.merchantId }}</dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Amount</dt>
-                <dd>{{ order.amountMinor }} minor units</dd>
+                <dt class="text-gray-500">{{ $t('payments.amount') }}</dt>
+                <dd data-testid="payment-amount">{{ amount(order.amountMinor, order.currency) }}</dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Currency</dt>
+                <dt class="text-gray-500">{{ $t('payments.currency') }}</dt>
                 <dd>{{ order.currency }}</dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Client Reference</dt>
+                <dt class="text-gray-500">{{ $t('payments.clientReference') }}</dt>
                 <dd class="flex items-center gap-2">
                   <span>{{ order.clientOrderReference }}</span>
                   <UButton
@@ -47,51 +47,51 @@
                 </dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Captured Amount</dt>
+                <dt class="text-gray-500">{{ $t('payments.capturedAmount') }}</dt>
                 <dd>{{ order.capturedAmountMinor != null ? `${order.capturedAmountMinor} minor units` : '—' }}</dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Refunded Amount</dt>
+                <dt class="text-gray-500">{{ $t('payments.refundedAmount') }}</dt>
                 <dd>{{ order.refundedAmountMinor != null ? `${order.refundedAmountMinor} minor units` : '—' }}</dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Authorized At</dt>
+                <dt class="text-gray-500">{{ $t('payments.authorizedAt') }}</dt>
                 <dd>{{ order.authorizedAt ? new Date(order.authorizedAt).toLocaleString() : '—' }}</dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Expires At</dt>
+                <dt class="text-gray-500">{{ $t('payments.expiresAt') }}</dt>
                 <dd>{{ order.expiresAt ? new Date(order.expiresAt).toLocaleString() : '—' }}</dd>
               </div>
               <div v-if="order.status === 'AUTHORIZED' && order.expiresAt" class="flex justify-between">
-                <dt class="text-gray-500">Authorization Window</dt>
+                <dt class="text-gray-500">{{ $t('payments.authorizationWindow') }}</dt>
                 <dd><ExpirationCountdown :expires-at="order.expiresAt" /></dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Captured At</dt>
+                <dt class="text-gray-500">{{ $t('payments.capturedAt') }}</dt>
                 <dd>{{ order.capturedAt ? new Date(order.capturedAt).toLocaleString() : '—' }}</dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Cancelled At</dt>
+                <dt class="text-gray-500">{{ $t('payments.cancelledAt') }}</dt>
                 <dd>{{ order.cancelledAt ? new Date(order.cancelledAt).toLocaleString() : '—' }}</dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Cancellation Reason</dt>
+                <dt class="text-gray-500">{{ $t('payments.cancellationReason') }}</dt>
                 <dd>{{ order.cancellationReason ?? '—' }}</dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Refunded At</dt>
+                <dt class="text-gray-500">{{ $t('payments.refundedAt') }}</dt>
                 <dd>{{ order.refundedAt ? new Date(order.refundedAt).toLocaleString() : '—' }}</dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Refund Reason</dt>
+                <dt class="text-gray-500">{{ $t('payments.refundReason') }}</dt>
                 <dd>{{ order.refundReason ?? '—' }}</dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Created At</dt>
-                <dd>{{ new Date(order.createdAt).toLocaleString() }}</dd>
+                <dt class="text-gray-500">{{ $t('payments.createdAt') }}</dt>
+                <dd data-testid="payment-created-at">{{ dateOnly(order.createdAt) }}</dd>
               </div>
               <div class="flex justify-between">
-                <dt class="text-gray-500">Updated At</dt>
+                <dt class="text-gray-500">{{ $t('payments.updatedAt') }}</dt>
                 <dd>{{ new Date(order.updatedAt).toLocaleString() }}</dd>
               </div>
             </dl>
@@ -148,6 +148,8 @@
  */
 
 import type { ApiHeaders, ProblemDetails } from '~/types/api'
+
+const { amount, dateOnly } = useLocaleFormat()
 
 const props = defineProps<{
   order: {

@@ -11,7 +11,7 @@ last_updated: 2026-08-20
 | Warstwa | Zmiana w tym milestone? | Co |
 |---|---|---|
 | PostgreSQL 18 compose | **Nie** obrazu | Nowe tabele + indeksy V31+ |
-| Flyway | **Tak** | `support/V31`, `merchant/V32`, `payment/V33`, `ops/V34`, `iam/V35`, `tenant/V36` (numery globalne — **nie** kolidować z M360 V23–V30) |
+| Flyway | **Tak** | `merchant/V31` contact, `support/V32` cases, `payment/V33`, `ops/V34`, `iam/V35`, `tenant/V36` (numery rosną z falą — **nie** kolidować z M360 V23–V30; nie stosować catalog V32 contact przed V31) |
 | Keycloak realm JSON | **Tak, minimalnie** | Realm roles w istniejących composites; opcjonalnie user `support.agent.b` |
 | `scripts/dev-stack.sh` | **Nie** (używać) | `--app` do POM; default do DX |
 | Spring Security authorities | **Tak** | `platform:support:*`, `platform:ops:*`, `platform:notifications:read` |
@@ -61,12 +61,29 @@ corepack pnpm test:e2e:app
 - Wzorzec indeksów: [V3__add_payment_order_list_indexes.sql](../../../apps/backend/src/main/resources/db/migration/payment/V3__add_payment_order_list_indexes.sql) — `CREATE INDEX IF NOT EXISTS`.
 - **Zakaz** `CREATE INDEX CONCURRENTLY` ([PG 18 CREATE INDEX](https://www.postgresql.org/docs/18/sql-createindex.html) — nie w transakcji Flyway).
 
-### B.1 V31 — support_cases (E3)
+### B.1 V31 — merchant contact (E1 / Fala 1)
 
-Plik: `apps/backend/src/main/resources/db/migration/support/V31__create_support_cases.sql`
+Plik: `apps/backend/src/main/resources/db/migration/merchant/V31__merchant_contact_fields.sql`
+
+Kolumna `merchants.version` **już istnieje** (V1). HTTP ETag na merchant (M360 T13) zostaje; Wave 2 dodaje tylko kolumny contact.
 
 ```sql
--- V31__create_support_cases.sql
+-- V31__merchant_contact_fields.sql
+ALTER TABLE merchants
+    ADD COLUMN contact_phone   VARCHAR(32),
+    ADD COLUMN contact_address VARCHAR(200);
+```
+
+Bound: phone max 32; address max 200. PATCH tych pól + `display_name`.
+
+### B.1b V32 — support_cases (E3)
+
+Plik: `apps/backend/src/main/resources/db/migration/support/V32__create_support_cases.sql`
+
+**Nie implementować w Fali 1.** Catalog wcześniej nazywał ten plik V31 — numery rosną z falą (V31 contact już zajęte).
+
+```sql
+-- V32__create_support_cases.sql
 -- Support work queue. Not payment_orders.status.
 
 CREATE TABLE support_cases (
@@ -98,21 +115,6 @@ CREATE INDEX IF NOT EXISTS idx_support_cases_assignee
 ```
 
 `case_reference` format `INC-{n}` unikalny globalnie (jak merchant reference). POM: `uniqueCaseReference(testInfo)`. Partial index na assignee jest OK w PG 18 (immutable predicate).
-
-### B.2 V32 — merchant contact + HTTP ETag already has version (E1)
-
-Kolumna `merchants.version` **już istnieje** (V1). Brak HTTP ETag na merchant detail (tylko payment / tenant settings).
-
-```sql
--- V32__merchant_contact_fields.sql
-ALTER TABLE merchants
-    ADD COLUMN contact_phone   VARCHAR(32),
-    ADD COLUMN contact_address VARCHAR(200);
-```
-
-Indeks niepotrzebny (to nie list filter Fali 1 M360). Bound: phone E.164-ish max 32; address max 200. PATCH tylko tych pól + `display_name`.
-
-Jeśli M360 T13 już dodał ETag na GET/activate — **nie** duplikować handlerów; tylko dodać kolumny i conflict DTO.
 
 ### B.3 V33 — refund challenges (E5)
 

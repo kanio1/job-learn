@@ -1,10 +1,14 @@
 package lab.paymentquality.iam.internal.web;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lab.paymentquality.iam.internal.domain.exception.DuplicateSavedViewException;
 import lab.paymentquality.iam.internal.domain.exception.DuplicateUserException;
 import lab.paymentquality.iam.internal.domain.exception.InvalidRoleException;
+import lab.paymentquality.iam.internal.domain.exception.InvalidSavedViewFiltersException;
 import lab.paymentquality.iam.internal.domain.exception.KeycloakAdminUnavailableException;
 import lab.paymentquality.iam.internal.domain.exception.MissingTenantReferenceException;
+import lab.paymentquality.iam.internal.domain.exception.SavedViewNotFoundException;
+import lab.paymentquality.iam.internal.domain.exception.SavedViewQuotaExceededException;
 import lab.paymentquality.iam.internal.domain.exception.TenantBoundaryViolationException;
 import lab.paymentquality.iam.internal.domain.exception.UserNotFoundException;
 import org.slf4j.MDC;
@@ -32,23 +36,28 @@ public class UserManagementExceptionHandler {
         return problem(HttpStatus.FORBIDDEN, "forbidden", "Forbidden", "Access denied", request);
     }
 
-    @ExceptionHandler({InvalidRoleException.class, MissingTenantReferenceException.class})
+    @ExceptionHandler({
+            InvalidRoleException.class,
+            MissingTenantReferenceException.class,
+            InvalidSavedViewFiltersException.class,
+            SavedViewQuotaExceededException.class
+    })
     public ResponseEntity<ProblemDetail> handleValidation(
             RuntimeException exception,
             HttpServletRequest request) {
         return problem(HttpStatus.BAD_REQUEST, "validation", "Bad Request", exception.getMessage(), request);
     }
 
-    @ExceptionHandler(UserNotFoundException.class)
+    @ExceptionHandler({UserNotFoundException.class, SavedViewNotFoundException.class})
     public ResponseEntity<ProblemDetail> handleNotFound(
-            UserNotFoundException exception,
+            RuntimeException exception,
             HttpServletRequest request) {
-        return problem(HttpStatus.NOT_FOUND, "not_found", "Not Found", "User not found", request);
+        return problem(HttpStatus.NOT_FOUND, "not_found", "Not Found", exception.getMessage(), request);
     }
 
-    @ExceptionHandler(DuplicateUserException.class)
+    @ExceptionHandler({DuplicateUserException.class, DuplicateSavedViewException.class})
     public ResponseEntity<ProblemDetail> handleDuplicate(
-            DuplicateUserException exception,
+            RuntimeException exception,
             HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "conflict", "Conflict", exception.getMessage(), request);
     }

@@ -1,0 +1,36 @@
+{
+  "merchants": {
+    "title": "Handlare",
+    "tenant": "Hyresgäst",
+    "reference": "Referens",
+    "displayName": "Visningsnamn",
+    "status": "Status",
+    "risk": "Risk",
+    "updated": "Uppdaterad",
+    "created": "Skapad"
+  },
+  "payments": {
+    "detailTitle": "Betalorder",
+    "amount": "Belopp",
+    "createdAt": "Skapad",
+    "paymentOrderId": "Betalorder-ID",
+    "merchantId": "Handlar-ID",
+    "currency": "Valuta",
+    "clientReference": "Kundreferens",
+    "capturedAmount": "Debiterat belopp",
+    "refundedAmount": "Återbetalt belopp",
+    "authorizedAt": "Auktoriserad",
+    "expiresAt": "Utgår",
+    "authorizationWindow": "Auktorisationsfönster",
+    "capturedAt": "Debiterad",
+    "cancelledAt": "Avbruten",
+    "cancellationReason": "Avbrottsorsak",
+    "refundedAt": "Återbetald",
+    "refundReason": "Återbetalningsorsak",
+    "updatedAt": "Uppdaterad"
+  },
+  "support": {
+    "title": "Support",
+    "queue": "Kö"
+  }
+}

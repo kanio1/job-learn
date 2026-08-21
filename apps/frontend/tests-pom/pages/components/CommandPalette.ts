@@ -12,8 +12,21 @@ export class CommandPalette {
     await expect(this.page.getByText('Search Payment Quality Lab')).toBeVisible()
   }
 
+  async openFromButton(): Promise<void> {
+    await this.page.getByRole('button', { name: /Search/ }).click()
+    await expect(this.page.getByText('Search Payment Quality Lab')).toBeVisible()
+  }
+
+  searchInput(): Locator {
+    return this.dialog().getByPlaceholder('Search dashboard...')
+  }
+
   async search(text: string): Promise<void> {
     await this.page.keyboard.type(text)
+  }
+
+  async fillSearch(text: string): Promise<void> {
+    await this.searchInput().fill(text)
   }
 
   async selectOption(name: string): Promise<void> {

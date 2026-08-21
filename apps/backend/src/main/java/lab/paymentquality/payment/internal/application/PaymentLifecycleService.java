@@ -62,7 +62,7 @@ public class PaymentLifecycleService {
 
         log.info("payment.authorize.succeeded merchantId={} paymentOrderId={} correlationId={}",
                 merchantId, paymentOrderId, correlationId);
-        publishSuccess("PAYMENT_AUTHORIZED", paymentOrderId, actorSubject, correlationId);
+        publishSuccess("PAYMENT_AUTHORIZED", order, merchantId, actorSubject, correlationId);
         return order;
     }
 
@@ -91,7 +91,7 @@ public class PaymentLifecycleService {
 
         log.info("payment.capture.succeeded merchantId={} paymentOrderId={} capturedAmountMinor={} correlationId={}",
                 merchantId, paymentOrderId, order.getCapturedAmountMinor(), correlationId);
-        publishSuccess("PAYMENT_CAPTURED", paymentOrderId, actorSubject, correlationId);
+        publishSuccess("PAYMENT_CAPTURED", order, merchantId, actorSubject, correlationId);
         return order;
     }
 
@@ -123,7 +123,7 @@ public class PaymentLifecycleService {
 
         log.info("payment.cancel.succeeded merchantId={} paymentOrderId={} correlationId={}",
                 merchantId, paymentOrderId, correlationId);
-        publishSuccess("PAYMENT_CANCELLED", paymentOrderId, actorSubject, correlationId);
+        publishSuccess("PAYMENT_CANCELLED", order, merchantId, actorSubject, correlationId);
         return order;
     }
 
@@ -160,7 +160,7 @@ public class PaymentLifecycleService {
 
         log.info("payment.refund.succeeded merchantId={} paymentOrderId={} refundedAmountMinor={} correlationId={}",
                 merchantId, paymentOrderId, order.getRefundedAmountMinor(), correlationId);
-        publishSuccess("PAYMENT_REFUNDED", paymentOrderId, actorSubject, correlationId);
+        publishSuccess("PAYMENT_REFUNDED", order, merchantId, actorSubject, correlationId);
         return order;
     }
 
@@ -251,15 +251,22 @@ public class PaymentLifecycleService {
 
     private void publishSuccess(
             String action,
-            UUID paymentOrderId,
+            PaymentOrder order,
+            UUID merchantId,
             String actorSubject,
             String correlationId) {
+        java.util.Map<String, Object> afterState = new java.util.LinkedHashMap<>();
+        afterState.put("merchantId", merchantId.toString());
+        afterState.put("clientOrderReference", order.getClientOrderReference());
+        afterState.put("status", order.getStatus().name());
         eventPublisher.publishEvent(AuditableActionEventFactory.success(
                 action,
                 "PAYMENT_ORDER",
-                paymentOrderId.toString(),
+                order.getPaymentOrderId().toString(),
                 null,
                 actorSubject,
-                correlationId));
+                correlationId,
+                null,
+                afterState));
     }
 }

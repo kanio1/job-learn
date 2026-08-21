@@ -27,6 +27,7 @@ import java.util.List;
         PaymentOrderController.class,
         PaymentExportJobController.class,
         PaymentRefundApprovalController.class,
+        PaymentRefundChallengeController.class,
         PaymentExpirationOpsController.class
 })
 public class PaymentExceptionHandler {
@@ -140,6 +141,22 @@ public class PaymentExceptionHandler {
     @ExceptionHandler(DualControlRequiredException.class)
     public ResponseEntity<PaymentErrorResponse> handleDualControlRequired(DualControlRequiredException ex) {
         return problem(ex.status(), ex.error(), ex.getMessage());
+    }
+
+    @ExceptionHandler(RefundChallengeException.class)
+    public ResponseEntity<java.util.Map<String, Object>> handleRefundChallenge(RefundChallengeException ex) {
+        java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("type", "https://api.payment-quality.local/problems/" + ex.error().replace('_', '-'));
+        body.put("title", ex.status().getReasonPhrase());
+        body.put("status", ex.status().value());
+        body.put("detail", ex.getMessage());
+        body.put("error", ex.error());
+        if (ex.lockedUntil() != null) {
+            body.put("lockedUntil", ex.lockedUntil().toString());
+        }
+        return ResponseEntity.status(ex.status())
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(body);
     }
 
     @ExceptionHandler(PaymentExportJobNotReadyException.class)

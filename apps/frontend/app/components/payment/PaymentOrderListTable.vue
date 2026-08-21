@@ -5,16 +5,34 @@
       <template #header>
         <div class="flex items-center justify-between gap-3">
           <h3 class="text-base font-semibold">Filters</h3>
-          <UButton
-            v-if="hasActiveFilters"
-            data-testid="payment-filter-clear"
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-x"
-            label="Clear filters"
-            @click="clearFilters"
-          />
+          <div class="flex items-center gap-2">
+            <SavedViewsPanel
+              :views="views"
+              @open="onOpenView"
+              @save="onSaveView"
+              @set-default="onSetDefaultView"
+            />
+            <UButton
+              v-if="hasActiveFilters"
+              data-testid="payment-filter-clear"
+              size="xs"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-x"
+              label="Clear filters"
+              @click="clearFilters"
+            />
+            <UFormField label="Columns" class="min-w-48">
+              <UCheckboxGroup
+                v-model="visibleColumnIds"
+                data-testid="payment-column-profile"
+                legend="Columns"
+                orientation="horizontal"
+                variant="list"
+                :items="columnOptions"
+              />
+            </UFormField>
+          </div>
         </div>
       </template>
 
@@ -179,15 +197,17 @@
 </template>
 
 <script setup lang="ts">
-import { h, resolveComponent, computed, reactive } from 'vue'
+import { h, resolveComponent, computed, reactive, watch } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 import type { ProblemDetails } from '~/types/api'
+import type { PaymentView } from '~~/shared/types/payment-view'
 import {
   paymentOrderListQuerySchema,
   type PaymentOrderListQuery,
   type PaymentOrderListResponse,
   type PaymentOrderResponse,
 } from '~/schemas/payment-order.schema'
+import { DEFAULT_PAYMENT_VIEW_COLUMNS } from '~/utils/paymentViewsStorage'
 
 const PaymentStatusBadge = resolveComponent('PaymentStatusBadge')
 const UButton = resolveComponent('UButton')
@@ -200,11 +220,17 @@ const props = defineProps<{
   problem?: ProblemDetails | null
   onRetry?: () => void
   currentQuery?: PaymentOrderListQuery
+  views?: PaymentView[]
 }>()
 
 const emit = defineEmits<{
   (e: 'query-change', query: PaymentOrderListQuery): void
+  (e: 'save-view', name: string, columns: string[]): void
+  (e: 'open-view', view: PaymentView): void
+  (e: 'set-default-view', view: PaymentView): void
 }>()
+
+const views = computed(() => props.views ?? [])
 
 // ---------------------------------------------------------------------------
 // Filter state — initialised from currentQuery if provided
@@ -224,6 +250,27 @@ const currentPage = ref((props.currentQuery?.page ?? 0))
 const pageSize = ref(props.currentQuery?.size ?? 20)
 const currentSort = ref(props.currentQuery?.sort ?? 'createdAt,desc')
 const sorting = ref(sortingFromSort(currentSort.value))
+
+watch(
+  () => props.currentQuery,
+  (query) => {
+    if (!query) {
+      return
+    }
+    filters.status = query.status ?? ''
+    filters.currency = query.currency ?? ''
+    filters.fromDate = query.fromDate ?? ''
+    filters.toDate = query.toDate ?? ''
+    filters.minAmountStr = query.minAmount != null ? String(query.minAmount) : ''
+    filters.maxAmountStr = query.maxAmount != null ? String(query.maxAmount) : ''
+    filters.clientOrderReference = query.clientOrderReference ?? ''
+    currentPage.value = query.page ?? 0
+    pageSize.value = query.size ?? 20
+    currentSort.value = query.sort ?? 'createdAt,desc'
+    sorting.value = sortingFromSort(currentSort.value)
+  },
+  { deep: true },
+)
 
 // ---------------------------------------------------------------------------
 // Derived state
@@ -291,6 +338,21 @@ function clearFilters() {
   emit('query-change', buildQuery(0))
 }
 
+function onSaveView(name: string) {
+  emit('save-view', name, [...visibleColumnIds.value])
+}
+
+function onOpenView(view: PaymentView) {
+  if (view.columns.length > 0) {
+    visibleColumnIds.value = [...view.columns]
+  }
+  emit('open-view', view)
+}
+
+function onSetDefaultView(view: PaymentView) {
+  emit('set-default-view', view)
+}
+
 function onPageChange(page: number) {
   // UPagination is 1-based; backend is 0-based
   currentPage.value = page - 1
@@ -340,25 +402,47 @@ function sortableHeader(
 // Table columns
 // ---------------------------------------------------------------------------
 
-const columns: TableColumn<PaymentOrderResponse>[] = [
+const columnOptions = [
+  { value: 'clientOrderReference', label: 'Reference' },
+  { value: 'amountMinor', label: 'Amount' },
+  { value: 'status', label: 'Status' },
+  { value: 'createdAt', label: 'Created' },
+  { value: 'createdBy', label: 'Created by' },
+  { value: 'actions', label: 'Actions' },
+]
+
+const visibleColumnIds = ref<string[]>([...DEFAULT_PAYMENT_VIEW_COLUMNS])
+const { amount, dateOnly } = useLocaleFormat()
+
+const allColumns = computed<TableColumn<PaymentOrderResponse>[]>(() => [
   {
+    id: 'clientOrderReference',
     accessorKey: 'clientOrderReference',
     header: 'Reference',
   },
   {
+    id: 'amountMinor',
     accessorKey: 'amountMinor',
     header: ({ column }) => sortableHeader(column, 'Amount'),
-    cell: ({ row }) => `${row.original.amountMinor} ${row.original.currency}`,
+    cell: ({ row }) => h('span', { 'data-testid': 'payment-list-amount' }, amount(row.original.amountMinor, row.original.currency)),
   },
   {
+    id: 'status',
     accessorKey: 'status',
     header: 'Status',
     cell: ({ row }) => h(PaymentStatusBadge, { status: row.original.status }),
   },
   {
+    id: 'createdAt',
     accessorKey: 'createdAt',
     header: ({ column }) => sortableHeader(column, 'Created'),
-    cell: ({ row }) => h('span', { class: 'text-muted text-sm' }, new Date(row.original.createdAt).toLocaleString()),
+    cell: ({ row }) => h('span', { class: 'text-muted text-sm', 'data-testid': 'payment-list-created-at' }, dateOnly(row.original.createdAt)),
+  },
+  {
+    id: 'createdBy',
+    accessorKey: 'createdAt',
+    header: 'Created by',
+    cell: ({ row }) => h('span', { class: 'text-muted text-sm' }, dateOnly(row.original.createdAt)),
   },
   {
     id: 'actions',
@@ -371,5 +455,9 @@ const columns: TableColumn<PaymentOrderResponse>[] = [
       to: `/admin/merchants/${props.merchantId}/payments/${row.original.paymentOrderId}`,
     }),
   },
-]
+])
+
+const columns = computed(() =>
+  allColumns.value.filter(column => visibleColumnIds.value.includes(String(column.id))),
+)
 </script>

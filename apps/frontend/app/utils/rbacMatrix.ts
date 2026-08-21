@@ -60,6 +60,11 @@ export interface Capability {
   canManageTenantSettings: boolean
   canManageUsers: boolean
   canAssignRoles: boolean
+  canReadSupport: boolean
+  canOperateSupport: boolean
+  canReadOpsFeed: boolean
+  canInjectOps: boolean
+  canReadNotifications: boolean
 }
 
 // Convenience constant for a fully-denied capability set (no grants).
@@ -79,6 +84,11 @@ const DENY_ALL: Capability = {
   canManageTenantSettings: false,
   canManageUsers: false,
   canAssignRoles: false,
+  canReadSupport: false,
+  canOperateSupport: false,
+  canReadOpsFeed: false,
+  canInjectOps: false,
+  canReadNotifications: false,
 }
 
 /**
@@ -111,6 +121,11 @@ export const rbacMatrix: Record<CompositeRole, Capability> = {
     canManageTenantSettings: true,
     canManageUsers: true,
     canAssignRoles: true,
+    canReadSupport: true,
+    canOperateSupport: true,
+    canReadOpsFeed: true,
+    canInjectOps: true,
+    canReadNotifications: true,
   },
 
   TENANT_ADMIN: {
@@ -122,6 +137,9 @@ export const rbacMatrix: Record<CompositeRole, Capability> = {
     canViewAuditLog: true,
     canManageUsers: true,
     canAssignRoles: true,
+    canReadSupport: true,
+    canReadOpsFeed: true,
+    canReadNotifications: true,
   },
 
   MERCHANT_MANAGER: {
@@ -129,6 +147,8 @@ export const rbacMatrix: Record<CompositeRole, Capability> = {
     canCreatePaymentOrder: true,
     canReadMerchantPayments: true,
     canRunLifecycle: true,
+    canReadOpsFeed: true,
+    canReadNotifications: true,
   },
 
   SUPPORT_AGENT: {
@@ -139,11 +159,18 @@ export const rbacMatrix: Record<CompositeRole, Capability> = {
     canViewAuditLog: true,
     canReadPaymentNotes: true,
     canCreatePaymentNote: true,
+    canReadSupport: true,
+    canOperateSupport: true,
+    canReadOpsFeed: true,
+    canReadNotifications: true,
   },
 
   READ_ONLY_USER: {
     ...DENY_ALL,
     canReadMerchants: true,
     canReadPlatformPayments: true,
+    canReadSupport: true,
+    canReadOpsFeed: true,
+    canReadNotifications: true,
   },
 }

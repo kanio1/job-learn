@@ -14,7 +14,7 @@ export default defineEventHandler(async (event): Promise<any> => {
     throw createError({ statusCode: 400, statusMessage: 'Evidence file is required' })
   }
   const form = new FormData()
-  form.append('file', new Blob([file.data], { type: file.type || 'application/octet-stream' }), file.filename || 'evidence')
+  form.append('file', new Blob([Uint8Array.from(file.data)], { type: file.type || 'application/octet-stream' }), file.filename || 'evidence')
   try {
     const response = await $fetch.raw(
       `${backendUrl}/api/mirror-lab/disputes/${id}/evidence`,

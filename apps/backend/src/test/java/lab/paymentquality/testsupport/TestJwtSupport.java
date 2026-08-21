@@ -254,16 +254,44 @@ public final class TestJwtSupport {
                         "merchants:update-risk-flag",
                         "platform:payments:read", "platform:payments:lifecycle", "platform:payments:audit",
                         "platform:payments:notes:read", "platform:payments:notes:create",
-                        "platform:tenant:settings:read", "platform:tenant:settings:update"),
+                        "platform:tenant:settings:read", "platform:tenant:settings:update",
+                        "platform:support:read", "platform:support:operate",
+                        "platform:ops:feed", "platform:ops:inject", "platform:notifications:read"),
                 "PLATFORM_TENANT");
+    }
+
+    public static String opsInjectToken() {
+        return tokenWithRolesAndTenantId("platform.admin",
+                List.of("platform:ops:inject", "platform:ops:feed", "platform:notifications:read"),
+                "PLATFORM_TENANT");
+    }
+
+    public static String opsFeedReadonlyToken() {
+        return tokenWithRolesAndTenantId("readonly.user",
+                List.of("platform:ops:feed", "platform:notifications:read",
+                        "merchants:read", "platform:payments:read", "platform:support:read"),
+                "PLATFORM_TENANT");
+    }
+
+    public static String opsFeedManagerToken(String merchantId) {
+        return tokenWithRolesTenantIdAndMerchantId("merchant.manager",
+                List.of("merchant:payments:create", "merchant:payments:read", "merchant:payments:lifecycle",
+                        "platform:ops:feed", "platform:notifications:read"),
+                "TENANT_ALPHA", merchantId);
     }
 
     public static String supportAgentToken() {
         return tokenWithRolesAndTenantId("support.agent",
                 List.of("platform:payments:read", "platform:payments:audit",
                         "platform:audit:read",
-                        "platform:payments:notes:read", "platform:payments:notes:create"),
+                        "platform:payments:notes:read", "platform:payments:notes:create",
+                        "platform:support:read", "platform:support:operate",
+                        "platform:ops:feed", "platform:notifications:read"),
                 "PLATFORM_TENANT");
+    }
+
+    public static String supportOperateToken() {
+        return supportAgentToken();
     }
 
     public static String platformUserAdminToken() {

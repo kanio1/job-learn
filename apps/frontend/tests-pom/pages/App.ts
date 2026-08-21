@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar'
 import { ProblemDetailsCard } from './components/ProblemDetailsCard'
 import { UserMenu } from './components/UserMenu'
 import { CommandPalette } from './components/CommandPalette'
+import { LocaleSelectComponent } from './components/LocaleSelectComponent'
 import { IdleOverlay } from './components/IdleOverlay'
 import { LoginPage } from './LoginPage'
 import { MerchantsListPage } from './MerchantsListPage'
@@ -22,6 +23,7 @@ import { CheckoutLabWidgetPage } from './CheckoutLabWidgetPage'
 import { HostedCheckoutPage } from './HostedCheckoutPage'
 import { CheckoutReturnPage } from './CheckoutReturnPage'
 import { SupportPage } from './SupportPage'
+import { OverviewPage } from './OverviewPage'
 import { MirrorLabHubPage } from './MirrorLabHubPage'
 import { SessionLabPage } from './SessionLabPage'
 import { NetworkLabPage } from './NetworkLabPage'
@@ -36,6 +38,7 @@ export class App {
   readonly problem: ProblemDetailsCard
   readonly userMenu: UserMenu
   readonly commandPalette: CommandPalette
+  readonly localeSelect: LocaleSelectComponent
   readonly idle: IdleOverlay
   readonly login: LoginPage
   readonly merchants: MerchantsListPage
@@ -55,6 +58,7 @@ export class App {
   readonly hostedCheckout: HostedCheckoutPage
   readonly checkoutReturn: CheckoutReturnPage
   readonly support: SupportPage
+  readonly overview: OverviewPage
   readonly mirrorHub: MirrorLabHubPage
   readonly sessionLab: SessionLabPage
   readonly networkLab: NetworkLabPage
@@ -68,6 +72,7 @@ export class App {
     this.problem = new ProblemDetailsCard(page)
     this.userMenu = new UserMenu(page)
     this.commandPalette = new CommandPalette(page)
+    this.localeSelect = new LocaleSelectComponent(page)
     this.idle = new IdleOverlay(page)
     this.login = new LoginPage(page)
     this.merchants = new MerchantsListPage(page)
@@ -87,6 +92,7 @@ export class App {
     this.hostedCheckout = new HostedCheckoutPage(page)
     this.checkoutReturn = new CheckoutReturnPage(page)
     this.support = new SupportPage(page)
+    this.overview = new OverviewPage(page)
     this.mirrorHub = new MirrorLabHubPage(page)
     this.sessionLab = new SessionLabPage(page)
     this.networkLab = new NetworkLabPage(page)

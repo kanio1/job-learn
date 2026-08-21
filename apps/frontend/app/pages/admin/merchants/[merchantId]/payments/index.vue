@@ -129,8 +129,12 @@
           :error="listError"
           :problem="listProblem"
           :current-query="currentQuery"
+          :views="savedPaymentViews"
           :on-retry="reloadList"
           @query-change="onQueryChange"
+          @save-view="onSaveView"
+          @open-view="onOpenView"
+          @set-default-view="onSetDefaultView"
         />
         <PaymentKanban
           v-else-if="!authDenied && paymentsView === 'board' && listData"
@@ -151,8 +155,10 @@
 
 <script setup lang="ts">
 import type { ProblemDetails } from '~/types/api'
+import type { PaymentView } from '~~/shared/types/payment-view'
 import type { PaymentOrderListResponse, PaymentOrderSummaryResponse, PaymentOrderListQuery } from '~/schemas/payment-order.schema'
 import { paymentOrderListQuerySchema } from '~/schemas/payment-order.schema'
+import { DEFAULT_PAYMENT_VIEW_COLUMNS } from '~/utils/paymentViewsStorage'
 
 definePageMeta({
   layout: 'dashboard',
@@ -164,6 +170,13 @@ const merchantId = route.params.merchantId as string
 const { listOrders, getOrderSummary } = usePaymentOrdersApi()
 const { can } = useAuthorization()
 const toast = useAppToast()
+const {
+  views: savedPaymentViews,
+  defaultView: defaultPaymentView,
+  hydrate: hydratePaymentViews,
+  saveAs: savePaymentView,
+  setDefault: setDefaultPaymentView,
+} = usePaymentViews()
 const offline = ref(false)
 const asyncExportPolling = ref(false)
 const asyncExportStatus = ref('')
@@ -308,6 +321,53 @@ function onQueryChange(query: PaymentOrderListQuery) {
   reloadList()
 }
 
+function routeHasFilterQuery(): boolean {
+  return Boolean(
+    singleQueryValue(route.query.status)
+    || singleQueryValue(route.query.currency)
+    || singleQueryValue(route.query.fromDate)
+    || singleQueryValue(route.query.toDate)
+    || singleQueryValue(route.query.minAmount)
+    || singleQueryValue(route.query.maxAmount)
+    || singleQueryValue(route.query.clientOrderReference),
+  )
+}
+
+function queryFromView(view: PaymentView): PaymentOrderListQuery {
+  return paymentOrderListQuerySchema.parse({
+    status: view.filters.status,
+    currency: view.filters.currency,
+    fromDate: view.filters.fromDate,
+    toDate: view.filters.toDate,
+    minAmount: view.filters.minAmount,
+    maxAmount: view.filters.maxAmount,
+    clientOrderReference: view.filters.clientOrderReference,
+    page: 0,
+    size: currentQuery.value.size ?? 20,
+    sort: view.filters.sort ?? 'createdAt,desc',
+  })
+}
+
+function applyView(view: PaymentView) {
+  onQueryChange(queryFromView(view))
+}
+
+function onSaveView(name: string, columns: string[] = [...DEFAULT_PAYMENT_VIEW_COLUMNS]) {
+  void savePaymentView({
+    name,
+    filters: currentQuery.value,
+    columns,
+  })
+}
+
+function onOpenView(view: PaymentView) {
+  applyView(view)
+}
+
+function onSetDefaultView(view: PaymentView) {
+  void setDefaultPaymentView(view.id)
+}
+
 function paymentQueryFromRoute(): PaymentOrderListQuery {
   const rawQuery = {
     status: singleQueryValue(route.query.status),
@@ -438,10 +498,15 @@ function syncOffline() {
 // ---------------------------------------------------------------------------
 // Initial load
 // ---------------------------------------------------------------------------
-onMounted(() => {
+onMounted(async () => {
   syncOffline()
   window.addEventListener('online', syncOffline)
   window.addEventListener('offline', syncOffline)
+  await hydratePaymentViews()
+  if (!routeHasFilterQuery() && defaultPaymentView.value) {
+    currentQuery.value = queryFromView(defaultPaymentView.value)
+    void syncQueryToUrl(currentQuery.value)
+  }
   reload()
 })
 

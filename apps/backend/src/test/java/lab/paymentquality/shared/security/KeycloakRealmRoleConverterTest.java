@@ -53,7 +53,12 @@ class KeycloakRealmRoleConverterTest {
             Map.entry("tenant:users:read",           "tenant:users:read"),
             Map.entry("tenant:users:create",         "tenant:users:create"),
             Map.entry("tenant:users:update",         "tenant:users:update"),
-            Map.entry("tenant:users:assign-roles",   "tenant:users:assign-roles")
+            Map.entry("tenant:users:assign-roles",   "tenant:users:assign-roles"),
+            Map.entry("platform:support:read",       "platform:support:read"),
+            Map.entry("platform:support:operate",    "platform:support:operate"),
+            Map.entry("platform:ops:feed",           "platform:ops:feed"),
+            Map.entry("platform:ops:inject",         "platform:ops:inject"),
+            Map.entry("platform:notifications:read", "platform:notifications:read")
     );
 
     private static final Set<String> KNOWN_ROLES = KNOWN_ROLE_MAPPING.keySet();

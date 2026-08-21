@@ -93,6 +93,7 @@ export function useApiClient() {
       headers?: Record<string, string>
       query?: Record<string, string | number | boolean | null | undefined>
       redirect?: RequestRedirect
+      signal?: AbortSignal
     }
   ): Promise<ApiResponse<T>> {
     try {
@@ -103,6 +104,7 @@ export function useApiClient() {
         headers: opts?.headers,
         query: opts?.query,
         redirect: opts?.redirect,
+        signal: opts?.signal,
       })
 
       const status = response.status
@@ -136,6 +138,9 @@ export function useApiClient() {
 
       return { data: result.data, status, headers: apiHeaders, problem: null, raw }
     } catch (err: any) {
+      if (opts?.signal?.aborted || err?.name === 'AbortError') {
+        return { data: null, status: 0, headers: {}, problem: null, raw: '' }
+      }
       // $fetch.raw throws on network errors and non-2xx status codes
       const status: number = err?.statusCode ?? err?.response?.status ?? 0
       const errorData = problemPayload(err?.data ?? err?.response?._data, status)

@@ -1,5 +1,15 @@
 export default defineNuxtConfig({
-  modules: ['@nuxt/ui', '@pinia/nuxt', 'nuxt-auth-utils'],
+  modules: ['@nuxt/ui', '@pinia/nuxt', 'nuxt-auth-utils', '@nuxtjs/i18n'],
+  i18n: {
+    locales: [
+      { code: 'en', language: 'en-US', name: 'English', file: 'en.json' },
+      { code: 'pl', language: 'pl-PL', name: 'Polski', file: 'pl.json' },
+      { code: 'sv', language: 'sv-SE', name: 'Svenska', file: 'sv.json' },
+    ],
+    defaultLocale: 'en',
+    strategy: 'no_prefix',
+    detectBrowserLanguage: false,
+  },
   css: ['~/assets/css/main.css'],
   devtools: { enabled: true },
   app: {
@@ -12,6 +22,11 @@ export default defineNuxtConfig({
   colorMode: {
     preference: 'light',
     fallback: 'light'
+  },
+  nitro: {
+    experimental: {
+      websocket: true,
+    },
   },
   compatibilityDate: '2026-05-18',
   routeRules: {

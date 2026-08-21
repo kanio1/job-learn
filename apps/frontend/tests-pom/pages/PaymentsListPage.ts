@@ -1,7 +1,12 @@
 import { expect } from '@playwright/test'
 import { BasePage } from './BasePage'
+import { PaymentFiltersComponent } from './components/PaymentFiltersComponent'
+import { SavedViewsComponent } from './components/SavedViewsComponent'
 
 export class PaymentsListPage extends BasePage {
+  readonly filters = new PaymentFiltersComponent(this.page)
+  readonly views = new SavedViewsComponent(this.page)
+
   async gotoForMerchant(merchantId: string, query = ''): Promise<void> {
     await super.goto(`/admin/merchants/${merchantId}/payments${query}`)
   }

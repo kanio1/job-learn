@@ -8,9 +8,9 @@ package lab.paymentquality.shared.security;
  * via concatenation
  * ({@code @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_CREATE + "')")}).
  *
- * <p>Exactly 19 enforced authorities are declared here. The known-but-unenforced
- * {@code merchant:payments:operate} authority is intentionally excluded; it lives as a
- * documented constant local to {@link KeycloakRealmRoleConverter}.
+ * <p>The known-but-unenforced {@code merchant:payments:operate} authority is
+ * intentionally excluded; it lives as a documented constant local to
+ * {@link KeycloakRealmRoleConverter}.
  */
 public final class Authorities {
 
@@ -72,6 +72,21 @@ public final class Authorities {
     public static final String TENANT_USERS_CREATE       = "tenant:users:create";
     public static final String TENANT_USERS_UPDATE       = "tenant:users:update";
     public static final String TENANT_USERS_ASSIGN_ROLES = "tenant:users:assign-roles";
+
+    // -------------------------------------------------------------------------
+    // Support cases (platform-scoped; tenant JWT still filters rows)
+    // -------------------------------------------------------------------------
+
+    public static final String SUPPORT_READ    = "platform:support:read";
+    public static final String SUPPORT_OPERATE = "platform:support:operate";
+
+    // -------------------------------------------------------------------------
+    // Live operations feed + notification inbox (platform-scoped)
+    // -------------------------------------------------------------------------
+
+    public static final String OPS_FEED            = "platform:ops:feed";
+    public static final String OPS_INJECT          = "platform:ops:inject";
+    public static final String NOTIFICATIONS_READ  = "platform:notifications:read";
 
     private Authorities() {}
 }

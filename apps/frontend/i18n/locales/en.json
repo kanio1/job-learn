@@ -1,0 +1,36 @@
+{
+  "merchants": {
+    "title": "Merchants",
+    "tenant": "Tenant",
+    "reference": "Reference",
+    "displayName": "Display Name",
+    "status": "Status",
+    "risk": "Risk",
+    "updated": "Updated",
+    "created": "Created"
+  },
+  "payments": {
+    "detailTitle": "Payment Order Detail",
+    "amount": "Amount",
+    "createdAt": "Created At",
+    "paymentOrderId": "Payment Order ID",
+    "merchantId": "Merchant ID",
+    "currency": "Currency",
+    "clientReference": "Client Reference",
+    "capturedAmount": "Captured Amount",
+    "refundedAmount": "Refunded Amount",
+    "authorizedAt": "Authorized At",
+    "expiresAt": "Expires At",
+    "authorizationWindow": "Authorization Window",
+    "capturedAt": "Captured At",
+    "cancelledAt": "Cancelled At",
+    "cancellationReason": "Cancellation Reason",
+    "refundedAt": "Refunded At",
+    "refundReason": "Refund Reason",
+    "updatedAt": "Updated At"
+  },
+  "support": {
+    "title": "Support",
+    "queue": "Work Queue"
+  }
+}

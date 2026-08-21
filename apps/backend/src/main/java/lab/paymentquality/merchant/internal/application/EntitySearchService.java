@@ -17,6 +17,7 @@ import java.util.UUID;
 public class EntitySearchService {
 
     static final int LIMIT = 10;
+    static final int MAX_QUERY_LENGTH = 80;
 
     private final MerchantService merchantService;
     private final PaymentOrderSearch paymentOrderSearch;
@@ -37,6 +38,9 @@ public class EntitySearchService {
             throw new SearchQueryRequiredException();
         }
         String query = q.strip();
+        if (query.length() > MAX_QUERY_LENGTH) {
+            query = query.substring(0, MAX_QUERY_LENGTH);
+        }
         List<SearchMerchantHit> merchants = includeMerchants
                 ? merchantService.list(
                         tenantContext,

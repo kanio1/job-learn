@@ -1,4 +1,5 @@
 import { createError, getRouterParam, setHeader, setResponseStatus } from 'h3'
+import { writeSpringError } from '~~/server/utils/backendApi'
 
 export default defineEventHandler(async (event) => {
   const merchantId = getRouterParam(event, 'merchantId')
@@ -33,11 +34,6 @@ export default defineEventHandler(async (event) => {
     return new Uint8Array(response._data as ArrayBuffer)
   }
   catch (error: any) {
-    const statusCode = error?.response?.status || error?.statusCode || 503
-    throw createError({
-      statusCode,
-      statusMessage: error?.data?.message || error?.message || 'Evidence download failed',
-      data: error?.data || { error: 'evidence_download_failed' },
-    })
+    return writeSpringError(event, error)
   }
 })

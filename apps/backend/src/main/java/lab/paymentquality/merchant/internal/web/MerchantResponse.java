@@ -11,5 +11,7 @@ public record MerchantResponse(
         Instant createdAt,
         Instant updatedAt,
         boolean riskFlagged,
-        Long version) {
+        Long version,
+        String contactPhone,
+        String contactAddress) {
 }

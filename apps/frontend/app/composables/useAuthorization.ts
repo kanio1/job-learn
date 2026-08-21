@@ -39,6 +39,11 @@ export function useAuthorization() {
       canManageTenantSettings: false,
       canManageUsers: false,
       canAssignRoles: false,
+      canReadSupport: false,
+      canOperateSupport: false,
+      canReadOpsFeed: false,
+      canInjectOps: false,
+      canReadNotifications: false,
     }
     for (const role of roles.value) {
       const cap = rbacMatrix[role]
@@ -58,6 +63,11 @@ export function useAuthorization() {
       if (cap.canManageTenantSettings) merged.canManageTenantSettings = true
       if (cap.canManageUsers) merged.canManageUsers = true
       if (cap.canAssignRoles) merged.canAssignRoles = true
+      if (cap.canReadSupport) merged.canReadSupport = true
+      if (cap.canOperateSupport) merged.canOperateSupport = true
+      if (cap.canReadOpsFeed) merged.canReadOpsFeed = true
+      if (cap.canInjectOps) merged.canInjectOps = true
+      if (cap.canReadNotifications) merged.canReadNotifications = true
     }
     return merged
   })

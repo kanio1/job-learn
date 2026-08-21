@@ -18,6 +18,24 @@ test.describe('merchant.denied RBAC', () => {
     await app.merchants.expectAccessDenied()
   })
 
+  test('PW-OPS-E2E-203 denied search 403 does not crash palette', { tag: ['@security'] }, async ({ app, page }) => {
+    await app.page.goto('/admin/merchants')
+    await app.commandPalette.openFromButton()
+    const search = page.waitForResponse((response) => {
+      try {
+        return new URL(response.url()).pathname === '/api/search'
+      }
+      catch {
+        return false
+      }
+    })
+    await app.commandPalette.search('denied-search')
+    const status = (await search).status()
+    expect([403, 200]).toContain(status)
+    await expect(app.commandPalette.dialog()).toBeVisible()
+    await expect(app.page.locator('vite-plugin-checker-error-overlay')).toHaveCount(0)
+  })
+
   test('forbidden page matches ARIA snapshot', { tag: ['@a11y'] }, async ({ app }) => {
     await app.page.goto('/forbidden')
     await expect(app.page.getByTestId('forbidden-page')).toBeVisible()

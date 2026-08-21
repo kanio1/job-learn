@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
       let realmRoles: string[] = []
       let tenantId: string | undefined
       let merchantId: string | undefined
+      let subject: string | undefined
 
       try {
         const encodedPayload = tokens.access_token.split('.')[1] ?? ''
@@ -36,6 +37,7 @@ export default defineEventHandler(async (event) => {
         realmRoles = Array.isArray(raw) ? (raw as string[]) : []
         tenantId = typeof payload?.tenant_id === 'string' ? payload.tenant_id : undefined
         merchantId = typeof payload?.merchant_id === 'string' ? payload.merchant_id : undefined
+        subject = typeof payload?.sub === 'string' ? payload.sub : undefined
       }
       catch {
         // Malformed token — proceed without roles (session will reflect no capabilities)
@@ -52,8 +54,11 @@ export default defineEventHandler(async (event) => {
       const redirectTo = getCookie(event, 'auth_redirect') ?? '/admin/merchants'
       deleteCookie(event, 'auth_redirect')
 
+      const id = subject ?? (typeof user.sub === 'string' ? user.sub : undefined)
+
       await setUserSession(event, {
         user: {
+          id,
           username: user.preferred_username ?? user.name ?? user.sub,
           email: user.email ?? undefined,
           roles,

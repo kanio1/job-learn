@@ -35,6 +35,14 @@
           </UButton>
         </li>
       </ul>
+      <PinChallengeComponent
+        v-if="pinChallenge"
+        :merchant-id="merchantId"
+        :payment-order-id="paymentOrderId"
+        :challenge-id="pinChallenge.challengeId"
+        :expires-at="pinChallenge.expiresAt"
+        @verified="onPinVerified"
+      />
     </div>
   </UCard>
 </template>
@@ -45,6 +53,7 @@ const props = defineProps<{
   paymentOrderId: string
   etag?: string | null
   orderStatus?: string | null
+  amountMinor?: number | null
 }>()
 
 const { can } = useAuthorization()
@@ -57,8 +66,11 @@ const approvals = ref<Array<{
   makerSubject: string
 }>>([])
 const errorMessage = ref<string | null>(null)
+const pinChallenge = ref<{ challengeId: string, expiresAt?: string, approvalId: string } | null>(null)
+const pinVerified = ref(false)
 
 const emit = defineEmits<{ approved: [] }>()
+const needsPin = computed(() => (props.amountMinor ?? 0) > 100_000)
 
 async function load() {
   try {
@@ -76,7 +88,7 @@ async function createRequest() {
   try {
     await $fetch(
       `/api/merchants/${props.merchantId}/payment-orders/${props.paymentOrderId}/refund-approvals`,
-      { method: 'POST', body: {} },
+      { method: 'POST', body: props.amountMinor != null ? { amountMinor: props.amountMinor } : {} },
     )
     toast.success('Refund requested', 'A checker must approve before money moves.')
     await load()
@@ -85,10 +97,30 @@ async function createRequest() {
   }
 }
 
+async function onPinVerified() {
+  pinVerified.value = true
+  const approvalId = pinChallenge.value?.approvalId
+  if (approvalId) {
+    await approve(approvalId)
+  }
+}
+
 async function approve(approvalId: string) {
   errorMessage.value = null
   if (!props.etag) {
     errorMessage.value = 'Reload the payment order to obtain an ETag before approving.'
+    return
+  }
+  if (needsPin.value && !pinVerified.value) {
+    try {
+      const created = await $fetch<{ challengeId: string, expiresAt?: string }>(
+        `/api/merchants/${props.merchantId}/payment-orders/${props.paymentOrderId}/refund-challenges`,
+        { method: 'POST', body: {} },
+      )
+      pinChallenge.value = { ...created, approvalId }
+    } catch (error: any) {
+      errorMessage.value = error?.data?.detail || error?.data?.error || 'PIN challenge failed'
+    }
     return
   }
   try {

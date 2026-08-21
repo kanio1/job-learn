@@ -78,6 +78,21 @@
         "name": "platform:payments:notes:create"
       },
       {
+        "name": "platform:support:read"
+      },
+      {
+        "name": "platform:support:operate"
+      },
+      {
+        "name": "platform:ops:feed"
+      },
+      {
+        "name": "platform:ops:inject"
+      },
+      {
+        "name": "platform:notifications:read"
+      },
+      {
         "name": "PLATFORM_ADMIN",
         "composite": true,
         "composites": {
@@ -96,7 +111,12 @@
             "platform:tenant:settings:read",
             "platform:tenant:settings:update",
             "platform:payments:notes:read",
-            "platform:payments:notes:create"
+            "platform:payments:notes:create",
+            "platform:support:read",
+            "platform:support:operate",
+            "platform:ops:feed",
+            "platform:ops:inject",
+            "platform:notifications:read"
           ]
         }
       },
@@ -115,7 +135,10 @@
             "tenant:users:update",
             "tenant:users:assign-roles",
             "platform:tenant:settings:read",
-            "platform:tenant:settings:update"
+            "platform:tenant:settings:update",
+            "platform:support:read",
+            "platform:ops:feed",
+            "platform:notifications:read"
           ]
         }
       },
@@ -126,7 +149,9 @@
           "realm": [
             "merchant:payments:create",
             "merchant:payments:read",
-            "merchant:payments:lifecycle"
+            "merchant:payments:lifecycle",
+            "platform:ops:feed",
+            "platform:notifications:read"
           ]
         }
       },
@@ -140,7 +165,11 @@
             "platform:payments:audit",
             "platform:audit:read",
             "platform:payments:notes:read",
-            "platform:payments:notes:create"
+            "platform:payments:notes:create",
+            "platform:support:read",
+            "platform:support:operate",
+            "platform:ops:feed",
+            "platform:notifications:read"
           ]
         }
       },
@@ -150,7 +179,10 @@
         "composites": {
           "realm": [
             "merchants:read",
-            "platform:payments:read"
+            "platform:payments:read",
+            "platform:support:read",
+            "platform:ops:feed",
+            "platform:notifications:read"
           ]
         }
       }

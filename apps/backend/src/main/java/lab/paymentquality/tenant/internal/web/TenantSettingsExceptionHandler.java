@@ -2,6 +2,7 @@ package lab.paymentquality.tenant.internal.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lab.paymentquality.tenant.TenantResolutionException;
+import lab.paymentquality.tenant.internal.domain.InvalidPaymentPolicyException;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -39,6 +40,11 @@ class TenantSettingsExceptionHandler {
     ResponseEntity<Map<String, Object>> handleTenantResolution(TenantResolutionException ex) {
         return problem(HttpStatus.FORBIDDEN,
                 "tenant_access_denied", "Tenant access denied", ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidPaymentPolicyException.class)
+    ResponseEntity<Map<String, Object>> handleInvalidPaymentPolicy(InvalidPaymentPolicyException ex) {
+        return problem(HttpStatus.BAD_REQUEST, "validation", "Validation Failed", ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

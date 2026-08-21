@@ -20,7 +20,6 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -69,41 +68,17 @@ class IamModuleTest extends PostgresContainerSupport {
     }
 
     @Test
-    void iamModuleDeclaresNoJpaEntity() {
-        Path iamRoot = Path.of("src/main/java/lab/paymentquality/iam");
-        assertThat(Files.isDirectory(iamRoot)).isTrue();
-
-        try (Stream<Path> files = Files.walk(iamRoot)) {
-            assertThat(files
-                    .filter(Files::isRegularFile)
-                    .filter(p -> p.getFileName().toString().endsWith(".java"))
-                    .map(this::readContent)
-                    .noneMatch(content -> content.contains("@Entity")))
-                    .as("iam module must not declare any JPA @Entity")
-                    .isTrue();
-        } catch (Exception e) {
-            throw new AssertionError("Failed to scan iam module for JPA entities", e);
-        }
+    void iamModuleOwnsUserSavedViewEntity() {
+        Path entity = Path.of("src/main/java/lab/paymentquality/iam/internal/domain/UserSavedView.java");
+        assertThat(entity).exists();
+        assertThat(readContent(entity)).contains("@Entity").contains("user_saved_views");
     }
 
     @Test
-    void iamModuleContributesNoFlywayMigration() {
-        Path migrationRoot = Path.of("src/main/resources/db/migration");
-        if (Files.exists(migrationRoot)) {
-            try (Stream<Path> files = Files.walk(migrationRoot)) {
-                assertThat(files
-                        .filter(Files::isRegularFile)
-                        .filter(p -> {
-                            String path = p.toString().replace('\\', '/');
-                            return path.contains("/iam/");
-                        })
-                        .toList())
-                        .as("iam module must not contribute any Flyway migration")
-                        .isEmpty();
-            } catch (Exception e) {
-                throw new AssertionError("Failed to scan for iam Flyway migrations", e);
-            }
-        }
+    void iamModuleContributesV35SavedViewsMigration() {
+        Path migration = Path.of("src/main/resources/db/migration/iam/V35__create_user_saved_views.sql");
+        assertThat(migration).exists();
+        assertThat(readContent(migration)).contains("user_saved_views").contains("owner_subject");
     }
 
     private String readContent(Path file) {

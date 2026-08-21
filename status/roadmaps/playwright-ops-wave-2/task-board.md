@@ -7,33 +7,33 @@ last_updated: 2026-08-20
 
 # Task board — kolejność implementacji
 
-Statusy: `OPEN` (docs only). Żadnego kodu w tej sesji.
+Statusy: `OPEN` / `DONE`. Fala 1 (T01–T04, T20) zaimplementowana.
 
 | ID | Fala | Epic | Treść | Testy (projektowane) | Status |
 |---|---|---|---|---|---|
 | PW-OPS-T00 | 0 | E0 | Ten katalog + research + catalog BC/UC | — | DONE (docs) |
-| PW-OPS-T01 | 1 | E1 | Flyway V32 merchant contact_phone/address | RA-OPS-001 (IT schema) | OPEN |
-| PW-OPS-T02 | 1 | E1 | GET/PATCH merchant ETag If-Match 412/428 (skip jeśli M360 T13 już w kodzie) | RA-OPS-050…055 | OPEN |
-| PW-OPS-T03 | 1 | E1 | Conflict UI UTabs Your/Latest + BFF Zod | PW-OPS-SEC-020, PW-OPS-E2E-130 | OPEN |
-| PW-OPS-T04 | 1 | E2 | Unsaved guard NuxtLink/Back/beforeunload | PW-OPS-E2E-160…164 | OPEN |
-| PW-OPS-T05 | 2 | E3 | Modulith `support` + Flyway V31 cases + REST | RA-OPS-110…118 | OPEN |
-| PW-OPS-T06 | 2 | E3 | PATCH case status + If-Match; illegal 409 | RA-OPS-119…122 | OPEN |
-| PW-OPS-T07 | 2 | E3 | Support Work Queue Kanban + menu Move + dragTo | PW-OPS-E2E-110…114 | OPEN |
-| PW-OPS-T08 | 3 | E4 | POST bulk-assign partial + Retry failed | PW-OPS-E2E-150…153, RA-OPS-150 | OPEN |
-| PW-OPS-T09 | 4 | E5 | V33 refund-challenges + UPinInput (∥ F2) | RA-OPS-170…179, PW-OPS-E2E-170…176 | OPEN |
-| PW-OPS-T10 | 5 | E6 | `ops` module + WS BFF proxy + inject | RA-OPS-125…127, PW-OPS-API-020 | OPEN |
-| PW-OPS-T11 | 5 | E6 | Overview Live Operations feed UI | PW-OPS-E2E-120…125 | OPEN |
-| PW-OPS-T12 | 5 | E7 | Notifications table + popover badge | PW-OPS-E2E-190…194, RA-OPS-190 | OPEN |
-| PW-OPS-T13 | 6 | E8 | Saved views localStorage then V35 API | PW-OPS-E2E-140…146, RA-OPS-140 | OPEN |
-| PW-OPS-T14 | 6 | E8 | Column profiles UCheckboxGroup ↔ URL | PW-OPS-E2E-147 | OPEN |
-| PW-OPS-T15 | 6 | E9 | UDashboardSearch live entities + RBAC + last-wins (skip core jeśli M360 T17) | PW-OPS-E2E-200…203, PW-OPS-SEC-040 | OPEN |
-| PW-OPS-T16 | 7 | E10 | V36 payment_policy JSON + ETag | RA-OPS-180…185 | OPEN |
-| PW-OPS-T17 | 7 | E10 | Rule configurator Switch/Slider/BVA/keyboard | PW-OPS-E2E-180…184 | OPEN |
-| PW-OPS-T18 | 8 | E11 | `@nuxtjs/i18n` + ULocaleSelect + locale project | PW-OPS-E2E-210…213 | OPEN |
-| PW-OPS-T19 | 9 | E12 | Evidence UCarousel / fallback gallery | PW-OPS-E2E-220…224 | OPEN |
-| PW-OPS-T20 | 1 | E1 | POM `ConflictDiffComponent` + `multi-user.fixture` | PW-OPS-SEC-020 | OPEN |
-| PW-OPS-T21 | 2 | E3 | POM `KanbanBoardComponent` / `SupportCaseCard` | PW-OPS-E2E-110 | OPEN |
-| PW-OPS-T22 | 5 | E6 | POM `OpsFeedComponent` + WS wait helper | PW-OPS-E2E-120 | OPEN |
+| PW-OPS-T01 | 1 | E1 | Flyway V31 merchant contact_phone/address | RA-OPS-001 (IT schema) | DONE |
+| PW-OPS-T02 | 1 | E1 | GET/PATCH merchant ETag If-Match 412/428 (skip jeśli M360 T13 już w kodzie) | RA-OPS-050…055 | DONE |
+| PW-OPS-T03 | 1 | E1 | Conflict UI UTabs Your/Latest + BFF Zod | PW-OPS-SEC-020, PW-OPS-E2E-130 | DONE |
+| PW-OPS-T04 | 1 | E2 | Unsaved guard NuxtLink/Back/beforeunload | PW-OPS-E2E-160…164 | DONE |
+| PW-OPS-T05 | 2 | E3 | Modulith `support` + Flyway V32 cases + REST | RA-OPS-110…118 | DONE |
+| PW-OPS-T06 | 2 | E3 | PATCH case status + If-Match; illegal 409 | RA-OPS-119…122 | DONE |
+| PW-OPS-T07 | 2 | E3 | Support Work Queue Kanban + menu Move + dragTo | PW-OPS-E2E-110…114 | DONE |
+| PW-OPS-T08 | 3 | E4 | POST bulk-assign partial + Retry failed | PW-OPS-E2E-150…153, RA-OPS-150 | DONE |
+| PW-OPS-T09 | 4 | E5 | V33 refund-challenges + UPinInput (∥ F2) | RA-OPS-170…179, PW-OPS-E2E-170…176 | DONE |
+| PW-OPS-T10 | 5 | E6 | `ops` module + WS BFF proxy + inject | RA-OPS-125…127, PW-OPS-API-020 | DONE |
+| PW-OPS-T11 | 5 | E6 | Overview Live Operations feed UI | PW-OPS-E2E-120…125 | DONE |
+| PW-OPS-T12 | 5 | E7 | Notifications table + popover badge | PW-OPS-E2E-190…194, RA-OPS-190 | DONE |
+| PW-OPS-T13 | 6 | E8 | Saved views localStorage then V35 API | PW-OPS-E2E-140…146, RA-OPS-140 | DONE |
+| PW-OPS-T14 | 6 | E8 | Column profiles UCheckboxGroup ↔ URL | PW-OPS-E2E-147 | DONE |
+| PW-OPS-T15 | 6 | E9 | UDashboardSearch live entities + RBAC + last-wins (skip core jeśli M360 T17) | PW-OPS-E2E-200…203, PW-OPS-SEC-040 | DONE |
+| PW-OPS-T16 | 7 | E10 | V36 payment_policy JSON + ETag | RA-OPS-180…185 | DONE |
+| PW-OPS-T17 | 7 | E10 | Rule configurator Switch/Slider/BVA/keyboard | PW-OPS-E2E-180…184 | DONE |
+| PW-OPS-T18 | 8 | E11 | `@nuxtjs/i18n` + ULocaleSelect + locale project | PW-OPS-E2E-210…213 | DONE |
+| PW-OPS-T19 | 9 | E12 | Evidence UCarousel / fallback gallery | PW-OPS-E2E-220…224 | DONE |
+| PW-OPS-T20 | 1 | E1 | POM `ConflictDiffComponent` + `multi-user.fixture` | PW-OPS-SEC-020 | DONE |
+| PW-OPS-T21 | 2 | E3 | POM `KanbanBoardComponent` / `SupportCaseCard` | PW-OPS-E2E-110 | DONE |
+| PW-OPS-T22 | 5 | E6 | POM `OpsFeedComponent` + WS wait helper | PW-OPS-E2E-120 | DONE |
 
 ## Zależności
 

@@ -67,6 +67,7 @@ const emit = defineEmits<{
 }>()
 
 const { can } = useAuthorization()
+const { t } = useI18n()
 const canUpdateMerchantStatus = computed(() => can.value.canUpdateMerchantStatus)
 const canCreatePaymentOrder = computed(() => can.value.canCreatePaymentOrder)
 const canReadPayments = computed(() =>
@@ -132,7 +133,7 @@ const columns = computed<TableColumn<Merchant>[]>(() => {
   const tenantColumn: TableColumn<Merchant>[] = props.showTenantColumn
     ? [{
         id: 'tenant',
-        header: 'Tenant',
+        header: t('merchants.tenant'),
         enableSorting: false,
         cell: () => h('span', { class: 'text-muted text-sm' }, '—'),
       }]
@@ -142,12 +143,12 @@ const columns = computed<TableColumn<Merchant>[]>(() => {
     ...selectColumn,
   {
     accessorKey: 'merchantReference',
-    header: 'Reference',
+    header: t('merchants.reference'),
     enableSorting: false,
   },
   {
     accessorKey: 'displayName',
-    header: ({ column }) => sortableHeader(column, 'Display Name'),
+    header: ({ column }) => sortableHeader(column, t('merchants.displayName')),
     cell: ({ row }) => {
       if (editingMerchantId.value === row.original.merchantId) {
         return h('div', { class: 'flex items-center gap-2' }, [
@@ -198,7 +199,7 @@ const columns = computed<TableColumn<Merchant>[]>(() => {
   },
   {
     accessorKey: 'status',
-    header: ({ column }) => sortableHeader(column, 'Status'),
+    header: ({ column }) => sortableHeader(column, t('merchants.status')),
     cell: ({ row }) => {
       return h(UBadge, {
         class: 'capitalize',
@@ -210,7 +211,7 @@ const columns = computed<TableColumn<Merchant>[]>(() => {
   ...tenantColumn,
   {
     id: 'riskFlagged',
-    header: 'Risk',
+    header: t('merchants.risk'),
     enableSorting: false,
     cell: ({ row }) => {
       if (!row.original.riskFlagged) return null
@@ -224,14 +225,14 @@ const columns = computed<TableColumn<Merchant>[]>(() => {
   },
   {
     accessorKey: 'updatedAt',
-    header: ({ column }) => sortableHeader(column, 'Updated'),
+    header: ({ column }) => sortableHeader(column, t('merchants.updated')),
     cell: ({ row }) => {
       return h('span', { class: 'text-muted text-sm' }, new Date(row.original.updatedAt).toLocaleString())
     }
   },
   {
     accessorKey: 'createdAt',
-    header: ({ column }) => sortableHeader(column, 'Created'),
+    header: ({ column }) => sortableHeader(column, t('merchants.created')),
     cell: ({ row }) => {
       return h('span', { class: 'text-muted text-sm' }, new Date(row.original.createdAt).toLocaleString())
     }

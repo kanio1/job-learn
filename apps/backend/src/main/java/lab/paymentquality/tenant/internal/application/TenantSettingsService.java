@@ -4,6 +4,7 @@ import lab.paymentquality.tenant.TenantContext;
 import lab.paymentquality.tenant.TenantResolutionException;
 import lab.paymentquality.tenant.internal.domain.Tenant;
 import lab.paymentquality.tenant.internal.infrastructure.JpaTenantRepository;
+import lab.paymentquality.tenant.internal.web.PaymentPolicyDto;
 import lab.paymentquality.tenant.internal.web.TenantSettingsDto;
 import lab.paymentquality.tenant.internal.web.TenantSettingsPreconditionFailedException;
 import lab.paymentquality.tenant.internal.web.UpdateTenantSettingsRequest;
@@ -32,7 +33,8 @@ public class TenantSettingsService {
         if (tenant.getSettingsVersion() != expectedVersion) {
             throw new TenantSettingsPreconditionFailedException();
         }
-        tenant.updateSettings(req.contactEmail(), req.timezone(), req.webhookBaseUrl());
+        var nextPolicy = req.paymentPolicy() == null ? null : req.paymentPolicy().toDomain();
+        tenant.updateSettings(req.contactEmail(), req.timezone(), req.webhookBaseUrl(), nextPolicy);
         repository.saveAndFlush(tenant);
         return new SettingsWithVersion(toDto(tenant), tenant.getSettingsVersion());
     }
@@ -43,7 +45,11 @@ public class TenantSettingsService {
     }
 
     private static TenantSettingsDto toDto(Tenant t) {
-        return new TenantSettingsDto(t.getContactEmail(), t.getTimezone(), t.getWebhookBaseUrl());
+        return new TenantSettingsDto(
+                t.getContactEmail(),
+                t.getTimezone(),
+                t.getWebhookBaseUrl(),
+                PaymentPolicyDto.from(t.getPaymentPolicy()));
     }
 
     public record SettingsWithVersion(TenantSettingsDto dto, long version) {}

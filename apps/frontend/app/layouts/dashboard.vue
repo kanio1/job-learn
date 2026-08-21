@@ -9,7 +9,10 @@
       :ui="{ footer: 'lg:border-t lg:border-default' }"
     >
       <template #header="{ collapsed }">
-        <AppTeamsMenu :collapsed="collapsed" />
+        <div class="flex items-center gap-1">
+          <AppTeamsMenu :collapsed="collapsed" />
+          <NotificationCenter v-if="!collapsed" />
+        </div>
       </template>
 
       <template #default="{ collapsed }">
@@ -59,6 +62,7 @@ const searchLoading = ref(false)
 const entityMerchants = ref<Array<{ merchantId: string, merchantReference: string, displayName: string }>>([])
 const entityPayments = ref<Array<{ paymentOrderId: string, merchantId: string, clientOrderReference: string }>>([])
 let searchSeq = 0
+let searchAbort: AbortController | undefined
 const { searchEntities } = useEntitySearchApi()
 const { can } = useAuthorization()
 const { user } = useUserSession()
@@ -275,7 +279,8 @@ function flattenNavForSearch(items: NavigationMenuItem[]): DashboardSearchGroup[
  * with role-aware navigation (Requirement 9.1 of iam-roles spec).
  */
 watch(searchTerm, async (raw) => {
-  const q = raw.trim()
+  const q = raw.trim().slice(0, 80)
+  searchAbort?.abort()
   if (!q) {
     searchSeq += 1
     entityMerchants.value = []
@@ -284,18 +289,20 @@ watch(searchTerm, async (raw) => {
     return
   }
   const seq = ++searchSeq
+  searchAbort = new AbortController()
+  const signal = searchAbort.signal
   searchLoading.value = true
-  const response = await searchEntities(q)
-  if (seq !== searchSeq) {
+  const response = await searchEntities(q, signal)
+  if (seq !== searchSeq || response.status === 0) {
     return
   }
-  entityMerchants.value = response.data?.merchants ?? []
-  entityPayments.value = response.data?.payments ?? []
+  entityMerchants.value = can.value.canReadMerchants ? (response.data?.merchants ?? []) : []
+  entityPayments.value = canReadPayments.value ? (response.data?.payments ?? []) : []
   searchLoading.value = false
 })
 
 const searchGroups = computed<DashboardSearchGroup[]>(() => [
-  ...(entityMerchants.value.length > 0
+  ...(can.value.canReadMerchants && entityMerchants.value.length > 0
     ? [{
         id: 'merchants',
         label: 'Merchants',
@@ -309,7 +316,7 @@ const searchGroups = computed<DashboardSearchGroup[]>(() => [
         })),
       }]
     : []),
-  ...(entityPayments.value.length > 0
+  ...(canReadPayments.value && entityPayments.value.length > 0
     ? [{
         id: 'payments',
         label: 'Payments',

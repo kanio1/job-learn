@@ -1,12 +1,13 @@
 <template>
   <UDashboardPanel id="merchants">
     <template #header>
-      <UDashboardNavbar title="Merchants" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :title="$t('merchants.title')" :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
 
         <template #right>
+          <AppLocaleSelect />
           <UTooltip text="Refresh merchants">
             <UButton
               v-if="!insufficientAuthority"

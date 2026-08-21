@@ -1,5 +1,6 @@
 package lab.paymentquality.tenant.internal.web;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -21,5 +22,8 @@ public record UpdateTenantSettingsRequest(
         @Size(max = 500, message = "webhookBaseUrl must not exceed 500 characters")
         @Pattern(regexp = "^(https://.*)?$",
                  message = "webhookBaseUrl must start with https:// if provided")
-        String webhookBaseUrl
+        String webhookBaseUrl,
+
+        @Valid
+        PaymentPolicyDto paymentPolicy
 ) {}

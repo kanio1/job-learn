@@ -17,6 +17,7 @@ const authDir = optionalEnv('PLAYWRIGHT_POM_AUTH_DIR', 'tests-pom/.auth')
 
 export const pomAuthFiles = {
   platformAdmin: `${authDir}/platform-admin.json`,
+  platformOperator: `${authDir}/platform-operator.json`,
   platformAdminSession: `${authDir}/platform-admin-session.json`,
   tenantAdmin: `${authDir}/tenant-admin.json`,
   merchantManager: `${authDir}/merchant-manager.json`,

@@ -1,13 +1,16 @@
 import { expect } from '@playwright/test'
 import { BasePage } from './BasePage'
 import { ProblemDetailsCard } from './components/ProblemDetailsCard'
+import { KanbanBoardComponent } from './components/KanbanBoardComponent'
 
 export class SupportPage extends BasePage {
   readonly problem: ProblemDetailsCard
+  readonly board: KanbanBoardComponent
 
   constructor(page: import('@playwright/test').Page) {
     super(page)
     this.problem = new ProblemDetailsCard(page)
+    this.board = new KanbanBoardComponent(page)
   }
 
   async goto(): Promise<void> {
@@ -16,6 +19,11 @@ export class SupportPage extends BasePage {
 
   async expectLoaded(): Promise<void> {
     await expect(this.byTestId('support-search-button')).toBeVisible()
+  }
+
+  async openWorkQueue(): Promise<void> {
+    await this.page.getByRole('tab', { name: 'Work Queue' }).click()
+    await this.board.expectLoaded()
   }
 
   async search(merchantId: string, clientOrderReference?: string): Promise<void> {

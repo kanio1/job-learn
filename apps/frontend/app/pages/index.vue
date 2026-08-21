@@ -140,6 +140,8 @@
       <!-- ─────────────────────────────────────────────────────────────
            No merchant scope info card — shown when there are no merchants
            ───────────────────────────────────────────────────────────── -->
+      <OpsFeedPanel v-if="can.canReadOpsFeed" class="mt-2" />
+
       <div v-if="canReadMerchants && !summaryLoading && !summaryError && merchantCount === 0 && !ordersLoading">
         <EmptyStateCard
           description="No merchants registered yet. Create a merchant to see payment order data."

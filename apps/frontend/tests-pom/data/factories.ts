@@ -39,3 +39,7 @@ export function uniqueIdempotencyKey(testInfo: TestInfo, label = 'IDEM'): string
 export function uniqueExtOrderId(testInfo: TestInfo): string {
   return `BOOK-${testInfo.workerIndex}-${uniqueToken()}`
 }
+
+export function uniqueCaseReference(testInfo: TestInfo): string {
+  return `INC-${testInfo.workerIndex}${uniqueToken()}`.slice(0, 32)
+}

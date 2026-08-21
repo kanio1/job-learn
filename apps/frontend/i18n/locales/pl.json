@@ -1,0 +1,36 @@
+{
+  "merchants": {
+    "title": "Sprzedawcy",
+    "tenant": "Najemca",
+    "reference": "Referencja",
+    "displayName": "Nazwa",
+    "status": "Status",
+    "risk": "Ryzyko",
+    "updated": "Zaktualizowano",
+    "created": "Utworzono"
+  },
+  "payments": {
+    "detailTitle": "Szczegóły płatności",
+    "amount": "Kwota",
+    "createdAt": "Utworzono",
+    "paymentOrderId": "ID zlecenia płatności",
+    "merchantId": "ID sprzedawcy",
+    "currency": "Waluta",
+    "clientReference": "Referencja klienta",
+    "capturedAmount": "Kwota przechwycenia",
+    "refundedAmount": "Kwota zwrotu",
+    "authorizedAt": "Autoryzowano",
+    "expiresAt": "Wygasa",
+    "authorizationWindow": "Okno autoryzacji",
+    "capturedAt": "Przechwycono",
+    "cancelledAt": "Anulowano",
+    "cancellationReason": "Powód anulowania",
+    "refundedAt": "Zwrócono",
+    "refundReason": "Powód zwrotu",
+    "updatedAt": "Zaktualizowano"
+  },
+  "support": {
+    "title": "Wsparcie",
+    "queue": "Kolejka"
+  }
+}

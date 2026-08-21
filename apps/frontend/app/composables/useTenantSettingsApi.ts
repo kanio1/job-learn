@@ -8,16 +8,10 @@
  * Bearer is attached server-side only; never visible to browser JS.
  */
 
-import { z } from 'zod'
 import type { ApiResponse } from '~/types/api'
+import { tenantSettingsSchema, type TenantSettings } from '~/schemas/tenant-settings.schema'
 
-const tenantSettingsSchema = z.object({
-  contactEmail: z.string().nullable().optional(),
-  timezone: z.string(),
-  webhookBaseUrl: z.string().nullable().optional(),
-})
-
-export type TenantSettings = z.infer<typeof tenantSettingsSchema>
+export type { TenantSettings }
 
 export function useTenantSettingsApi() {
   const { request } = useApiClient()

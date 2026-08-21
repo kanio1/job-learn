@@ -39,6 +39,8 @@ const merchantResponseSchema = z.object({
   updatedAt: z.string(),
   riskFlagged: z.boolean().default(false),
   version: z.number().int().nonnegative().optional().default(0),
+  contactPhone: z.string().nullable().optional(),
+  contactAddress: z.string().nullable().optional(),
 })
 
 // Backend page DTO: { content, page, size, totalElements, totalPages }.
@@ -135,9 +137,21 @@ export function useMerchantsApi() {
     displayName: string,
     ifMatch: string,
   ): Promise<ApiResponse<MerchantResponse>> {
+    return patchMerchant(merchantId, { displayName }, ifMatch)
+  }
+
+  async function patchMerchant(
+    merchantId: string,
+    body: {
+      displayName?: string
+      contactPhone?: string | null
+      contactAddress?: string | null
+    },
+    ifMatch: string,
+  ): Promise<ApiResponse<MerchantResponse>> {
     return request(`/api/merchants/${merchantId}`, merchantResponseSchema, {
       method: 'PATCH',
-      body: { displayName },
+      body,
       headers: { 'If-Match': ifMatch },
     })
   }
@@ -166,6 +180,7 @@ export function useMerchantsApi() {
     suspendMerchant,
     updateMerchantRiskFlag,
     patchMerchantDisplayName,
+    patchMerchant,
     previewMerchantImport,
     commitMerchantImport,
   }

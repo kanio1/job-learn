@@ -41,7 +41,12 @@ public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<Gra
         Map.entry("tenant:users:read",           Authorities.TENANT_USERS_READ),
         Map.entry("tenant:users:create",         Authorities.TENANT_USERS_CREATE),
         Map.entry("tenant:users:update",         Authorities.TENANT_USERS_UPDATE),
-        Map.entry("tenant:users:assign-roles",   Authorities.TENANT_USERS_ASSIGN_ROLES));
+        Map.entry("tenant:users:assign-roles",   Authorities.TENANT_USERS_ASSIGN_ROLES),
+        Map.entry("platform:support:read",       Authorities.SUPPORT_READ),
+        Map.entry("platform:support:operate",    Authorities.SUPPORT_OPERATE),
+        Map.entry("platform:ops:feed",           Authorities.OPS_FEED),
+        Map.entry("platform:ops:inject",         Authorities.OPS_INJECT),
+        Map.entry("platform:notifications:read", Authorities.NOTIFICATIONS_READ));
 
     /**
      * Keycloak may put only the composite name on the access token. Expand to the
@@ -64,7 +69,12 @@ public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<Gra
                 Authorities.TENANT_SETTINGS_READ,
                 Authorities.TENANT_SETTINGS_UPDATE,
                 Authorities.PLATFORM_PAYMENT_NOTES_READ,
-                Authorities.PLATFORM_PAYMENT_NOTES_CREATE)),
+                Authorities.PLATFORM_PAYMENT_NOTES_CREATE,
+                Authorities.SUPPORT_READ,
+                Authorities.SUPPORT_OPERATE,
+                Authorities.OPS_FEED,
+                Authorities.OPS_INJECT,
+                Authorities.NOTIFICATIONS_READ)),
         Map.entry("TENANT_ADMIN", List.of(
                 Authorities.MERCHANTS_CREATE,
                 Authorities.MERCHANTS_READ,
@@ -76,21 +86,33 @@ public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<Gra
                 Authorities.TENANT_USERS_UPDATE,
                 Authorities.TENANT_USERS_ASSIGN_ROLES,
                 Authorities.TENANT_SETTINGS_READ,
-                Authorities.TENANT_SETTINGS_UPDATE)),
+                Authorities.TENANT_SETTINGS_UPDATE,
+                Authorities.SUPPORT_READ,
+                Authorities.OPS_FEED,
+                Authorities.NOTIFICATIONS_READ)),
         Map.entry("MERCHANT_MANAGER", List.of(
                 Authorities.MERCHANT_PAYMENTS_CREATE,
                 Authorities.MERCHANT_PAYMENTS_READ,
-                Authorities.MERCHANT_PAYMENTS_LIFECYCLE)),
+                Authorities.MERCHANT_PAYMENTS_LIFECYCLE,
+                Authorities.OPS_FEED,
+                Authorities.NOTIFICATIONS_READ)),
         Map.entry("SUPPORT_AGENT", List.of(
                 Authorities.MERCHANTS_READ,
                 Authorities.PLATFORM_PAYMENTS_READ,
                 Authorities.PLATFORM_PAYMENTS_AUDIT,
                 Authorities.PLATFORM_AUDIT_READ,
                 Authorities.PLATFORM_PAYMENT_NOTES_READ,
-                Authorities.PLATFORM_PAYMENT_NOTES_CREATE)),
+                Authorities.PLATFORM_PAYMENT_NOTES_CREATE,
+                Authorities.SUPPORT_READ,
+                Authorities.SUPPORT_OPERATE,
+                Authorities.OPS_FEED,
+                Authorities.NOTIFICATIONS_READ)),
         Map.entry("READ_ONLY_USER", List.of(
                 Authorities.MERCHANTS_READ,
-                Authorities.PLATFORM_PAYMENTS_READ)));
+                Authorities.PLATFORM_PAYMENTS_READ,
+                Authorities.SUPPORT_READ,
+                Authorities.OPS_FEED,
+                Authorities.NOTIFICATIONS_READ)));
 
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {

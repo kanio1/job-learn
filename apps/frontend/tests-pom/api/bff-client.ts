@@ -3,10 +3,18 @@ import { isProblemDetails, type ProblemDetails } from '../utils/problem'
 import { parseJson, parseJsonText } from '../utils/http'
 import { pomNodeBaseURL } from '../utils/env'
 
+export type PaymentPolicyBody = {
+  autoCapture: boolean
+  maxAutoCaptureMinor: number
+  riskThreshold: number
+  refundPolicy: 'MANUAL' | 'AUTOMATIC'
+}
+
 export type TenantSettingsBody = {
   contactEmail?: string | null
   timezone?: string
   webhookBaseUrl?: string | null
+  paymentPolicy?: PaymentPolicyBody
 }
 
 export class BffClient {
@@ -337,17 +345,32 @@ export class BffClient {
   }
 
   async patchMerchantDisplayName(merchantId: string, displayName: string, ifMatch?: string) {
+    return this.patchMerchant(merchantId, { displayName }, ifMatch)
+  }
+
+  async patchMerchant(
+    merchantId: string,
+    body: { displayName?: string, contactPhone?: string | null, contactAddress?: string | null },
+    ifMatch?: string,
+  ) {
     const headers: Record<string, string> = {}
     if (ifMatch !== undefined) {
       headers['If-Match'] = ifMatch
     }
     const response = await this.context.patch(`/api/merchants/${merchantId}`, {
-      data: { displayName },
+      data: body,
       headers,
     })
     return {
       status: response.status(),
-      body: await parseJson<{ displayName?: string, merchantReference?: string, merchantId?: string } & ProblemDetails>(response),
+      body: await parseJson<{
+        displayName?: string
+        merchantReference?: string
+        merchantId?: string
+        contactPhone?: string | null
+        contactAddress?: string | null
+        version?: number
+      } & ProblemDetails>(response),
       headers: response.headers(),
     }
   }
@@ -393,6 +416,117 @@ export class BffClient {
       data: { previewId },
     })
     const body = await parseJson<{ createdCount?: number, error?: string }>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async createSupportCase(payload: {
+    merchantId: string
+    title: string
+    paymentOrderId?: string
+    priority?: string
+    caseReference?: string
+    assigneeSubject?: string
+  }) {
+    const response = await this.context.post('/api/support/cases', { data: payload })
+    const body = await parseJson<{
+      caseId?: string
+      caseReference?: string
+      status?: string
+      version?: number
+      assigneeSubject?: string | null
+    } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async getSupportCase(caseId: string) {
+    const response = await this.context.get(`/api/support/cases/${caseId}`)
+    const body = await parseJson<{
+      caseId?: string
+      caseReference?: string
+      status?: string
+      version?: number
+      assigneeSubject?: string | null
+    } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async listSupportCases(query: Record<string, string | undefined> = {}) {
+    const params = new URLSearchParams()
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== '') {
+        params.set(key, value)
+      }
+    }
+    const suffix = params.toString() ? `?${params.toString()}` : ''
+    const response = await this.context.get(`/api/support/cases${suffix}`)
+    const body = await parseJson<{
+      content?: Array<{ caseId?: string, status?: string, caseReference?: string }>
+    } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async patchSupportCase(
+    caseId: string,
+    payload: { status?: string, assigneeSubject?: string | null },
+    ifMatch?: string,
+  ) {
+    const headers: Record<string, string> = {}
+    if (ifMatch !== undefined) {
+      headers['If-Match'] = ifMatch
+    }
+    const response = await this.context.patch(`/api/support/cases/${caseId}`, {
+      data: payload,
+      headers,
+    })
+    const body = await parseJson<{
+      caseId?: string
+      status?: string
+      version?: number
+      assigneeSubject?: string | null
+    } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async bulkAssignSupportCases(caseIds: string[], assigneeSubject: string) {
+    const response = await this.context.post('/api/support/cases/bulk-assign', {
+      data: { caseIds, assigneeSubject },
+    })
+    const body = await parseJson<{
+      succeeded?: number
+      failed?: Array<{ caseId?: string, caseReference?: string, error?: string }>
+    } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async createChallenge(merchantId: string, paymentOrderId: string) {
+    const response = await this.context.post(
+      `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/refund-challenges`,
+      { data: {} },
+    )
+    const body = await parseJson<{
+      challengeId?: string
+      pin?: string
+      expiresAt?: string
+      error?: string
+    } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async verifyChallenge(
+    merchantId: string,
+    paymentOrderId: string,
+    challengeId: string,
+    pin: string,
+  ) {
+    const response = await this.context.post(
+      `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/refund-challenges/${challengeId}/verify`,
+      { data: { pin } },
+    )
+    const body = await parseJson<{
+      challengeId?: string
+      verifiedAt?: string
+      error?: string
+    } & ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -509,6 +643,112 @@ export class BffClient {
   async assignUserRoles(userId: string, payload: { assign: string[], remove: string[] }) {
     const response = await this.context.post(`/api/users/${encodeURIComponent(userId)}/roles`, { data: payload })
     const body = await parseJson<{ id?: string, username?: string, roles?: string[] }>(response)
+    return { status: response.status(), body }
+  }
+
+  async injectOpsFeed(payload: {
+    eventId?: string
+    occurredAt?: string
+    merchantId?: string
+    paymentOrderId?: string
+    type?: string
+    label?: string
+    raw?: string
+  }) {
+    const response = await this.context.post('/api/ops/feed/inject', { data: payload })
+    const body = await parseJson<{
+      eventId?: string
+      occurredAt?: string
+      merchantId?: string
+      paymentOrderId?: string
+      type?: string
+      label?: string
+      malformed?: boolean
+    } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async disconnectOpsFeed() {
+    const response = await this.context.post('/api/ops/feed/disconnect-me')
+    return { status: response.status() }
+  }
+
+  async listNotifications(unreadOnly = false) {
+    const suffix = unreadOnly ? '?unreadOnly=true' : ''
+    const response = await this.context.get(`/api/notifications${suffix}`)
+    const body = await parseJson<{
+      content?: Array<{
+        notificationId?: string
+        eventId?: string
+        eventType?: string
+        title?: string
+        body?: string
+        readAt?: string | null
+      }>
+    } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async markNotificationRead(notificationId: string) {
+    const response = await this.context.post(`/api/notifications/${notificationId}/read`)
+    const body = await parseJson<{ notificationId?: string, readAt?: string | null } & ProblemDetails>(response)
+    return { status: response.status(), body }
+  }
+
+  async markAllNotificationsRead() {
+    const response = await this.context.post('/api/notifications/read-all')
+    return { status: response.status() }
+  }
+
+  async listPaymentViews() {
+    const response = await this.context.get('/api/users/me/payment-views')
+    const body = await parseJson<{
+      content?: Array<{
+        id?: string
+        name?: string
+        resource?: string
+        filters?: Record<string, unknown>
+        columns?: string[]
+        isDefault?: boolean
+      }>
+    } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async createPaymentView(payload: {
+    name: string
+    filters: Record<string, unknown>
+    columns?: string[]
+    isDefault?: boolean
+  }) {
+    const response = await this.context.post('/api/users/me/payment-views', { data: payload })
+    const body = await parseJson<{
+      id?: string
+      name?: string
+      resource?: string
+      filters?: Record<string, unknown>
+      isDefault?: boolean
+    } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async updatePaymentView(
+    id: string,
+    payload: { name: string, filters: Record<string, unknown>, columns?: string[] },
+  ) {
+    const response = await this.context.put(`/api/users/me/payment-views/${id}`, { data: payload })
+    const body = await parseJson<{ id?: string, name?: string } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async deletePaymentView(id: string) {
+    const response = await this.context.delete(`/api/users/me/payment-views/${id}`)
+    return { status: response.status() }
+  }
+
+  async setDefaultPaymentView(id: string) {
+    const response = await this.context.post(`/api/users/me/payment-views/${id}/default`)
+    const body = await parseJson<{ id?: string, isDefault?: boolean } & ProblemDetails>(response)
     return { status: response.status(), body }
   }
 

@@ -10,6 +10,15 @@ export interface PomAccount {
   merchantId?: string
 }
 
+export function platformOperatorAccount(): PomAccount {
+  return {
+    username: optionalEnv('PLAYWRIGHT_PLATFORM_OPERATOR_USERNAME', 'platform.operator'),
+    password: requiredEnv('PLAYWRIGHT_PLATFORM_OPERATOR_PASSWORD'),
+    role: 'PLATFORM_ADMIN',
+    tenantId: 'PLACEHOLDER_TENANT_ID',
+  }
+}
+
 export function platformAdminAccount(): PomAccount {
   return {
     username: optionalEnv('PLAYWRIGHT_PLATFORM_ADMIN_USERNAME', 'platform.admin'),

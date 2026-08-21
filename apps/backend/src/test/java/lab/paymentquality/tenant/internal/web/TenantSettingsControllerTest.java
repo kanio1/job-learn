@@ -50,7 +50,7 @@ class TenantSettingsControllerTest {
             TENANT_ID, TenantReference.of("PLATFORM_TENANT"), true);
 
     private static final TenantSettingsDto SAMPLE_DTO =
-            new TenantSettingsDto("ops@example.com", "Europe/Warsaw", null);
+            new TenantSettingsDto("ops@example.com", "Europe/Warsaw", null, PaymentPolicyDto.from(null));
 
     @Autowired
     MockMvc mockMvc;
@@ -79,7 +79,8 @@ class TenantSettingsControllerTest {
     @Test
     void platformAdminPatchWithMatchingIfMatchSucceeds() throws Exception {
         when(tenantResolver.resolve(any())).thenReturn(PLATFORM_CTX);
-        TenantSettingsDto updated = new TenantSettingsDto("new@example.com", "UTC", null);
+        TenantSettingsDto updated = new TenantSettingsDto(
+                "new@example.com", "UTC", null, PaymentPolicyDto.from(null));
         when(settingsService.updateSettings(eq(PLATFORM_CTX), any(), eq(3L)))
                 .thenReturn(new SettingsWithVersion(updated, 4L));
 

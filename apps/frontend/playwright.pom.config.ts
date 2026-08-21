@@ -47,6 +47,11 @@ export default defineConfig({
       fullyParallel: false,
     },
     {
+      name: 'setup-platform-operator',
+      testMatch: /auth\/platform-operator\.setup\.ts/,
+      fullyParallel: false,
+    },
+    {
       name: 'setup-platform-admin-session',
       testMatch: /auth\/platform-admin-session\.setup\.ts/,
       fullyParallel: false,
@@ -91,8 +96,8 @@ export default defineConfig({
     },
     {
       name: 'chromium-admin',
-      testMatch: /specs\/(merchants|merchants-table|merchants-slideover|merchants-concurrency|merchants-import|merchants-tree|users|audit|error-lab|checkout-lab|session-lab|network-lab|mirror-lab|command-palette|internal-notes|merchant-risk|support-admin|admin-bff|a11y-axe|psp-redirect)\.spec\.ts/,
-      dependencies: ['setup-platform-admin', 'setup-tenant-admin', 'setup-read-only-user', 'setup-merchant-manager'],
+      testMatch: /specs\/(merchants|merchants-table|merchants-slideover|merchants-concurrency|merchants-conflict|merchants-unsaved|merchants-import|merchants-tree|users|audit|error-lab|checkout-lab|session-lab|network-lab|mirror-lab|command-palette|internal-notes|merchant-risk|support-admin|support-kanban|support-bulk|admin-bff|a11y-axe|psp-redirect|ops-feed|ops-notifications|ops-search)\.spec\.ts/,
+      dependencies: ['setup-platform-admin', 'setup-platform-operator', 'setup-tenant-admin', 'setup-read-only-user', 'setup-merchant-manager'],
       use: {
         ...devices['Desktop Chrome'],
         storageState: './tests-pom/.auth/platform-admin.json',
@@ -100,9 +105,9 @@ export default defineConfig({
     },
     {
       name: 'chromium-manager',
-      testMatch: /specs\/(payments-(?!refund-dual-control).*|support|error-lab-manager)\.spec\.ts/,
+      testMatch: /specs\/(payments-(?!refund-dual-control|pin).*|support|error-lab-manager)\.spec\.ts/,
       fullyParallel: true,
-      dependencies: ['setup-worker-managers', 'setup-merchant-denied'],
+      dependencies: ['setup-worker-managers', 'setup-merchant-denied', 'setup-platform-operator'],
       use: {
         ...devices['Desktop Chrome'],
         storageState: { cookies: [], origins: [] },
@@ -110,7 +115,7 @@ export default defineConfig({
     },
     {
       name: 'chromium-serial',
-      testMatch: /specs\/(tenant-settings|payments-refund-dual-control)\.spec\.ts/,
+      testMatch: /specs\/(tenant-settings|tenant-policy|payments-refund-dual-control|payments-pin)\.spec\.ts/,
       fullyParallel: false,
       workers: 1,
       dependencies: ['setup-platform-admin', 'setup-merchant-manager'],
@@ -152,6 +157,15 @@ export default defineConfig({
           },
         }]
       : []),
+    {
+      name: 'locale',
+      testMatch: /specs\/locale-.*\.spec.ts/,
+      dependencies: ['setup-platform-admin', 'setup-read-only-user', 'setup-merchant-manager'],
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: './tests-pom/.auth/platform-admin.json',
+      },
+    },
     {
       name: 'chromium-rbac',
       testMatch: /specs\/(auth-rbac|tenant-scope|mirror-lab-rbac|rls-lab|support-rbac|readonly-rbac|denied-rbac|merchants-rbac-columns)\.spec\.ts/,

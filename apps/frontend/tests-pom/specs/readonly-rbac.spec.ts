@@ -33,3 +33,19 @@ test('read-only user can list merchants but cannot create or run lifecycle', { t
     await managerApi.dispose()
   }
 })
+
+test('PW-OPS-SEC-041 readonly palette has no Create merchant action', { tag: ['@security'] }, async ({ browser }) => {
+  const context = await browser.newContext({ storageState: pomAuthFiles.readOnlyUser })
+  const page = await context.newPage()
+  const app = new App(page)
+  try {
+    await app.merchants.goto()
+    await app.merchants.expectRegistryTable()
+    await app.commandPalette.openWithKeyboard()
+    await app.commandPalette.search('Create merchant')
+    await expect(app.commandPalette.dialog().getByRole('option', { name: 'Create merchant' })).toHaveCount(0)
+  }
+  finally {
+    await context.close()
+  }
+})

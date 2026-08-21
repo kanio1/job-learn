@@ -286,6 +286,41 @@ public class MerchantService {
         return MerchantMapper.toResponse(merchant);
     }
 
+    public MerchantResponse patch(
+            UUID id,
+            lab.paymentquality.merchant.internal.web.UpdateMerchantRequest request,
+            TenantContext tenantContext,
+            Long expectedVersion) {
+        Merchant merchant = findMerchantEnforcingTenantBoundary(id, tenantContext);
+        requireCurrentVersion(merchant, expectedVersion);
+        if (request.displayNameSpecified()) {
+            DisplayName validated = DisplayName.from(request.displayName());
+            merchant.rename(validated.value());
+        }
+        if (request.contactPhoneSpecified()) {
+            requireContactBound("contactPhone", request.contactPhone(), 32);
+        }
+        if (request.contactAddressSpecified()) {
+            requireContactBound("contactAddress", request.contactAddress(), 200);
+        }
+        merchant.updateContact(
+                request.contactPhone(), request.contactPhoneSpecified(),
+                request.contactAddress(), request.contactAddressSpecified());
+        repository.saveAndFlush(merchant);
+        log.info("merchant.contact.updated merchantId={} correlationId={}", id, MDC.get("correlationId"));
+        publishSuccess("MERCHANT_UPDATED", id, tenantContext.tenantReference().value());
+        return MerchantMapper.toResponse(merchant);
+    }
+
+    private static void requireContactBound(String field, String value, int maxLength) {
+        if (value == null) {
+            return;
+        }
+        if (value.length() > maxLength) {
+            throw new InvalidMerchantContactException(field, field + " must be at most " + maxLength + " characters");
+        }
+    }
+
     private static void requireCurrentVersion(Merchant merchant, Long expectedVersion) {
         if (expectedVersion == null) {
             return;

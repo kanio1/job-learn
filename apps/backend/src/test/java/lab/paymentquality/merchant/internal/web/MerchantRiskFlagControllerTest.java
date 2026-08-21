@@ -52,7 +52,7 @@ class MerchantRiskFlagControllerTest {
     private MerchantResponse riskFlaggedResponse(boolean flagged) {
         return new MerchantResponse(
                 MERCHANT_ID, "RISK-MERCH-001", "Risk Test Merchant",
-                "ACTIVE", Instant.now(), Instant.now(), flagged, 0L);
+                "ACTIVE", Instant.now(), Instant.now(), flagged, 0L, null, null);
     }
 
     @Test

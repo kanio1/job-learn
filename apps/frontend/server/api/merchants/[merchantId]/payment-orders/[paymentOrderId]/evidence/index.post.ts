@@ -26,7 +26,7 @@ export default defineEventHandler(async (event): Promise<any> => {
   }
 
   const form = new FormData()
-  const blob = new Blob([file.data], { type: file.type || 'application/octet-stream' })
+  const blob = new Blob([Uint8Array.from(file.data)], { type: file.type || 'application/octet-stream' })
   form.append('file', blob, file.filename || 'evidence')
   const category = parts?.find(part => part.name === 'category')
   if (category?.data) {

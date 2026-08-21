@@ -1,21 +1,35 @@
 import { expect } from '@playwright/test'
 import { BasePage } from './BasePage'
 import { ConfirmModal } from './components/ConfirmModal'
+import { PinChallengeComponent } from './components/PinChallengeComponent'
+import { EvidenceCarouselComponent } from './components/EvidenceCarouselComponent'
 
 export class PaymentDetailPage extends BasePage {
   readonly confirm: ConfirmModal
+  readonly pinChallenge: PinChallengeComponent
+  readonly evidenceCarousel: EvidenceCarouselComponent
 
   constructor(page: import('@playwright/test').Page) {
     super(page)
     this.confirm = new ConfirmModal(page)
+    this.pinChallenge = new PinChallengeComponent(page)
+    this.evidenceCarousel = new EvidenceCarouselComponent(page)
   }
 
-  async gotoOrder(merchantId: string, paymentOrderId: string): Promise<void> {
-    await super.goto(`/admin/merchants/${merchantId}/payments/${paymentOrderId}`)
+  async gotoOrder(merchantId: string, paymentOrderId: string, query = ''): Promise<void> {
+    await super.goto(`/admin/merchants/${merchantId}/payments/${paymentOrderId}${query}`)
   }
 
   async expectLoaded(): Promise<void> {
     await expect(this.byTestId('payment-order-detail')).toBeVisible()
+  }
+
+  amount(): import('@playwright/test').Locator {
+    return this.byTestId('payment-amount')
+  }
+
+  createdAt(): import('@playwright/test').Locator {
+    return this.byTestId('payment-created-at')
   }
 
   statusInDetail(label: string) {

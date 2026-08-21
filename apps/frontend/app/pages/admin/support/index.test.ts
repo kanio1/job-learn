@@ -98,6 +98,12 @@ async function mountPage() {
         UDashboardPanel: PassThroughStub,
         UDashboardNavbar: PassThroughStub,
         UDashboardSidebarCollapse: true,
+        UTabs: defineComponent({
+          setup(_, { slots }) {
+            return () => h('div', [slots.search?.(), slots.queue?.(), slots.default?.()])
+          },
+        }),
+        SupportKanban: true,
         UCard: PassThroughStub,
         UFormField: FormFieldStub,
         UInput: InputStub,
@@ -154,7 +160,6 @@ describe('QA-HARDEN-01.09 — Support Search results', () => {
   beforeEach(() => mocks.request.mockReset())
 
   it('renders typed status, formatted date and a uniquely named exact detail link', async () => {
-    const localeSpy = vi.spyOn(Date.prototype, 'toLocaleString').mockReturnValue('13.07.2026, 12:34:56')
     mocks.request.mockResolvedValue(apiResponse({
       content: [{
         paymentOrderId: 'payment-202',
@@ -173,12 +178,10 @@ describe('QA-HARDEN-01.09 — Support Search results', () => {
     await flushPromises()
 
     expect(wrapper.find('span[role="status"]').text()).toBe('AUTHORIZED')
-    expect(wrapper.text()).toContain('13.07.2026, 12:34:56')
+    expect(wrapper.get('[data-testid="support-created-at"]').text()).toBe('7/13/2026')
     expect(wrapper.text()).not.toContain('2026-07-13T10:34:56.123456Z')
     const view = wrapper.get('a[aria-label="View payment order ORDER-101"]')
     expect(view.attributes('href')).toBe('/admin/merchants/merchant-101/payments/payment-202')
-    expect(localeSpy).toHaveBeenCalledOnce()
-    localeSpy.mockRestore()
   })
 
   it('distinguishes an empty successful result from an error result', async () => {

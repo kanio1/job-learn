@@ -4,9 +4,10 @@ import { searchResponseSchema, type SearchResponse } from '~/schemas/search.sche
 export function useEntitySearchApi() {
   const { request } = useApiClient()
 
-  async function searchEntities(q: string): Promise<ApiResponse<SearchResponse>> {
+  async function searchEntities(q: string, signal?: AbortSignal): Promise<ApiResponse<SearchResponse>> {
     return request('/api/search', searchResponseSchema, {
-      query: { q },
+      query: { q: q.slice(0, 80) },
+      signal,
     })
   }
 

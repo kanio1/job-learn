@@ -1,15 +1,20 @@
 <template>
   <UDashboardPanel id="support">
     <template #header>
-      <UDashboardNavbar title="Support Search">
+      <UDashboardNavbar :title="$t('support.title')">
         <template #leading>
           <UDashboardSidebarCollapse />
+        </template>
+        <template #right>
+          <AppLocaleSelect />
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
-      <div class="space-y-4">
+      <UTabs :items="tabItems" class="w-full">
+        <template #search>
+      <div class="space-y-4 pt-4">
         <UCard>
           <template #header>
             <span class="text-sm font-semibold">Search Payment Orders</span>
@@ -75,6 +80,13 @@
           </div>
         </UCard>
       </div>
+        </template>
+        <template #queue>
+          <div class="pt-4">
+            <SupportKanban />
+          </div>
+        </template>
+      </UTabs>
     </template>
   </UDashboardPanel>
 </template>
@@ -100,6 +112,12 @@ const searchProblem = ref<ProblemDetails | null>(null)
 const results = ref<SupportPaymentOrder[]>([])
 const searched = ref(false)
 
+const { t } = useI18n()
+const tabItems = computed(() => [
+  { label: 'Search', slot: 'search' as const },
+  { label: t('support.queue'), slot: 'queue' as const },
+])
+
 const canSearch = computed(() => searchMerchantId.value.trim() !== '')
 
 const paymentOrderSchema = z.object({
@@ -116,7 +134,9 @@ type SupportPaymentOrder = z.infer<typeof paymentOrderSchema>
 
 const listSchema = z.object({ content: z.array(paymentOrderSchema) }).passthrough()
 
-const columns: TableColumn<SupportPaymentOrder>[] = [
+const { amount, dateOnly } = useLocaleFormat()
+
+const columns = computed<TableColumn<SupportPaymentOrder>[]>(() => [
   {
     accessorKey: 'clientOrderReference',
     header: 'Client Reference',
@@ -128,7 +148,8 @@ const columns: TableColumn<SupportPaymentOrder>[] = [
   },
   {
     accessorKey: 'amountMinor',
-    header: 'Amount (minor)',
+    header: 'Amount',
+    cell: ({ row }) => h('span', { 'data-testid': 'support-amount' }, amount(row.original.amountMinor, row.original.currency)),
   },
   {
     accessorKey: 'currency',
@@ -137,7 +158,7 @@ const columns: TableColumn<SupportPaymentOrder>[] = [
   {
     accessorKey: 'createdAt',
     header: 'Created',
-    cell: ({ row }) => h('span', { class: 'text-sm' }, new Date(row.original.createdAt).toLocaleString()),
+    cell: ({ row }) => h('span', { class: 'text-sm', 'data-testid': 'support-created-at' }, dateOnly(row.original.createdAt)),
   },
   {
     id: 'view',
@@ -157,7 +178,7 @@ const columns: TableColumn<SupportPaymentOrder>[] = [
       })
     },
   },
-]
+])
 
 async function handleSearch() {
   if (!canSearch.value) return

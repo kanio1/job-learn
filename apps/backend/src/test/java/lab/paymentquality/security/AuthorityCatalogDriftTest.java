@@ -111,6 +111,26 @@ class AuthorityCatalogDriftTest {
         assertThat(Authorities.TENANT_USERS_ASSIGN_ROLES)
                 .as("TENANT_USERS_ASSIGN_ROLES must equal the documented user-management literal")
                 .isEqualTo("tenant:users:assign-roles");
+
+        assertThat(Authorities.SUPPORT_READ)
+                .as("SUPPORT_READ must equal the documented support literal")
+                .isEqualTo("platform:support:read");
+
+        assertThat(Authorities.SUPPORT_OPERATE)
+                .as("SUPPORT_OPERATE must equal the documented support literal")
+                .isEqualTo("platform:support:operate");
+
+        assertThat(Authorities.OPS_FEED)
+                .as("OPS_FEED must equal the documented ops feed literal")
+                .isEqualTo("platform:ops:feed");
+
+        assertThat(Authorities.OPS_INJECT)
+                .as("OPS_INJECT must equal the documented ops inject literal")
+                .isEqualTo("platform:ops:inject");
+
+        assertThat(Authorities.NOTIFICATIONS_READ)
+                .as("NOTIFICATIONS_READ must equal the documented notifications literal")
+                .isEqualTo("platform:notifications:read");
     }
 
     @Test
@@ -118,7 +138,6 @@ class AuthorityCatalogDriftTest {
     @DisplayName("Property 4: catalog no-drift")
     void catalogContainsExactlyNineteenEnforcedAuthorities() {
         // Guard against accidental additions or removals from the catalog.
-        // The current design mandates exactly 19 enforced authorities.
         var allConstants = new String[]{
                 Authorities.MERCHANTS_CREATE,
                 Authorities.MERCHANTS_READ,
@@ -138,12 +157,17 @@ class AuthorityCatalogDriftTest {
                 Authorities.TENANT_USERS_READ,
                 Authorities.TENANT_USERS_CREATE,
                 Authorities.TENANT_USERS_UPDATE,
-                Authorities.TENANT_USERS_ASSIGN_ROLES
+                Authorities.TENANT_USERS_ASSIGN_ROLES,
+                Authorities.SUPPORT_READ,
+                Authorities.SUPPORT_OPERATE,
+                Authorities.OPS_FEED,
+                Authorities.OPS_INJECT,
+                Authorities.NOTIFICATIONS_READ
         };
 
         assertThat(allConstants)
-                .as("The enforced authority catalog must contain exactly 19 constants")
-                .hasSize(19);
+                .as("The enforced authority catalog must contain exactly 24 constants in this drift set")
+                .hasSize(24);
     }
 
     @Test
@@ -171,7 +195,12 @@ class AuthorityCatalogDriftTest {
                 Authorities.TENANT_USERS_READ,
                 Authorities.TENANT_USERS_CREATE,
                 Authorities.TENANT_USERS_UPDATE,
-                Authorities.TENANT_USERS_ASSIGN_ROLES
+                Authorities.TENANT_USERS_ASSIGN_ROLES,
+                Authorities.SUPPORT_READ,
+                Authorities.SUPPORT_OPERATE,
+                Authorities.OPS_FEED,
+                Authorities.OPS_INJECT,
+                Authorities.NOTIFICATIONS_READ
         };
 
         for (String authority : allConstants) {

@@ -116,14 +116,14 @@ public class MerchantController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_UPDATE_STATUS + "')")
-    public ResponseEntity<MerchantResponse> rename(@PathVariable String id,
-                                                   @RequestHeader(value = "If-Match", required = false) String ifMatch,
-                                                   @RequestBody UpdateMerchantDisplayNameRequest request,
-                                                   @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<MerchantResponse> patch(@PathVariable String id,
+                                                  @RequestHeader(value = "If-Match", required = false) String ifMatch,
+                                                  @RequestBody UpdateMerchantRequest request,
+                                                  @AuthenticationPrincipal Jwt jwt) {
         UUID uuid = parseUUID(id);
         TenantContext tenantContext = tenantResolver.resolve(jwt);
         long expectedVersion = MerchantEtag.requireVersion(ifMatch);
-        var response = merchantService.rename(uuid, request.displayName(), tenantContext, expectedVersion);
+        var response = merchantService.patch(uuid, request, tenantContext, expectedVersion);
         return ResponseEntity.ok()
                 .header("ETag", MerchantEtag.from(response.version()))
                 .body(response);

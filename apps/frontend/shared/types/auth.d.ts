@@ -6,6 +6,8 @@ declare module '#auth-utils' {
    * Never include the bearer token, passwords, or other secrets here.
    */
   interface User {
+    /** JWT `sub` — storage keys and view ownership. Never the access token. */
+    id?: string
     username?: string
     email?: string
     /** Intersection of realm_access.roles with the five composite role names. */

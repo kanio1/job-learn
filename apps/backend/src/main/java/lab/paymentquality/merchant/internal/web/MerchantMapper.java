@@ -19,7 +19,9 @@ public final class MerchantMapper {
                 merchant.getCreatedAt(),
                 merchant.getUpdatedAt(),
                 merchant.isRiskFlagged(),
-                merchant.getVersion());
+                merchant.getVersion(),
+                merchant.getContactPhone(),
+                merchant.getContactAddress());
     }
 
     public static MerchantListResponse toListResponse(Page<Merchant> page) {

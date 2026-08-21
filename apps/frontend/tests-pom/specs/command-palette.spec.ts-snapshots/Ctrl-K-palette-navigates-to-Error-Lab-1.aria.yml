@@ -3,10 +3,9 @@
   - button "Close"
   - listbox:
     - group "Go to":
-      - text: ""
+      - text: Go to
       - option "Overview"
-      - option "Merchants"
-      - option "Payment Orders"
+      - option "Registry"
       - option "Users"
       - option "Audit Log"
       - option "Support"
@@ -15,10 +14,9 @@
       - option "Mirror Lab"
       - option "RLS Lab"
     - group "Actions":
-      - text: ""
+      - text: Actions
       - option "Create merchant"
       - option "Merchant registry"
-      - option "Payment orders"
       - option "User management"
       - option "Audit log"
       - option "Error Lab"
@@ -27,7 +25,7 @@
       - option "Event Inspector"
       - option "Mirror Lab"
     - group "Theme":
-      - text: ""
+      - text: Theme
       - option "System"
       - option "Light"
       - option "Dark"

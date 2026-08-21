@@ -38,6 +38,12 @@ public class Merchant {
     @Column(name = "risk_flagged", nullable = false)
     private boolean riskFlagged = false;
 
+    @Column(name = "contact_phone", length = 32)
+    private String contactPhone;
+
+    @Column(name = "contact_address", length = 200)
+    private String contactAddress;
+
     protected Merchant() {
     }
 
@@ -142,5 +148,26 @@ public class Merchant {
     public void rename(String displayName) {
         this.displayName = displayName;
         this.updatedAt = Instant.now();
+    }
+
+    public String getContactPhone() {
+        return contactPhone;
+    }
+
+    public String getContactAddress() {
+        return contactAddress;
+    }
+
+    public void updateContact(String contactPhone, boolean phoneSpecified,
+                              String contactAddress, boolean addressSpecified) {
+        if (phoneSpecified) {
+            this.contactPhone = contactPhone;
+        }
+        if (addressSpecified) {
+            this.contactAddress = contactAddress;
+        }
+        if (phoneSpecified || addressSpecified) {
+            this.updatedAt = Instant.now();
+        }
     }
 }

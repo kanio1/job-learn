@@ -29,6 +29,15 @@ public class MerchantExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(MerchantExceptionHandler.class);
 
+    @ExceptionHandler(InvalidMerchantContactException.class)
+    public ResponseEntity<ErrorResponse> handleContactValidation(InvalidMerchantContactException e) {
+        log.warn("merchant.patch.failed.validation field={} correlationId={}",
+                e.getField(), MDC.get("correlationId"));
+        return ResponseEntity.badRequest()
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(new ErrorResponse("validation", "Invalid merchant request", e.getMessage()));
+    }
+
     @ExceptionHandler({InvalidMerchantReferenceException.class, InvalidDisplayNameException.class})
     public ResponseEntity<ErrorResponse> handleValidation(RuntimeException e) {
         String detail = e instanceof InvalidMerchantReferenceException ire

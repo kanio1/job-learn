@@ -53,6 +53,24 @@
           />
         </UFormField>
 
+        <UAccordion
+          :items="policyAccordionItems"
+          type="single"
+          default-value="policy"
+          :unmount-on-hide="false"
+          data-testid="policy-accordion"
+        >
+          <template #body>
+            <RuleConfigurator
+              v-model:auto-capture="form.autoCapture"
+              v-model:max-auto-capture-minor="form.maxAutoCaptureMinor"
+              v-model:risk-threshold="form.riskThreshold"
+              v-model:refund-policy="form.refundPolicy"
+              :max-error="policyMaxError"
+            />
+          </template>
+        </UAccordion>
+
         <!-- Stale ETag error -->
         <ProblemDetailsCard
           v-if="saveError"
@@ -77,6 +95,7 @@
 
 <script setup lang="ts">
 import type { ProblemDetails } from '~/types/api'
+import { paymentPolicySchema, DEFAULT_PAYMENT_POLICY } from '~/schemas/tenant-settings.schema'
 
 definePageMeta({ layout: 'dashboard' })
 
@@ -92,14 +111,30 @@ const loading = ref(true)
 const saving = ref(false)
 const loadError = ref<ProblemDetails | null>(null)
 const saveError = ref<ProblemDetails | null>(null)
+const policyMaxError = ref<string | null>(null)
 
 let currentEtag = ''
+
+const policyAccordionItems = [
+  { label: 'Payment rules', value: 'policy', icon: 'i-lucide-sliders-horizontal' },
+]
 
 const form = reactive({
   contactEmail: '',
   timezone: 'UTC',
   webhookBaseUrl: '',
+  autoCapture: DEFAULT_PAYMENT_POLICY.autoCapture,
+  maxAutoCaptureMinor: DEFAULT_PAYMENT_POLICY.maxAutoCaptureMinor as number | null,
+  riskThreshold: DEFAULT_PAYMENT_POLICY.riskThreshold,
+  refundPolicy: DEFAULT_PAYMENT_POLICY.refundPolicy,
 })
+
+function applyPolicy(policy: typeof DEFAULT_PAYMENT_POLICY) {
+  form.autoCapture = policy.autoCapture
+  form.maxAutoCaptureMinor = policy.autoCapture ? policy.maxAutoCaptureMinor : 0
+  form.riskThreshold = policy.riskThreshold
+  form.refundPolicy = policy.refundPolicy
+}
 
 async function load() {
   loading.value = true
@@ -110,6 +145,7 @@ async function load() {
     form.contactEmail = response.data.contactEmail ?? ''
     form.timezone = response.data.timezone
     form.webhookBaseUrl = response.data.webhookBaseUrl ?? ''
+    applyPolicy(response.data.paymentPolicy)
     currentEtag = response.headers?.etag ?? ''
   } else {
     loadError.value = response.problem ?? null
@@ -119,11 +155,26 @@ async function load() {
 async function handleSave() {
   saving.value = true
   saveError.value = null
+  policyMaxError.value = null
+  const max = form.autoCapture ? form.maxAutoCaptureMinor : 0
+  const parsedPolicy = paymentPolicySchema.safeParse({
+    autoCapture: form.autoCapture,
+    maxAutoCaptureMinor: max ?? 0,
+    riskThreshold: form.riskThreshold,
+    refundPolicy: form.refundPolicy,
+  })
+  if (!parsedPolicy.success) {
+    saving.value = false
+    const maxIssue = parsedPolicy.error.issues.find(issue => issue.path[0] === 'maxAutoCaptureMinor')
+    policyMaxError.value = maxIssue?.message ?? parsedPolicy.error.issues[0]?.message ?? 'Invalid payment policy'
+    return
+  }
   const response = await updateSettings(
     {
       contactEmail: form.contactEmail || undefined,
       timezone: form.timezone,
       webhookBaseUrl: form.webhookBaseUrl || undefined,
+      paymentPolicy: parsedPolicy.data,
     },
     currentEtag,
   )
@@ -133,9 +184,13 @@ async function handleSave() {
     form.contactEmail = response.data.contactEmail ?? ''
     form.timezone = response.data.timezone
     form.webhookBaseUrl = response.data.webhookBaseUrl ?? ''
+    applyPolicy(response.data.paymentPolicy)
     toastSuccess('Settings saved')
   } else {
     saveError.value = response.problem ?? null
+    if (response.status === 400) {
+      policyMaxError.value = response.problem?.detail ?? 'Invalid payment policy'
+    }
     if (!response.problem) {
       toastError('Failed to save settings')
     }
