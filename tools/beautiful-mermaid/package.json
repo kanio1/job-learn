@@ -1,0 +1,13 @@
+{
+  "name": "lab-beautiful-mermaid",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.18.0",
+  "scripts": {
+    "render": "node render.mjs",
+    "view": "node render.mjs --open"
+  },
+  "dependencies": {
+    "@vercel/beautiful-mermaid": "0.1.5"
+  }
+}

@@ -95,10 +95,7 @@ async function revoke(id: string) {
 }
 
 async function endOidc() {
-  const result = await $fetch<{ ended: boolean, endSessionUrl: string }>('/api/session-lab/end-session', {
-    method: 'POST',
-  })
-  window.location.href = result.endSessionUrl
+  window.location.assign('/api/session-lab/end-session')
 }
 
 async function csrfDemo(withToken: boolean) {

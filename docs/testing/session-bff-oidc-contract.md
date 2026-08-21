@@ -26,25 +26,36 @@ Powiązane: [live-pom-wave-2](live-pom-wave-2/), [payu-bank-mirror-labs](payu-ba
 
 | Ścieżka | UI | Kod | BFF cookie | SSO Keycloak | TC dziś |
 |---|---|---|---|---|---|
-| A — aplikacja | menu Sign out, idle Unlock | `auth.logout()` → `session.clear()` + `/login` | **puste** `nuxt-session` (as-built; nie RFC delete) | **zostaje** | existing-pom E2E-010, E2E-012, MRL E2E-021; oracle `expectSessionCookieCleared` |
-| B — RP OIDC | `session-lab-end-oidc` | POST `/api/session-lab/end-session` → `clearUserSession` + URL `…/logout?client_id=&post_logout_redirect_uri=` | puste (`expectSessionCookieCleared`) | hop `end_session` (bez `id_token_hint`) | existing-pom `session.spec.ts` E2E-013 |
+| A — płytki (named) | **Sign out of dashboard only**, idle Unlock | `auth.logoutShallow()` → `session.clear()` + `/login?logout=shallow` | **puste** `nuxt-session` (as-built; nie RFC delete) | **zostaje** | `session.spec.ts` shallow + idle `session-lab.spec.ts`; oracle `expectSessionCookieCleared` |
+| B — głęboki (default) | menu **Sign out**; Session Lab `session-lab-end-oidc` | GET `/api/auth/end-session` (produkt) albo GET `/api/session-lab/end-session` (klasa) → `clearUserSession` + **302** na URL `…/logout?client_id=&post_logout_redirect_uri=`. POST na te same ścieżki zwraca JSON `{ ended, endSessionUrl }` (oracle bez hopu). | puste (`expectSessionCookieCleared`) | hop `end_session` (bez `id_token_hint`) | existing-pom `session.spec.ts` E2E-027 (Sign out) + E2E-013 (Session Lab) |
 
-Idle Unlock = ścieżka A. FR „logout BFF + OIDC” dotyczy **tylko** ścieżki B.
+Idle Unlock = ścieżka A. Default **Sign out** = ścieżka B (lab jest jednym RP). FR historyczne „logout BFF + OIDC tylko w Session Lab” jest **nieaktualne**.
+
+Na `/login` po ścieżce A: alert SSO resume + **Use a different account** (`/auth/keycloak?prompt=login`).
 
 Nazwa lekcji „OIDC revoke” w learning-map = **end_session** (RP logout), nie RFC 7009 token revocation.
+
+Podgląd diagramów: otwórz [diagrams/index.html](diagrams/index.html) w przeglądarce (`corepack pnpm --dir tools/beautiful-mermaid run view`). Źródło Mermaid: [diagrams/dual-depth-logout.mmd](diagrams/dual-depth-logout.mmd).
 
 ---
 
 ## Use cases
 
-### UC-SESS-01 — Operator Sign out (świat aplikacji) — P0
+### UC-SESS-01 — Operator Sign out (głęboki, default) — P0
 
 - **Aktor:** platform admin.
 - **Precondition:** `nuxt-session` HttpOnly; SSO Keycloak może istnieć.
-- **Kroki:** registry → `logout-control` → Sign out → `goto /admin/merchants`.
-- **Oracle:** oba razy `/login`; brak JWT w Web Storage; `nuxt-session` puste (`expectSessionCookieCleared` — as-built, nie `expectSessionCookieDeleted`).
-- **Nie-oracle:** request do Keycloak `end_session` (tego **nie** ma).
-- **TC:** PW-W2-E2E-010, UC-W2-02.
+- **Kroki:** registry → `logout-control` → **Sign out** (exact) → Keycloak `end_session` (confirm jeśli jest) → `/login` → opcjonalnie Continue to Keycloak.
+- **Oracle:** hop `/protocol/openid-connect/logout` z `client_id` + `post_logout_redirect_uri`, **brak** `id_token_hint`; `/login`; brak JWT w Web Storage; `nuxt-session` puste; następny Continue pokazuje formularz Keycloak **Sign in to your account** (nie ciche SSO).
+- **Nie-oracle:** Sign out **nie** może zostawić SSO (to jest stary kontrakt E2E-027).
+- **TC:** PW-MRL-E2E-027 (przepisany), PW-W2-E2E-010 (powrót na `/login` + blokada admin).
+
+### UC-SESS-01a — Sign out of dashboard only (płytki, named) — P0
+
+- **Aktor:** platform admin.
+- **Kroki:** registry → `logout-control` → **Sign out of dashboard only** → `/login?logout=shallow`.
+- **Oracle:** **zero** requestów do Keycloak `end_session`; alert `login-sso-resume-notice`; `expectSessionCookieCleared`; **Use a different account** → authorize z `prompt=login` i formularz Sign in.
+- **TC:** `session.spec.ts` · `Sign out of dashboard only keeps Keycloak SSO and explains resume`.
 
 ### UC-SESS-02 — Idle Unlock (świat aplikacji) — P0
 
@@ -57,7 +68,7 @@ Nazwa lekcji „OIDC revoke” w learning-map = **end_session** (RP logout), nie
 ### UC-SESS-03 — End OIDC session (świat SSO) — P0
 
 - **Aktor:** platform admin na Session Lab.
-- **Kroki:** POST `/api/session-lab/end-session` (JSON przez `page.request`, hop przez klik UI). CDP nie oddaje body po `window.location` — JSON i hop są dwoma testami w `session.spec.ts`.
+- **Kroki:** POST `/api/session-lab/end-session` (JSON przez `page.request`, bez hopu). Hop: GET `/api/session-lab/end-session` (302) przez klik UI. CDP nie oddaje body po nawigacji — JSON i hop są dwoma testami w `session.spec.ts`.
 - **Oracle:** body `{ ended: true, endSessionUrl }`; URL (body i hop) zawiera `client_id=` i `post_logout_redirect_uri=`; **brak** `id_token_hint`; po confirm (jeśli jest) `/login`; ponowny `/admin/merchants` → `/login`; Web Storage bez JWT; `expectSessionCookieCleared`.
 - **Uwaga lab:** Keycloak **może** pokazać confirm (brak `id_token_hint`). Realm JSON ma additive `post.logout.redirect.uris` (HTTP `:3000/login` + HTTPS app vhost). Istniejący volume: `python3 scripts/provision-keycloak-logout-uris.py` (`--import-realm` nie aktualizuje).
 - **TC:** PW-W2-E2E-013, PW-MRL-E2E-026, PW-MRL-API-024 — existing-pom `session.spec.ts`.
@@ -89,10 +100,10 @@ Dwa contexty, ten sam `storageState`. HTTP oracle w `session.spec.ts` (E2E-122, 
 
 | ID | Pokrycie | Oracle |
 |---|---|---|
-| PW-W2-E2E-010 | existing-pom `session.spec.ts` | ścieżka A |
+| PW-W2-E2E-010 | existing-pom `session.spec.ts` | Sign out (głęboki) → `/login` + blokada admin |
 | PW-W2-E2E-011 | existing-pom | HttpOnly + brak JWT w storage/`origins` |
-| PW-W2-E2E-012 | existing-pom | idle → Unlock = A |
-| PW-W2-E2E-013 | existing-pom `session.spec.ts` | ścieżka B + query `client_id`, bez `id_token_hint` |
+| PW-W2-E2E-012 | existing-pom | idle → Unlock = A (płytki) |
+| PW-W2-E2E-013 | existing-pom `session.spec.ts` | ścieżka B Session Lab + query `client_id`, bez `id_token_hint` |
 | PW-W2-SEC-001–003 | existing-pom | HttpOnly; token w cookie nie w Web Storage; nie skanować blobu |
 | PW-W2-SEC-005 | existing-pom | cookie &lt; 4 KB; brak `id_token` w sesji |
 | PW-W2-SEC-006 | existing-pom | `sameSite` `"Lax"` z `context.cookies()` |
@@ -100,7 +111,7 @@ Dwa contexty, ten sam `storageState`. HTTP oracle w `session.spec.ts` (E2E-122, 
 | PW-MRL-E2E-013 | existing-pom | SameSite Lax z prawdziwego cookie |
 | PW-MRL-E2E-014 | designed / docs-only | policy JSON `secure:false` **≠** TLS cookie |
 | PW-MRL-E2E-026 | existing-pom | `session-lab-end-oidc` |
-| PW-MRL-E2E-027 | existing-pom `session.spec.ts` | Sign out **nie** woła `/protocol/openid-connect/logout` |
+| PW-MRL-E2E-027 | existing-pom `session.spec.ts` | menu **Sign out** woła `/protocol/openid-connect/logout`; Continue pokazuje formularz Keycloak |
 | PW-MRL-E2E-028 | existing-pom | rozmiar cookie |
 | PW-MRL-API-023 | existing-pom `session-lab.spec.ts` | GET cookie-policy 200 (edukacja, nie TLS) |
 | PW-MRL-API-024 | existing-pom `session.spec.ts` | POST end-session URL |

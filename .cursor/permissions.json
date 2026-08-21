@@ -1,0 +1,33 @@
+{
+  "terminalAllowlist": [
+    "cat",
+    "curl",
+    "docker",
+    "corepack",
+    "echo",
+    "exit",
+    "break",
+    "find",
+    "head",
+    "ls",
+    "mvn",
+    "./mvnw",
+    "pnpm",
+    "rg",
+    "seq",
+    "sleep",
+    "true"
+  ],
+  "autoRun": {
+    "allow_instructions": [
+      "Allow curl for HTTP checks against local development APIs and stack health endpoints.",
+      "Allow Docker inspection, project image builds, and project Compose start, stop, restart, build, logs, config, and up operations without privileged mode or destructive volume removal.",
+      "Allow corepack, mvn, ./mvnw, and pnpm for local compile, test, verify, lint, typecheck, format, and development server commands, but not deploy, release, or package publishing.",
+      "Allow cat, echo, head, ls, rg, seq, sleep, true, and find for local inspection and short waits. Allow exit and break to stop a shell or loop.",
+    ],
+    "block_instructions": [
+      "Require approval for docker rm, docker rmi, docker system prune, docker volume rm, docker compose down with volumes, privileged containers, host-network containers, or mounting sensitive host directories.",
+      "Require approval for find -delete, find -exec, and other find invocations that modify or remove files."
+    ]
+  }
+}

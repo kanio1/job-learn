@@ -1,6 +1,7 @@
 import { test, expect } from '../fixtures'
 import { App } from '../pages/App'
 import { pomAuthFiles } from '../utils/env'
+import { completeKeycloakEndSession } from '../utils/keycloak-oidc'
 import {
   expectNoJwtInStorageStateFile,
   expectNoTokenInBrowserStorage,
@@ -112,7 +113,31 @@ test('session cookie is HttpOnly and storageState has no JWT', { tag: ['@securit
   expectNoJwtInStorageStateFile(pomAuthFiles.platformAdminSession)
 })
 
-test('Sign out does not call Keycloak end_session (EG-W2-11 / E2E-027)', { tag: ['@security'] }, async ({ app, page }) => {
+test('Sign out hops to Keycloak end_session then login (PW-MRL-E2E-027)', { tag: ['@security'] }, async ({ app, page }) => {
+  await app.merchants.goto()
+  await app.merchants.expectLoaded()
+
+  const logoutReq = page.waitForRequest(request => request.url().includes('/protocol/openid-connect/logout'))
+  await page.getByTestId('logout-control').click()
+  await page.getByRole('menuitem', { name: 'Sign out', exact: true }).click()
+  const endSessionUrl = new URL((await logoutReq).url())
+  expect(endSessionUrl.searchParams.get('client_id')).toBeTruthy()
+  expect(endSessionUrl.searchParams.get('post_logout_redirect_uri')).toBeTruthy()
+  expect(endSessionUrl.searchParams.has('id_token_hint')).toBe(false)
+
+  await completeKeycloakEndSession(page)
+  await app.login.expectLoaded()
+  await expectSessionCookieCleared(page)
+  await expectNoTokenInBrowserStorage(page)
+
+  await app.login.continueToKeycloak()
+  await expect(page).toHaveURL(/\/realms\/payment-quality\/protocol\/openid-connect\/auth/, { timeout: 15_000 })
+  expect(new URL(page.url()).searchParams.get('prompt')).toBeNull()
+  await expect(page.getByRole('heading', { name: /sign in to your account/i })).toBeVisible()
+  await expect(page.getByLabel(/username/i)).toBeVisible()
+})
+
+test('Sign out of dashboard only keeps Keycloak SSO and explains resume', { tag: ['@security'] }, async ({ app, page }) => {
   await app.merchants.goto()
   await app.merchants.expectLoaded()
   let keycloakLogout = 0
@@ -121,10 +146,18 @@ test('Sign out does not call Keycloak end_session (EG-W2-11 / E2E-027)', { tag: 
       keycloakLogout += 1
     }
   })
-  await app.userMenu.signOut()
+  await app.userMenu.signOutOfDashboardOnly()
   await expect(app.page).toHaveURL(/\/login/)
   await app.login.expectLoaded()
-  expect(keycloakLogout, 'application Sign out must not hit RP end_session').toBe(0)
+  await expect(app.login.ssoResumeNotice()).toBeVisible()
+  await expectSessionCookieCleared(app.page)
+  await expectNoTokenInBrowserStorage(app.page)
+  expect(keycloakLogout, 'named shallow logout must not hit RP end_session').toBe(0)
+
+  await app.login.useDifferentAccount()
+  await expect(page).toHaveURL(/\/protocol\/openid-connect\/auth/, { timeout: 15_000 })
+  expect(new URL(page.url()).searchParams.get('prompt')).toBe('login')
+  await expect(page.getByRole('heading', { name: /sign in to your account/i })).toBeVisible()
 })
 
 test('Session Lab end-session JSON has client_id and no id_token_hint', { tag: ['@security'] }, async ({ app, page }) => {
@@ -139,30 +172,30 @@ test('Session Lab end-session JSON has client_id and no id_token_hint', { tag: [
   expect(fromBody.searchParams.get('client_id')).toBeTruthy()
   expect(fromBody.searchParams.get('post_logout_redirect_uri')).toBeTruthy()
   expect(fromBody.searchParams.has('id_token_hint')).toBe(false)
+
+  const session = await page.request.get('/api/_auth/session')
+  expect(session.status()).toBe(200)
+  const sessionBody = await session.json() as { user?: unknown }
+  expect(sessionBody.user, 'POST end-session must drop the BFF user').toBeFalsy()
+
   await page.goto('/admin/merchants')
   await expect(page).toHaveURL(/\/login/)
   await app.login.expectLoaded()
-  await expectSessionCookieCleared(page)
+  await expectNoTokenInBrowserStorage(page)
 })
 
-test('Session Lab end OIDC posts a logout URL without id_token_hint then hops to Keycloak', { tag: ['@security'] }, async ({ app, page }) => {
+test('Session Lab end OIDC hops to Keycloak logout without id_token_hint', { tag: ['@security'] }, async ({ app, page }) => {
   await app.sessionLab.goto()
   await app.sessionLab.expectLoaded()
 
-  const hopped = page.waitForURL(/\/protocol\/openid-connect\/logout/, { timeout: 15_000 })
+  const logoutReq = page.waitForRequest(request => request.url().includes('/protocol/openid-connect/logout'))
   await app.sessionLab.endOidc()
-  await hopped
-  const endSessionUrl = new URL(page.url())
+  const endSessionUrl = new URL((await logoutReq).url())
   expect(endSessionUrl.searchParams.get('client_id')).toBeTruthy()
   expect(endSessionUrl.searchParams.get('post_logout_redirect_uri')).toBeTruthy()
   expect(endSessionUrl.searchParams.has('id_token_hint')).toBe(false)
 
-  const confirm = page.getByRole('button', { name: /^(logout|yes|continue)$/i })
-  await expect(confirm.or(page.getByRole('heading', { name: /sign in|log in/i }))).toBeVisible({ timeout: 15_000 })
-  if (await confirm.isVisible()) {
-    await confirm.click()
-  }
-  await expect(page).toHaveURL(/\/login/, { timeout: 15_000 })
+  await completeKeycloakEndSession(page)
   await app.login.expectLoaded()
   await expectSessionCookieCleared(page)
   await page.goto('/admin/merchants')

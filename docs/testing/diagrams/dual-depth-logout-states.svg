@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600.928 664.8" width="600.928" height="664.8" style="--bg:#FFFFFF;--fg:#171717;--line:#EAEAEA;--accent:#000000;--muted:#888888;--surface:#FAFAFA;--border:#EAEAEA;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Geist', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 30%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="7" markerHeight="7" refX="0" refY="3.5" orient="auto" markerUnits="userSpaceOnUse" overflow="visible">
+    <polygon points="0 0, 7 3.5, 0 7" fill="var(--_arrow)" />
+  </marker>
+  <marker id="arrowhead-start" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto-start-reverse" markerUnits="userSpaceOnUse" overflow="visible">
+    <polygon points="7 0, 0 3.5, 7 7" fill="var(--_arrow)" />
+  </marker>
+  <pattern id="diag-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <rect width="6" height="6" fill="var(--bg)" />
+    <line x1="0" y1="0" x2="0" y2="6" stroke="#171717" stroke-width="3" />
+  </pattern>
+</defs>
+<polyline points="319.964,84 319.964,141" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M319.964,217.2 L319.964,242.2 Q319.964,250.2 311.964,250.2 L117.2,250.2 Q109.2,250.2 109.2,258.2 L109.2,448.694 Q109.2,450 107.894,450 L106.588,450" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M319.964,217.2 L319.964,242.2 Q319.964,250.2 327.964,250.2 L388.128,250.2 Q396.128,250.2 396.128,258.2 L396.128,274.2" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<polyline points="396.128,350.40000000000003 396.128,407.4" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M396.128,350.40000000000003 L396.128,375.4 Q396.128,383.4 388.128,383.4 L184.5,383.4 Q176.5,383.4 176.5,391.4 L176.5,407.4" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M176.5,416.4 L176.5,391.4 Q176.5,383.4 184.5,383.4 L235.8,383.4 Q243.8,383.4 243.8,375.4 L243.8,187.218 Q243.8,183.6 247.418,183.6 L251.036,183.6" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M176.5,483.6 L176.5,575.1999999999999 Q176.5,583.1999999999999 184.5,583.1999999999999 L303.224,583.1999999999999" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<polyline points="396.128,483.6 396.128,540.5999999999999" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M396.128,549.5999999999999 L396.128,524.5999999999999 Q396.128,516.5999999999999 404.128,516.5999999999999 L496.728,516.5999999999999 Q504.728,516.5999999999999 504.728,508.5999999999999 L504.728,191.6 Q504.728,183.6 496.728,183.6 L397.892,183.6" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<rect x="278.164" y="104" width="83.60000000000001" height="26" rx="4" ry="4" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="319.964" y="117" text-anchor="middle" dy="0.35em" font-size="10" font-weight="400" fill="var(--_text-muted)">OIDC callback</text>
+<rect x="44" y="303.8" width="130.4" height="26" rx="4" ry="4" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="109.2" y="316.8" text-anchor="middle" dy="0.35em" font-size="10" font-weight="400" fill="var(--_text-muted)">shallow or idle Unlock</text>
+<rect x="336.128" y="237.2" width="120" height="26" rx="4" ry="4" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="396.128" y="250.2" text-anchor="middle" dy="0.35em" font-size="10" font-weight="400" fill="var(--_text-muted)">Sign out or End OIDC</text>
+<rect x="351.728" y="370.4" width="88.8" height="26" rx="4" ry="4" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="396.128" y="383.4" text-anchor="middle" dy="0.35em" font-size="10" font-weight="400" fill="var(--_text-muted)">confirm Logout</text>
+<rect x="132.1" y="370.4" width="88.8" height="26" rx="4" ry="4" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="176.5" y="383.4" text-anchor="middle" dy="0.35em" font-size="10" font-weight="400" fill="var(--_text-muted)">cancel confirm</text>
+<rect x="186.4" y="303.8" width="114.8" height="26" rx="4" ry="4" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="243.8" y="316.8" text-anchor="middle" dy="0.35em" font-size="10" font-weight="400" fill="var(--_text-muted)">Continue SSO resume</text>
+<rect x="124.3" y="503.5999999999999" width="104.4" height="26" rx="4" ry="4" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="176.5" y="516.5999999999999" text-anchor="middle" dy="0.35em" font-size="10" font-weight="400" fill="var(--_text-muted)">different account</text>
+<rect x="336.128" y="503.5999999999999" width="120" height="26" rx="4" ry="4" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="396.128" y="516.5999999999999" text-anchor="middle" dy="0.35em" font-size="10" font-weight="400" fill="var(--_text-muted)">Continue to Keycloak</text>
+<rect x="452.528" y="370.4" width="104.4" height="26" rx="4" ry="4" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="504.728" y="383.4" text-anchor="middle" dy="0.35em" font-size="10" font-weight="400" fill="var(--_text-muted)">username password</text>
+<circle cx="319.964" cy="66" r="16" fill="var(--_text)" stroke="none" />
+<rect x="251.036" y="150" width="137.856" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="97.588" y="416.4" width="157.824" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="327.2" y="283.2" width="137.856" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="322.20799999999997" y="416.4" width="147.84" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="312.224" y="549.5999999999999" width="167.808" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+
+<text x="319.964" y="183.6" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">AppAndSso</text>
+<text x="176.5" y="450" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">LoginAndSso</text>
+<text x="396.128" y="316.8" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">KcConfirm</text>
+<text x="396.128" y="450" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">LoginNoSso</text>
+<text x="396.128" y="583.1999999999999" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">KeycloakForm</text>
+</svg>

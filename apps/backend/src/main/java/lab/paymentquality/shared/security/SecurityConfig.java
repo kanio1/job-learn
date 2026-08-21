@@ -124,10 +124,19 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/merchants/*/payment-orders/*").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_READ, Authorities.PLATFORM_PAYMENTS_READ)
                         .requestMatchers(HttpMethod.GET, "/api/merchants/*/payment-orders").hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_READ, Authorities.PLATFORM_PAYMENTS_READ)
                         .requestMatchers(HttpMethod.POST, "/api/merchants").hasAuthority(Authorities.MERCHANTS_CREATE)
+                        .requestMatchers(HttpMethod.POST, "/api/merchants/import/preview").hasAuthority(Authorities.MERCHANTS_CREATE)
+                        .requestMatchers(HttpMethod.POST, "/api/merchants/import/commit").hasAuthority(Authorities.MERCHANTS_CREATE)
+                        .requestMatchers(HttpMethod.GET, "/api/search").hasAnyAuthority(
+                                Authorities.MERCHANTS_READ,
+                                Authorities.MERCHANT_PAYMENTS_READ,
+                                Authorities.PLATFORM_PAYMENTS_READ)
+                        .requestMatchers(HttpMethod.GET, "/api/org-tree").hasAuthority(Authorities.MERCHANTS_READ)
                         .requestMatchers(HttpMethod.GET, "/api/merchants").hasAuthority(Authorities.MERCHANTS_READ)
                         .requestMatchers(HttpMethod.GET, "/api/merchants/**").hasAuthority(Authorities.MERCHANTS_READ)
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/activate").hasAuthority(Authorities.MERCHANTS_UPDATE_STATUS)
                         .requestMatchers(HttpMethod.POST, "/api/merchants/*/suspend").hasAuthority(Authorities.MERCHANTS_UPDATE_STATUS)
+                        .requestMatchers(HttpMethod.PATCH, "/api/merchants/*/risk-flag").hasAuthority(Authorities.MERCHANTS_UPDATE_RISK_FLAG)
+                        .requestMatchers(HttpMethod.PATCH, "/api/merchants/*").hasAuthority(Authorities.MERCHANTS_UPDATE_STATUS)
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

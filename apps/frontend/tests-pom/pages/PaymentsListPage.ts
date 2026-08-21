@@ -51,6 +51,10 @@ export class PaymentsListPage extends BasePage {
     await this.byTestId('payment-filter-clear').click()
   }
 
+  async sortByAmount(): Promise<void> {
+    await this.page.getByRole('columnheader', { name: /Amount/i }).click()
+  }
+
   async gotoPage(displayPage: number): Promise<void> {
     await this.byTestId('payment-orders-pagination')
       .getByRole('button', { name: new RegExp(`Page ${displayPage}|^${displayPage}$`) })
@@ -80,7 +84,39 @@ export class PaymentsListPage extends BasePage {
     await this.byTestId('export-payment-orders-async').click()
   }
 
-  async runExpirationSweep(): Promise<void> {
-    await this.byTestId('run-expiration-sweep').click()
+  async openBoard(): Promise<void> {
+    await this.byTestId('payments-view-board').click()
+    await expect(this.byTestId('payment-kanban')).toBeVisible()
+  }
+
+  async openCalendar(): Promise<void> {
+    await this.byTestId('payments-view-calendar').click()
+    await expect(this.byTestId('payment-expiry-calendar')).toBeVisible()
+  }
+
+  calendar() {
+    return this.byTestId('payment-expiry-calendar')
+  }
+
+  card(paymentOrderId: string) {
+    return this.byTestId(`payment-card-${paymentOrderId}`)
+  }
+
+  stage(status: string) {
+    return this.byTestId(`stage-${status}`)
+  }
+
+  async moveCardTo(paymentOrderId: string, status: string): Promise<void> {
+    const card = this.card(paymentOrderId)
+    await card.getByRole('button', { name: /^Move / }).click()
+    await this.page.getByRole('menuitem', { name: `Move to ${status}` }).click()
+  }
+
+  statusChart() {
+    return this.byTestId('payment-status-chart')
+  }
+
+  statusLegend(status: string) {
+    return this.statusChart().getByRole('rowheader', { name: new RegExp(`^${status} `) })
   }
 }

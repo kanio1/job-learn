@@ -89,6 +89,7 @@ class TenantIsolationIT extends PostgresContainerSupport {
         String merchantId = createMerchantAsPlatform(PLACEHOLDER_TENANT, "WRITE-OTHER", "Other Write Merchant");
 
         requestWithToken(port, TestJwtSupport.tenantAdminToken())
+                .header("If-Match", "\"v0\"")
                 .when().post("/api/merchants/{id}/activate", merchantId)
                 .then()
                 .statusCode(403)
@@ -163,7 +164,7 @@ class TenantIsolationIT extends PostgresContainerSupport {
                 .then()
                 .statusCode(200)
                 .header("X-Correlation-ID", not(equalTo("")))
-                .body("merchants", empty());
+                .body("content", empty());
     }
 
     private String createMerchantAsTenant(String bodyTenantReference, String label, String displayName) {

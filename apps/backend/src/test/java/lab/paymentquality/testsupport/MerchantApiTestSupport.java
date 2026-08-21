@@ -31,6 +31,10 @@ public final class MerchantApiTestSupport {
         return Map.copyOf(body);
     }
 
+    public static RequestSpecification operatorIfMatch(int port, String etag) {
+        return operatorRequest(port).header("If-Match", etag);
+    }
+
     public static String uniqueMerchantReference(String label) {
         return "MERCH-" + label + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }

@@ -52,18 +52,19 @@ class MerchantRiskFlagControllerTest {
     private MerchantResponse riskFlaggedResponse(boolean flagged) {
         return new MerchantResponse(
                 MERCHANT_ID, "RISK-MERCH-001", "Risk Test Merchant",
-                "ACTIVE", Instant.now(), Instant.now(), flagged);
+                "ACTIVE", Instant.now(), Instant.now(), flagged, 0L);
     }
 
     @Test
     void platformAdminCanMarkMerchantAsRiskFlagged() throws Exception {
         String token = tokenWithRolesAndTenantId("platform.admin",
                 List.of("merchants:update-risk-flag"), "PLATFORM_TENANT");
-        when(merchantService.updateRiskFlag(MERCHANT_ID, true))
+        when(merchantService.updateRiskFlag(MERCHANT_ID, true, 0L))
                 .thenReturn(riskFlaggedResponse(true));
 
         mockMvc.perform(patch("/api/merchants/{id}/risk-flag", MERCHANT_ID)
                         .header("Authorization", "Bearer " + token)
+                        .header("If-Match", "\"v0\"")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"riskFlagged\":true}"))
                 .andExpect(status().isOk())
@@ -75,11 +76,12 @@ class MerchantRiskFlagControllerTest {
     void platformAdminCanClearRiskFlag() throws Exception {
         String token = tokenWithRolesAndTenantId("platform.admin",
                 List.of("merchants:update-risk-flag"), "PLATFORM_TENANT");
-        when(merchantService.updateRiskFlag(MERCHANT_ID, false))
+        when(merchantService.updateRiskFlag(MERCHANT_ID, false, 0L))
                 .thenReturn(riskFlaggedResponse(false));
 
         mockMvc.perform(patch("/api/merchants/{id}/risk-flag", MERCHANT_ID)
                         .header("Authorization", "Bearer " + token)
+                        .header("If-Match", "\"v0\"")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"riskFlagged\":false}"))
                 .andExpect(status().isOk())
@@ -93,6 +95,7 @@ class MerchantRiskFlagControllerTest {
 
         mockMvc.perform(patch("/api/merchants/{id}/risk-flag", MERCHANT_ID)
                         .header("Authorization", "Bearer " + token)
+                        .header("If-Match", "\"v0\"")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"riskFlagged\":true}"))
                 .andExpect(status().isForbidden());
@@ -110,11 +113,12 @@ class MerchantRiskFlagControllerTest {
     void merchantListIncludesRiskFlaggedField() throws Exception {
         String token = tokenWithRolesAndTenantId("platform.admin",
                 List.of("merchants:update-risk-flag"), "PLATFORM_TENANT");
-        when(merchantService.updateRiskFlag(MERCHANT_ID, true))
+        when(merchantService.updateRiskFlag(MERCHANT_ID, true, 0L))
                 .thenReturn(riskFlaggedResponse(true));
 
         mockMvc.perform(patch("/api/merchants/{id}/risk-flag", MERCHANT_ID)
                         .header("Authorization", "Bearer " + token)
+                        .header("If-Match", "\"v0\"")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"riskFlagged\":true}"))
                 .andExpect(status().isOk())

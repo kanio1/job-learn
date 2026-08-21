@@ -72,15 +72,22 @@
           </UCard>
 
           <!-- Payment order count — from summary endpoint -->
-          <UCard v-if="canReadPaymentOrders && selectedMerchantId">
-            <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-receipt" class="text-2xl text-primary" />
-              <div>
-                <div class="text-sm text-muted">Payment Orders</div>
-                <div class="text-2xl font-semibold text-highlighted">{{ totalOrders }}</div>
+          <NuxtLink
+            v-if="canReadPaymentOrders && selectedMerchantId"
+            :to="`/admin/merchants/${selectedMerchantId}/payments`"
+            class="block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            aria-label="View payment orders"
+          >
+            <UCard>
+              <div class="flex items-center gap-3">
+                <UIcon name="i-lucide-receipt" class="text-2xl text-primary" />
+                <div>
+                  <div class="text-sm text-muted">Payment Orders</div>
+                  <div class="text-2xl font-semibold text-highlighted">{{ totalOrders }}</div>
+                </div>
               </div>
-            </div>
-          </UCard>
+            </UCard>
+          </NuxtLink>
 
           <!-- Per-Payment_Status count cards — from summary.byStatus (Req 1.1) -->
           <template v-for="statusEntry in canReadPaymentOrders ? byStatus : []" :key="statusEntry.status">

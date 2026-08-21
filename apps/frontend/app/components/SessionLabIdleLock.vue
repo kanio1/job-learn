@@ -21,6 +21,6 @@ const { locked, idleSeconds } = useIdleLock()
 const auth = useAuthStore()
 
 async function unlock() {
-  await auth.logout()
+  await auth.logoutShallow()
 }
 </script>

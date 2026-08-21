@@ -26,7 +26,8 @@ test('risk toggle on a unique merchant shows the list badge', { tag: ['@ux'] }, 
     await app.merchantDetail.expectRiskFlagged(true)
     await app.merchants.goto()
     await app.merchants.expectLoaded()
-    await app.page.getByPlaceholder('Filter merchants...').fill(reference)
+    await app.merchants.filterByText(reference)
+    await app.merchants.applyFilters()
     await app.merchants.expectRowVisible(reference)
     await app.merchants.expectRiskBadgeFor(displayName)
   } else {

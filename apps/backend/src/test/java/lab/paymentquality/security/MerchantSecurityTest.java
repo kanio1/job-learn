@@ -5,6 +5,7 @@ import lab.paymentquality.merchant.internal.application.MerchantService;
 import lab.paymentquality.testsupport.PostgresContainerSupport;
 import lab.paymentquality.testsupport.TestJwtConfiguration;
 import lab.paymentquality.testsupport.TestJwtSupport;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -94,6 +95,8 @@ class MerchantSecurityTest extends PostgresContainerSupport {
                 .when().post("/api/merchants")
                 .then().statusCode(201)
                 .extract().path("merchantId");
+        String etag = requestWithToken(port, readOnly).when().get("/api/merchants/{id}", id)
+                .then().statusCode(200).extract().header("ETag");
 
         requestWithToken(port, readOnly).when().get("/api/merchants").then().statusCode(200);
         requestWithToken(port, readOnly).when().get("/api/merchants/{id}", id).then().statusCode(200);
@@ -112,8 +115,10 @@ class MerchantSecurityTest extends PostgresContainerSupport {
         requestWithToken(port, createOnly).when().post("/api/merchants/{id}/activate", id).then().statusCode(403);
         requestWithToken(port, createOnly).when().post("/api/merchants/{id}/suspend", id).then().statusCode(403);
 
-        requestWithToken(port, updateOnly).when().post("/api/merchants/{id}/activate", id).then().statusCode(200);
-        requestWithToken(port, updateOnly).when().post("/api/merchants/{id}/suspend", id).then().statusCode(200);
+        requestWithToken(port, updateOnly).header("If-Match", etag).when().post("/api/merchants/{id}/activate", id).then().statusCode(200);
+        String afterActivate = requestWithToken(port, readOnly).when().get("/api/merchants/{id}", id)
+                .then().statusCode(200).extract().header("ETag");
+        requestWithToken(port, updateOnly).header("If-Match", afterActivate).when().post("/api/merchants/{id}/suspend", id).then().statusCode(200);
         requestWithToken(port, updateOnly).when().get("/api/merchants").then().statusCode(403);
         requestWithToken(port, updateOnly).when().get("/api/merchants/{id}", id).then().statusCode(403);
         requestWithToken(port, updateOnly).contentType(ContentType.JSON)
@@ -122,19 +127,43 @@ class MerchantSecurityTest extends PostgresContainerSupport {
     }
 
     @Test
+    @DisplayName("RA-M360-040 merchants:read GET 200 and POST activate 403")
+    void readOnlyAuthorityCannotActivateMerchant() {
+        String createOnly = TestJwtSupport.tokenWithRolesAndTenantId(
+                "create.only.ra040", List.of("merchants:create"), LEGACY_TENANT_REFERENCE);
+        String readOnly = TestJwtSupport.tokenWithRolesAndTenantId(
+                "read.only.ra040", List.of("merchants:read"), LEGACY_TENANT_REFERENCE);
+
+        String id = requestWithToken(port, createOnly).contentType(ContentType.JSON)
+                .body(createMerchantBody(uniqueMerchantReference("RA040"), "RA-M360-040"))
+                .when().post("/api/merchants")
+                .then().statusCode(201)
+                .extract().path("merchantId");
+
+        requestWithToken(port, readOnly).when().get("/api/merchants").then().statusCode(200);
+        requestWithToken(port, readOnly).when().get("/api/merchants/{id}", id).then().statusCode(200);
+        requestWithToken(port, readOnly).when().post("/api/merchants/{id}/activate", id)
+                .then()
+                .statusCode(403);
+    }
+
+    @Test
     void fullPlatformOperatorCanUseAllMerchantEndpoints() {
         String token = TestJwtSupport.platformOperatorToken();
-        String id = requestWithToken(port, token).contentType(ContentType.JSON)
+        var created = requestWithToken(port, token).contentType(ContentType.JSON)
                 .body(createMerchantBody(uniqueMerchantReference("FULL"), "Full Operator"))
         .when().post("/api/merchants")
         .then()
                 .statusCode(201)
-                .extract().path("merchantId");
+                .extract();
+        String id = created.path("merchantId");
+        String etag = created.header("ETag");
 
         requestWithToken(port, token).when().get("/api/merchants").then().statusCode(200);
         requestWithToken(port, token).when().get("/api/merchants/{id}", id).then().statusCode(200);
-        requestWithToken(port, token).when().post("/api/merchants/{id}/activate", id).then().statusCode(200);
-        requestWithToken(port, token).when().post("/api/merchants/{id}/suspend", id).then().statusCode(200);
+        String afterActivate = requestWithToken(port, token).header("If-Match", etag).when().post("/api/merchants/{id}/activate", id)
+                .then().statusCode(200).extract().header("ETag");
+        requestWithToken(port, token).header("If-Match", afterActivate).when().post("/api/merchants/{id}/suspend", id).then().statusCode(200);
     }
 
     private void assertMerchantEndpointsRequire401(String token, String id) {

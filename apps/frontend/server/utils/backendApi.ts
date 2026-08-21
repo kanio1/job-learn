@@ -23,7 +23,8 @@ export async function backendApi(
       headers[key] = value
     }
   }
-  if (method !== 'HEAD' && !headers['Content-Type'] && !headers['content-type']) {
+  const isFormData = typeof FormData !== 'undefined' && opts.body instanceof FormData
+  if (method !== 'HEAD' && !isFormData && !headers['Content-Type'] && !headers['content-type']) {
     headers['Content-Type'] = 'application/json'
   }
 

@@ -150,12 +150,15 @@
 
       <!-- Data table -->
       <template v-else-if="list && list.content.length > 0">
-        <UTable
-          :data="list.content"
-          :columns="columns"
-          aria-label="Payment order list"
-          class="shrink-0"
-        />
+    <UTable
+      :sorting="sorting"
+      :data="list.content"
+      :columns="columns"
+      :sorting-options="{ manualSorting: true }"
+      aria-label="Payment order list"
+      class="shrink-0"
+      @update:sorting="onSortingChange"
+    />
       </template>
 
       <!-- Pagination -->
@@ -219,6 +222,8 @@ const filters = reactive({
 
 const currentPage = ref((props.currentQuery?.page ?? 0))
 const pageSize = ref(props.currentQuery?.size ?? 20)
+const currentSort = ref(props.currentQuery?.sort ?? 'createdAt,desc')
+const sorting = ref(sortingFromSort(currentSort.value))
 
 // ---------------------------------------------------------------------------
 // Derived state
@@ -263,7 +268,7 @@ function buildQuery(page: number): PaymentOrderListQuery {
     clientOrderReference: filters.clientOrderReference || undefined,
     page,
     size: pageSize.value,
-    sort: 'createdAt,desc',
+    sort: currentSort.value,
   }
   // Validate and strip via schema (sets defaults, enforces max size=100)
   return paymentOrderListQuerySchema.parse(raw)
@@ -292,6 +297,45 @@ function onPageChange(page: number) {
   emit('query-change', buildQuery(page - 1))
 }
 
+function sortingFromSort(sort: string): Array<{ id: string, desc: boolean }> {
+  const [id, direction] = sort.split(',')
+  if (id !== 'createdAt' && id !== 'amountMinor') {
+    return [{ id: 'createdAt', desc: true }]
+  }
+  return [{ id, desc: direction !== 'asc' }]
+}
+
+function onSortingChange(next: Array<{ id: string, desc: boolean }> | undefined) {
+  sorting.value = next && next.length > 0 ? next : [{ id: 'createdAt', desc: true }]
+  const first = sorting.value[0]
+  const sort = !first || (first.id !== 'createdAt' && first.id !== 'amountMinor')
+    ? 'createdAt,desc'
+    : `${first.id},${first.desc ? 'desc' : 'asc'}`
+  if (sort === currentSort.value) {
+    return
+  }
+  currentSort.value = sort
+  currentPage.value = 0
+  emit('query-change', buildQuery(0))
+}
+
+function sortableHeader(
+  column: { getIsSorted: () => false | 'asc' | 'desc', toggleSorting: (desc?: boolean) => void },
+  label: string,
+) {
+  const isSorted = column.getIsSorted()
+  return h(UButton, {
+    color: 'neutral',
+    variant: 'ghost',
+    label,
+    icon: isSorted
+      ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow')
+      : 'i-lucide-arrow-up-down',
+    class: '-mx-2.5',
+    onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Table columns
 // ---------------------------------------------------------------------------
@@ -303,7 +347,7 @@ const columns: TableColumn<PaymentOrderResponse>[] = [
   },
   {
     accessorKey: 'amountMinor',
-    header: 'Amount',
+    header: ({ column }) => sortableHeader(column, 'Amount'),
     cell: ({ row }) => `${row.original.amountMinor} ${row.original.currency}`,
   },
   {
@@ -313,7 +357,7 @@ const columns: TableColumn<PaymentOrderResponse>[] = [
   },
   {
     accessorKey: 'createdAt',
-    header: 'Created',
+    header: ({ column }) => sortableHeader(column, 'Created'),
     cell: ({ row }) => h('span', { class: 'text-muted text-sm' }, new Date(row.original.createdAt).toLocaleString()),
   },
   {

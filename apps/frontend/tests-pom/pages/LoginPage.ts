@@ -13,4 +13,12 @@ export class LoginPage extends BasePage {
   async continueToKeycloak(): Promise<void> {
     await this.byTestId('login-control').click()
   }
+
+  async useDifferentAccount(): Promise<void> {
+    await this.byTestId('login-different-account').click()
+  }
+
+  ssoResumeNotice() {
+    return this.byTestId('login-sso-resume-notice')
+  }
 }

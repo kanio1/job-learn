@@ -35,9 +35,9 @@ Jako operator platformy chcę szybki filtr `ACTIVE` w moim tenancie posortowany 
 
 ### Acceptance criteria
 
-- [ ] Flyway `merchant/V23__merchant_list_query_indexes.sql` jak w [01-infra](../01-infra-postgres-keycloak-stack.md).
-- [ ] JPA validate zielone; `ModulithArchitectureTest`.
-- [ ] Brak `CONCURRENTLY`.
+- [x] Flyway `merchant/V23__merchant_list_query_indexes.sql` jak w [01-infra](../01-infra-postgres-keycloak-stack.md).
+- [x] JPA validate zielone; `ModulithArchitectureTest`.
+- [x] Brak `CONCURRENTLY`.
 
 ### Test IDs
 
@@ -68,11 +68,11 @@ Jako tenant admin chcę stronę 20 merchantów z `q` i `status`, aby nie scrollo
 
 ### Acceptance criteria
 
-- [ ] Query: `q` (ILIKE reference lub displayName), `status` enum, `riskFlagged`, `tenantId` tylko platform, `page≥0`, `1≤size≤100`, `sort` regex `createdAt|updatedAt|displayName|status,(asc|desc)`.
-- [ ] Tenant JWT: zawsze `tenant_id` z tokena; ignoruj obcy `tenantId`.
-- [ ] Platform bez `tenantId`: wszystkie tenanty (jak dziś list).
-- [ ] Domyślnie `sort=createdAt,desc` + `merchant_id` ASC.
-- [ ] 400 problem+json na zły sort/status/size.
+- [x] Query: `q` (ILIKE reference lub displayName), `status` enum, `riskFlagged`, `tenantId` tylko platform, `page≥0`, `1≤size≤100`, `sort` regex `createdAt|updatedAt|displayName|status,(asc|desc)`.
+- [x] Tenant JWT: zawsze `tenant_id` z tokena; ignoruj obcy `tenantId`.
+- [x] Platform bez `tenantId`: wszystkie tenanty (jak dziś list).
+- [x] Domyślnie `sort=createdAt,desc` + `merchant_id` ASC.
+- [x] 400 problem+json na zły sort/status/size.
 
 ### Test IDs
 
@@ -112,10 +112,10 @@ Jako merchant manager chcę listę `AUTHORIZED` i sort po kwocie, aby Kanban i t
 
 ### Acceptance criteria
 
-- [ ] `status` = `CREATED\|AUTHORIZED\|CAPTURED\|CANCELLED\|EXPIRED\|REFUNDED`.
-- [ ] `sort` = `createdAt,(asc\|desc)` **lub** `amountMinor,(asc\|desc)`.
-- [ ] V24 index amount.
-- [ ] Tenant/merchant ownership bez zmian.
+- [x] `status` = `CREATED\|AUTHORIZED\|CAPTURED\|CANCELLED\|EXPIRED\|REFUNDED`.
+- [x] `sort` = `createdAt,(asc\|desc)` **lub** `amountMinor,(asc\|desc)`.
+- [x] V24 index amount.
+- [x] Tenant/merchant ownership bez zmian.
 
 ### Test IDs
 

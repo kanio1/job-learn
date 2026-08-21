@@ -16,16 +16,19 @@ public final class PaymentApiTestSupport {
         String ref = uniqueMerchantReference("PAY");
         Map<String, Object> body = MerchantApiTestSupport.createMerchantBody(ref, "Payment Test Merchant");
 
-        String merchantId = operatorRequest
+        var created = operatorRequest
                 .contentType("application/json")
                 .body(body)
                 .when()
                 .post("/api/merchants")
                 .then()
                 .statusCode(201)
-                .extract().path("merchantId");
+                .extract();
+        String merchantId = created.path("merchantId");
+        String etag = created.header("ETag");
 
         operatorRequest
+                .header("If-Match", etag)
                 .when()
                 .post("/api/merchants/" + merchantId + "/activate")
                 .then()
@@ -38,16 +41,19 @@ public final class PaymentApiTestSupport {
         String ref = uniqueMerchantReference("PAY");
         Map<String, Object> body = MerchantApiTestSupport.createMerchantBody(ref, "Payment Test Merchant");
 
-        String merchantId = operatorRequest
+        var created = operatorRequest
             .contentType("application/json")
             .body(body)
             .when()
             .post("/api/merchants")
             .then()
             .statusCode(201)
-            .extract().path("merchantId");
+            .extract();
+        String merchantId = created.path("merchantId");
+        String etag = created.header("ETag");
 
         operatorRequest
+            .header("If-Match", etag)
             .when()
             .post("/api/merchants/" + merchantId + "/activate")
             .then()

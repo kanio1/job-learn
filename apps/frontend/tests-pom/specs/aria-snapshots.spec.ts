@@ -3,7 +3,7 @@ import { pomAuthFiles } from '../utils/env'
 import { test, expect } from '../fixtures'
 import { App } from '../pages/App'
 
-test('create-merchant form matches ARIA snapshot', { tag: ['@visual'] }, async ({ app }) => {
+test('PW-M360-E2E-073 create-merchant form matches ARIA snapshot', { tag: ['@visual'] }, async ({ app }) => {
   await app.merchants.goto()
   await app.merchants.expectLoaded()
   await app.merchants.openCreateForm()

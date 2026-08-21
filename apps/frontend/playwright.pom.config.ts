@@ -91,8 +91,8 @@ export default defineConfig({
     },
     {
       name: 'chromium-admin',
-      testMatch: /specs\/(merchants|users|audit|error-lab|checkout-lab|session-lab|network-lab|mirror-lab|command-palette|internal-notes|merchant-risk|support-admin|admin-bff|a11y-axe|psp-redirect)\.spec\.ts/,
-      dependencies: ['setup-platform-admin'],
+      testMatch: /specs\/(merchants|merchants-table|merchants-slideover|merchants-concurrency|merchants-import|merchants-tree|users|audit|error-lab|checkout-lab|session-lab|network-lab|mirror-lab|command-palette|internal-notes|merchant-risk|support-admin|admin-bff|a11y-axe|psp-redirect)\.spec\.ts/,
+      dependencies: ['setup-platform-admin', 'setup-tenant-admin', 'setup-read-only-user', 'setup-merchant-manager'],
       use: {
         ...devices['Desktop Chrome'],
         storageState: './tests-pom/.auth/platform-admin.json',
@@ -102,7 +102,7 @@ export default defineConfig({
       name: 'chromium-manager',
       testMatch: /specs\/(payments-(?!refund-dual-control).*|support|error-lab-manager)\.spec\.ts/,
       fullyParallel: true,
-      dependencies: ['setup-worker-managers'],
+      dependencies: ['setup-worker-managers', 'setup-merchant-denied'],
       use: {
         ...devices['Desktop Chrome'],
         storageState: { cookies: [], origins: [] },
@@ -154,7 +154,7 @@ export default defineConfig({
       : []),
     {
       name: 'chromium-rbac',
-      testMatch: /specs\/(auth-rbac|tenant-scope|mirror-lab-rbac|rls-lab|support-rbac|readonly-rbac|denied-rbac)\.spec\.ts/,
+      testMatch: /specs\/(auth-rbac|tenant-scope|mirror-lab-rbac|rls-lab|support-rbac|readonly-rbac|denied-rbac|merchants-rbac-columns)\.spec\.ts/,
       fullyParallel: false,
       dependencies: ['setup-platform-admin', 'setup-tenant-admin', 'setup-merchant-manager', 'setup-support-agent', 'setup-read-only-user', 'setup-merchant-denied'],
       use: devices['Desktop Chrome'],

@@ -2,6 +2,8 @@ import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 import { utcToday } from '../utils/dates'
+import { etagOf } from '../utils/http'
+import { waitForBffResponse } from '../utils/wait-bff'
 
 test('list filters by amount with API oracle and BFF composition', async ({ app, api, page, ownedMerchantId }, testInfo) => {
   const client = requireApi(api)
@@ -50,7 +52,7 @@ test('list filters by amount with API oracle and BFF composition', async ({ app,
   await expectNoTokenInBrowserStorage(app.page)
 })
 
-test('date status and reference filters agree with API oracle', async ({ app, api, ownedMerchantId }, testInfo) => {
+test('PW-M360-E2E-027 date status and reference filters agree with API oracle', async ({ app, api, ownedMerchantId }, testInfo) => {
   const client = requireApi(api)
   const reference = uniqueOrderReference(testInfo, 'PAIR')
   const created = await client.createPaymentOrder(
@@ -113,7 +115,7 @@ test('status and currency pairwise filter agrees with API oracle', async ({ app,
   expect(refs).not.toContain(eurRef)
 })
 
-test('applying filters from a stale page query resets to page 0', async ({ app, api, page, ownedMerchantId }, testInfo) => {
+test('PW-M360-E2E-028 applying filters from a stale page query resets to page 0', async ({ app, api, page, ownedMerchantId }, testInfo) => {
   const client = requireApi(api)
   const reference = uniqueOrderReference(testInfo, 'PAGE')
   const created = await client.createPaymentOrder(
@@ -149,3 +151,67 @@ test('applying filters from a stale page query resets to page 0', async ({ app, 
   await expect(app.page).not.toHaveURL(/page=1/)
   await app.payments.expectReferenceVisible(reference)
 })
+
+test('PW-M360-E2E-025 Amount columnheader sends sort=amountMinor', async ({ app, api, page, ownedMerchantId }, testInfo) => {
+  const client = requireApi(api)
+  const reference = uniqueOrderReference(testInfo, 'AMT')
+  expect((await client.createPaymentOrder(
+    ownedMerchantId,
+    { amountMinor: 1500, currency: 'PLN', clientOrderReference: reference },
+    uniqueIdempotencyKey(testInfo, 'AMT'),
+  )).status).toBe(201)
+
+  await app.payments.gotoForMerchant(ownedMerchantId)
+  await app.payments.expectLoaded()
+  const listPath = `/api/merchants/${ownedMerchantId}/payment-orders`
+  const sorted = page.waitForResponse((response) => {
+    if (response.request().method() !== 'GET') {
+      return false
+    }
+    try {
+      const url = new URL(response.url())
+      return url.pathname === listPath && (url.searchParams.get('sort') ?? '').includes('amountMinor')
+    }
+    catch {
+      return false
+    }
+  })
+  await app.page.getByRole('button', { name: 'Amount' }).click()
+  const response = await sorted
+  expect(response.status()).toBe(200)
+})
+
+test('PW-M360-E2E-026 status CAPTURED Apply shows captured row', async ({ app, api, ownedMerchantId }, testInfo) => {
+  const client = requireApi(api)
+  const reference = uniqueOrderReference(testInfo, 'CAP')
+  const created = await client.createPaymentOrder(
+    ownedMerchantId,
+    { amountMinor: 2400, currency: 'PLN', clientOrderReference: reference },
+    uniqueIdempotencyKey(testInfo, 'CAP-CREATE'),
+  )
+  expect(created.status).toBe(201)
+  const paymentOrderId = created.body.paymentOrderId!
+  const authorized = await client.authorizePayment(
+    ownedMerchantId,
+    paymentOrderId,
+    etagOf(created.headers),
+    uniqueIdempotencyKey(testInfo, 'CAP-AUTH'),
+  )
+  expect(authorized.status).toBe(200)
+  const captured = await client.capturePayment(
+    ownedMerchantId,
+    paymentOrderId,
+    etagOf(authorized.headers),
+    uniqueIdempotencyKey(testInfo, 'CAP-CAP'),
+    2400,
+  )
+  expect(captured.status).toBe(200)
+
+  await app.payments.gotoForMerchant(ownedMerchantId)
+  await app.payments.expectLoaded()
+  await app.payments.applyStatusFilter('Captured')
+  await app.payments.expectReferenceVisible(reference)
+  await expect(app.page).toHaveURL(/status=CAPTURED/)
+  await expect(app.payments.statusBadgeForReference(reference)).toHaveAttribute('data-status', 'CAPTURED')
+})
+

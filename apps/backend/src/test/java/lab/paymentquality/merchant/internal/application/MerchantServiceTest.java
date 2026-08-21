@@ -14,6 +14,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 
@@ -181,8 +184,8 @@ class MerchantServiceTest {
     @Test
     void listFirstPageFiltersForTenantScopedContext() {
         var merchant = Merchant.create(UUID.randomUUID(), "MERCH-001", "Test", TENANT_ALPHA_ID);
-        when(repository.findAllByTenantIdOrderByCreatedAtDescMerchantIdAsc(eq(TENANT_ALPHA_ID), any()))
-                .thenReturn(List.of(merchant));
+        when(repository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(merchant)));
 
         var response = service.listFirstPage(TENANT_ALPHA_CONTEXT, TENANT_BETA_ID);
 
@@ -193,8 +196,8 @@ class MerchantServiceTest {
     @Test
     void listFirstPageSupportsPlatformTenantFilter() {
         var merchant = Merchant.create(UUID.randomUUID(), "MERCH-001", "Test", TENANT_BETA_ID);
-        when(repository.findAllByTenantIdOrderByCreatedAtDescMerchantIdAsc(eq(TENANT_BETA_ID), any()))
-                .thenReturn(List.of(merchant));
+        when(repository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(merchant)));
 
         var response = service.listFirstPage(PLATFORM_CONTEXT, TENANT_BETA_ID);
 

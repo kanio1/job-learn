@@ -147,16 +147,19 @@ class PaymentOrderSecurityTest extends PostgresContainerSupport {
     @Test
     void merchantNaturalReferenceClaimCanCreateOnlyForItsResolvedMerchant() {
         String merchantReference = MerchantApiTestSupport.uniqueMerchantReference("CLAIM");
-        String merchantId = MerchantApiTestSupport.operatorRequest(port)
+        var created = MerchantApiTestSupport.operatorRequest(port)
                 .contentType(ContentType.JSON)
                 .body(MerchantApiTestSupport.createMerchantBody(merchantReference, "Claim-scoped Merchant"))
                 .when()
                 .post("/api/merchants")
                 .then()
                 .statusCode(201)
-                .extract().path("merchantId");
+                .extract();
+        String merchantId = created.path("merchantId");
+        String etag = created.header("ETag");
 
         MerchantApiTestSupport.operatorRequest(port)
+                .header("If-Match", etag)
                 .when()
                 .post("/api/merchants/{merchantId}/activate", merchantId)
                 .then()

@@ -14,7 +14,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -40,7 +39,9 @@ public class MerchantController {
                 tenantContext,
                 request.tenantReference());
         var response = MerchantMapper.toResponse(merchant);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header("ETag", MerchantEtag.from(response.version()))
+                .body(response);
     }
 
     @GetMapping("/{id}")
@@ -50,54 +51,82 @@ public class MerchantController {
         UUID uuid = parseUUID(id);
         TenantContext tenantContext = tenantResolver.resolve(jwt);
         var response = merchantService.findById(uuid, tenantContext);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok()
+                .header("ETag", MerchantEtag.from(response.version()))
+                .body(response);
     }
 
     @GetMapping
     @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_READ + "')")
-    public ResponseEntity<MerchantListResponse> list(@RequestParam(required = false) String tenantId,
+    public ResponseEntity<MerchantListResponse> list(@Valid @ModelAttribute MerchantListRequest request,
                                                      @AuthenticationPrincipal Jwt jwt) {
         TenantContext tenantContext = tenantResolver.resolve(jwt);
         UUID filterTenantId = null;
-        if (tenantContext.isPlatformScoped() && tenantId != null && !tenantId.isBlank()) {
+        if (tenantContext.isPlatformScoped() && request.tenantId() != null) {
             try {
-                filterTenantId = tenantResolver.resolveTenantId(TenantReference.of(tenantId));
+                filterTenantId = tenantResolver.resolveTenantId(TenantReference.of(request.tenantId()));
             } catch (IllegalArgumentException | TenantResolutionException e) {
-                return ResponseEntity.ok(new MerchantListResponse(List.of()));
+                return ResponseEntity.ok(MerchantListResponse.empty(request.effectivePage(), request.effectiveSize()));
             }
         }
 
-        var merchants = merchantService.listFirstPage(tenantContext, filterTenantId);
-        return ResponseEntity.ok(new MerchantListResponse(merchants));
+        return ResponseEntity.ok(merchantService.list(tenantContext, request, filterTenantId));
     }
 
     @PostMapping("/{id}/activate")
     @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_UPDATE_STATUS + "')")
     public ResponseEntity<MerchantResponse> activate(@PathVariable String id,
+                                                     @RequestHeader(value = "If-Match", required = false) String ifMatch,
                                                      @AuthenticationPrincipal Jwt jwt) {
         UUID uuid = parseUUID(id);
         TenantContext tenantContext = tenantResolver.resolve(jwt);
-        var response = merchantService.activate(uuid, tenantContext);
-        return ResponseEntity.ok(response);
+        long expectedVersion = MerchantEtag.requireVersion(ifMatch);
+        var response = merchantService.activate(uuid, tenantContext, expectedVersion);
+        return ResponseEntity.ok()
+                .header("ETag", MerchantEtag.from(response.version()))
+                .body(response);
     }
 
     @PostMapping("/{id}/suspend")
     @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_UPDATE_STATUS + "')")
     public ResponseEntity<MerchantResponse> suspend(@PathVariable String id,
+                                                    @RequestHeader(value = "If-Match", required = false) String ifMatch,
                                                     @AuthenticationPrincipal Jwt jwt) {
         UUID uuid = parseUUID(id);
         TenantContext tenantContext = tenantResolver.resolve(jwt);
-        var response = merchantService.suspend(uuid, tenantContext);
-        return ResponseEntity.ok(response);
+        long expectedVersion = MerchantEtag.requireVersion(ifMatch);
+        var response = merchantService.suspend(uuid, tenantContext, expectedVersion);
+        return ResponseEntity.ok()
+                .header("ETag", MerchantEtag.from(response.version()))
+                .body(response);
     }
 
     @PatchMapping("/{id}/risk-flag")
     @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_UPDATE_RISK_FLAG + "')")
     public ResponseEntity<MerchantResponse> updateRiskFlag(@PathVariable String id,
+                                                           @RequestHeader(value = "If-Match", required = false) String ifMatch,
                                                            @RequestBody UpdateRiskFlagRequest request) {
         UUID uuid = parseUUID(id);
-        var response = merchantService.updateRiskFlag(uuid, request.riskFlagged());
-        return ResponseEntity.ok(response);
+        long expectedVersion = MerchantEtag.requireVersion(ifMatch);
+        var response = merchantService.updateRiskFlag(uuid, request.riskFlagged(), expectedVersion);
+        return ResponseEntity.ok()
+                .header("ETag", MerchantEtag.from(response.version()))
+                .body(response);
+    }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasAuthority('" + Authorities.MERCHANTS_UPDATE_STATUS + "')")
+    public ResponseEntity<MerchantResponse> rename(@PathVariable String id,
+                                                   @RequestHeader(value = "If-Match", required = false) String ifMatch,
+                                                   @RequestBody UpdateMerchantDisplayNameRequest request,
+                                                   @AuthenticationPrincipal Jwt jwt) {
+        UUID uuid = parseUUID(id);
+        TenantContext tenantContext = tenantResolver.resolve(jwt);
+        long expectedVersion = MerchantEtag.requireVersion(ifMatch);
+        var response = merchantService.rename(uuid, request.displayName(), tenantContext, expectedVersion);
+        return ResponseEntity.ok()
+                .header("ETag", MerchantEtag.from(response.version()))
+                .body(response);
     }
 
     private UUID parseUUID(String id) {

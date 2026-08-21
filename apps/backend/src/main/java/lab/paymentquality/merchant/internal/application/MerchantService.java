@@ -2,7 +2,10 @@ package lab.paymentquality.merchant.internal.application;
 
 import lab.paymentquality.merchant.internal.domain.*;
 import lab.paymentquality.merchant.internal.infrastructure.JpaMerchantRepository;
+import lab.paymentquality.merchant.internal.infrastructure.MerchantSpecification;
 import lab.paymentquality.merchant.internal.web.DuplicateMerchantReferenceException;
+import lab.paymentquality.merchant.internal.web.MerchantListRequest;
+import lab.paymentquality.merchant.internal.web.MerchantListResponse;
 import lab.paymentquality.merchant.internal.web.MerchantMapper;
 import lab.paymentquality.merchant.internal.web.MerchantResponse;
 import lab.paymentquality.shared.events.AuditableActionEventFactory;
@@ -13,10 +16,14 @@ import lab.paymentquality.tenant.TenantResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -141,26 +148,56 @@ public class MerchantService {
 
     @Transactional(readOnly = true)
     public List<MerchantResponse> listFirstPage(TenantContext tenantContext, UUID filterTenantId) {
+        return list(tenantContext, MerchantListRequest.defaults(), filterTenantId).content();
+    }
+
+    @Transactional(readOnly = true)
+    public MerchantListResponse list(
+            TenantContext tenantContext,
+            MerchantListRequest request,
+            UUID filterTenantId) {
         Objects.requireNonNull(tenantContext, "tenantContext must not be null");
+        Objects.requireNonNull(request, "request must not be null");
 
-        PageRequest page = PageRequest.of(0, LIST_LIMIT);
+        int page = request.effectivePage();
+        int size = request.effectiveSize();
+        Sort sort = parseSort(request.effectiveSort());
+
+        Specification<Merchant> spec = (root, query, cb) -> cb.conjunction();
         if (tenantContext.isTenantScoped()) {
-            return repository.findAllByTenantIdOrderByCreatedAtDescMerchantIdAsc(tenantContext.tenantId(), page)
-                    .stream()
-                    .map(MerchantMapper::toResponse)
-                    .toList();
+            spec = spec.and(MerchantSpecification.hasTenantId(tenantContext.tenantId()));
+        } else if (filterTenantId != null) {
+            spec = spec.and(MerchantSpecification.hasTenantId(filterTenantId));
         }
+        spec = addIfNotNull(spec, MerchantSpecification.hasStatus(request.status()));
+        spec = addIfNotNull(spec, MerchantSpecification.riskFlagged(request.riskFlagged()));
+        spec = addIfNotNull(spec, MerchantSpecification.matchesQuery(request.q()));
 
-        if (filterTenantId != null) {
-            return repository.findAllByTenantIdOrderByCreatedAtDescMerchantIdAsc(filterTenantId, page)
-                    .stream()
-                    .map(MerchantMapper::toResponse)
-                    .toList();
-        }
+        Page<Merchant> result = repository.findAll(spec, PageRequest.of(page, size, sort));
+        return MerchantMapper.toListResponse(result);
+    }
 
-        return repository.findAllByOrderByCreatedAtDescMerchantIdAsc(page).stream()
+    @Transactional(readOnly = true)
+    public List<MerchantResponse> listByTenantId(UUID tenantId) {
+        Objects.requireNonNull(tenantId, "tenantId must not be null");
+        return repository.findAllByTenantIdOrderByCreatedAtDescMerchantIdAsc(tenantId, Pageable.unpaged())
+                .stream()
                 .map(MerchantMapper::toResponse)
                 .toList();
+    }
+
+    private static Sort parseSort(String sortParam) {
+        String[] sortParts = sortParam.split(",");
+        Sort.Direction direction = sortParts.length > 1 && "asc".equalsIgnoreCase(sortParts[1])
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+        return Sort.by(direction, sortParts[0]).and(Sort.by(Sort.Direction.ASC, "merchantId"));
+    }
+
+    private static Specification<Merchant> addIfNotNull(
+            Specification<Merchant> base,
+            Specification<Merchant> additional) {
+        return additional != null ? base.and(additional) : base;
     }
 
     public MerchantResponse activate(UUID id) {
@@ -176,7 +213,12 @@ public class MerchantService {
     }
 
     public MerchantResponse activate(UUID id, TenantContext tenantContext) {
+        return activate(id, tenantContext, null);
+    }
+
+    public MerchantResponse activate(UUID id, TenantContext tenantContext, Long expectedVersion) {
         Merchant merchant = findMerchantEnforcingTenantBoundary(id, tenantContext);
+        requireCurrentVersion(merchant, expectedVersion);
         MerchantStatus statusBefore = merchant.getStatus();
         merchant.activate();
         repository.saveAndFlush(merchant);
@@ -200,7 +242,12 @@ public class MerchantService {
     }
 
     public MerchantResponse suspend(UUID id, TenantContext tenantContext) {
+        return suspend(id, tenantContext, null);
+    }
+
+    public MerchantResponse suspend(UUID id, TenantContext tenantContext, Long expectedVersion) {
         Merchant merchant = findMerchantEnforcingTenantBoundary(id, tenantContext);
+        requireCurrentVersion(merchant, expectedVersion);
         MerchantStatus statusBefore = merchant.getStatus();
         merchant.suspend();
         repository.saveAndFlush(merchant);
@@ -212,8 +259,13 @@ public class MerchantService {
     }
 
     public MerchantResponse updateRiskFlag(UUID id, boolean riskFlagged) {
+        return updateRiskFlag(id, riskFlagged, null);
+    }
+
+    public MerchantResponse updateRiskFlag(UUID id, boolean riskFlagged, Long expectedVersion) {
         Merchant merchant = repository.findById(id)
                 .orElseThrow(() -> new MerchantNotFoundException(id.toString()));
+        requireCurrentVersion(merchant, expectedVersion);
         merchant.updateRiskFlag(riskFlagged);
         repository.saveAndFlush(merchant);
         String action = riskFlagged ? "MERCHANT_RISK_FLAGGED" : "MERCHANT_RISK_FLAG_CLEARED";
@@ -221,6 +273,27 @@ public class MerchantService {
                 id, riskFlagged, MDC.get("correlationId"));
         publishSuccess(action, id, null);
         return MerchantMapper.toResponse(merchant);
+    }
+
+    public MerchantResponse rename(UUID id, String displayName, TenantContext tenantContext, Long expectedVersion) {
+        Merchant merchant = findMerchantEnforcingTenantBoundary(id, tenantContext);
+        requireCurrentVersion(merchant, expectedVersion);
+        DisplayName validated = DisplayName.from(displayName);
+        merchant.rename(validated.value());
+        repository.saveAndFlush(merchant);
+        log.info("merchant.display-name.updated merchantId={} correlationId={}", id, MDC.get("correlationId"));
+        publishSuccess("MERCHANT_RENAMED", id, tenantContext.tenantReference().value());
+        return MerchantMapper.toResponse(merchant);
+    }
+
+    private static void requireCurrentVersion(Merchant merchant, Long expectedVersion) {
+        if (expectedVersion == null) {
+            return;
+        }
+        Long current = merchant.getVersion();
+        if (current == null || current != expectedVersion) {
+            throw new MerchantVersionMismatchException();
+        }
     }
 
     private void publishSuccess(String action, UUID merchantId, String tenantReference) {

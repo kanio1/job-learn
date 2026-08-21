@@ -46,7 +46,7 @@ Skrypty HTTP + kombinacje person (tenant.admin, ALPHA_002, dual-control): [09](0
 | Spec | `session.spec.ts` · `logout returns to login and blocks admin again` |
 | Kroki | `merchants.goto` → `userMenu.signOut()` (`logout-control` + menuitem Sign out) → `goto('/admin/merchants')` |
 | Asercje | URL `/login` po sign-out **i** po drugim goto |
-| Nie asertuje | Keycloak `end_session` (to jest E2E-013). Kontrakt: [session-bff-oidc-contract](../session-bff-oidc-contract.md) UC-SESS-01 |
+| Nie asertuje | kształt query `end_session` (to jest E2E-027 / E2E-013). Kontrakt: [session-bff-oidc-contract](../session-bff-oidc-contract.md) UC-SESS-01 |
 
 ### PW-W2-E2E-013 — End OIDC session (Session Lab)
 

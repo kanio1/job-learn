@@ -9,7 +9,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
 public record PaymentOrderListRequest(
-        @Pattern(regexp = "CREATED", message = "status must be CREATED")
+        @Pattern(regexp = "CREATED|AUTHORIZED|CAPTURED|CANCELLED|EXPIRED|REFUNDED",
+                message = "status must be CREATED, AUTHORIZED, CAPTURED, CANCELLED, EXPIRED, or REFUNDED")
         String status,
 
         @Pattern(regexp = "PLN|EUR|USD", message = "currency must be PLN, EUR, or USD")
@@ -33,12 +34,34 @@ public record PaymentOrderListRequest(
         @Max(value = 100, message = "size must be <= 100")
         Integer size,
 
-        @Pattern(regexp = "createdAt,(asc|desc)", message = "sort must be createdAt,asc or createdAt,desc")
+        @Pattern(regexp = "(createdAt|amountMinor),(asc|desc)",
+                message = "sort must be createdAt,asc|desc or amountMinor,asc|desc")
         String sort
 ) {
     public void validate() {
+        validateStatus();
+        validateSort();
         validateDateRange();
         validateAmountRange();
+    }
+
+    private void validateStatus() {
+        if (status == null || status.isBlank()) {
+            return;
+        }
+        if (!status.matches("CREATED|AUTHORIZED|CAPTURED|CANCELLED|EXPIRED|REFUNDED")) {
+            throw new IllegalArgumentException(
+                    "status must be CREATED, AUTHORIZED, CAPTURED, CANCELLED, EXPIRED, or REFUNDED");
+        }
+    }
+
+    private void validateSort() {
+        if (sort == null || sort.isBlank()) {
+            return;
+        }
+        if (!sort.matches("(createdAt|amountMinor),(asc|desc)")) {
+            throw new IllegalArgumentException("sort must be createdAt,asc|desc or amountMinor,asc|desc");
+        }
     }
 
     private void validateDateRange() {

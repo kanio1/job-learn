@@ -4,7 +4,10 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import lab.paymentquality.testsupport.PostgresContainerSupport;
 import lab.paymentquality.testsupport.TestJwtConfiguration;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
@@ -22,6 +25,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 import static lab.paymentquality.testsupport.MerchantApiTestSupport.createMerchantBody;
+import static lab.paymentquality.testsupport.MerchantApiTestSupport.operatorIfMatch;
 import static lab.paymentquality.testsupport.MerchantApiTestSupport.operatorRequest;
 import static lab.paymentquality.testsupport.MerchantApiTestSupport.uniqueMerchantReference;
 
@@ -49,31 +53,34 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
         String id = createMerchant(reference, "Flow Merchant")
                 .then()
                 .statusCode(201)
+                .header("ETag", notNullValue())
                 .body("merchantReference", equalTo(reference))
                 .body("displayName", equalTo("Flow Merchant"))
                 .body("status", equalTo("DRAFT"))
                 .extract().path("merchantId");
 
-        operatorRequest(port)
+        String etag = operatorRequest(port)
         .when().get("/api/merchants/{id}", id)
         .then()
                 .statusCode(200)
                 .body("merchantId", equalTo(id))
-                .body("status", equalTo("DRAFT"));
+                .body("status", equalTo("DRAFT"))
+                .extract().header("ETag");
 
         operatorRequest(port)
         .when().get("/api/merchants")
         .then()
                 .statusCode(200)
-                .body("merchants.merchantReference", hasItem(reference));
+                .body("content.merchantReference", hasItem(reference));
 
-        operatorRequest(port)
+        String afterActivate = operatorIfMatch(port, etag)
         .when().post("/api/merchants/{id}/activate", id)
         .then()
                 .statusCode(200)
-                .body("status", equalTo("ACTIVE"));
+                .body("status", equalTo("ACTIVE"))
+                .extract().header("ETag");
 
-        operatorRequest(port)
+        operatorIfMatch(port, afterActivate)
         .when().post("/api/merchants/{id}/suspend", id)
         .then()
                 .statusCode(200)
@@ -94,7 +101,7 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
         List<Map<String, Object>> merchants = operatorRequest(port)
                 .when().get("/api/merchants")
                 .then().statusCode(200)
-                .extract().path("merchants");
+                .extract().path("content");
 
         List<String> orderedReferences = merchants.stream()
                 .map(row -> (String) row.get("merchantReference"))
@@ -159,8 +166,10 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
 
     @Test
     void notFoundMalformedAndInvalidTransitionErrors() {
-        String id = createMerchant(uniqueMerchantReference("ERR"), "Error Merchant")
-                .then().statusCode(201).extract().path("merchantId");
+        Response created = createMerchant(uniqueMerchantReference("ERR"), "Error Merchant");
+        created.then().statusCode(201);
+        String id = created.path("merchantId");
+        String etag = created.getHeader("ETag");
 
         operatorRequest(port)
         .when().get("/api/merchants/not-a-uuid")
@@ -179,29 +188,31 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
                 .body("status", equalTo(404))
                 .body("error", equalTo("not_found"));
 
-        operatorRequest(port)
+        String afterActivate = operatorIfMatch(port, etag)
         .when().post("/api/merchants/{id}/activate", id)
-        .then().statusCode(200);
+        .then().statusCode(200)
+                .extract().header("ETag");
 
-        operatorRequest(port)
+        operatorIfMatch(port, afterActivate)
         .when().post("/api/merchants/{id}/activate", id)
         .then()
                 .statusCode(409)
                 .body("error", equalTo("invalid_transition"));
 
-        operatorRequest(port)
+        String afterSuspend = operatorIfMatch(port, afterActivate)
         .when().post("/api/merchants/{id}/suspend", id)
         .then()
                 .statusCode(200)
-                .body("status", equalTo("SUSPENDED"));
+                .body("status", equalTo("SUSPENDED"))
+                .extract().header("ETag");
 
-        operatorRequest(port)
+        operatorIfMatch(port, afterSuspend)
         .when().post("/api/merchants/{id}/activate", id)
         .then()
                 .statusCode(409)
                 .body("error", equalTo("invalid_transition"));
 
-        operatorRequest(port)
+        operatorIfMatch(port, "\"v0\"")
         .when().post("/api/merchants/{id}/activate", UUID.randomUUID())
         .then()
                 .statusCode(404)
@@ -210,38 +221,108 @@ class MerchantRestAssuredTest extends PostgresContainerSupport {
 
     @Test
     void suspendValidAndInvalidTransitions() {
-        String draftId = createMerchant(uniqueMerchantReference("DRAFT"), "Draft Merchant")
-                .then().statusCode(201).extract().path("merchantId");
-        String activeId = createMerchant(uniqueMerchantReference("ACTIVE"), "Active Merchant")
-                .then().statusCode(201).extract().path("merchantId");
+        Response draftCreated = createMerchant(uniqueMerchantReference("DRAFT"), "Draft Merchant");
+        draftCreated.then().statusCode(201);
+        String draftId = draftCreated.path("merchantId");
+        String draftEtag = draftCreated.getHeader("ETag");
+        Response activeCreated = createMerchant(uniqueMerchantReference("ACTIVE"), "Active Merchant");
+        activeCreated.then().statusCode(201);
+        String activeId = activeCreated.path("merchantId");
+        String activeEtag = activeCreated.getHeader("ETag");
 
-        operatorRequest(port)
+        operatorIfMatch(port, draftEtag)
         .when().post("/api/merchants/{id}/suspend", draftId)
         .then()
                 .statusCode(409)
                 .body("error", equalTo("invalid_transition"));
 
-        operatorRequest(port)
+        String afterActivate = operatorIfMatch(port, activeEtag)
         .when().post("/api/merchants/{id}/activate", activeId)
-        .then().statusCode(200);
+        .then().statusCode(200)
+                .extract().header("ETag");
 
-        operatorRequest(port)
+        String afterSuspend = operatorIfMatch(port, afterActivate)
         .when().post("/api/merchants/{id}/suspend", activeId)
         .then()
                 .statusCode(200)
-                .body("status", equalTo("SUSPENDED"));
+                .body("status", equalTo("SUSPENDED"))
+                .extract().header("ETag");
 
-        operatorRequest(port)
+        operatorIfMatch(port, afterSuspend)
         .when().post("/api/merchants/{id}/suspend", activeId)
         .then()
                 .statusCode(409)
                 .body("error", equalTo("invalid_transition"));
 
-        operatorRequest(port)
+        operatorIfMatch(port, "\"v0\"")
         .when().post("/api/merchants/{id}/suspend", UUID.randomUUID())
         .then()
                 .statusCode(404)
                 .body("error", equalTo("not_found"));
+    }
+
+    @Test
+    @DisplayName("RA-M360-019 activate already ACTIVE merchant is 409 invalid_transition")
+    void activateAlreadyActiveReturns409() {
+        Response created = createMerchant(uniqueMerchantReference("RA019"), "RA-M360-019");
+        created.then().statusCode(201);
+        String id = created.path("merchantId");
+        String etag = created.getHeader("ETag");
+
+        String afterActivate = operatorIfMatch(port, etag)
+        .when().post("/api/merchants/{id}/activate", id)
+        .then().statusCode(200)
+                .extract().header("ETag");
+
+        operatorIfMatch(port, afterActivate)
+                .when().post("/api/merchants/{id}/activate", id)
+                .then()
+                .statusCode(409)
+                .body("error", equalTo("invalid_transition"));
+    }
+
+    @ParameterizedTest(name = "RA-M360-030 merchantReference length {0} → HTTP {1}")
+    @CsvSource({
+            "2, 400",
+            "3, 201",
+            "64, 201",
+            "65, 400"
+    })
+    @DisplayName("RA-M360-030 merchantReference length BVA")
+    void merchantReferenceLengthBounds(int length, int expectedStatus) {
+        int status = -1;
+        Response response = null;
+        for (int attempt = 0; attempt < 5; attempt++) {
+            String reference = merchantReferenceOfLength(length);
+            response = createMerchant(reference, "RA-M360-030");
+            status = response.statusCode();
+            if (expectedStatus == 201 && status == 409) {
+                continue;
+            }
+            break;
+        }
+        assertThat(status).isEqualTo(expectedStatus);
+        if (expectedStatus == 400) {
+            response.then().body("error", equalTo("validation"));
+        } else {
+            response.then().body("merchantId", notNullValue());
+        }
+    }
+
+    private static String merchantReferenceOfLength(int length) {
+        if (length <= 0) {
+            return "";
+        }
+        String seed = UUID.randomUUID().toString().replace("-", "").toUpperCase();
+        String padded = (seed + "X".repeat(Math.max(length, 1))).substring(0, length);
+        char[] chars = padded.toCharArray();
+        if (!Character.isLetterOrDigit(chars[0])) {
+            chars[0] = 'A';
+        }
+        if (!Character.isLetterOrDigit(chars[chars.length - 1])) {
+            chars[chars.length - 1] = 'Z';
+        }
+        return new String(chars);
     }
 
     private Response createMerchant(String reference, String displayName) {

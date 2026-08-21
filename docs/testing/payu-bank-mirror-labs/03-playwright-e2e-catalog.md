@@ -129,13 +129,14 @@ Hosted: `/psp/checkout/{id}` ma `layout: false` — **nie** dashboard overlay.
 | Asercje | query `client_id` + `post_logout_redirect_uri`; brak `id_token_hint`; `nuxt-session` znika |
 | FR | S04b · P0 |
 
-### PW-MRL-E2E-027 — Menu Sign out **nie** woła `end_session`
+### PW-MRL-E2E-027 — Menu Sign out **woła** `end_session` (default głęboki)
 
 | | |
 |---|---|
-| Pokrycie | existing-pom `session.spec.ts` (kontrast E2E-010 / MRL-021) |
-| Kroki | Sign out z `/admin/merchants`; `waitForRequest` do `/protocol/openid-connect/logout` count 0 |
-| FR | S04a · P1 |
+| Pokrycie | existing-pom `session.spec.ts` (kontrast: named shallow w tym samym pliku) |
+| Kroki | Sign out z `/admin/merchants`; hop `/protocol/openid-connect/logout`; confirm Keycloak jeśli jest; Continue to Keycloak |
+| Asercje | query `client_id` + `post_logout_redirect_uri`; brak `id_token_hint`; heading Sign in to your account |
+| FR | dual-depth logout · P0 |
 
 ### PW-MRL-E2E-028 — Cookie `nuxt-session` &lt; 4 KB
 

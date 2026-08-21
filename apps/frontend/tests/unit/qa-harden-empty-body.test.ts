@@ -55,7 +55,7 @@ describe('QA-HARDEN-01.01 — Error Lab 304 contract', () => {
       .mockResolvedValueOnce({
         status: 200,
         headers: new Headers(),
-        _data: { merchants: [{ merchantId: 'merchant-101', status: 'ACTIVE' }] },
+        _data: { content: [{ merchantId: 'merchant-101', status: 'ACTIVE' }] },
       })
       .mockResolvedValueOnce({
         status: 200,

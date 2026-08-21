@@ -41,3 +41,82 @@ test('platform admin sees notes form and can submit on a live order', { tag: ['@
     await managerApi.dispose()
   }
 })
+
+test('PW-M360-E2E-140 type in contenteditable POSTs notes 201', async ({ app, api, page, playwright }, testInfo) => {
+  const adminApi = requireApi(api)
+  const managerApi = await BffClient.create(playwright, pomAuthFiles.merchantManager)
+  try {
+    const created = await managerApi.createPaymentOrder(
+      merchantAlphaId,
+      { amountMinor: 2400, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'ED') },
+      uniqueIdempotencyKey(testInfo, 'ED'),
+    )
+    expect(created.status).toBe(201)
+    const paymentOrderId = created.body.paymentOrderId!
+    const body = `Editor note ${uniqueToken()}`
+
+    await app.paymentDetail.gotoOrder(merchantAlphaId, paymentOrderId)
+    await app.paymentDetail.expectLoaded()
+    await expect(app.page.locator('[data-testid="payment-note-body"] [contenteditable="true"]')).toBeVisible()
+
+    const posted = page.waitForResponse((response) => {
+      try {
+        return response.request().method() === 'POST'
+          && new URL(response.url()).pathname
+            === `/api/merchants/${merchantAlphaId}/payment-orders/${paymentOrderId}/notes`
+      }
+      catch {
+        return false
+      }
+    })
+    await app.paymentDetail.addNote(body)
+    expect((await posted).status()).toBe(201)
+    await app.paymentDetail.expectNoteVisible(body)
+    const notes = await adminApi.listNotes(merchantAlphaId, paymentOrderId)
+    expect(notes.status).toBe(200)
+    expect(notes.body.some(note => note.body?.includes(body))).toBe(true)
+  }
+  finally {
+    await managerApi.dispose()
+  }
+})
+
+test('PW-M360-E2E-141 stored XSS is escaped in GET and list', async ({ app, api, page, playwright }, testInfo) => {
+  const adminApi = requireApi(api)
+  const managerApi = await BffClient.create(playwright, pomAuthFiles.merchantManager)
+  try {
+    const created = await managerApi.createPaymentOrder(
+      merchantAlphaId,
+      { amountMinor: 2500, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'XSS') },
+      uniqueIdempotencyKey(testInfo, 'XSS'),
+    )
+    expect(created.status).toBe(201)
+    const paymentOrderId = created.body.paymentOrderId!
+    const token = uniqueToken()
+    const xss = `<script>alert(${token})</script>`
+
+    await app.paymentDetail.gotoOrder(merchantAlphaId, paymentOrderId)
+    await app.paymentDetail.expectLoaded()
+    const posted = page.waitForResponse((response) => {
+      try {
+        return response.request().method() === 'POST'
+          && new URL(response.url()).pathname
+            === `/api/merchants/${merchantAlphaId}/payment-orders/${paymentOrderId}/notes`
+      }
+      catch {
+        return false
+      }
+    })
+    await app.paymentDetail.addNote(xss)
+    expect((await posted).status()).toBe(201)
+
+    const notes = await adminApi.listNotes(merchantAlphaId, paymentOrderId)
+    expect(notes.status).toBe(200)
+    expect(notes.body.some(note => note.body?.includes(token))).toBe(true)
+    await expect(app.page.getByTestId('payment-note-item').filter({ hasText: token })).toBeVisible()
+    await expect(app.page.getByTestId('payment-internal-notes').locator('script')).toHaveCount(0)
+  }
+  finally {
+    await managerApi.dispose()
+  }
+})

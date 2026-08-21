@@ -45,6 +45,10 @@ const items = computed<DropdownMenuItem[][]>(() => [[{
   label: 'Sign out',
   icon: 'i-lucide-log-out',
   onSelect: () => auth.logout()
+}, {
+  label: 'Sign out of dashboard only',
+  icon: 'i-lucide-monitor-off',
+  onSelect: () => auth.logoutShallow()
 }]])
 </script>
 

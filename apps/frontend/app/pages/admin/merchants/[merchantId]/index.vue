@@ -84,6 +84,13 @@
           </div>
         </UCard>
 
+        <ErrorState
+          v-if="actionProblem"
+          :problem="actionProblem"
+          retry-label="Reload"
+          :on-retry="reloadAfterConflict"
+        />
+
         <!-- Risk Review -->
         <UCard data-testid="merchant-risk-panel">
           <template #header>
@@ -156,6 +163,7 @@ definePageMeta({ layout: 'dashboard' })
 
 import type { MerchantResponse } from '~/composables/useMerchantsApi'
 import type { ProblemDetails } from '~/types/api'
+import { merchantIfMatch } from '~/utils/merchant-etag'
 
 const route = useRoute()
 const merchantId = route.params.merchantId as string
@@ -171,6 +179,7 @@ const loadProblem = ref<ProblemDetails | null>(null)
 const activating = ref(false)
 const suspending = ref(false)
 const updatingRiskFlag = ref(false)
+const actionProblem = ref<ProblemDetails | null>(null)
 
 const responseEtag = ref<string | undefined>()
 const responseCorrelationId = ref<string | undefined>()
@@ -197,32 +206,56 @@ async function load() {
     if (h.vary) headers['Vary'] = h.vary
     if (h.correlationId) headers['X-Correlation-ID'] = h.correlationId
     responseHeaders.value = headers
+    actionProblem.value = null
   } else {
     loadError.value = response.problem?.detail ?? 'Failed to load merchant'
     loadProblem.value = response.problem
   }
 }
 
-async function handleActivate() {
-  activating.value = true
-  const response = await activateMerchant(merchantId)
-  activating.value = false
+function currentIfMatch(): string {
+  return merchantIfMatch(responseEtag.value, merchant.value?.version)
+}
+
+function applyMerchantWrite(response: Awaited<ReturnType<typeof activateMerchant>>): boolean {
   if (response.data) {
     merchant.value = response.data
+    if (response.headers.etag) {
+      responseEtag.value = response.headers.etag
+    }
+    actionProblem.value = null
+    return true
+  }
+  if (response.status === 412) {
+    actionProblem.value = response.problem
+    return false
+  }
+  return false
+}
+
+async function reloadAfterConflict() {
+  actionProblem.value = null
+  await load()
+}
+
+async function handleActivate() {
+  activating.value = true
+  const response = await activateMerchant(merchantId, currentIfMatch())
+  activating.value = false
+  if (applyMerchantWrite(response)) {
     toastSuccess('Merchant activated')
-  } else {
+  } else if (response.status !== 412) {
     toastError(response.problem?.detail ?? 'Activation failed')
   }
 }
 
 async function handleSuspend() {
   suspending.value = true
-  const response = await suspendMerchant(merchantId)
+  const response = await suspendMerchant(merchantId, currentIfMatch())
   suspending.value = false
-  if (response.data) {
-    merchant.value = response.data
+  if (applyMerchantWrite(response)) {
     toastWarning('Merchant suspended')
-  } else {
+  } else if (response.status !== 412) {
     toastError(response.problem?.detail ?? 'Suspend failed')
   }
 }
@@ -231,12 +264,11 @@ async function handleRiskFlagToggle() {
   if (!merchant.value) return
   updatingRiskFlag.value = true
   const newValue = !merchant.value.riskFlagged
-  const response = await updateMerchantRiskFlag(merchantId, newValue)
+  const response = await updateMerchantRiskFlag(merchantId, newValue, currentIfMatch())
   updatingRiskFlag.value = false
-  if (response.data) {
-    merchant.value = response.data
+  if (applyMerchantWrite(response)) {
     toastSuccess(newValue ? 'Risk flag set' : 'Risk flag cleared')
-  } else {
+  } else if (response.status !== 412) {
     toastError(response.problem?.detail ?? 'Risk flag update failed')
   }
 }

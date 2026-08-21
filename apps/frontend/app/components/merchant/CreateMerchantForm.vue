@@ -7,7 +7,7 @@
     class="space-y-4"
     @submit="onSubmit"
   >
-    <UFormField label="Merchant Reference" name="merchantReference">
+    <UFormField label="Merchant Reference" name="merchantReference" required>
       <UInput
         v-model="formState.merchantReference"
         placeholder="e.g. MERCH-001"
@@ -15,7 +15,7 @@
       />
     </UFormField>
 
-    <UFormField label="Display Name" name="displayName">
+    <UFormField label="Display Name" name="displayName" required>
       <UInput
         v-model="formState.displayName"
         placeholder="e.g. Acme Payments Inc."

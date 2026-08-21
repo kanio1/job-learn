@@ -19,10 +19,10 @@ export async function expectNoTokenInBrowserStorage(page: Page): Promise<void> {
 }
 
 function sessionCookie(page: Page) {
-  return page.context().cookies().then(cookies => cookies.find(cookie => cookie.name === 'nuxt-session'))
+  return page.context().cookies(page.url()).then(cookies => cookies.find(cookie => cookie.name === 'nuxt-session'))
 }
 
-/** Path A (app Sign out / idle Unlock): sealed blob is gone. Empty value is as-built, not RFC 6265 delete. */
+/** App logout (deep Sign out or idle Unlock / shallow): sealed blob is gone. Empty value is as-built, not RFC 6265 delete. */
 export async function expectSessionCookieCleared(page: Page): Promise<void> {
   const session = await sessionCookie(page)
   expect(session?.value ?? '', 'nuxt-session must not carry a sealed session after app logout').toBe('')

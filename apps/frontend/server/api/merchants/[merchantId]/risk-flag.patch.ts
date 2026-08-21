@@ -4,5 +4,6 @@ export default defineEventHandler(async (event) => {
   return backendApi(event, `/api/merchants/${merchantId}/risk-flag`, {
     method: 'PATCH',
     body,
+    forwardIfMatch: getHeader(event, 'if-match'),
   })
 })

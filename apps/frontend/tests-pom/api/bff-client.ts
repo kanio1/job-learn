@@ -34,9 +34,46 @@ export class BffClient {
     return { status: response.status(), body, headers: response.headers() }
   }
 
-  async listMerchants() {
-    const response = await this.context.get('/api/merchants')
-    const body = await parseJson<{ merchants?: Array<{ merchantId?: string, merchantReference?: string }> } & ProblemDetails>(response)
+  async listMerchants(query: Record<string, string | number | undefined> = {}) {
+    const params = new URLSearchParams()
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== '') {
+        params.set(key, String(value))
+      }
+    }
+    const suffix = params.toString() ? `?${params.toString()}` : ''
+    const response = await this.context.get(`/api/merchants${suffix}`)
+    const body = await parseJson<{
+      content?: Array<{ merchantId?: string, merchantReference?: string, status?: string }>
+      page?: number
+      size?: number
+      totalElements?: number
+      totalPages?: number
+    } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async searchEntities(q: string) {
+    const response = await this.context.get(`/api/search?q=${encodeURIComponent(q)}`)
+    const body = await parseJson<{
+      merchants?: Array<{ merchantId?: string, merchantReference?: string, displayName?: string }>
+      payments?: Array<{ paymentOrderId?: string, merchantId?: string, clientOrderReference?: string }>
+    } & ProblemDetails>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async getOrgTree(parent?: string) {
+    const suffix = parent ? `?parent=${encodeURIComponent(parent)}` : ''
+    const response = await this.context.get(`/api/org-tree${suffix}`)
+    const body = await parseJson<{
+      nodes?: Array<{
+        id?: string
+        type?: string
+        label?: string
+        reference?: string
+        lazy?: boolean
+      }>
+    } & ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -299,8 +336,28 @@ export class BffClient {
     return { status: response.status(), body }
   }
 
-  async activateMerchant(merchantId: string) {
-    const response = await this.context.post(`/api/merchants/${merchantId}/activate`)
+  async patchMerchantDisplayName(merchantId: string, displayName: string, ifMatch?: string) {
+    const headers: Record<string, string> = {}
+    if (ifMatch !== undefined) {
+      headers['If-Match'] = ifMatch
+    }
+    const response = await this.context.patch(`/api/merchants/${merchantId}`, {
+      data: { displayName },
+      headers,
+    })
+    return {
+      status: response.status(),
+      body: await parseJson<{ displayName?: string, merchantReference?: string, merchantId?: string } & ProblemDetails>(response),
+      headers: response.headers(),
+    }
+  }
+
+  async activateMerchant(merchantId: string, ifMatch?: string) {
+    const headers: Record<string, string> = {}
+    if (ifMatch !== undefined) {
+      headers['If-Match'] = ifMatch
+    }
+    const response = await this.context.post(`/api/merchants/${merchantId}/activate`, { headers })
     return {
       status: response.status(),
       body: await parseJson<{ error?: string }>(response),
@@ -308,9 +365,35 @@ export class BffClient {
     }
   }
 
-  async suspendMerchant(merchantId: string) {
-    const response = await this.context.post(`/api/merchants/${merchantId}/suspend`)
+  async suspendMerchant(merchantId: string, ifMatch?: string) {
+    const headers: Record<string, string> = {}
+    if (ifMatch !== undefined) {
+      headers['If-Match'] = ifMatch
+    }
+    const response = await this.context.post(`/api/merchants/${merchantId}/suspend`, { headers })
     return { status: response.status(), body: await response.json().catch(() => undefined), headers: response.headers() }
+  }
+
+  async previewMerchantImport(file: { name: string, mimeType: string, buffer: Buffer }) {
+    const response = await this.context.post('/api/merchants/import/preview', {
+      multipart: { file },
+    })
+    const body = await parseJson<{
+      previewId?: string
+      validCount?: number
+      warningCount?: number
+      rejectedCount?: number
+      rows?: Array<{ status?: string, reason?: string }>
+    }>(response)
+    return { status: response.status(), body, headers: response.headers() }
+  }
+
+  async commitMerchantImport(previewId: string) {
+    const response = await this.context.post('/api/merchants/import/commit', {
+      data: { previewId },
+    })
+    const body = await parseJson<{ createdCount?: number, error?: string }>(response)
+    return { status: response.status(), body, headers: response.headers() }
   }
 
   private async postLifecycle(

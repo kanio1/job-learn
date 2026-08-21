@@ -1,0 +1,67 @@
+%% Dual-depth logout — as-built lab contract
+%% Source of truth: docs/testing/session-bff-oidc-contract.md
+%% Render: corepack pnpm --dir tools/beautiful-mermaid exec node render.mjs
+
+%% diagram: cases
+flowchart TD
+  appSso[Logged in BFF and SSO]
+  appSso --> menu{Avatar menu}
+  appSso --> idle[Idle Unlock]
+  menu -->|Sign out| deep[Path B deep]
+  menu -->|dashboard only| shallow[Path A shallow]
+  idle --> shallow
+  lab[Session Lab End OIDC] --> deep
+
+  deep --> getHop[GET end-session]
+  getHop --> clearBff[clearUserSession]
+  clearBff --> kcLogout[302 Keycloak logout]
+  kcLogout --> confirm{Keycloak confirm}
+  confirm -->|Logout| loginNoSso[login SSO gone]
+  confirm -->|Cancel| loginSso[login SSO alive]
+
+  shallow --> clearOnly[session.clear logout=shallow]
+  clearOnly --> loginSso
+
+  loginSso --> notice[SSO resume notice]
+  notice --> continueA[Continue to Keycloak]
+  notice --> switchAcct[Use a different account]
+  continueA --> ssoResume[Silent SSO resume]
+  switchAcct --> promptLogin[prompt=login]
+  promptLogin --> form[Keycloak Sign in form]
+
+  loginNoSso --> continueB[Continue to Keycloak]
+  continueB --> form
+  form --> appSso
+
+%% diagram: deep-sequence
+sequenceDiagram
+  actor Op as Operator
+  participant Menu as Avatar menu
+  participant Bff as Nuxt BFF
+  participant Kc as Keycloak
+
+  Op->>Menu: Sign out
+  Menu->>Bff: GET /api/auth/end-session
+  Bff->>Bff: clearUserSession
+  Bff-->>Op: 302 end_session
+  Op->>Kc: logout client_id redirect
+  alt Confirm shown
+    Kc-->>Op: Do you want to log out?
+    Op->>Kc: Logout
+  end
+  Kc-->>Op: /login
+  Op->>Bff: Continue to Keycloak
+  Bff->>Kc: authorize
+  Kc-->>Op: Sign in to your account
+
+%% diagram: states
+stateDiagram-v2
+  [*] --> AppAndSso: OIDC callback
+  AppAndSso --> LoginAndSso: shallow or idle Unlock
+  AppAndSso --> KcConfirm: Sign out or End OIDC
+  KcConfirm --> LoginNoSso: confirm Logout
+  KcConfirm --> LoginAndSso: cancel confirm
+  LoginAndSso --> AppAndSso: Continue SSO resume
+  LoginAndSso --> KeycloakForm: different account
+  LoginNoSso --> KeycloakForm: Continue to Keycloak
+  KeycloakForm --> AppAndSso: username password

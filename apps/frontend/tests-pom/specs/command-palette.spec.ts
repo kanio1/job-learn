@@ -1,4 +1,5 @@
-import { test, expect } from '../fixtures'
+import { uniqueMerchantReference } from '../data/factories'
+import { test, expect, requireApi } from '../fixtures'
 
 test('Ctrl+K palette navigates to Error Lab', { tag: ['@a11y', '@ux'] }, async ({ app }) => {
   await app.merchants.goto()
@@ -39,3 +40,82 @@ for (const destination of paletteDestinations) {
     await expect(app.page).toHaveURL(destination.url)
   })
 }
+
+function waitForSearch(page: import('@playwright/test').Page, q: string) {
+  return page.waitForResponse((response) => {
+    if (response.request().method() !== 'GET') {
+      return false
+    }
+    try {
+      const url = new URL(response.url())
+      return url.pathname === '/api/search' && url.searchParams.get('q') === q
+    }
+    catch {
+      return false
+    }
+  })
+}
+
+test.describe('Command palette entity search', () => {
+  test('PW-M360-E2E-110 Ctrl+K unique merchant option and GET search 200', async ({ app, api, page }, testInfo) => {
+    const client = requireApi(api)
+    const reference = uniqueMerchantReference(testInfo)
+    const created = await client.createMerchant(reference, `Palette ${reference}`)
+    expect(created.status).toBe(201)
+
+    await app.merchants.goto()
+    await app.merchants.expectLoaded()
+    await app.commandPalette.openWithKeyboard()
+    const search = waitForSearch(page, reference)
+    await app.commandPalette.search(reference)
+    const response = await search
+    expect(response.status()).toBe(200)
+    await expect(app.commandPalette.dialog().getByRole('option', { name: reference })).toBeVisible()
+  })
+
+  test('PW-M360-E2E-111 select merchant opens 360 for that id', async ({ app, api, page }, testInfo) => {
+    const client = requireApi(api)
+    const reference = uniqueMerchantReference(testInfo)
+    const created = await client.createMerchant(reference, `Jump ${reference}`)
+    expect(created.status).toBe(201)
+    const merchantId = created.body.merchantId!
+
+    await app.merchants.goto()
+    await app.merchants.expectLoaded()
+    await app.commandPalette.openWithKeyboard()
+    const search = waitForSearch(page, reference)
+    await app.commandPalette.search(reference)
+    expect((await search).status()).toBe(200)
+    await app.commandPalette.dialog().getByRole('option', { name: reference }).first().click()
+    await expect(app.page).toHaveURL(new RegExp(`merchantId=${merchantId}`))
+    await app.merchantSlideover.expectOpen()
+  })
+
+  test('PW-M360-E2E-112 last search body contains only q hit', async ({ app, api, page }, testInfo) => {
+    const client = requireApi(api)
+    const reference = uniqueMerchantReference(testInfo)
+    expect((await client.createMerchant(reference, `Last ${reference}`)).status).toBe(201)
+    expect((await client.createMerchant(uniqueMerchantReference(testInfo), 'Other palette merchant')).status).toBe(201)
+
+    await app.merchants.goto()
+    await app.merchants.expectLoaded()
+    await app.commandPalette.openWithKeyboard()
+    const search = waitForSearch(page, reference)
+    await app.commandPalette.search(reference)
+    const response = await search
+    expect(response.status()).toBe(200)
+    const body = await response.json()
+    expect(body.merchants).toEqual([
+      expect.objectContaining({ merchantReference: reference }),
+    ])
+  })
+
+  test('PW-M360-API-051 search BFF 200 Zod-shaped body', async ({ api }, testInfo) => {
+    const client = requireApi(api)
+    const reference = uniqueMerchantReference(testInfo)
+    expect((await client.createMerchant(reference, `ApiSearch ${reference}`)).status).toBe(201)
+    const searched = await client.searchEntities(reference)
+    expect(searched.status).toBe(200)
+    expect(searched.body.merchants?.some(row => row.merchantReference === reference)).toBe(true)
+  })
+})

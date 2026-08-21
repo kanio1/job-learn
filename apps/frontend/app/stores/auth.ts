@@ -9,9 +9,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    await session.clear()
-    await navigateTo('/login')
+    // Same-origin GET 302 → Keycloak end_session. Do not POST-then-navigate:
+    // clearing nuxt-session first lets the SPA land on /login before the hop.
+    await navigateTo('/api/auth/end-session', { external: true })
   }
 
-  return { isAuthenticated, user, login, logout }
+  async function logoutShallow() {
+    await session.clear()
+    await navigateTo('/login?logout=shallow')
+  }
+
+  return { isAuthenticated, user, login, logout, logoutShallow }
 })

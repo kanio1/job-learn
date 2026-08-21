@@ -73,7 +73,9 @@ export class PaymentDetailPage extends BasePage {
   }
 
   async addNote(body: string): Promise<void> {
-    await this.byTestId('payment-note-body').fill(body)
+    const editor = this.byTestId('payment-note-body').locator('[contenteditable="true"]')
+    await editor.click()
+    await editor.fill(body)
     await this.byTestId('payment-note-submit').click()
   }
 
@@ -95,6 +97,10 @@ export class PaymentDetailPage extends BasePage {
 
   async openHistoryTab(): Promise<void> {
     await this.page.getByRole('tab', { name: 'History' }).click()
+  }
+
+  historyTimeline() {
+    return this.page.getByTestId('payment-history-timeline')
   }
 
   async copyClientReference(): Promise<void> {

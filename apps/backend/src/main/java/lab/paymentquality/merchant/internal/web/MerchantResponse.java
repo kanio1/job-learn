@@ -10,5 +10,6 @@ public record MerchantResponse(
         String status,
         Instant createdAt,
         Instant updatedAt,
-        boolean riskFlagged) {
+        boolean riskFlagged,
+        Long version) {
 }

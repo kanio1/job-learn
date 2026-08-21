@@ -11,6 +11,12 @@
 import { z } from 'zod'
 import type { ApiResponse } from '~/types/api'
 import { type CreateMerchantForm } from '~/schemas/merchant.schema'
+import {
+  merchantImportCommitSchema,
+  merchantImportPreviewSchema,
+  type MerchantImportCommit,
+  type MerchantImportPreview,
+} from '~/schemas/merchant-import.schema'
 
 // ---------------------------------------------------------------------------
 // Inline response schemas (merchant API responses only)
@@ -32,23 +38,19 @@ const merchantResponseSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   riskFlagged: z.boolean().default(false),
+  version: z.number().int().nonnegative().optional().default(0),
 })
 
-// Backend returns { merchants: [...] } — no pagination metadata.
-export const merchantListBackendSchema = z.object({
-  merchants: z.array(merchantResponseSchema),
-})
-
-// View-model exposed to callers: paginated shape derived from the flat list.
-// Keeps callers (index.vue, merchants page, PaymentOrderSummaryCards) stable
-// without requiring backend pagination support.
-const merchantListResponseSchema = z.object({
+// Backend page DTO: { content, page, size, totalElements, totalPages }.
+export const merchantListResponseSchema = z.object({
   content: z.array(merchantResponseSchema),
   page: z.number().int().nonnegative(),
   size: z.number().int().nonnegative(),
   totalElements: z.number().int().nonnegative(),
   totalPages: z.number().int().nonnegative(),
 })
+
+export const merchantListBackendSchema = merchantListResponseSchema
 
 // ---------------------------------------------------------------------------
 // Exported types inferred from schemas
@@ -67,20 +69,20 @@ export type { CreateMerchantForm }
 export function useMerchantsApi() {
   const { request } = useApiClient()
 
-  async function listMerchants(): Promise<ApiResponse<MerchantListResponse>> {
-    const raw = await request('/api/merchants', merchantListBackendSchema)
-    if (!raw.data) return { ...raw, data: null }
-    const { merchants } = raw.data
-    return {
-      ...raw,
-      data: {
-        content: merchants,
-        page: 0,
-        size: merchants.length,
-        totalElements: merchants.length,
-        totalPages: merchants.length > 0 ? 1 : 0,
-      },
+  async function listMerchants(
+    query?: Record<string, string | number | boolean | null | undefined>,
+  ): Promise<ApiResponse<MerchantListResponse>> {
+    const params: Record<string, string | number | boolean> = {}
+    if (query) {
+      for (const [key, value] of Object.entries(query)) {
+        if (value !== undefined && value !== null && value !== '') {
+          params[key] = value
+        }
+      }
     }
+    return request('/api/merchants', merchantListResponseSchema, {
+      query: Object.keys(params).length > 0 ? params : undefined,
+    })
   }
 
   async function getMerchant(merchantId: string): Promise<ApiResponse<MerchantResponse>> {
@@ -96,25 +98,63 @@ export function useMerchantsApi() {
     })
   }
 
-  async function activateMerchant(merchantId: string): Promise<ApiResponse<MerchantResponse>> {
+  async function activateMerchant(
+    merchantId: string,
+    ifMatch: string,
+  ): Promise<ApiResponse<MerchantResponse>> {
     return request(`/api/merchants/${merchantId}/activate`, merchantResponseSchema, {
       method: 'POST',
+      headers: { 'If-Match': ifMatch },
     })
   }
 
-  async function suspendMerchant(merchantId: string): Promise<ApiResponse<MerchantResponse>> {
+  async function suspendMerchant(
+    merchantId: string,
+    ifMatch: string,
+  ): Promise<ApiResponse<MerchantResponse>> {
     return request(`/api/merchants/${merchantId}/suspend`, merchantResponseSchema, {
       method: 'POST',
+      headers: { 'If-Match': ifMatch },
     })
   }
 
   async function updateMerchantRiskFlag(
     merchantId: string,
-    riskFlagged: boolean
+    riskFlagged: boolean,
+    ifMatch: string,
   ): Promise<ApiResponse<MerchantResponse>> {
     return request(`/api/merchants/${merchantId}/risk-flag`, merchantResponseSchema, {
       method: 'PATCH',
       body: { riskFlagged },
+      headers: { 'If-Match': ifMatch },
+    })
+  }
+
+  async function patchMerchantDisplayName(
+    merchantId: string,
+    displayName: string,
+    ifMatch: string,
+  ): Promise<ApiResponse<MerchantResponse>> {
+    return request(`/api/merchants/${merchantId}`, merchantResponseSchema, {
+      method: 'PATCH',
+      body: { displayName },
+      headers: { 'If-Match': ifMatch },
+    })
+  }
+
+  async function previewMerchantImport(file: File): Promise<ApiResponse<MerchantImportPreview>> {
+    const body = new FormData()
+    body.append('file', file)
+    return request('/api/merchants/import/preview', merchantImportPreviewSchema, {
+      method: 'POST',
+      body,
+    })
+  }
+
+  async function commitMerchantImport(previewId: string): Promise<ApiResponse<MerchantImportCommit>> {
+    return request('/api/merchants/import/commit', merchantImportCommitSchema, {
+      method: 'POST',
+      body: { previewId },
     })
   }
 
@@ -125,5 +165,8 @@ export function useMerchantsApi() {
     activateMerchant,
     suspendMerchant,
     updateMerchantRiskFlag,
+    patchMerchantDisplayName,
+    previewMerchantImport,
+    commitMerchantImport,
   }
 }

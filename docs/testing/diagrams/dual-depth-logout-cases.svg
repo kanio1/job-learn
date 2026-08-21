@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 912.0799999999999 1763.5680000000004" width="912.0799999999999" height="1763.5680000000004" style="--bg:#FFFFFF;--fg:#171717;--line:#EAEAEA;--accent:#000000;--muted:#888888;--surface:#FAFAFA;--border:#EAEAEA;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Geist', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 30%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="7" markerHeight="7" refX="0" refY="3.5" orient="auto" markerUnits="userSpaceOnUse" overflow="visible">
+    <polygon points="0 0, 7 3.5, 0 7" fill="var(--_arrow)" />
+  </marker>
+  <marker id="arrowhead-start" markerWidth="7" markerHeight="7" refX="7" refY="3.5" orient="auto-start-reverse" markerUnits="userSpaceOnUse" overflow="visible">
+    <polygon points="7 0, 0 3.5, 7 7" fill="var(--_arrow)" />
+  </marker>
+  <pattern id="diag-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <rect width="6" height="6" fill="var(--bg)" />
+    <line x1="0" y1="0" x2="0" y2="6" stroke="#171717" stroke-width="3" />
+  </pattern>
+</defs>
+<path d="M176.832,115.19999999999999 L176.832,132.2 Q176.832,140.2 184.832,140.2 L765.1679999999999,140.2 Q773.1679999999999,140.2 773.1679999999999,148.2 L773.1679999999999,156.20000000000002" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<polyline points="176.832,115.19999999999999 176.832,213.51200000000003" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M796.4266912654942,323.76530873450565 L796.4266912654942,372.024 Q796.4266912654942,380.024 804.4266912654942,380.024 L807.7679999999999,380.024 Q815.7679999999999,380.024 815.7679999999999,388.024 L815.7679999999999,438.624 Q815.7679999999999,446.624 807.7679999999999,446.624 L733.704,446.624" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M721.105416983943,294.9614169839431 L721.105416983943,372.024 Q721.105416983943,380.024 713.105416983943,380.024 L615.112,380.024 Q607.112,380.024 607.112,388.024 L607.112,438.624 Q607.112,446.624 599.112,446.624 L431.29600000000005,446.624" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M176.832,289.71200000000005 L176.832,438.624 Q176.832,446.624 184.832,446.624 L225.52,446.624" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M449.53599999999994,289.71200000000005 L449.53599999999994,438.624 Q449.53599999999994,446.624 457.53599999999994,446.624 L557.8799999999999,446.624" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<polyline points="645.7919999999999,480.22400000000005 645.7919999999999,521.2239999999999" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<polyline points="645.7919999999999,597.424 645.7919999999999,638.424" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<polyline points="645.7919999999999,714.624 645.7919999999999,755.624" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<polyline points="645.7919999999999,831.8240000000001 645.7919999999999,872.8240000000001" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M685.2658265306121,1074.094173469388 L685.2658265306121,1118.831086734694 Q685.2658265306121,1126.831086734694 693.2658265306121,1126.831086734694 L714.7119999999999,1126.831086734694 Q722.7119999999999,1126.831086734694 722.7119999999999,1134.831086734694 L722.7119999999999,1170.5680000000002" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M590.3991195130844,1058.1751195130846 L590.3991195130844,1138.5680000000002 Q590.3991195130844,1146.5680000000002 582.3991195130844,1146.5680000000002 L517.4399999999999,1146.5680000000002 Q509.43999999999994,1146.5680000000002 509.43999999999994,1154.5680000000002 L509.43999999999994,1205.1680000000001 Q509.43999999999994,1213.1680000000001 501.43999999999994,1213.1680000000001 L465.99199999999996,1213.1680000000001" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<polyline points="328.408,480.22400000000005 328.408,521.2239999999999" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M328.408,597.424 L328.408,1205.1680000000001 Q328.408,1213.1680000000001 320.408,1213.1680000000001 L268.23199999999997,1213.1680000000001" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<polyline points="358.11199999999997,1246.768 358.11199999999997,1287.7680000000003" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M358.11199999999997,1363.968 L358.11199999999997,1380.9680000000003 Q358.11199999999997,1388.9680000000003 366.11199999999997,1388.9680000000003 L501.43999999999994,1388.9680000000003 Q509.43999999999994,1388.9680000000003 509.43999999999994,1396.9680000000003 L509.43999999999994,1404.9680000000003" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M358.11199999999997,1363.968 L358.11199999999997,1380.9680000000003 Q358.11199999999997,1388.9680000000003 350.11199999999997,1388.9680000000003 L214.784,1388.9680000000003 Q206.784,1388.9680000000003 206.784,1396.9680000000003 L206.784,1404.9680000000003" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<polyline points="509.43999999999994,1481.1680000000001 509.43999999999994,1522.1680000000003" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<polyline points="206.784,1481.1680000000001 206.784,1522.1680000000003" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<polyline points="206.784,1598.3680000000002 206.784,1639.3680000000004" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<polyline points="722.7119999999999,1246.768 722.7119999999999,1287.7680000000003" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M722.7119999999999,1363.968 L722.7119999999999,1673.9680000000003 Q722.7119999999999,1681.9680000000003 714.7119999999999,1681.9680000000003 L344.616,1681.9680000000003" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<path d="M206.784,1648.3680000000004 L206.784,1631.3680000000004 Q206.784,1623.3680000000004 198.784,1623.3680000000004 L33.48799999999994,1623.3680000000004 Q25.487999999999943,1623.3680000000004 25.487999999999943,1615.3680000000004 L25.487999999999943,88.35600000000002 Q25.487999999999943,81.6 32.24399999999997,81.6 L39,81.6" fill="none" stroke="var(--_line)" stroke-width="1.5" marker-end="url(#arrowhead)" />
+<rect x="786.968" y="367.024" width="57.6" height="26" rx="4" ry="4" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="815.7679999999999" y="380.024" text-anchor="middle" dy="0.35em" font-size="10" font-weight="400" fill="var(--_text-muted)">Sign out</text>
+<rect x="562.712" y="367.024" width="88.8" height="26" rx="4" ry="4" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="607.112" y="380.024" text-anchor="middle" dy="0.35em" font-size="10" font-weight="400" fill="var(--_text-muted)">dashboard only</text>
+<rect x="699.1119999999999" y="1133.5680000000002" width="47.2" height="26" rx="4" ry="4" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="722.7119999999999" y="1146.5680000000002" text-anchor="middle" dy="0.35em" font-size="10" font-weight="400" fill="var(--_text-muted)">Logout</text>
+<rect x="485.8399999999999" y="1133.5680000000002" width="47.2" height="26" rx="4" ry="4" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="0.5" />
+<text x="509.43999999999994" y="1146.5680000000002" text-anchor="middle" dy="0.35em" font-size="10" font-weight="400" fill="var(--_text-muted)">Cancel</text>
+<rect x="48" y="48" width="257.664" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="773.1679999999999,165.20000000000002 864.0799999999999,256.112 773.1679999999999,347.024 682.2559999999999,256.112" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="97.91999999999999" y="222.51200000000003" width="157.824" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="566.8799999999999" y="413.024" width="157.824" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="234.52" y="413.024" width="187.776" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="325.6959999999999" y="222.51200000000003" width="247.68" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="546.9119999999999" y="530.2239999999999" width="197.76" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="541.92" y="647.424" width="207.744" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="526.944" y="764.624" width="237.69600000000003" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<polygon points="645.7919999999999,881.8240000000001 761.6639999999999,997.696 645.7919999999999,1113.568 529.92,997.696" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="628.8239999999998" y="1179.5680000000002" width="187.776" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="259.23199999999997" y="1179.5680000000002" width="197.76" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="164.632" y="530.2239999999999" width="327.552" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="249.248" y="1296.7680000000003" width="217.72799999999998" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="385.5999999999999" y="1413.9680000000003" width="247.68" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="67.96800000000002" y="1413.9680000000003" width="277.63199999999995" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="400.57599999999996" y="1531.1680000000003" width="217.72799999999998" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="122.88" y="1531.1680000000003" width="167.808" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="77.952" y="1648.3680000000004" width="257.664" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<rect x="598.8719999999998" y="1296.7680000000003" width="247.68" height="67.2" rx="6" ry="6" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+<text x="176.832" y="81.6" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">Logged in BFF and SSO</text>
+<text x="773.1679999999999" y="256.112" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">Avatar menu</text>
+<text x="176.832" y="256.112" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">Idle Unlock</text>
+<text x="645.7919999999999" y="446.624" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">Path B deep</text>
+<text x="328.408" y="446.624" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">Path A shallow</text>
+<text x="449.53599999999994" y="256.112" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">Session Lab End OIDC</text>
+<text x="645.7919999999999" y="563.824" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">GET end-session</text>
+<text x="645.7919999999999" y="681.024" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">clearUserSession</text>
+<text x="645.7919999999999" y="798.224" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">302 Keycloak logout</text>
+<text x="645.7919999999999" y="997.696" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">Keycloak confirm</text>
+<text x="722.7119999999999" y="1213.1680000000001" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">login SSO gone</text>
+<text x="358.11199999999997" y="1213.1680000000001" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">login SSO alive</text>
+<text x="328.408" y="563.824" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">session.clear logout=shallow</text>
+<text x="358.11199999999997" y="1330.3680000000002" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">SSO resume notice</text>
+<text x="509.43999999999994" y="1447.5680000000002" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">Continue to Keycloak</text>
+<text x="206.784" y="1447.5680000000002" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">Use a different account</text>
+<text x="509.43999999999994" y="1564.7680000000003" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">Silent SSO resume</text>
+<text x="206.784" y="1564.7680000000003" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">prompt=login</text>
+<text x="206.784" y="1681.9680000000003" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">Keycloak Sign in form</text>
+<text x="722.7119999999999" y="1330.3680000000002" text-anchor="middle" dy="0.35em" font-size="19.2" font-weight="400" letter-spacing="-0.384" fill="var(--_text)">Continue to Keycloak</text>
+</svg>

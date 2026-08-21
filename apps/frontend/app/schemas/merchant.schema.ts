@@ -14,3 +14,20 @@ export const createMerchantSchema = z.object({
 })
 
 export type CreateMerchantForm = z.infer<typeof createMerchantSchema>
+
+export const merchantListStatusSchema = z.enum(['DRAFT', 'ACTIVE', 'SUSPENDED'])
+
+export const merchantListSortSchema = z.string().regex(
+  /^(createdAt|updatedAt|displayName|status),(asc|desc)$/,
+)
+
+export const merchantListQuerySchema = z.object({
+  q: z.string().trim().min(1).optional(),
+  status: merchantListStatusSchema.optional(),
+  tenantId: z.string().trim().min(1).optional(),
+  page: z.number().int().nonnegative().default(0),
+  size: z.number().int().min(1).max(100).default(20),
+  sort: merchantListSortSchema.default('createdAt,desc'),
+})
+
+export type MerchantListQuery = z.infer<typeof merchantListQuerySchema>

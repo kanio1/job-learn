@@ -154,9 +154,9 @@ test.describe('tenant scope vs RBAC @security', () => {
       expect(tenantList.status).toBe(200)
       expect((await platform.getMerchant(merchantBetaId)).status).toBe(200)
       expect((await tenant.getMerchant(merchantBetaId)).status).toBe(404)
-      expect((tenantList.body.merchants ?? []).map(row => row.merchantReference))
+      expect((tenantList.body.content ?? []).map(row => row.merchantReference))
         .not.toContain(mrIso.betaReference)
-      for (const row of tenantList.body.merchants ?? []) {
+      for (const row of tenantList.body.content ?? []) {
         expect(
           (await platform.getMerchant(row.merchantId!)).status,
           `MR-ISO ${row.merchantReference}`,

@@ -1,6 +1,7 @@
 package lab.paymentquality.merchant;
 
 import lab.paymentquality.PaymentQualityApplication;
+import lab.paymentquality.merchant.PaymentOrderSearch;
 import lab.paymentquality.merchant.internal.application.MerchantService;
 import lab.paymentquality.merchant.internal.infrastructure.JpaMerchantRepository;
 import lab.paymentquality.merchant.internal.web.MerchantController;
@@ -12,6 +13,7 @@ import org.springframework.modulith.test.ApplicationModuleTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -31,6 +33,9 @@ class MerchantModuleTest extends PostgresContainerSupport {
     static void postgresProperties(DynamicPropertyRegistry registry) {
         registerPostgresProperties(registry, postgres);
     }
+
+    @MockitoBean
+    PaymentOrderSearch paymentOrderSearch;
 
     @Autowired
     MerchantService merchantService;

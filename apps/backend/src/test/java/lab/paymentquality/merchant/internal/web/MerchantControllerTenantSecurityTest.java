@@ -68,7 +68,8 @@ class MerchantControllerTenantSecurityTest {
                         "DRAFT",
                         java.time.Instant.parse("2026-01-01T00:00:00Z"),
                         java.time.Instant.parse("2026-01-01T00:00:00Z"),
-                        false));
+                        false,
+                        0L));
 
         mockMvc.perform(get("/api/merchants/{id}", merchantId)
                         .header("Authorization", bearer(TestJwtSupport.tenantAdminToken())))
@@ -104,11 +105,12 @@ class MerchantControllerTenantSecurityTest {
     void suspendTenantBoundaryViolationMapsToGenericProblemJson403() throws Exception {
         UUID merchantId = UUID.randomUUID();
         when(tenantResolver.resolve(any(Jwt.class))).thenReturn(TENANT_ALPHA_CONTEXT);
-        when(merchantService.suspend(merchantId, TENANT_ALPHA_CONTEXT))
+        when(merchantService.suspend(merchantId, TENANT_ALPHA_CONTEXT, 0L))
                 .thenThrow(new TenantBoundaryViolationException());
 
         mockMvc.perform(post("/api/merchants/{id}/suspend", merchantId)
-                        .header("Authorization", bearer(TestJwtSupport.tenantAdminToken())))
+                        .header("Authorization", bearer(TestJwtSupport.tenantAdminToken()))
+                        .header("If-Match", "\"v0\""))
                 .andExpect(status().isForbidden())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.error").value("forbidden"))

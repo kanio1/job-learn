@@ -9,9 +9,11 @@
         color="error"
         size="sm"
         icon="i-lucide-refresh-cw"
+        data-testid="error-state-retry"
+        :aria-label="retryLabel"
         @click="onRetry"
       >
-        Retry
+        {{ retryLabel }}
       </UButton>
     </div>
 
@@ -29,9 +31,11 @@
         color="error"
         size="sm"
         icon="i-lucide-refresh-cw"
+        data-testid="error-state-retry"
+        :aria-label="retryLabel"
         @click="onRetry"
       >
-        Retry
+        {{ retryLabel }}
       </UButton>
     </div>
   </div>
@@ -50,9 +54,12 @@
 import ProblemDetailsCard from '~/components/shared/ProblemDetailsCard.vue'
 import type { ProblemDetails } from '~/types/api'
 
-defineProps<{
+withDefaults(defineProps<{
   problem?: ProblemDetails | null
   message?: string
+  retryLabel?: string
   onRetry?: () => void
-}>()
+}>(), {
+  retryLabel: 'Retry',
+})
 </script>

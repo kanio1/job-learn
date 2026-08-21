@@ -27,6 +27,10 @@ export class MerchantDetailPage extends BasePage {
     await this.byTestId('merchant-payment-orders-link').click()
   }
 
+  async reloadAfterConflict(): Promise<void> {
+    await this.page.getByRole('button', { name: 'Reload' }).click()
+  }
+
   async toggleRisk(): Promise<void> {
     await this.byTestId('merchant-risk-toggle').click()
   }

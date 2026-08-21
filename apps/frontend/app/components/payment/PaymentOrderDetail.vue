@@ -129,33 +129,11 @@
             No lifecycle history recorded.
           </p>
 
-          <div v-else class="space-y-3">
-            <div
-              v-for="entry in sortedHistory"
-              :key="entry.statusHistoryId"
-              class="flex items-start gap-3 text-sm border-l-2 border-gray-200 dark:border-gray-700 pl-3"
-            >
-              <div class="flex-1 space-y-1">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <BusinessStatusBadge v-if="entry.fromStatus" :status="entry.fromStatus" type="payment" />
-                  <span v-else class="text-xs text-gray-400">—</span>
-                  <span class="text-gray-400">→</span>
-                  <BusinessStatusBadge :status="entry.toStatus" type="payment" />
-                </div>
-                <div class="text-xs text-gray-500 dark:text-gray-400 space-x-1">
-                  <span>{{ entry.action ?? '—' }}</span>
-                  <span>·</span>
-                  <span>{{ entry.actorDisplay || 'System' }}</span>
-                  <span>·</span>
-                  <span>{{ new Date(entry.createdAt).toLocaleString() }}</span>
-                  <template v-if="entry.correlationId">
-                    <span>·</span>
-                    <span class="font-mono">{{ entry.correlationId }}</span>
-                  </template>
-                </div>
-              </div>
-            </div>
-          </div>
+          <UTimeline
+            v-else
+            data-testid="payment-history-timeline"
+            :items="historyTimelineItems"
+          />
         </div>
       </template>
     </UTabs>
@@ -252,4 +230,13 @@ const sortedHistory = computed(() => {
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   )
 })
+
+const historyTimelineItems = computed(() =>
+  sortedHistory.value.map(entry => ({
+    date: new Date(entry.createdAt).toLocaleString(),
+    title: entry.toStatus,
+    description: `${entry.fromStatus ?? '—'} → ${entry.toStatus} · ${entry.action ?? '—'} · ${entry.actorDisplay || 'System'}`,
+    icon: 'i-lucide-git-commit',
+  })),
+)
 </script>

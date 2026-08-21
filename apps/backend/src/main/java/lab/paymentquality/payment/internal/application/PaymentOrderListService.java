@@ -37,7 +37,7 @@ public class PaymentOrderListService {
         String[] sortParts = sortParam.split(",");
         Sort.Direction direction = sortParts.length > 1 && "asc".equalsIgnoreCase(sortParts[1])
                 ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Sort sort = Sort.by(direction, sortParts[0]);
+        Sort sort = Sort.by(direction, sortParts[0]).and(Sort.by(Sort.Direction.ASC, "paymentOrderId"));
 
         LocalDate from = parseDateSafely(request.fromDate());
         LocalDate to = parseDateSafely(request.toDate());

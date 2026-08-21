@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(cat)",
+      "Shell(curl)",
+      "Shell(docker)",
+      "Shell(corepack)",
+      "Shell(echo)",
+      "Shell(exit)",
+      "Shell(break)",
+      "Shell(find)",
+      "Shell(head)",
+      "Shell(ls)",
+      "Shell(mvn)",
+      "Shell(./mvnw)",
+      "Shell(pnpm)",
+      "Shell(rg)",
+      "Shell(seq)",
+      "Shell(sleep)",
+      "Shell(true)"
+    ]
+  }
+}

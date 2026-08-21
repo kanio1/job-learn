@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dual-depth logout</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --fg: #ededed;
+      --muted: #888;
+      --line: #2a2a2a;
+      --card: #141414;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+    }
+    header {
+      max-width: 72rem;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 1rem;
+    }
+    h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 0.35rem; }
+    p { margin: 0; color: var(--muted); font-size: 0.9rem; line-height: 1.45; }
+    header a { color: var(--fg); }
+    nav[role="tablist"] {
+      display: flex;
+      gap: 0.35rem;
+      max-width: 72rem;
+      margin: 0 auto;
+      padding: 0 1.5rem 1rem;
+    }
+    nav button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 0.4rem 0.85rem;
+      font: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    nav button[aria-selected="true"] {
+      background: var(--fg);
+      color: var(--bg);
+      border-color: var(--fg);
+    }
+    main { max-width: 72rem; margin: 0 auto; padding: 0 1.5rem 2.5rem; }
+    .pane { display: none; margin: 0; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: auto; max-height: calc(100vh - 10rem); }
+    .pane.is-active { display: block; }
+    img { display: block; width: 100%; height: auto; background: #fff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Dual-depth logout</h1>
+    <p>As-built BFF vs Keycloak SSO. Source <a href="dual-depth-logout.mmd">dual-depth-logout.mmd</a> · contract <a href="../session-bff-oidc-contract.md">session-bff-oidc-contract.md</a></p>
+  </header>
+  <nav role="tablist" aria-label="Diagrams">
+        <button type="button" role="tab" aria-selected="true" data-pane="cases">All logout paths</button>
+        <button type="button" role="tab" aria-selected="false" data-pane="deep-sequence">Deep Sign out</button>
+        <button type="button" role="tab" aria-selected="false" data-pane="states">BFF × SSO states</button>
+  </nav>
+  <main>
+        <figure class="pane is-active" data-pane="cases">
+          <img src="dual-depth-logout-cases.svg" alt="All logout paths">
+        </figure>
+        <figure class="pane" data-pane="deep-sequence">
+          <img src="dual-depth-logout-deep-sequence.svg" alt="Deep Sign out">
+        </figure>
+        <figure class="pane" data-pane="states">
+          <img src="dual-depth-logout-states.svg" alt="BFF × SSO states">
+        </figure>
+  </main>
+  <script>
+    const tabs = [...document.querySelectorAll('[role="tab"]')]
+    const panes = [...document.querySelectorAll('.pane')]
+    function show(slug) {
+      tabs.forEach((tab) => tab.setAttribute('aria-selected', String(tab.dataset.pane === slug)))
+      panes.forEach((pane) => pane.classList.toggle('is-active', pane.dataset.pane === slug))
+    }
+    tabs.forEach((tab) => tab.addEventListener('click', () => show(tab.dataset.pane)))
+  </script>
+</body>
+</html>

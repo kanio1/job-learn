@@ -45,6 +45,30 @@
             aria-label="Refresh payment orders"
             @click="reload"
           />
+          <UButton
+            data-testid="payments-view-table"
+            color="neutral"
+            :variant="paymentsView === 'table' ? 'solid' : 'ghost'"
+            @click="paymentsView = 'table'"
+          >
+            Table
+          </UButton>
+          <UButton
+            data-testid="payments-view-board"
+            color="neutral"
+            :variant="paymentsView === 'board' ? 'solid' : 'ghost'"
+            @click="paymentsView = 'board'"
+          >
+            Board
+          </UButton>
+          <UButton
+            data-testid="payments-view-calendar"
+            color="neutral"
+            :variant="paymentsView === 'calendar' ? 'solid' : 'ghost'"
+            @click="openCalendar"
+          >
+            Calendar
+          </UButton>
         </template>
       </UDashboardNavbar>
     </template>
@@ -94,10 +118,11 @@
 
         <!-- Summary cards -->
         <PaymentOrderSummaryCards v-else-if="summary" :summary="summary" />
+        <PaymentStatusChart v-if="!authDenied && summary" :summary="summary" />
 
         <!-- Payment order list table with filters/pagination/states built in -->
         <PaymentOrderListTable
-          v-if="!authDenied"
+          v-if="!authDenied && paymentsView === 'table'"
           :merchant-id="merchantId"
           :list="listData"
           :loading="listLoading"
@@ -106,6 +131,18 @@
           :current-query="currentQuery"
           :on-retry="reloadList"
           @query-change="onQueryChange"
+        />
+        <PaymentKanban
+          v-else-if="!authDenied && paymentsView === 'board' && listData"
+          :merchant-id="merchantId"
+          :orders="listData.content"
+          @updated="applyKanbanUpdate"
+          @rollback="applyKanbanUpdate"
+        />
+        <PaymentExpiryCalendar
+          v-else-if="!authDenied && paymentsView === 'calendar'"
+          :orders="calendarOrders"
+          :dual-control-dues="calendarDues"
         />
       </div>
     </template>
@@ -147,6 +184,14 @@ const listData = ref<PaymentOrderListResponse | null>(null)
 const listLoading = ref(false)
 const listError = ref<string | null>(null)
 const listProblem = ref<ProblemDetails | null>(null)
+const paymentsView = ref<'table' | 'board' | 'calendar'>('table')
+const calendarOrders = ref<PaymentOrderListResponse['content']>([])
+const calendarDues = ref<Array<{
+  approvalId: string
+  paymentOrderId: string
+  clientOrderReference: string
+  dueAt: string
+}>>([])
 
 // ---------------------------------------------------------------------------
 // Query state (filter + pagination) — defaults: page=0, size=20
@@ -219,6 +264,44 @@ async function reload() {
 // ---------------------------------------------------------------------------
 // Filter / pagination event from table component
 // ---------------------------------------------------------------------------
+function applyKanbanUpdate(order: PaymentOrderListResponse['content'][number]) {
+  if (!listData.value) {
+    return
+  }
+  const content = listData.value.content.map(item =>
+    item.paymentOrderId === order.paymentOrderId ? order : item,
+  )
+  listData.value = { ...listData.value, content }
+}
+
+async function openCalendar() {
+  paymentsView.value = 'calendar'
+  const response = await listOrders(merchantId, { page: 0, size: 100, sort: 'createdAt,desc' })
+  calendarOrders.value = response.data?.content ?? []
+  const captured = calendarOrders.value.filter(order => order.status === 'CAPTURED')
+  const dues: typeof calendarDues.value = []
+  await Promise.all(captured.map(async (order) => {
+    try {
+      const listed = await $fetch<{ content?: Array<{ approvalId: string, status: string, createdAt: string }> }>(
+        `/api/merchants/${merchantId}/payment-orders/${order.paymentOrderId}/refund-approvals`,
+      )
+      for (const approval of listed.content ?? []) {
+        if (approval.status === 'PENDING') {
+          dues.push({
+            approvalId: approval.approvalId,
+            paymentOrderId: order.paymentOrderId,
+            clientOrderReference: order.clientOrderReference,
+            dueAt: approval.createdAt,
+          })
+        }
+      }
+    } catch {
+      // Keep expiry rows even if dual-control read is forbidden.
+    }
+  }))
+  calendarDues.value = dues
+}
+
 function onQueryChange(query: PaymentOrderListQuery) {
   currentQuery.value = query
   void syncQueryToUrl(query)

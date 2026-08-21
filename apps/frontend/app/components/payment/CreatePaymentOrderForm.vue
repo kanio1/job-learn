@@ -14,10 +14,15 @@
         role="alert"
       />
 
-      <!-- Idempotency Key Input -->
       <IdempotencyKeyInput v-model="idempotencyKey" />
 
-      <!-- Payment Order Form -->
+      <UStepper
+        v-model="step"
+        :items="[...stepItems]"
+        class="w-full"
+        data-testid="create-payment-order-stepper"
+      />
+
       <UForm
         :schema="createPaymentOrderSchema"
         :state="formState"
@@ -25,33 +30,85 @@
         class="space-y-4"
         @submit="onSubmit"
       >
-        <UFormField label="Amount (minor units)" name="amountMinor">
+        <UFormField
+          v-if="step === 'amount'"
+          label="Amount (minor units)"
+          name="amountMinor"
+          :error="stepError ?? undefined"
+        >
           <UInput v-model.number="formState.amountMinor" type="number" placeholder="12500" />
         </UFormField>
 
-        <UFormField label="Currency" name="currency">
+        <UFormField
+          v-else-if="step === 'currency'"
+          label="Currency"
+          name="currency"
+          :error="stepError ?? undefined"
+        >
           <USelect v-model="formState.currency" :items="currencies" placeholder="Select currency" />
         </UFormField>
 
-        <UFormField label="Client Order Reference" name="clientOrderReference">
+        <UFormField
+          v-else-if="step === 'reference'"
+          label="Client Order Reference"
+          name="clientOrderReference"
+          :error="stepError ?? undefined"
+        >
           <UInput v-model="formState.clientOrderReference" placeholder="PAY-001" />
         </UFormField>
 
-        <!-- Backend error / problem response -->
+        <dl
+          v-else
+          data-testid="create-payment-order-review"
+          class="space-y-2 text-sm"
+        >
+          <div class="flex justify-between gap-4">
+            <dt class="text-muted">Amount (minor units)</dt>
+            <dd>{{ formState.amountMinor }}</dd>
+          </div>
+          <div class="flex justify-between gap-4">
+            <dt class="text-muted">Currency</dt>
+            <dd>{{ formState.currency }}</dd>
+          </div>
+          <div class="flex justify-between gap-4">
+            <dt class="text-muted">Client Order Reference</dt>
+            <dd>{{ formState.clientOrderReference }}</dd>
+          </div>
+        </dl>
+
         <ErrorState
           v-if="errorProblem || errorMessage"
           :problem="errorProblem ?? undefined"
           :message="errorMessage ?? undefined"
         />
 
-        <UButton
-          type="submit"
-          :loading="submitting"
-          :disabled="!canCreatePaymentOrder"
-          label="Create Payment Order"
-          data-testid="action-create-payment-order"
-          :aria-label="canCreatePaymentOrder ? 'Create payment order' : 'Create payment order unavailable: missing payment create authority'"
-        />
+        <div class="flex items-center gap-2">
+          <UButton
+            v-if="step !== 'amount'"
+            type="button"
+            color="neutral"
+            variant="ghost"
+            label="Back"
+            data-testid="create-payment-order-back"
+            @click="goBack"
+          />
+          <UButton
+            v-if="step !== 'review'"
+            type="button"
+            label="Next"
+            data-testid="create-payment-order-next"
+            :disabled="!canCreatePaymentOrder"
+            @click="goNext"
+          />
+          <UButton
+            v-else
+            type="submit"
+            :disabled="!canCreatePaymentOrder"
+            label="Create Payment Order"
+            data-testid="action-create-payment-order"
+            :aria-label="canCreatePaymentOrder ? 'Create payment order' : 'Create payment order unavailable: missing payment create authority'"
+          />
+        </div>
       </UForm>
     </div>
   </UCard>
@@ -59,20 +116,10 @@
 
 <script setup lang="ts">
 /**
- * Create Payment Order Form (EXTENDED for task 10.2).
+ * Create Payment Order Form — stepper: amount → currency → reference → review.
  *
- * Changes vs original:
- * - Delegates transport to `usePaymentOrdersApi().createOrder` (header-aware).
- * - Integrates `IdempotencyKeyInput` (generated on mount, user-editable).
- * - Idempotency-Key reuse rule:
- *     - On failure, the key is RETAINED so a retry with unchanged values reuses it.
- *     - When the user changes any form field after a failure, a new key is generated.
- * - Retains form values on failure (does NOT reset the form).
- * - Emits `debugRequest` / `debugResponse` so the parent page can wire `ApiDebugPanel`.
- * - Adds `data-testid="create-payment-order-form"` on the <form> element.
- * - Validation messages come from the existing `createPaymentOrderSchema`.
- *
- * Requirements: 3.2, 3.3, 3.4, 10.1, 10.2, 10.3, 12.3
+ * Idempotency-Key reuse: on failure the key is retained; changing any field
+ * after a failure generates a new key. Draft lives in sessionStorage.
  */
 import { createPaymentOrderSchema } from '~/schemas/payment-order.schema'
 import type { ProblemDetails } from '~/types/api'
@@ -91,14 +138,22 @@ const { createOrder } = usePaymentOrdersApi()
 const { success: toastSuccess } = useAppToast()
 const { can } = useAuthorization()
 
-const submitting = ref(false)
 const errorMessage = ref<string | null>(null)
 const errorProblem = ref<ProblemDetails | null>(null)
+const stepError = ref<string | null>(null)
 
-/** True if the last submit resulted in a failure and form values are unchanged. */
 const failedSubmitSnapshot = ref<{ amountMinor: number | undefined; currency: string | undefined; clientOrderReference: string } | null>(null)
 
 const currencies = ['PLN', 'EUR', 'USD']
+const stepItems = [
+  { value: 'amount', title: 'Amount', icon: 'i-lucide-coins' },
+  { value: 'currency', title: 'Currency', icon: 'i-lucide-banknote' },
+  { value: 'reference', title: 'Reference', icon: 'i-lucide-hash' },
+  { value: 'review', title: 'Review', icon: 'i-lucide-check' },
+] as const
+
+type Step = (typeof stepItems)[number]['value']
+const step = ref<Step>('amount')
 
 const formState = reactive({
   amountMinor: undefined as number | undefined,
@@ -107,18 +162,9 @@ const formState = reactive({
 })
 
 const canCreatePaymentOrder = computed(() => can.value.canCreatePaymentOrder)
-
-/**
- * The idempotency key drives the IdempotencyKeyInput component.
- * Initial value is generated by the component on mount (via its own onMounted).
- * We seed it with an empty string; IdempotencyKeyInput will emit a UUID on mount.
- */
+const draftKey = computed(() => `payment-order-draft:${props.merchantId}`)
 const idempotencyKey = ref('')
 
-/**
- * Compares current form state to the last-failed snapshot.
- * Returns true when values are identical (key should be reused).
- */
 function formMatchesFailedSnapshot(): boolean {
   if (!failedSubmitSnapshot.value) return false
   const snap = failedSubmitSnapshot.value
@@ -129,26 +175,118 @@ function formMatchesFailedSnapshot(): boolean {
   )
 }
 
-/**
- * Watch form fields: when the user changes a value after a failure,
- * generate a new idempotency key.
- */
 watch(
   () => [formState.amountMinor, formState.currency, formState.clientOrderReference],
   () => {
+    persistDraft()
     if (failedSubmitSnapshot.value && !formMatchesFailedSnapshot()) {
-      // Values changed since last failure → generate a new key
       idempotencyKey.value = crypto.randomUUID()
-      // Clear the snapshot so we don't keep comparing against stale data
       failedSubmitSnapshot.value = null
     }
-  }
+  },
 )
+
+function persistDraft() {
+  if (!import.meta.client) {
+    return
+  }
+  sessionStorage.setItem(draftKey.value, JSON.stringify({
+    amountMinor: formState.amountMinor,
+    currency: formState.currency,
+    clientOrderReference: formState.clientOrderReference,
+    step: step.value,
+  }))
+}
+
+function restoreDraft() {
+  if (!import.meta.client) {
+    return
+  }
+  const raw = sessionStorage.getItem(draftKey.value)
+  if (!raw) {
+    return
+  }
+  try {
+    const parsed = JSON.parse(raw) as {
+      amountMinor?: number
+      currency?: 'PLN' | 'EUR' | 'USD'
+      clientOrderReference?: string
+      step?: Step
+    }
+    formState.amountMinor = parsed.amountMinor
+    formState.currency = parsed.currency
+    formState.clientOrderReference = parsed.clientOrderReference ?? ''
+    if (parsed.step && stepItems.some(item => item.value === parsed.step)) {
+      step.value = parsed.step
+    }
+  }
+  catch {
+    sessionStorage.removeItem(draftKey.value)
+  }
+}
+
+function clearDraft() {
+  if (import.meta.client) {
+    sessionStorage.removeItem(draftKey.value)
+  }
+}
+
+function goBack() {
+  stepError.value = null
+  if (step.value === 'currency') step.value = 'amount'
+  else if (step.value === 'reference') step.value = 'currency'
+  else if (step.value === 'review') step.value = 'reference'
+  persistDraft()
+}
+
+function goNext() {
+  stepError.value = null
+  if (step.value === 'amount') {
+    const amountParsed = createPaymentOrderSchema.pick({ amountMinor: true }).safeParse({
+      amountMinor: formState.amountMinor,
+    })
+    if (!amountParsed.success) {
+      stepError.value = formState.amountMinor == null || Number(formState.amountMinor) < 1
+        ? 'Amount must be at least 1'
+        : (amountParsed.error.issues[0]?.message ?? 'Amount must be at least 1')
+      return
+    }
+    step.value = 'currency'
+  }
+  else if (step.value === 'currency') {
+    const currencyParsed = createPaymentOrderSchema.pick({ currency: true }).safeParse({
+      currency: formState.currency,
+    })
+    if (!currencyParsed.success) {
+      stepError.value = currencyParsed.error.issues[0]?.message ?? 'Currency is required'
+      return
+    }
+    step.value = 'reference'
+  }
+  else if (step.value === 'reference') {
+    const referenceParsed = createPaymentOrderSchema.pick({ clientOrderReference: true }).safeParse({
+      clientOrderReference: formState.clientOrderReference,
+    })
+    if (!referenceParsed.success) {
+      stepError.value = referenceParsed.error.issues[0]?.message ?? 'Client order reference is required'
+      return
+    }
+    step.value = 'review'
+  }
+  persistDraft()
+}
+
+onMounted(() => {
+  restoreDraft()
+})
 
 async function onSubmit() {
   if (!canCreatePaymentOrder.value) return
+  if (step.value !== 'review') {
+    goNext()
+    return
+  }
 
-  submitting.value = true
   errorMessage.value = null
   errorProblem.value = null
 
@@ -158,7 +296,6 @@ async function onSubmit() {
     'Content-Type': 'application/json',
   }
 
-  // Emit request debug info before sending
   emit('debugRequest', {
     method: 'POST',
     path,
@@ -176,7 +313,6 @@ async function onSubmit() {
       idempotencyKey.value
     )
 
-    // Emit response debug info
     emit('debugResponse', {
       status: response.status,
       headers: {
@@ -190,13 +326,11 @@ async function onSubmit() {
     })
 
     if (response.problem || !response.data) {
-      // API returned a failure — retain form values, retain idempotency key
       errorProblem.value = response.problem
       errorMessage.value = response.problem
         ? null
         : 'Failed to create payment order. Please try again.'
 
-      // Capture snapshot so we know to reuse key on unchanged resubmit
       failedSubmitSnapshot.value = {
         amountMinor: formState.amountMinor,
         currency: formState.currency,
@@ -205,28 +339,25 @@ async function onSubmit() {
       return
     }
 
-    // Success — reset form, generate a fresh key, show toast
     formState.amountMinor = undefined
     formState.currency = undefined
     formState.clientOrderReference = ''
+    step.value = 'amount'
     idempotencyKey.value = crypto.randomUUID()
     failedSubmitSnapshot.value = null
+    clearDraft()
 
     toastSuccess(`Payment order ${response.data.paymentOrderId} created successfully`)
 
     emit('created', response.data.paymentOrderId)
   } catch {
-    // Unexpected transport error
     errorMessage.value = 'An unexpected error occurred. Please try again.'
 
-    // Retain key for reuse on unchanged resubmit
     failedSubmitSnapshot.value = {
       amountMinor: formState.amountMinor,
       currency: formState.currency,
       clientOrderReference: formState.clientOrderReference,
     }
-  } finally {
-    submitting.value = false
   }
 }
 </script>

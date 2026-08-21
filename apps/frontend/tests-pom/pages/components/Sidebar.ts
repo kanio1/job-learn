@@ -7,6 +7,14 @@ export class Sidebar {
     await this.page.getByTestId('nav-link-merchants').click()
   }
 
+  paymentOrders() {
+    return this.page.getByTestId('nav-link-payment-orders')
+  }
+
+  async openPaymentOrders(): Promise<void> {
+    await this.paymentOrders().click()
+  }
+
   async openUsers(): Promise<void> {
     await this.page.getByTestId('nav-link-users').click()
   }

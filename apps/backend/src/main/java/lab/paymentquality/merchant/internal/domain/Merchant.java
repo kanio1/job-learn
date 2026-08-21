@@ -138,4 +138,9 @@ public class Merchant {
         this.riskFlagged = riskFlagged;
         this.updatedAt = Instant.now();
     }
+
+    public void rename(String displayName) {
+        this.displayName = displayName;
+        this.updatedAt = Instant.now();
+    }
 }

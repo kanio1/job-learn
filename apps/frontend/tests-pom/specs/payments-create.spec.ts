@@ -2,7 +2,7 @@ import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
 import { expectProblem, headerOf, locationOf } from '../utils/http'
 import { requestHeader } from '../utils/network'
-import { waitForBffRequest } from '../utils/wait-bff'
+import { waitForBffRequest, waitForBffResponse } from '../utils/wait-bff'
 import { createUcEpRest } from '../methods/combinations/CreateUcEpRest'
 import { orderReferenceFor } from '../methods/ep-bva/OrderReferencePartitions'
 
@@ -15,8 +15,11 @@ test('creates a payment order with Idempotency-Key and lands on detail', async (
   await app.paymentCreate.expectLoaded()
   await app.paymentCreate.fillIdempotencyKey(idempotencyKey)
   await app.paymentCreate.fillAmount(1500)
+  await app.paymentCreate.next()
   await app.paymentCreate.chooseCurrency('PLN')
+  await app.paymentCreate.next()
   await app.paymentCreate.fillReference(reference)
+  await app.paymentCreate.next()
 
   const createRequest = waitForBffRequest(page, {
     method: 'POST',
@@ -136,4 +139,63 @@ test('BFF mints a key when Idempotency-Key is missing or empty (SCN-PAY-04/05)',
     ids.push(created.body.paymentOrderId!)
   }
   expect(new Set(ids).size).toBe(ids.length)
+})
+
+test('PW-M360-E2E-134 Next without amount shows field error', async ({ app, ownedMerchantId }) => {
+  await app.paymentCreate.gotoForMerchant(ownedMerchantId)
+  await app.paymentCreate.expectLoaded()
+  await app.paymentCreate.next()
+  await expect(app.page.getByText('Amount must be at least 1')).toBeVisible()
+})
+
+test('PW-M360-E2E-135 full wizard POSTs create 201', async ({ app, page, ownedMerchantId }, testInfo) => {
+  const reference = uniqueOrderReference(testInfo, 'WIZ')
+  const idempotencyKey = uniqueIdempotencyKey(testInfo, 'WIZ')
+  await app.paymentCreate.gotoForMerchant(ownedMerchantId)
+  await app.paymentCreate.expectLoaded()
+  await app.paymentCreate.fillIdempotencyKey(idempotencyKey)
+  await app.paymentCreate.fillAmount(1800)
+  await app.paymentCreate.next()
+  await app.paymentCreate.chooseCurrency('EUR')
+  await app.paymentCreate.next()
+  await app.paymentCreate.fillReference(reference)
+  await app.paymentCreate.next()
+  await expect(app.page.getByTestId('create-payment-order-review')).toContainText(reference)
+
+  const created = waitForBffResponse(page, {
+    method: 'POST',
+    pathExact: `/api/merchants/${ownedMerchantId}/payment-orders`,
+  })
+  await app.paymentCreate.submit()
+  expect((await created).status()).toBe(201)
+  await app.paymentDetail.expectLoaded()
+})
+
+test('PW-M360-E2E-136 double click Create is 201 then replay 200', async ({ app, page, ownedMerchantId }, testInfo) => {
+  const reference = uniqueOrderReference(testInfo, 'DBL')
+  const idempotencyKey = uniqueIdempotencyKey(testInfo, 'DBL')
+  await app.paymentCreate.gotoForMerchant(ownedMerchantId)
+  await app.paymentCreate.expectLoaded()
+  await app.paymentCreate.fillIdempotencyKey(idempotencyKey)
+  await app.paymentCreate.fillAmount(1900)
+  await app.paymentCreate.next()
+  await app.paymentCreate.chooseCurrency('USD')
+  await app.paymentCreate.next()
+  await app.paymentCreate.fillReference(reference)
+  await app.paymentCreate.next()
+
+  const statuses: number[] = []
+  const createPath = `/api/merchants/${ownedMerchantId}/payment-orders`
+  page.on('response', (response) => {
+    try {
+      if (response.request().method() === 'POST' && new URL(response.url()).pathname === createPath) {
+        statuses.push(response.status())
+      }
+    }
+    catch {
+      // ignore
+    }
+  })
+  await app.page.getByTestId('action-create-payment-order').dblclick()
+  await expect.poll(() => statuses.slice().sort((a, b) => a - b)).toEqual([200, 201])
 })

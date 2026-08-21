@@ -1,8 +1,12 @@
 <template>
   <UTable
+    v-model:sorting="sorting"
+    v-model:row-selection="rowSelection"
     :data="merchants"
     :columns="columns"
     :loading="loading"
+    :sorting-options="{ manualSorting: true }"
+    :get-row-id="(row: Merchant) => row.merchantId"
     aria-label="Merchant registry"
     class="shrink-0"
     :ui="{
@@ -20,13 +24,13 @@
 /**
  * Merchant registry table.
  *
+ * Server sort: v-model:sorting + manualSorting. Headers for displayName,
+ * status, updatedAt, and createdAt emit the column name as the button label.
+ *
  * Row actions:
- * - DRAFT merchants: Activate button (`data-testid="activate-merchant-button"`, Req 12.2)
+ * - DRAFT merchants: Activate button (`data-testid="activate-merchant-button"`)
  * - ACTIVE merchants: New Payment + Suspend buttons
  * - SUSPENDED merchants: no lifecycle action (terminal merchant state)
- *
- * Emits `activate` and `suspend` to let the parent page call useMerchantsApi and
- * show the resulting status (Req 2.6) or an error (Req 2.9).
  */
 
 import { h, resolveComponent } from 'vue'
@@ -35,24 +39,51 @@ import type { MerchantResponse } from '~/composables/useMerchantsApi'
 
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
+const UCheckbox = resolveComponent('UCheckbox')
+const UInput = resolveComponent('UInput')
 
 export type Merchant = MerchantResponse
 
-withDefaults(defineProps<{
+export type MerchantTableSorting = Array<{ id: string, desc: boolean }>
+export type MerchantTableRowSelection = Record<string, boolean>
+
+const props = withDefaults(defineProps<{
   merchants: Merchant[]
   loading?: boolean
+  showTenantColumn?: boolean
 }>(), {
-  loading: false
+  loading: false,
+  showTenantColumn: false,
 })
+
+const sorting = defineModel<MerchantTableSorting>('sorting', { default: () => [{ id: 'createdAt', desc: true }] })
+const rowSelection = defineModel<MerchantTableRowSelection>('rowSelection', { default: () => ({}) })
 
 const emit = defineEmits<{
   activate: [merchant: Merchant]
   suspend: [merchant: Merchant]
+  open360: [merchant: Merchant]
+  saveName: [merchant: Merchant, displayName: string]
 }>()
 
 const { can } = useAuthorization()
 const canUpdateMerchantStatus = computed(() => can.value.canUpdateMerchantStatus)
 const canCreatePaymentOrder = computed(() => can.value.canCreatePaymentOrder)
+const canReadPayments = computed(() =>
+  can.value.canReadMerchantPayments || can.value.canReadPlatformPayments,
+)
+const editingMerchantId = ref<string | null>(null)
+const draftName = ref('')
+
+watch(() => props.merchants, (rows) => {
+  if (!editingMerchantId.value) {
+    return
+  }
+  const current = rows.find(row => row.merchantId === editingMerchantId.value)
+  if (current && current.displayName === draftName.value.trim()) {
+    editingMerchantId.value = null
+  }
+})
 
 function statusColor(status: string) {
   switch (status) {
@@ -63,27 +94,111 @@ function statusColor(status: string) {
   }
 }
 
-const columns: TableColumn<Merchant>[] = [
+function sortableHeader(
+  column: { getIsSorted: () => false | 'asc' | 'desc', toggleSorting: (desc?: boolean) => void },
+  label: string,
+) {
+  const isSorted = column.getIsSorted()
+  return h(UButton, {
+    color: 'neutral',
+    variant: 'ghost',
+    label,
+    icon: isSorted
+      ? (isSorted === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow')
+      : 'i-lucide-arrow-up-down',
+    class: '-mx-2.5',
+    onClick: () => column.toggleSorting(column.getIsSorted() === 'asc'),
+  })
+}
+
+const columns = computed<TableColumn<Merchant>[]>(() => {
+  const selectColumn: TableColumn<Merchant>[] = canUpdateMerchantStatus.value
+    ? [{
+        id: 'select',
+        header: ({ table }) => h(UCheckbox, {
+          'modelValue': table.getIsSomePageRowsSelected() ? 'indeterminate' : table.getIsAllPageRowsSelected(),
+          'onUpdate:modelValue': (value: boolean | 'indeterminate') => table.toggleAllPageRowsSelected(!!value),
+          'aria-label': 'Select all',
+        }),
+        cell: ({ row }) => h(UCheckbox, {
+          'modelValue': row.getIsSelected(),
+          'onUpdate:modelValue': (value: boolean | 'indeterminate') => row.toggleSelected(!!value),
+          'aria-label': `Select ${row.original.merchantReference}`,
+        }),
+        enableSorting: false,
+      }]
+    : []
+
+  const tenantColumn: TableColumn<Merchant>[] = props.showTenantColumn
+    ? [{
+        id: 'tenant',
+        header: 'Tenant',
+        enableSorting: false,
+        cell: () => h('span', { class: 'text-muted text-sm' }, '—'),
+      }]
+    : []
+
+  return [
+    ...selectColumn,
   {
     accessorKey: 'merchantReference',
-    header: 'Reference'
+    header: 'Reference',
+    enableSorting: false,
   },
   {
     accessorKey: 'displayName',
-    header: 'Display Name',
+    header: ({ column }) => sortableHeader(column, 'Display Name'),
     cell: ({ row }) => {
-      return h(UButton, {
+      if (editingMerchantId.value === row.original.merchantId) {
+        return h('div', { class: 'flex items-center gap-2' }, [
+          h(UInput, {
+            'modelValue': draftName.value,
+            'onUpdate:modelValue': (value: string) => { draftName.value = value },
+            'aria-label': `Display name for ${row.original.merchantReference}`,
+            'data-testid': 'merchant-name-input',
+          }),
+          h(UButton, {
+            size: 'xs',
+            color: 'primary',
+            label: 'Save',
+            'aria-label': `Save name ${row.original.merchantReference}`,
+            'data-testid': 'merchant-name-save',
+            onClick: () => emit('saveName', row.original, draftName.value),
+          }),
+        ])
+      }
+      const nameLink = h(UButton, {
         variant: 'link',
         color: 'primary',
         size: 'sm',
+        type: 'button',
         label: row.original.displayName,
-        to: `/admin/merchants/${row.original.merchantId}`,
+        'aria-label': `Open ${row.original.merchantReference}`,
+        onClick: () => emit('open360', row.original),
       })
+      if (!canUpdateMerchantStatus.value) {
+        return nameLink
+      }
+      return h('div', { class: 'flex items-center gap-1' }, [
+        nameLink,
+        h(UButton, {
+          size: 'xs',
+          color: 'neutral',
+          variant: 'ghost',
+          label: 'Edit',
+          'aria-label': `Edit name ${row.original.merchantReference}`,
+          'data-testid': 'merchant-name-edit',
+          onClick: () => {
+            editingMerchantId.value = row.original.merchantId
+            draftName.value = row.original.displayName
+          },
+        }),
+      ])
     }
   },
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: ({ column }) => sortableHeader(column, 'Status'),
     cell: ({ row }) => {
       return h(UBadge, {
         class: 'capitalize',
@@ -92,9 +207,11 @@ const columns: TableColumn<Merchant>[] = [
       }, () => row.original.status)
     }
   },
+  ...tenantColumn,
   {
     id: 'riskFlagged',
     header: 'Risk',
+    enableSorting: false,
     cell: ({ row }) => {
       if (!row.original.riskFlagged) return null
       return h(UBadge, {
@@ -106,19 +223,26 @@ const columns: TableColumn<Merchant>[] = [
     }
   },
   {
+    accessorKey: 'updatedAt',
+    header: ({ column }) => sortableHeader(column, 'Updated'),
+    cell: ({ row }) => {
+      return h('span', { class: 'text-muted text-sm' }, new Date(row.original.updatedAt).toLocaleString())
+    }
+  },
+  {
     accessorKey: 'createdAt',
-    header: 'Created',
+    header: ({ column }) => sortableHeader(column, 'Created'),
     cell: ({ row }) => {
       return h('span', { class: 'text-muted text-sm' }, new Date(row.original.createdAt).toLocaleString())
     }
   },
   {
     id: 'actions',
+    enableSorting: false,
     cell: ({ row }) => {
-      const buttons: any[] = []
+      const buttons: ReturnType<typeof h>[] = []
       const status = row.original.status
 
-      // Activate: DRAFT → ACTIVE is the only supported activation transition.
       if (status === 'DRAFT' && canUpdateMerchantStatus.value) {
         buttons.push(
           h('span', { 'data-testid': 'action-activate-merchant' }, [
@@ -136,7 +260,22 @@ const columns: TableColumn<Merchant>[] = [
         )
       }
 
-      // ACTIVE merchants: navigate to payments or suspend
+      if (canReadPayments.value) {
+        buttons.push(
+          h('span', { 'data-testid': 'action-view-payments' }, [
+            h(UButton, {
+              size: 'xs',
+              color: 'neutral',
+              variant: 'ghost',
+              icon: 'i-lucide-receipt',
+              label: 'Payments',
+              'aria-label': `View payments for ${row.original.merchantReference}`,
+              to: `/admin/merchants/${row.original.merchantId}/payments`,
+            }),
+          ]),
+        )
+      }
+
       if (status === 'ACTIVE') {
         if (canCreatePaymentOrder.value) {
           buttons.push(
@@ -173,5 +312,6 @@ const columns: TableColumn<Merchant>[] = [
       return h('div', { class: 'flex items-center justify-end gap-1' }, buttons)
     }
   }
-]
+  ]
+})
 </script>

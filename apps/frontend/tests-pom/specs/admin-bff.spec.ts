@@ -1,7 +1,16 @@
+import { z } from 'zod'
 import { merchantAlphaId } from '../auth/accounts'
 import { uniqueIdempotencyKey, uniqueMerchantReference, uniqueOrderReference, uniqueToken } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
 import { expectMerchantError, expectProblem } from '../utils/http'
+
+const merchantListPageSchema = z.object({
+  content: z.array(z.object({ merchantId: z.string() }).passthrough()),
+  page: z.number().int().nonnegative(),
+  size: z.number().int().nonnegative(),
+  totalElements: z.number().int().nonnegative(),
+  totalPages: z.number().int().nonnegative(),
+})
 
 test('platform admin POST payment-order is 403', async ({ api }, testInfo) => {
   const client = requireApi(api)
@@ -52,4 +61,34 @@ test('platform admin expiration sweep is 200 with expiredCount', async ({ api })
   const sweep = await client.runExpirationSweep()
   expect(sweep.status).toBe(200)
   expect(typeof sweep.body?.expiredCount).toBe('number')
+})
+
+test('PW-M360-API-001 GET merchants returns content and totalElements', async ({ api }) => {
+  const client = requireApi(api)
+  const listed = await client.listMerchants({ page: 0, size: 20 })
+  expect(listed.status).toBe(200)
+  expect(Array.isArray(listed.body?.content)).toBe(true)
+  expect(listed.body!.content!.length).toBeLessThanOrEqual(20)
+  expect(typeof listed.body?.totalElements).toBe('number')
+})
+
+test('PW-M360-API-002 illegal sort is 400 problem+json', async ({ api }) => {
+  const client = requireApi(api)
+  const listed = await client.listMerchants({ sort: 'revenue,desc' })
+  expect(listed.status).toBe(400)
+  expect(listed.headers['content-type'] ?? '').toContain('application/problem+json')
+  expectMerchantError(listed.body, 'validation')
+})
+
+test('PW-M360-API-003 payment list status=CAPTURED is 200', async ({ api }) => {
+  const client = requireApi(api)
+  const listed = await client.listPaymentOrders(merchantAlphaId, { status: 'CAPTURED' })
+  expect(listed.status).toBe(200)
+})
+
+test('PW-M360-API-004 merchant list Zod safeParse', async ({ api }) => {
+  const client = requireApi(api)
+  const listed = await client.listMerchants()
+  expect(listed.status).toBe(200)
+  expect(merchantListPageSchema.safeParse(listed.body).success).toBe(true)
 })

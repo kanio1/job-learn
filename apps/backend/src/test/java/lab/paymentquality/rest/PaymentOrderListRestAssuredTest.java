@@ -258,7 +258,7 @@ class PaymentOrderListRestAssuredTest extends PostgresContainerSupport {
     }
 
     @Test
-    @DisplayName("list filtered by fromDate and toDate returns orders created today")
+    @DisplayName("RA-M360-080 list filtered by fromDate and toDate returns orders created today")
     void listFilteredByDateRangeReturnsMatchingOrders() {
         String merchantId = seedAndGetReader(3);
         String readToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
@@ -357,5 +357,208 @@ class PaymentOrderListRestAssuredTest extends PostgresContainerSupport {
                 .then()
                 .statusCode(400)
                 .body("error", equalTo("validation"));
+    }
+
+    @Test
+    @DisplayName("RA-M360-020 status=AUTHORIZED returns 200")
+    void raM360_020_statusAuthorizedReturns200() {
+        String merchantId = PaymentApiTestSupport.createActiveMerchant(port,
+                MerchantApiTestSupport.operatorRequest(port));
+        authorizeOrder(merchantId, createOrder(merchantId, 2100));
+        createOrder(merchantId, 2200);
+        String readToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        PaymentOrderListResponse response = MerchantApiTestSupport.requestWithToken(port, readToken)
+                .accept(ContentType.JSON)
+                .queryParam("status", "AUTHORIZED")
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(200)
+                .extract().as(PaymentOrderListResponse.class);
+
+        assertThat(response.content()).isNotEmpty();
+        assertThat(response.content()).extracting("status").containsOnly("AUTHORIZED");
+    }
+
+    @Test
+    @DisplayName("RA-M360-021 status=NOPE returns 400")
+    void raM360_021_statusNopeReturns400() {
+        String merchantId = PaymentApiTestSupport.createActiveMerchant(port,
+                MerchantApiTestSupport.operatorRequest(port));
+        String readToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        MerchantApiTestSupport.requestWithToken(port, readToken)
+                .accept(ContentType.JSON)
+                .queryParam("status", "NOPE")
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(400)
+                .body("error", equalTo("validation"));
+    }
+
+    @Test
+    @DisplayName("RA-M360-022 sort=amountMinor,asc is monotonic")
+    void raM360_022_sortAmountMinorAscIsMonotonic() {
+        String merchantId = PaymentApiTestSupport.createActiveMerchant(port,
+                MerchantApiTestSupport.operatorRequest(port));
+        createOrder(merchantId, 3000);
+        createOrder(merchantId, 1000);
+        createOrder(merchantId, 2000);
+        String readToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        PaymentOrderListResponse response = MerchantApiTestSupport.requestWithToken(port, readToken)
+                .accept(ContentType.JSON)
+                .queryParam("sort", "amountMinor,asc")
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(200)
+                .extract().as(PaymentOrderListResponse.class);
+
+        assertThat(response.content()).extracting(lab.paymentquality.payment.internal.web.PaymentOrderResponse::amountMinor)
+                .containsExactly(1000L, 2000L, 3000L);
+    }
+
+    @Test
+    @DisplayName("RA-M360-023 foreign merchant list is 403")
+    void raM360_023_foreignMerchantListReturns403() {
+        String merchantA = PaymentApiTestSupport.createActiveMerchant(port,
+                MerchantApiTestSupport.operatorRequest(port));
+        String merchantB = PaymentApiTestSupport.createActiveMerchant(port,
+                MerchantApiTestSupport.operatorRequest(port));
+        createOrder(merchantA, 1500);
+        String foreignReader = TestJwtSupport.merchantPaymentReaderToken(merchantB);
+
+        MerchantApiTestSupport.requestWithToken(port, foreignReader)
+                .accept(ContentType.JSON)
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders", merchantA)
+                .then()
+                .statusCode(403);
+    }
+
+    @Test
+    @DisplayName("RA-M360-024 status=CREATED still filters")
+    void raM360_024_statusCreatedStillWorks() {
+        String merchantId = PaymentApiTestSupport.createActiveMerchant(port,
+                MerchantApiTestSupport.operatorRequest(port));
+        createOrder(merchantId, 1800);
+        authorizeOrder(merchantId, createOrder(merchantId, 1900));
+        String readToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        PaymentOrderListResponse response = MerchantApiTestSupport.requestWithToken(port, readToken)
+                .accept(ContentType.JSON)
+                .queryParam("status", "CREATED")
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(200)
+                .extract().as(PaymentOrderListResponse.class);
+
+        assertThat(response.content()).isNotEmpty();
+        assertThat(response.content()).extracting("status").containsOnly("CREATED");
+    }
+
+    @Test
+    @DisplayName("RA-M360-025 fromDate and minAmount compose with AUTHORIZED")
+    void raM360_025_dateAndAmountComposeWithAuthorized() {
+        String merchantId = PaymentApiTestSupport.createActiveMerchant(port,
+                MerchantApiTestSupport.operatorRequest(port));
+        authorizeOrder(merchantId, createOrder(merchantId, 4000));
+        authorizeOrder(merchantId, createOrder(merchantId, 500));
+        String readToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+        String today = java.time.LocalDate.now(java.time.ZoneOffset.UTC).toString();
+
+        PaymentOrderListResponse response = MerchantApiTestSupport.requestWithToken(port, readToken)
+                .accept(ContentType.JSON)
+                .queryParam("status", "AUTHORIZED")
+                .queryParam("fromDate", today)
+                .queryParam("minAmount", 1000)
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(200)
+                .extract().as(PaymentOrderListResponse.class);
+
+        assertThat(response.content()).isNotEmpty();
+        assertThat(response.content())
+                .allMatch(item -> "AUTHORIZED".equals(item.status()) && item.amountMinor() >= 1000);
+    }
+
+    @Test
+    @DisplayName("RA-M360-026 status=CAPTURED list is not 500")
+    void raM360_026_statusCapturedDoesNot500() {
+        String merchantId = PaymentApiTestSupport.createActiveMerchant(port,
+                MerchantApiTestSupport.operatorRequest(port));
+        captureOrder(merchantId, createOrder(merchantId, 2100));
+        String readToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+
+        PaymentOrderListResponse response = MerchantApiTestSupport.requestWithToken(port, readToken)
+                .accept(ContentType.JSON)
+                .queryParam("status", "CAPTURED")
+                .when()
+                .get("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(200)
+                .extract().as(PaymentOrderListResponse.class);
+
+        assertThat(response.content()).isNotEmpty();
+        assertThat(response.content()).extracting("status").containsOnly("CAPTURED");
+    }
+
+    private String createOrder(String merchantId, long amountMinor) {
+        String createToken = TestJwtSupport.merchantPaymentCreatorToken(merchantId);
+        return MerchantApiTestSupport.requestWithToken(port, createToken)
+                .accept(ContentType.JSON)
+                .contentType(ContentType.JSON)
+                .header("Idempotency-Key", PaymentApiTestSupport.uniqueIdempotencyKey("m360-create"))
+                .body(PaymentApiTestSupport.createPaymentOrderBody(
+                        amountMinor, "PLN", PaymentApiTestSupport.uniquePaymentReference("M360")))
+                .when()
+                .post("/api/merchants/{merchantId}/payment-orders", merchantId)
+                .then()
+                .statusCode(201)
+                .extract().path("paymentOrderId");
+    }
+
+    private String authorizeOrder(String merchantId, String paymentOrderId) {
+        return transition(merchantId, paymentOrderId, "authorize", java.util.Map.of());
+    }
+
+    private void captureOrder(String merchantId, String paymentOrderId) {
+        String etag = authorizeOrder(merchantId, paymentOrderId);
+        transition(merchantId, paymentOrderId, "capture", java.util.Map.of("amountMinor", 2100), etag);
+    }
+
+    private String transition(String merchantId, String paymentOrderId, String action, java.util.Map<String, Object> body) {
+        String readerToken = TestJwtSupport.merchantPaymentReaderToken(merchantId);
+        String etag = MerchantApiTestSupport.requestWithToken(port, readerToken)
+                .when()
+                .get("/api/merchants/{id}/payment-orders/{oid}", merchantId, paymentOrderId)
+                .then()
+                .statusCode(200)
+                .extract().header("ETag");
+        return transition(merchantId, paymentOrderId, action, body, etag);
+    }
+
+    private String transition(
+            String merchantId,
+            String paymentOrderId,
+            String action,
+            java.util.Map<String, Object> body,
+            String etag) {
+        String lifecycleToken = TestJwtSupport.merchantPaymentLifecycleToken(merchantId);
+        return MerchantApiTestSupport.requestWithToken(port, lifecycleToken)
+                .header("Idempotency-Key", PaymentApiTestSupport.uniqueIdempotencyKey("m360-" + action))
+                .header("If-Match", etag)
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when()
+                .post("/api/merchants/{id}/payment-orders/{oid}/{action}", merchantId, paymentOrderId, action)
+                .then()
+                .statusCode(200)
+                .extract().header("ETag");
     }
 }

@@ -7,6 +7,7 @@ import { IdleOverlay } from './components/IdleOverlay'
 import { LoginPage } from './LoginPage'
 import { MerchantsListPage } from './MerchantsListPage'
 import { MerchantDetailPage } from './MerchantDetailPage'
+import { MerchantSlideover } from './components/MerchantSlideover'
 import { PaymentsListPage } from './PaymentsListPage'
 import { PaymentCreatePage } from './PaymentCreatePage'
 import { PaymentDetailPage } from './PaymentDetailPage'
@@ -39,6 +40,7 @@ export class App {
   readonly login: LoginPage
   readonly merchants: MerchantsListPage
   readonly merchantDetail: MerchantDetailPage
+  readonly merchantSlideover: MerchantSlideover
   readonly payments: PaymentsListPage
   readonly paymentCreate: PaymentCreatePage
   readonly paymentDetail: PaymentDetailPage
@@ -70,6 +72,7 @@ export class App {
     this.login = new LoginPage(page)
     this.merchants = new MerchantsListPage(page)
     this.merchantDetail = new MerchantDetailPage(page)
+    this.merchantSlideover = new MerchantSlideover(page)
     this.payments = new PaymentsListPage(page)
     this.paymentCreate = new PaymentCreatePage(page)
     this.paymentDetail = new PaymentDetailPage(page)

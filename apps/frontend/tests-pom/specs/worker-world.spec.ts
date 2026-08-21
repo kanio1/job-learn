@@ -39,8 +39,11 @@ test('worker UI create lands on that worker merchant detail', async ({ workerWor
   await workerApp.paymentCreate.expectLoaded()
   await workerApp.paymentCreate.fillIdempotencyKey(idempotencyKey)
   await workerApp.paymentCreate.fillAmount(1400)
+  await workerApp.paymentCreate.next()
   await workerApp.paymentCreate.chooseCurrency('PLN')
+  await workerApp.paymentCreate.next()
   await workerApp.paymentCreate.fillReference(reference)
+  await workerApp.paymentCreate.next()
   await workerApp.paymentCreate.submit()
 
   await workerApp.paymentDetail.expectLoaded()

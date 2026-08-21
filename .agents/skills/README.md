@@ -29,8 +29,10 @@ This directory is the **single skill home** for Grok Build, Codex CLI, and Curso
 | Nuxt 4 / TypeScript 6 / Node 22+ production frontend | `nuxt-frontend` |
 | Playwright 1.61 POM / fixtures / live tests-pom | `playwright-pom` |
 | Live browser exploration / locator discovery (`playwright-cli`) | `playwright-cli` |
+| Mermaid → SVG (`@vercel/beautiful-mermaid`) | `beautiful-mermaid` |
 | Hand off to another session | `handoff` |
 | Implement Merchant 360 slices `PW-M360-T*` (Custom Mode) | `merchant-360-implement` |
+| Review Merchant 360 WIP vs HEAD (findings only) | `merchant-360-review` |
 | Confirm tracker layout | `setup-lab-engineering-skills` |
 
 ## Compose with existing lab skills
@@ -50,6 +52,6 @@ This directory is the **single skill home** for Grok Build, Codex CLI, and Curso
 | REST security / Keycloak | `tdd` | `rest-api-security-oauth-testing` |
 | Dashboard taste / a11y polish | `nuxt-frontend` | `nuxt-dashboard-zod-pinia-frontend-engineering` |
 
-User-invoked: `ask-engineering-flow`, `grill-me`, `grill-with-docs`, `wayfinder`, `triage`, `to-spec`, `to-tickets`, `implement`, `merchant-360-implement`, `teach`, `handoff`, `setup-lab-engineering-skills`.
+User-invoked: `ask-engineering-flow`, `grill-me`, `grill-with-docs`, `wayfinder`, `triage`, `to-spec`, `to-tickets`, `implement`, `merchant-360-implement`, `merchant-360-review`, `teach`, `handoff`, `setup-lab-engineering-skills`.
 
-Model-invoked: `grilling`, `tdd`, `code-review`, `codebase-design`, `spring-modulith`, `nuxt-frontend`, `playwright-pom`, `playwright-cli`, `diagnosing-bugs`, `prototype`, `research`, `wizard`, plus domain skills in this directory when their description matches.
+Model-invoked: `grilling`, `tdd`, `code-review`, `codebase-design`, `spring-modulith`, `nuxt-frontend`, `playwright-pom`, `playwright-cli`, `beautiful-mermaid`, `diagnosing-bugs`, `prototype`, `research`, `wizard`, plus domain skills in this directory when their description matches.

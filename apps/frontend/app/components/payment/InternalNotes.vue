@@ -32,13 +32,17 @@
       <!-- Add note form — only for allowed roles -->
       <div v-if="can.canCreatePaymentNote" class="space-y-2">
         <UFormField label="Note body" :error="validationError ?? undefined">
-          <UTextarea
-            v-model="noteBody"
-            placeholder="Add an internal note…"
-            :rows="3"
-            data-testid="payment-note-body"
-            @input="validationError = null"
-          />
+          <div data-testid="payment-note-body">
+            <UEditor
+              ref="noteEditor"
+              v-model="noteBody"
+              content-type="markdown"
+              placeholder="Add an internal note…"
+              :image="false"
+              :mention="false"
+              @update:model-value="validationError = null"
+            />
+          </div>
         </UFormField>
         <UButton
           color="primary"
@@ -70,6 +74,7 @@ const loading = ref(false)
 const submitting = ref(false)
 const noteBody = ref('')
 const validationError = ref<string | null>(null)
+const noteEditor = ref<{ editor?: { getText: () => string } } | null>(null)
 
 async function load() {
   loading.value = true
@@ -81,7 +86,7 @@ async function load() {
 }
 
 async function handleSubmit() {
-  const trimmed = noteBody.value.trim()
+  const trimmed = (noteEditor.value?.editor?.getText() ?? noteBody.value).trim()
   if (!trimmed) {
     validationError.value = 'Note body must not be blank'
     return

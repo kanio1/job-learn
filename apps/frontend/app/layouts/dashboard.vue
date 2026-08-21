@@ -36,6 +36,9 @@
     </UDashboardSidebar>
 
     <UDashboardSearch
+      v-model:search-term="searchTerm"
+      :search-delay="0"
+      :loading="searchLoading"
       title="Search Payment Quality Lab"
       description="Quickly navigate to dashboard areas and merchant registry actions."
       placeholder="Search dashboard..."
@@ -51,130 +54,279 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 
 const open = ref(false)
+const searchTerm = ref('')
+const searchLoading = ref(false)
+const entityMerchants = ref<Array<{ merchantId: string, merchantReference: string, displayName: string }>>([])
+const entityPayments = ref<Array<{ paymentOrderId: string, merchantId: string, clientOrderReference: string }>>([])
+let searchSeq = 0
+const { searchEntities } = useEntitySearchApi()
 const { can } = useAuthorization()
 const { user } = useUserSession()
+const route = useRoute()
 const checkoutLabEnabled = computed(() => useRuntimeConfig().public.checkoutLabEnabled === true)
 const mirrorLabEnabled = computed(() => useRuntimeConfig().public.mirrorLabEnabled === true)
 const rlsLabEnabled = computed(() => useRuntimeConfig().public.rlsLabEnabled === true)
 const tenantId = computed(() => (user.value as { tenantId?: string })?.tenantId)
+const canReadPayments = computed(() =>
+  can.value.canReadMerchantPayments || can.value.canReadPlatformPayments,
+)
+
+const MERCHANT_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function closeSidebar() {
   open.value = false
 }
 
-/**
- * All possible sidebar links.  Each carries a stable data-testid so future
- * Playwright tests can assert visibility per role.
- */
-const allLinks: (NavigationMenuItem & { testid: string; visible: ComputedRef<boolean> })[] = [
-  {
-    testid: 'nav-link-overview',
-    label: 'Overview',
-    icon: 'i-lucide-layout-dashboard',
-    to: '/',
-    onSelect: closeSidebar,
-    // Overview is always visible to authenticated users
-    visible: computed(() => true),
-  },
-  {
-    testid: 'nav-link-merchants',
-    label: 'Merchants',
-    icon: 'i-lucide-store',
-    to: '/admin/merchants',
-    onSelect: closeSidebar,
-    visible: computed(() => can.value.canReadMerchants),
-  },
-  {
-    testid: 'nav-link-payment-orders',
+function firstQueryString(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.length > 0) {
+    return value
+  }
+  if (Array.isArray(value) && typeof value[0] === 'string' && value[0].length > 0) {
+    return value[0]
+  }
+  return undefined
+}
+
+function scopedMerchantUuid(): string | undefined {
+  const param = route.params.merchantId
+  if (typeof param === 'string' && MERCHANT_UUID.test(param)) {
+    return param
+  }
+  const fromQuery = firstQueryString(route.query.merchantId)
+  if (fromQuery && MERCHANT_UUID.test(fromQuery)) {
+    return fromQuery
+  }
+  const sessionId = (user.value as { merchantId?: string })?.merchantId
+  if (sessionId && MERCHANT_UUID.test(sessionId)) {
+    return sessionId
+  }
+  return undefined
+}
+
+const paymentOrdersTo = computed(() => {
+  const id = scopedMerchantUuid()
+  return id ? `/admin/merchants/${id}/payments` : undefined
+})
+
+const onPaymentOrdersRoute = computed(() =>
+  /\/admin\/merchants\/[^/]+\/payments(?:\/|$)/.test(route.path),
+)
+
+const onMerchantsSection = computed(() =>
+  route.path === '/admin/merchants'
+  || (/^\/admin\/merchants\/[^/]+/.test(route.path) && !onPaymentOrdersRoute.value),
+)
+
+function paymentOrdersNavItem(): NavigationMenuItem {
+  return {
     label: 'Payment Orders',
     icon: 'i-lucide-receipt',
-    to: '/admin/merchants',
+    to: paymentOrdersTo.value,
+    active: onPaymentOrdersRoute.value,
+    disabled: !paymentOrdersTo.value,
     onSelect: closeSidebar,
-    visible: computed(() => can.value.canReadMerchants || can.value.canReadPlatformPayments),
-  },
-  {
-    testid: 'nav-link-users',
-    label: 'Users',
-    icon: 'i-lucide-users',
-    to: '/admin/users',
-    onSelect: closeSidebar,
-    visible: computed(() => can.value.canManageUsers),
-  },
-  {
-    testid: 'nav-link-audit',
-    label: 'Audit Log',
-    icon: 'i-lucide-scroll-text',
-    to: '/admin/audit',
-    onSelect: closeSidebar,
-    visible: computed(() => can.value.canViewAuditLog),
-  },
-  {
-    testid: 'nav-link-support',
-    label: 'Support',
-    icon: 'i-lucide-headset',
-    to: '/admin/support',
-    onSelect: closeSidebar,
-    visible: computed(() => can.value.canReadMerchants || can.value.canReadPlatformPayments),
-  },
-  {
-    testid: 'nav-link-error-lab',
+    'data-testid': 'nav-link-payment-orders',
+  }
+}
+
+/**
+ * Sidebar follows the Nuxt UI Dashboard nested-nav pattern: unique `to` per
+ * item, parent groups as `type: 'trigger'`, and explicit `active` so registry
+ * and merchant-scoped payments are never both current.
+ */
+const visibleLinks = computed<NavigationMenuItem[]>(() => {
+  const links: NavigationMenuItem[] = [
+    {
+      label: 'Overview',
+      icon: 'i-lucide-layout-dashboard',
+      to: '/',
+      onSelect: closeSidebar,
+      'data-testid': 'nav-link-overview',
+    },
+  ]
+
+  if (can.value.canReadMerchants) {
+    links.push({
+      label: 'Merchants',
+      icon: 'i-lucide-store',
+      type: 'trigger',
+      defaultOpen: true,
+      'data-testid': 'nav-group-merchants',
+      children: [
+        {
+          label: 'Registry',
+          icon: 'i-lucide-store',
+          to: '/admin/merchants',
+          active: onMerchantsSection.value,
+          onSelect: closeSidebar,
+          'data-testid': 'nav-link-merchants',
+        },
+        ...(canReadPayments.value ? [paymentOrdersNavItem()] : []),
+      ],
+    })
+  }
+  else if (canReadPayments.value) {
+    links.push(paymentOrdersNavItem())
+  }
+
+  if (can.value.canManageUsers) {
+    links.push({
+      label: 'Users',
+      icon: 'i-lucide-users',
+      to: '/admin/users',
+      onSelect: closeSidebar,
+      'data-testid': 'nav-link-users',
+    })
+  }
+
+  if (can.value.canViewAuditLog) {
+    links.push({
+      label: 'Audit Log',
+      icon: 'i-lucide-scroll-text',
+      to: '/admin/audit',
+      onSelect: closeSidebar,
+      'data-testid': 'nav-link-audit',
+    })
+  }
+
+  if (can.value.canReadMerchants || can.value.canReadPlatformPayments) {
+    links.push({
+      label: 'Support',
+      icon: 'i-lucide-headset',
+      to: '/admin/support',
+      onSelect: closeSidebar,
+      'data-testid': 'nav-link-support',
+    })
+  }
+
+  links.push({
     label: 'Error Lab',
     icon: 'i-lucide-flask-conical',
     to: '/error-lab',
     onSelect: closeSidebar,
-    // Error Lab is always visible — it is a learning surface, not a role-gated screen
-    visible: computed(() => true),
-  },
-  {
-    testid: 'nav-link-checkout-lab',
-    label: 'Checkout Lab',
-    icon: 'i-lucide-credit-card',
-    to: '/admin/checkout-lab',
-    onSelect: closeSidebar,
-    visible: computed(() => checkoutLabEnabled.value),
-  },
-  {
-    testid: 'nav-link-mirror-lab',
-    label: 'Mirror Lab',
-    icon: 'i-lucide-scan-eye',
-    to: '/admin/mirror-lab',
-    onSelect: closeSidebar,
-    visible: computed(() => mirrorLabEnabled.value),
-  },
-  {
-    testid: 'nav-link-rls-lab',
-    label: 'RLS Lab',
-    icon: 'i-lucide-shield',
-    to: '/admin/rls-lab',
-    onSelect: closeSidebar,
-    visible: computed(() => rlsLabEnabled.value),
-  },
-]
+    'data-testid': 'nav-link-error-lab',
+  })
 
-/**
- * Filtered navigation items based on the current session's capabilities.
- * Omit the testid/visible fields from the final items passed to UNavigationMenu.
- */
-const visibleLinks = computed<NavigationMenuItem[]>(() =>
-  allLinks
-    .filter(link => link.visible.value)
-    .map(({ testid, visible: _v, ...item }) => ({
-      ...item,
-      // Carry the testid forward via an arbitrary prop — UNavigationMenu passes it
-      // through to the rendered element so Playwright can use getByTestId.
-      'data-testid': testid,
-    }))
-)
+  if (checkoutLabEnabled.value) {
+    links.push({
+      label: 'Checkout Lab',
+      icon: 'i-lucide-credit-card',
+      to: '/admin/checkout-lab',
+      onSelect: closeSidebar,
+      'data-testid': 'nav-link-checkout-lab',
+    })
+  }
+
+  if (mirrorLabEnabled.value) {
+    links.push({
+      label: 'Mirror Lab',
+      icon: 'i-lucide-scan-eye',
+      to: '/admin/mirror-lab',
+      onSelect: closeSidebar,
+      'data-testid': 'nav-link-mirror-lab',
+    })
+  }
+
+  if (rlsLabEnabled.value) {
+    links.push({
+      label: 'RLS Lab',
+      icon: 'i-lucide-shield',
+      to: '/admin/rls-lab',
+      onSelect: closeSidebar,
+      'data-testid': 'nav-link-rls-lab',
+    })
+  }
+
+  return links
+})
+
+type DashboardSearchGroup = {
+  id: string
+  label: string
+  ignoreFilter?: boolean
+  items: Array<{
+    id: string
+    label: string
+    suffix?: string
+    icon?: string
+    to?: string
+    'data-testid'?: string
+  }>
+}
+
+function flattenNavForSearch(items: NavigationMenuItem[]): DashboardSearchGroup['items'] {
+  return items.flatMap((link, index) => {
+    const to = typeof link.to === 'string' ? link.to : undefined
+    const testId = 'data-testid' in link ? String(link['data-testid']) : `nav-${index}`
+    const self = to
+      ? [{
+          id: testId,
+          label: String(link.label ?? ''),
+          icon: typeof link.icon === 'string' ? link.icon : undefined,
+          to,
+        }]
+      : []
+    return [...self, ...flattenNavForSearch(link.children ?? [])]
+  })
+}
 
 /**
  * UDashboardSearch groups — mirrors the visible links so search stays in sync
  * with role-aware navigation (Requirement 9.1 of iam-roles spec).
  */
-const searchGroups = computed<any[]>(() => [
+watch(searchTerm, async (raw) => {
+  const q = raw.trim()
+  if (!q) {
+    searchSeq += 1
+    entityMerchants.value = []
+    entityPayments.value = []
+    searchLoading.value = false
+    return
+  }
+  const seq = ++searchSeq
+  searchLoading.value = true
+  const response = await searchEntities(q)
+  if (seq !== searchSeq) {
+    return
+  }
+  entityMerchants.value = response.data?.merchants ?? []
+  entityPayments.value = response.data?.payments ?? []
+  searchLoading.value = false
+})
+
+const searchGroups = computed<DashboardSearchGroup[]>(() => [
+  ...(entityMerchants.value.length > 0
+    ? [{
+        id: 'merchants',
+        label: 'Merchants',
+        ignoreFilter: true,
+        items: entityMerchants.value.map(merchant => ({
+          id: `merchant:${merchant.merchantId}`,
+          label: merchant.merchantReference,
+          suffix: merchant.displayName,
+          icon: 'i-lucide-store',
+          to: `/admin/merchants?merchantId=${merchant.merchantId}`,
+        })),
+      }]
+    : []),
+  ...(entityPayments.value.length > 0
+    ? [{
+        id: 'payments',
+        label: 'Payments',
+        ignoreFilter: true,
+        items: entityPayments.value.map(payment => ({
+          id: `payment:${payment.paymentOrderId}`,
+          label: payment.clientOrderReference,
+          suffix: payment.paymentOrderId,
+          icon: 'i-lucide-receipt',
+          to: `/admin/merchants/${payment.merchantId}/payments/${payment.paymentOrderId}`,
+        })),
+      }]
+    : []),
   {
     id: 'links',
     label: 'Go to',
-    items: visibleLinks.value,
+    items: flattenNavForSearch(visibleLinks.value),
   },
   {
     id: 'actions',
@@ -196,12 +348,12 @@ const searchGroups = computed<any[]>(() => [
             to: '/admin/merchants',
           }]
         : []),
-      ...(can.value.canReadMerchants || can.value.canReadPlatformPayments
+      ...(paymentOrdersTo.value
         ? [{
             id: 'payment-orders',
             label: 'Payment orders',
             icon: 'i-lucide-receipt',
-            to: '/admin/merchants',
+            to: paymentOrdersTo.value,
           }]
         : []),
       ...(can.value.canManageUsers

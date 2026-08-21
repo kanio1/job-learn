@@ -19,8 +19,12 @@ export class PaymentCreatePage extends BasePage {
     await this.page.getByLabel('Amount (minor units)').fill(String(amountMinor))
   }
 
+  async next(): Promise<void> {
+    await this.page.getByRole('button', { name: 'Next' }).click()
+  }
+
   async chooseCurrency(code: string): Promise<void> {
-    await this.page.getByLabel('Currency').click()
+    await this.page.getByRole('combobox', { name: 'Currency' }).click()
     await this.page.getByRole('option', { name: code }).click()
   }
 
