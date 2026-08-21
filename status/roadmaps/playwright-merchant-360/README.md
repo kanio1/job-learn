@@ -17,6 +17,7 @@ Następny milestone Playwright po [playwright-real-stack-learning](../playwright
 To **nie** jest Kiro spec. Nie edytować `.kiro/**`. Implementacja tylko po osobnym zleceniu fali. Ten katalog = backlog wykonawczy.
 
 Katalog testów (BC / UC / BF / EP / AT / plan POM): [docs/testing/merchant-360-erp-lab/](../../../docs/testing/merchant-360-erp-lab/) — start od [00-business-flows](../../../docs/testing/merchant-360-erp-lab/00-business-flows.md) i [09-agent-tests-pom-plan](../../../docs/testing/merchant-360-erp-lab/09-agent-tests-pom-plan.md).  
+Para z Wave 2 (co dają, czego uczą E2E/REST): [docs/testing/m360-ops-wave-2-value-and-learning.md](../../../docs/testing/m360-ops-wave-2-value-and-learning.md).  
 Research wersji: [.codex/research/merchant-360-versioned-stack.md](../../../.codex/research/merchant-360-versioned-stack.md).  
 Implementacja (Grok 4.6 cache): [.codex/prompts/merchant-360-implement.md](../../../.codex/prompts/merchant-360-implement.md) · overlay [.codex/merchant-360-slice.md](../../../.codex/merchant-360-slice.md) · skill `merchant-360-implement`.  
 Review WIP T01–T20: [.codex/prompts/merchant-360-review.md](../../../.codex/prompts/merchant-360-review.md) · skill `merchant-360-review`.

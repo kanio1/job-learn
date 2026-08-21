@@ -30,6 +30,7 @@ Pokrycie wierszy: `designed` (ten katalog). Po implementacji → `existing-pom` 
 | [07-dt-st-uc-mr.md](07-dt-st-uc-mr.md) | `DT-*`, `ST-*`, `MR-*`, `EG-*` |
 | [08-acceptance-tests.md](08-acceptance-tests.md) | `AT-M360-*` |
 | [09-agent-tests-pom-plan.md](09-agent-tests-pom-plan.md) | specs / `methods/` / E2E vs REST |
+| [m360-ops-wave-2-value-and-learning.md](../m360-ops-wave-2-value-and-learning.md) | para z Wave 2: wartość, uzupełnienie, lekcja E2E/REST |
 
 ## Persony
 

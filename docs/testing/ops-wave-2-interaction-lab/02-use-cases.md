@@ -34,4 +34,21 @@ Format: aktor, trigger, sukces, błąd, oracle. Wszystkie na żywym BFF.
 | UC-OPS-37 | 22 | support.agent | carousel next | keyboard | index | E2E-220/221 |
 | UC-OPS-38 | 22 | support.agent | invalid evidence | 404 slide | problem | E2E-223, API-070 |
 
-Happy-path interview: UC-14 → UC-18 → UC-19 → UC-20 → UC-16 → UC-23 → UC-25 → UC-26.
+Happy-path interview: UC-14 → UC-18 → UC-19 → UC-20 → UC-16 → UC-23 → UC-25 → UC-26.  
+Potem (P1): UC-34 → UC-35 → UC-36 → UC-37.
+
+Flow: [00-business-flows.md](00-business-flows.md). Curriculum: [value-and-learning](../m360-ops-wave-2-value-and-learning.md).
+
+### Czego uczą testy przypięte do UC
+
+| UC | E2E uczy | REST (BFF/RA) uczy |
+|---|---|---|
+| UC-OPS-13–15 | dwa contexty; tabs Your/Latest | 200/412/428; JSONB/merchant version unchanged |
+| UC-OPS-16/17 | Stay/Discard/`beforeunload` | PATCH length 0 |
+| UC-OPS-11/18/19 | Move + 412 rollback | maszyna statusów; illegal 409 |
+| UC-OPS-20/21 | counts per item | retry `caseIds` = failed |
+| UC-OPS-22/23 | `pressSequentially` / clock | hash ≠ pin; 429 |
+| UC-OPS-25/26 | `framereceived` na żywym WS | inject 201; readonly 403 |
+| UC-OPS-34/35 | BVA + `aria-valuenow` | V36 JSONB; isolation `/current` |
+| UC-OPS-36 | `test.use({ locale })` + Intl | — (brak RA i18n) |
+| UC-OPS-37/38 | carousel klawiatura; 404 slide | API-070 problem+json |

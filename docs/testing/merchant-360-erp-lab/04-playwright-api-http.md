@@ -2,7 +2,12 @@
 
 Żywy stos. Playwright REST = cookie sesji na `:3000` (`BffClient` / `page.request`). REST Assured = JWT na Spring `:8080` / Testcontainers.
 
-Nie powielać pełnej macierzy RA w POM. Który ID idzie do `BffClient` vs Surefire vs E2E: [09](09-agent-tests-pom-plan.md).
+Nie powielać pełnej macierzy RA w POM. Który ID idzie do `BffClient` vs Surefire vs E2E: [09](09-agent-tests-pom-plan.md).  
+Curriculum warstw: [value-and-learning](../m360-ops-wave-2-value-and-learning.md).
+
+### Czego uczy ta warstwa (M360 REST)
+
+Playwright REST: cookie sesji, Zod list, 403 readonly, search/summary jak UI. REST Assured: page/size/tenant mask, 412 DB unchanged, import UK, indeksy V23. Wave 2 RA (policy JSONB, PIN 429, case 409) **nie** należy do tego pliku.
 
 ---
 

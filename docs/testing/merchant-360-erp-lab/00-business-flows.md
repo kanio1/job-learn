@@ -6,7 +6,12 @@ Nie-oracle (fałszywy sukces): sam `innerText` bez GET; schowany przycisk bez 40
 
 Persony i seed: [live-pom-wave-2/09](../live-pom-wave-2/09-core-domain-flows.md). Stos: `scripts/dev-stack.sh --app`.
 
-Kanon PM: [playbook 01](../playwright-method-playbook/01-pm-business-flows.md).
+Kanon PM: [playbook 01](../playwright-method-playbook/01-pm-business-flows.md).  
+Para z Ops Wave 2: [m360-ops-wave-2-value-and-learning.md](../m360-ops-wave-2-value-and-learning.md) · flow ops: [ops 00](../ops-wave-2-interaction-lab/00-business-flows.md).
+
+### Co te flowy dają (M360)
+
+Rejestr merchanta zachowuje się jak ERP: **znajdź (GET+URL), otwórz 360, zmień stan legalnie, nie zgub izolacji**. Ops Wave 2 nie zastępuje tych ścieżek — dokłada conflict workspace, support queue i PIN na tym samym merchancie/płatności.
 
 ---
 

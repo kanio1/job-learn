@@ -4,7 +4,12 @@
 
 Nie powielać pełnej macierzy RA w POM.
 
-`waitForResponse` używa **exact pathname** (nie łapać `/history` prefixem).
+`waitForResponse` używa **exact pathname** (nie łapać `/history` prefixem).  
+Curriculum: [value-and-learning](../m360-ops-wave-2-value-and-learning.md).
+
+### Czego uczy ta warstwa (Ops REST)
+
+Playwright REST: cookie BFF, If-Match merchant, inject 403, bulk retry ids, evidence 404 **problem** (nie koperta Nitro). REST Assured: 412/428/409/429, maszyna case, PIN hash, JSONB policy, isolation. E2E nie powtarza RA-OPS-182 (threshold -1/101).
 
 ---
 

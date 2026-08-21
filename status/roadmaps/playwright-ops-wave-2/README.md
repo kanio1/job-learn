@@ -16,7 +16,8 @@ Wave 1 (10 zaakceptowanych feature’ów: simulator, import, virtualized history
 
 To **nie** jest Kiro spec. Nie edytować `.kiro/**`. Implementacja tylko po osobnym zleceniu fali. Ten katalog = backlog wykonawczy.
 
-Katalog testów (BC / UC / TC): [docs/testing/ops-wave-2-interaction-lab/](../../../docs/testing/ops-wave-2-interaction-lab/).  
+Katalog testów (BC / UC / BF / TC): [docs/testing/ops-wave-2-interaction-lab/](../../../docs/testing/ops-wave-2-interaction-lab/) — start od [00-business-flows](../../../docs/testing/ops-wave-2-interaction-lab/00-business-flows.md).  
+Para z M360 (co dają, czego uczą E2E/REST): [docs/testing/m360-ops-wave-2-value-and-learning.md](../../../docs/testing/m360-ops-wave-2-value-and-learning.md).  
 Research wersji: [.codex/research/ops-wave-2-versioned-stack.md](../../../.codex/research/ops-wave-2-versioned-stack.md).
 
 ## Jak czytać

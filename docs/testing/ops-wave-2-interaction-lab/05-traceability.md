@@ -20,3 +20,5 @@
 P0 Fale 1–5 = najwyższy learning (concurrent, dirty, kanban, bulk, PIN, WS, notif, views). P1/P2 nie blokują T01–T12.
 
 M360 overlap: FR-M360-ETAG ⊂ FR-OPS-ETAG (implement once). FR-M360-SEARCH ⊂ FR-OPS-SEARCH (E9 skip core jeśli T17 live). FR-M360-KANBAN **disjoint** od FR-OPS-KANBAN.
+
+Wartość / curriculum warstw: [m360-ops-wave-2-value-and-learning.md](../m360-ops-wave-2-value-and-learning.md). Flow: [00](00-business-flows.md).

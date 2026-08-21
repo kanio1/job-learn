@@ -25,3 +25,7 @@ Każdy BC ma właściciela fali. Nie są to encje CRM. Flow PM: [00-business-flo
 | BC-M360-63 | 7 | Inline displayName | Editable grid | PATCH bez If-Match |
 
 Poza BC: settlement, PSP, Customers table, Revenue column, `page.route` race.
+
+### Uzupełnienie vs Ops Wave 2
+
+M360 pokrywa **odczyt i gęstość** (lista, 360, import, payment Kanban, drzewo, summary). Wave 2 pokrywa **zapis pod konfliktem i ops** (412 UI, dirty, support Kanban, bulk partial, PIN, WS). Wspólne: merchant ETag i Ctrl+K — implementacja **raz** (patrz [value-and-learning](../m360-ops-wave-2-value-and-learning.md)). BC-M360-31 ⊂ BC-OPS-13 na backendzie; BC-M360-41 **disjoint** od BC-OPS-11.

@@ -5,7 +5,12 @@ Pokrycie: **designed**. Spec docelowy podany.
 
 Page objects: rozszerzyć `MerchantsListPage`, `PaymentsListPage`; dodać `MerchantSlideover` (component). Locatory: `getByRole` → `getByLabel` → `getByTestId`. Wiersz: `getByRole('row').filter({ hasText: ref })`.
 
-Pliki `tests-pom` i warstwa E2E vs REST: [09-agent-tests-pom-plan.md](09-agent-tests-pom-plan.md). Techniki: [06](06-istqb-ep-bva.md), [07](07-dt-st-uc-mr.md).
+Pliki `tests-pom` i warstwa E2E vs REST: [09-agent-tests-pom-plan.md](09-agent-tests-pom-plan.md). Techniki: [06](06-istqb-ep-bva.md), [07](07-dt-st-uc-mr.md).  
+Curriculum: [value-and-learning](../m360-ops-wave-2-value-and-learning.md).
+
+### Czego uczy ta warstwa (M360 E2E)
+
+Żywy Keycloak + BFF. Lekcje: `columnheader` server sort, `waitForResponse` exact path, `storageState` RBAC, dwa contexty 412, `setInputFiles`, `role=tree`, Ctrl+K. **Nie** uczy `page.route`, pixel chart, ani support Kanban (to Wave 2 E2E-110).
 
 ---
 

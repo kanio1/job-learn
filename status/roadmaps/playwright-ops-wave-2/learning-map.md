@@ -40,4 +40,6 @@ Curriculum senior SDET na **żywym** stosie. Świadomie **bez** lekcji `page.rou
 | Discriminated unions / `satisfies` / Zod | TS 6 w schema + events | E1–E7 | typecheck + oxlint |
 | Component objects vs page | POM model | E3, E7, E8 | tests-pom/pages/components |
 
+Co para z M360 daje operatorowi i czemu RA ≠ E2E: [value-and-learning](../../../docs/testing/m360-ops-wave-2-value-and-learning.md). Flow: [00-business-flows](../../../docs/testing/ops-wave-2-interaction-lab/00-business-flows.md).
+
 Poza mapą (non-goal): GraphQL, `routeWebSocket` mock, WebAuthn, Keycloak OTP, visual pixel chart jako jedyna asercja, trzy pełne projekty PW na cały suite.

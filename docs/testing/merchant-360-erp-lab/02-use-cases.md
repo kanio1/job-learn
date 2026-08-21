@@ -31,3 +31,18 @@ Flow PM + mermaid: [00-business-flows.md](00-business-flows.md). AT: [08-accepta
 | UC-M360-63 | 63 | tenant.admin | inline rename | 412 stale | PATCH | E2E-150/151 |
 
 Główny happy-path **Customer 360 analog**: UC-10 → UC-20 → UC-21 → UC-61 → UC-30 → UC-31 → UC-41.
+
+### Czego uczą testy przypięte do UC
+
+| UC | E2E uczy | REST (BFF/RA) uczy |
+|---|---|---|
+| UC-M360-04 | Overview ≠ długość strony | `totalElements` w JSON |
+| UC-M360-10/11 | URL+Back; header sort | query `sort=` / `q=` 200 |
+| UC-M360-21 | formularz BVA/409 na create | RA unique UK |
+| UC-M360-30 | readonly bez Save | POST activate 403 mimo UI |
+| UC-M360-31 | dwa `storageState` | 412 + DB unchanged |
+| UC-M360-40 | `setInputFiles` preview | brak INSERT po preview |
+| UC-M360-42 | Move = POST lifecycle | If-Match na authorize |
+| UC-M360-51 | Ctrl+K last response | GET `/api/search` limit |
+
+Ops UC (conflict tabs, PIN, WS, i18n, gallery) są w [02-use-cases Wave 2](../ops-wave-2-interaction-lab/02-use-cases.md) — nie powielać tu jako drugi CRM.

@@ -31,6 +31,7 @@ Curriculum senior SDET na **żywym** stosie. Świadomie **bez** lekcji `page.rou
 | `contenteditable` (jeśli Editor 4.7.1) | Notes | E7-S4 | PW-M360-E2E-140 |
 | Discriminated unions / `satisfies` / Zod | TS 6 w schema + columns | E1–E2 | typecheck + oxlint |
 
-Warstwa E2E vs REST i docelowe `methods/`: [09-agent-tests-pom-plan](../../../docs/testing/merchant-360-erp-lab/09-agent-tests-pom-plan.md).
+Warstwa E2E vs REST i docelowe `methods/`: [09-agent-tests-pom-plan](../../../docs/testing/merchant-360-erp-lab/09-agent-tests-pom-plan.md).  
+Co para z Wave 2 daje operatorowi i czemu RA ≠ E2E: [value-and-learning](../../../docs/testing/m360-ops-wave-2-value-and-learning.md).
 
 Poza mapą (non-goal): GraphQL, WS, WebAuthn, visual pixel chart jako jedyna asercja, native `page.on('dialog')`.

@@ -3,7 +3,12 @@
 Warstwa: Chromium `tests-pom`, **zero fulfill, zero routeWebSocket**. Stos: `scripts/dev-stack.sh --app`.  
 Pokrycie: **designed**.
 
-Page objects: rozszerzyć `SupportPage`, `PaymentDetailPage`; dodać component objects z [README roadmap](../../status/roadmaps/playwright-ops-wave-2/README.md). Locatory: `getByRole` → `getByLabel` → `getByTestId`. Import `test`/`expect` z `tests-pom/fixtures/index.ts`.
+Page objects: rozszerzyć `SupportPage`, `PaymentDetailPage`; dodać component objects z [README roadmap](../../status/roadmaps/playwright-ops-wave-2/README.md). Locatory: `getByRole` → `getByLabel` → `getByTestId`. Import `test`/`expect` z `tests-pom/fixtures/index.ts`.  
+Curriculum: [value-and-learning](../m360-ops-wave-2-value-and-learning.md) · flow: [00](00-business-flows.md).
+
+### Czego uczy ta warstwa (Ops E2E)
+
+Klasy: dwa `storageState`, dirty guard, Kanban spraw, bulk partial, PIN, żywy WS (`page.on('websocket')` nie mock), saved views bez JWT, slider ARIA, `locale` project, carousel. **Nie** uczy payment-status Kanban (M360 E2E-090) ani pełnej macierzy 400 (RA-OPS).
 
 ---
 

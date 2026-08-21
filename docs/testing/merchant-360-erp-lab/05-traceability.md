@@ -25,3 +25,5 @@ AT: [08-acceptance-tests.md](08-acceptance-tests.md). EP/BVA: [06](06-istqb-ep-b
 | FR-M360-EDITGRID | 63 | 60 | E2E-150–151 | API-060 | 090–091 | T20 | P1 |
 
 P0 Fale 1–5 = epic Customer 360 analog na merchantach. P1/P2 nie blokują T01–T15.
+
+Wartość / uzupełnienie vs Ops Wave 2: [m360-ops-wave-2-value-and-learning.md](../m360-ops-wave-2-value-and-learning.md).

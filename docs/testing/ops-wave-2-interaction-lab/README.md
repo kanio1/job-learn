@@ -21,11 +21,13 @@ Pokrycie wierszy: `designed` (ten katalog). Po implementacji → `existing-pom` 
 
 | Plik | Prefiks |
 |---|---|
+| [00-business-flows.md](00-business-flows.md) | `BF-OPS-##` |
 | [01-business-cases.md](01-business-cases.md) | `BC-OPS-##` |
 | [02-use-cases.md](02-use-cases.md) | `UC-OPS-##` |
 | [03-playwright-e2e-catalog.md](03-playwright-e2e-catalog.md) | `PW-OPS-E2E-###`, `PW-OPS-SEC-###` |
 | [04-playwright-api-http.md](04-playwright-api-http.md) | `PW-OPS-API-###`, `RA-OPS-###` |
 | [05-traceability.md](05-traceability.md) | FR → TC |
+| [m360-ops-wave-2-value-and-learning.md](../m360-ops-wave-2-value-and-learning.md) | para z M360: wartość, uzupełnienie, lekcja E2E/REST |
 
 ## Persony
 

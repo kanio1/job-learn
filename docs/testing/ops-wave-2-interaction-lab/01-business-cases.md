@@ -19,3 +19,9 @@ Każdy BC ma właściciela epiku. Nie są to encje CRM. 10 feature’ów Wave 1 
 | BC-OPS-22 | 9 | Evidence gallery | Przegląd załączników | Drugi Download Lab |
 
 Poza BC: Kafka, PSP, Keycloak OTP, Customers, Revenue, payment Kanban, `page.route`.
+
+Flow PM: [00-business-flows.md](00-business-flows.md). Para z M360: [value-and-learning](../m360-ops-wave-2-value-and-learning.md).
+
+### Uzupełnienie vs Merchant 360
+
+Wave 2 **nie** buduje drugiego rejestru. BC-OPS-13 pogłębia BC-M360-31 (conflict UI). BC-OPS-20 pogłębia BC-M360-51 (RBAC/last-wins). BC-OPS-11 jest **innym** Kanbanem niż BC-M360-41. BC-OPS-18/21/22 (policy, locale, gallery) nie mają analogu w M360 — to nowe klasy SDET.
