@@ -27,3 +27,5 @@ Metamorphic (relacja, nie pojedynczy expected):
 Minimal covering: nie 5 ról × 15 czasowników w Playwright (to RA). E2E izolacji = trzy wiersze: platform, tenant.admin, manager.
 
 Szczegóły UC/HTTP: `live-pom-wave-2/07` i `09`. Karty GWT: plan sesji §P.
+
+Poza tą tabelą (domain testing, classification trees, cause-effect, HTSM/SFDPOT, output-domain, base-choice): [07-advanced-techniques-beyond-metamorphic.md](07-advanced-techniques-beyond-metamorphic.md).

@@ -12,6 +12,7 @@ Jak projektować business flows → use cases → test cases na żywym POM (`tes
 | [04-principal-typescript.md](04-principal-typescript.md) | Principal / SDET — foldery, wzorce |
 | [05-combinations.md](05-combinations.md) | Dlaczego techniki się łączą |
 | [06-scenario-catalog.md](06-scenario-catalog.md) | Indeks SCN → klasa / spec |
+| [07-advanced-techniques-beyond-metamorphic.md](07-advanced-techniques-beyond-metamorphic.md) | Poza FL: CTAL-TA, RST, książki (interview) |
 
 Kod: `apps/frontend/tests-pom/methods/`. Learner: kopiujesz sam do `tests-pom-learner`. Agent tam nie pisze.
 
