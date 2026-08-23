@@ -6,7 +6,7 @@ Panel: tech-lead, architect, Kafka expert, PostgreSQL 18 administrator, implemen
 Input: `kafka-event-streaming-proposal.md`, `kafka-event-streaming-proposal-review.md`, ADR 0002, spec `kafka-event-streaming-lab.md`.
 Research: Firecrawl MCP (`firecrawl_search`) against Confluent/Conduktor/meshiq/IBM FinServ write-ups, webhook-reliability guides (Hookdeck/KodeKloud), Debezium/outbox engineering posts (Trade Republic, singhajit), idempotent-consumer pattern posts, PostgreSQL 18 release notes (postgresql.org, xata, CrunchyData, Neon), Podman/KRaft compose examples.
 
-Scope guard unchanged: nothing here authorizes implementation before P0 (retire "No Kafka" in AGENTS.md + accept ADR 0002).
+Scope: ADR 0002 is **ACCEPTED** (2026-08-23). This catalog remains a **reading list**, not an implementation backlog. Wave 1 delivery is still cases 1+2 (+3 as DLT, not product webhooks).
 
 ---
 

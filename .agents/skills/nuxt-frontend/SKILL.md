@@ -3,10 +3,10 @@ name: nuxt-frontend
 description: >-
   Place and change Nuxt 4.4.6 / TypeScript 6.0.3 / Node 22+ (Nitro BFF) frontend
   code in this lab: app/ vs server/, server/api proxy, $fetch.raw, Zod-before-render,
-  Pinia only for shared state, Nuxt UI first. Use when adding or editing Vue pages,
+  Pinia only for shared state, Nuxt UI first, plus dashboard taste / a11y /
+  testability review via its ui.md. Use when adding or editing Vue pages,
   components, composables, schemas, stores, or Nitro handlers. Do not use as a generic
-  Nuxt tutorial, Playwright framework skill (that is playwright-pom / playwright-sdet-review),
-  or a dashboard-taste pass (that is nuxt-dashboard-zod-pinia-frontend-engineering).
+  Nuxt tutorial, Playwright framework skill (that is playwright-pom / playwright-sdet-review).
 ---
 
 # Nuxt frontend (this lab)
@@ -36,7 +36,7 @@ Pinned from `apps/frontend/package.json` — do not bump:
 | Red-green at UI / BFF HTTP seams | `tdd` then `implement` |
 | Playwright POM / fixtures | `playwright-pom` |
 | Playwright locators / auth / flake | `playwright-sdet-review` |
-| Dashboard visual taste, density, a11y polish | `nuxt-dashboard-zod-pinia-frontend-engineering` + `.kiro/steering/frontend-nuxt-ui.md` |
+| Dashboard visual taste, density, a11y polish | [ui.md](ui.md) + `.kiro/steering/frontend-nuxt-ui.md` |
 | Deep-module vocabulary | `codebase-design` |
 | Version-sensitive fact check | `research` + `official-docs-and-versioned-research` |
 
@@ -46,10 +46,10 @@ Pinned from `apps/frontend/package.json` — do not bump:
 2. Browser never calls Spring. Add or reuse a Nitro handler that uses `backendApi` from `server/utils/backendApi.ts`.
 3. Client transport goes through `useApiClient` (`$fetch.raw` on `/api/**`) and a Zod schema in `app/schemas/`. On parse failure: `ErrorState`, no unvalidated data.
 4. Pinia only when two surfaces share state (see [layout.md](layout.md)). Otherwise composable + local state.
-5. Prefer existing Nuxt UI / `app/components/shared/` widgets. Do not invent KPI tiles.
+5. Prefer existing Nuxt UI / `app/components/shared/` widgets. Do not invent KPI tiles. Event Lab is a **thin** proof-of-delivery page plus a payment-order delivery card — not a Kafka console (`eventlab-kafka`).
 6. After TS/Vue changes: `corepack pnpm typecheck` and `corepack pnpm lint` in `apps/frontend`. Then the agreed `tdd` seam.
 
-Package map: [layout.md](layout.md). BFF and headers: [bff.md](bff.md). Language/runtime: [typescript-node.md](typescript-node.md).
+Package map: [layout.md](layout.md). BFF and headers: [bff.md](bff.md). Language/runtime: [typescript-node.md](typescript-node.md). Dashboard taste and testability: [ui.md](ui.md).
 
 ## Lab mappings
 

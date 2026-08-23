@@ -20,7 +20,7 @@ Use this skill to review backend diffs. When the user asked for a full branch/PR
 
 ## Repository Rules
 
-- `merchant` and `payment` are Spring Modulith modules.
+- `merchant` and `payment` are Spring Modulith modules. Kafka belongs in `eventlab` only (`eventlab-kafka`); do not flag overlay work as scope creep.
 - `foundation.status` and `shared.*` are supporting packages, not feature modules.
 - Payment code must not depend on `merchant.internal`.
 - Flyway owns schema creation; JPA validates.

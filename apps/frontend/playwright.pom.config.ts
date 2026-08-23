@@ -96,7 +96,7 @@ export default defineConfig({
     },
     {
       name: 'chromium-admin',
-      testMatch: /specs\/(merchants|merchants-table|merchants-slideover|merchants-concurrency|merchants-conflict|merchants-unsaved|merchants-import|merchants-tree|users|audit|error-lab|checkout-lab|session-lab|network-lab|mirror-lab|command-palette|internal-notes|merchant-risk|support-admin|support-kanban|support-bulk|admin-bff|a11y-axe|psp-redirect|ops-feed|ops-notifications|ops-search)\.spec\.ts/,
+      testMatch: /specs\/(merchants|merchants-table|merchants-slideover|merchants-concurrency|merchants-conflict|merchants-unsaved|merchants-import|merchants-tree|users|audit|error-lab|checkout-lab|session-lab|network-lab|mirror-lab|command-palette|internal-notes|merchant-risk|support-admin|support-kanban|support-bulk|admin-bff|a11y-axe|psp-redirect|ops-feed|ops-notifications|ops-search|event-lab)\.spec\.ts/,
       dependencies: ['setup-platform-admin', 'setup-platform-operator', 'setup-tenant-admin', 'setup-read-only-user', 'setup-merchant-manager'],
       use: {
         ...devices['Desktop Chrome'],

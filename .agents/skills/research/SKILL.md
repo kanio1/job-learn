@@ -33,4 +33,4 @@ Follow every claim back to the source that owns it.
 ## Uncertainty / follow-up
 ```
 
-If running as a background/sub-agent, still write the file and return its path. Research **feeds** `grill-with-docs` / `wayfinder`; it does not replace them.
+If running as a background/sub-agent, still write the file and return its path. Research **feeds** `grill-with-docs`; it does not replace it.

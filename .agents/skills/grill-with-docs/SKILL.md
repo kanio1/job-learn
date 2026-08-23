@@ -8,6 +8,8 @@ disable-model-invocation: true
 
 Follow `grilling`. While grilling, maintain the lab glossary and ADRs.
 
+This is the default grill entrypoint in this repo; there is no separate bare-grill wrapper skill.
+
 ## Where docs live in this lab
 
 - Repo map (already exists): `CONTEXT.md` at the repo root — orientation, not a glossary.

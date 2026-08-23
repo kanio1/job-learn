@@ -122,6 +122,12 @@
         :payment-order-id="paymentOrderId"
         :merchant-id="merchantId"
       />
+
+      <EventLabDeliveryCard
+        v-if="store.currentOrder && can.canReadEventLab"
+        :record="eventLabRecord"
+        :pending="eventLabPending"
+      />
     </template>
 
     <!-- Lifecycle action drawer -->
@@ -254,6 +260,39 @@ const { can } = useAuthorization()
 const toast = useToast()
 
 const statusPolling = usePaymentStatusPolling(refreshPaymentStatus)
+
+const { list: listEventLab } = useEventLabApi()
+const eventLabRecord = ref<import('~/schemas/event-lab.schema').EventLabRecord | null>(null)
+const eventLabPending = ref(true)
+
+async function refreshEventLabDelivery() {
+  if (!can.value.canReadEventLab) {
+    eventLabPending.value = false
+    return
+  }
+  const res = await listEventLab({ targetId: paymentOrderId })
+  if (res.data && res.data.length > 0) {
+    eventLabRecord.value = res.data[0]!
+    eventLabPending.value = false
+  } else {
+    eventLabRecord.value = null
+    eventLabPending.value = true
+  }
+}
+
+let eventLabInterval: ReturnType<typeof setInterval> | null = null
+
+watch(() => store.currentOrder?.paymentOrderId, (id) => {
+  if (id) {
+    refreshEventLabDelivery()
+    if (eventLabInterval) clearInterval(eventLabInterval)
+    eventLabInterval = setInterval(refreshEventLabDelivery, 2000)
+  }
+})
+
+onBeforeUnmount(() => {
+  if (eventLabInterval) clearInterval(eventLabInterval)
+})
 
 // ---------------------------------------------------------------------------
 // Page-level state

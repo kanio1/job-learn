@@ -74,7 +74,7 @@ Never use DB-only assertions as a substitute for the HTTP contract.
 ./mvnw -Dtest=PaymentOrderRestAssuredTest#methodName test
 ```
 
-Follow `rest-api-test-design` for coverage matrix and `junit6-assertj-restassured-testcraft` for assertion style.
+Follow `rest-api-test-design` for coverage matrix, assertion style, and data isolation.
 
 ### Playwright REST
 

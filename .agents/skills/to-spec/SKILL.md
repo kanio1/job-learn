@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Synthesize what you already know. Do **not** interview.
 
-If alignment is still missing, tell the user to run `grill-me` first.
+If alignment is still missing, tell the user to run `grill-with-docs` first.
 
 ## Process
 

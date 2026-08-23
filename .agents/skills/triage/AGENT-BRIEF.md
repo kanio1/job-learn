@@ -32,5 +32,5 @@ An agent brief is the contract a later `implement` session works from. Original 
 - [ ] criterion
 
 **Out of scope:**
-- PSP, Kafka, settlement, KYC, top-level POST /payments unless explicitly in scope
+- PSP, settlement, KYC, top-level POST /payments; Kafka outside `eventlab` overlay unless the ticket is `KAFKA-T*`
 ```

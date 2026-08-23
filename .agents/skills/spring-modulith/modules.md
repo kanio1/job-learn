@@ -24,6 +24,7 @@ Root: `lab.paymentquality` (`PaymentQualityApplication`). Each **direct** sub-pa
 | `checkoutlab` | Checkout Protocol Lab | Feature-flagged; not a product PSP |
 | `mirrorlab` | Mirror Lab | Feature-flagged |
 | `rlslab` | RLS Lab | Feature-flagged |
+| `eventlab` | Event Streaming Lab | Flag-gated Kafka overlay (ADR 0002). Placement: `eventlab-kafka`. Implementation in progress — confirm current state on the `KAFKA-T*` task board before assuming code exists |
 
 `foundation.status` is a supporting package for `GET /api/status`, not a product module. Do not grow it into a second web stack.
 
@@ -65,7 +66,7 @@ If a new call would require `*.internal`, either move a type to the module root 
 
 Already on the classpath: `spring-modulith-events-api` + `spring-modulith-events-jpa`. `application.yml` sets `spring.modulith.events.republish-outstanding-events-on-restart: true`.
 
-Use `ApplicationEventPublisher` the way `MerchantService` / `PaymentLifecycleService` already do. Do **not** add Kafka, webhooks, or a new outbox table. Do not start using `Scenario` event tests unless the slice is specifically async event delivery.
+Use `ApplicationEventPublisher` the way `MerchantService` / `PaymentLifecycleService` already do. Keep the existing `event_publication` outbox. Do **not** add a second outbox table or put Kafka producers/listeners in `shared` / `audit` / `payment`. Kafka externalization is **only** `eventlab` (`eventlab-kafka` skill, ADR 0002). Do not start using `Scenario` event tests unless the slice is specifically async event delivery.
 
 ## New module checklist
 
@@ -76,4 +77,4 @@ Only when a real feature owns behavior (see root `package-info.java`). Then:
 3. Flyway folder `db/migration/<module>/` and add it to `spring.flyway.locations` in `application.yml` **and** `application-test.yml` if that file lists locations.
 4. `*ModuleTest` next to the module package, `@ActiveProfiles("test")`, Testcontainers via `PostgresContainerSupport`.
 5. `ApplicationModules.of(PaymentQualityApplication.class).verify()` still green (`ModulithArchitectureTest`).
-6. Do not enable `checkoutlab` / `mirrorlab` / `rlslab` style labs unless the user asked for that lab.
+6. Do not enable `checkoutlab` / `mirrorlab` / `rlslab` / `eventlab` style labs unless the user asked for that lab (Event Streaming Lab tickets are `KAFKA-T*` on the kafka roadmap).

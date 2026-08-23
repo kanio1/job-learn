@@ -10,4 +10,4 @@ Canonical process: `.agents/skills/README.md`.
 | [triage-labels.md](triage-labels.md) | Status strings on those files |
 | [domain.md](domain.md) | Glossary and ADR locations |
 
-Re-run `setup-lab-engineering-skills` only to switch tracker or restart this config.
+Tracker layout is defined in [issue-tracker.md](issue-tracker.md); re-check it only when switching trackers.

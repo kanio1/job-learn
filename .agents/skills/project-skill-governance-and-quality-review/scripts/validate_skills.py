@@ -12,18 +12,22 @@ for skill_dir in sorted(SKILLS.iterdir()):
     if not skill_dir.is_dir():
         continue
     skill_file = skill_dir / "SKILL.md"
-    if not skill_file.exists():
+    if skill_file.exists():
+        text = skill_file.read_text(encoding="utf-8")
+        if not text.startswith("---"):
+            errors.append(f"{skill_dir.name}: missing YAML frontmatter opener")
+        if "name:" not in text:
+            errors.append(f"{skill_dir.name}: missing name")
+        if "description:" not in text:
+            errors.append(f"{skill_dir.name}: missing description")
+        if "when not to use" not in text.lower():
+            warnings.append(f"{skill_dir.name}: no 'When Not to Use' section")
+    elif (skill_dir / "REFERENCE.md").exists():
+        # Reference-only pack: intentionally not triggerable, no SKILL.md required.
+        continue
+    else:
         errors.append(f"{skill_dir.name}: missing SKILL.md")
         continue
-    text = skill_file.read_text(encoding="utf-8")
-    if not text.startswith("---"):
-        errors.append(f"{skill_dir.name}: missing YAML frontmatter opener")
-    if "name:" not in text:
-        errors.append(f"{skill_dir.name}: missing name")
-    if "description:" not in text:
-        errors.append(f"{skill_dir.name}: missing description")
-    if "when not to use" not in text.lower():
-        warnings.append(f"{skill_dir.name}: no 'When Not to Use' section")
 
 print("== Skill Validation ==")
 print(f"Skills path: {SKILLS}")

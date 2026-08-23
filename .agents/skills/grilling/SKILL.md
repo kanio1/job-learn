@@ -25,6 +25,6 @@ Finding **facts** is your job (read the repo, specs, tests). The **decisions** a
 - Which **module** (`merchant`, `payment`, `tenant`, `iam`) owns the change?
 - Does this need a Kiro spec, a `.codex` continuation note, or a small lesson-sized slice?
 - Which authorities and tenant/merchant ownership rules apply?
-- What is explicitly out of scope (PSP, Kafka, settlement, KYC)?
+- What is explicitly out of scope (see `AGENTS.md`: PSP, settlement, KYC; Kafka only in `eventlab` overlay)?
 
 Do not act until the user confirms shared understanding. The frontier is empty only when nothing is silently assumed.

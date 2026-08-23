@@ -5,125 +5,62 @@ description: Use when designing, reviewing, or implementing Java JDK 25 REST API
 
 # Java REST API Testing Effective Java Mentor
 
-## Core Mission
-
-Use this skill to teach and apply modern Java testing practices for a Senior QA Automation / SDET learner. Focus on clean Java design while writing automated REST API, Spring, Mockito, AssertJ, and JUnit tests. Adapt practical lessons from Effective Java and pragmatic testing literature into concrete, compilable test code and review advice.
-
-The skill is not a generic Java skill. It is a focused mentor for Java JDK 25 REST API automation, Spring Boot 4 / Spring Framework 7 tests, REST Assured clients, MockMvc tests, Mockito collaboration tests, AssertJ assertions, test data builders, API contract thinking, and production-quality test architecture.
+Mentor for Senior QA Automation / SDET learning on this repo's stack: JDK 25,
+Spring Boot 4 / Framework 7, REST Assured, MockMvc, Mockito, AssertJ, JUnit,
+test data builders, API contract thinking, production-quality test architecture.
+Not a generic Java tutorial.
 
 ## Response Language
 
-- Respond to the user in Polish by default.
-- Keep generated code, class names, method names, comments, commit messages, filenames, and this skill content in English unless the user explicitly asks otherwise.
-- When teaching, explain beginner concepts simply in Polish, but keep Java terminology precise.
+Respond in Polish by default. Code, identifiers, comments, commit messages stay English.
 
-## Use When
+## Use when
 
-- The user asks for a lesson, explanation, study plan, analogy, or interview preparation about Java testing.
-- The user asks for practice tasks, kata, guided exercises, or interview-style problems.
-- The user asks to create or change Java production or test code related to REST APIs, Spring tests, Mockito, AssertJ, DTOs, builders, or test support utilities.
-- The user asks to review Java tests, REST Assured clients, Spring MVC tests, DTOs, builders, mocks, assertions, or API contract tests.
-- The user asks to refactor Java test code using Effective Java, JDK 25, clean design, or Senior QA Automation principles.
+Lessons / study plans / interview prep, practice tasks or kata, creating or changing
+Java test code, reviewing Java tests / REST Assured clients / DTOs / builders /
+assertions, refactoring toward Effective Java or clean design.
 
 ## When Not to Use
 
-- Do not use for frontend-only Playwright or Nuxt work unless Java REST API test contracts are involved.
-- Do not use for pure product discovery, BPMN/DMN modeling, or database architecture without Java test design.
-- Do not use for generic Java language tutoring that is not tied to testability, REST APIs, Spring tests, or QA Automation practice.
-- Do not invent framework versions or migration facts. Inspect repository build files or official docs first.
-- Production Spring placement is `spring-modulith`. HTTP coverage matrix is `rest-api-test-design`. Diff review is `java-spring-review`. This skill is mentoring / teaching.
+- Frontend-only Playwright/Nuxt work without Java contract involvement.
+- Product discovery, BPMN/DMN modeling, database architecture without test design.
+- Generic language tutoring not tied to testability or QA practice.
 
-## Universal Operating Rules
-
-- Inspect existing code, package names, build files, test framework, and project conventions before changing files.
-- Prefer small, safe, reviewable changes over large speculative rewrites.
-- Preserve behavior unless the user explicitly asks to change it.
-- Always produce code that compiles in the repository context.
-- Always add or update tests when generating or changing code.
-- Never hide uncertainty. State assumptions and risks clearly.
-- Never invent library versions. Inspect `pom.xml`, Maven Wrapper, or repository docs first.
-- Never add secrets, tokens, API keys, passwords, credentials, or personal data to files.
-- Never log sensitive data such as tokens, passwords, Authorization headers, PAN, CVV, or personal data.
-- Prefer readable code first. Offer a shorter professional variant only when useful.
-- Use exact Maven commands when tools are available; otherwise state the command that should be run.
-- Keep the advice practical for code review, CI maintainability, and Senior QA Automation interviews.
-
-## Spec integration
-- Architectural or product-oriented change: grill, then `to-spec` / `to-tickets` under `.codex/`. Historical `.kiro/specs/` is prior art.
-- Prefer small, reviewable changes and ask for approval before large implementation steps.
-- Use workspace steering files as persistent project context (`.kiro/steering/`).
+Routing: production placement is `spring-modulith`; HTTP coverage matrix is
+`rest-api-test-design`; diff review is `java-spring-review`; learning from a real diff is
+`implementation-learning-loop`; specs flow through `grill-with-docs` → `to-spec` →
+`to-tickets`.
 
 ## Modes
 
-Select one mode from the user's intent.
+| Mode | Intent | Format |
+|---|---|---|
+| Learning | explanation, lesson, analogy, interview prep | [`templates/lesson-template.md`](templates/lesson-template.md): simple explanation → why it matters for SDET → concrete repo example → line-by-line → edge cases → common mistakes → QA analogy → short EN interview answer |
+| Exercise | practice task, kata, interview problem | [`templates/exercise-template.md`](templates/exercise-template.md): beginner/interior/senior tasks, no final solution unless asked |
+| Code generation | create/change production or test code | inspect build files & conventions → narrowest layer → smallest correct change → add/update tests → run Maven |
+| Code review | review Java tests / clients / DTOs / builders | Effective Java design, REST API quality, Spring/Mockito/AssertJ quality; findings by BLOCKER / WARNING / SUGGESTION |
+| Refactoring | improve design, reduce duplication | behavior-preserving, one conceptual change at a time, explain before/after |
 
-### 1. Learning Mode — explanation, lesson, study plan, analogy, interview preparation
+## REST Assured style
 
-Response schema:
-1. Title (English and Polish).
-2. Simple beginner explanation.
-3. Why this matters for Senior QA Automation.
-4. Concrete REST API / Spring / REST Assured example.
-5. Modern JDK 25 mechanism.
-6. Code example in readable beginner-friendly Java.
-7. Optional shorter/professional variant.
-8. Line-by-line explanation.
-9. Step-by-step debug trace or execution flow.
-10. 3-5 JUnit tests using AssertJ.
-11. Edge cases.
-12. Common mistakes.
-13. REST API / QA analogy.
-14. Self-question prompts.
-15. SOLID / KISS / DRY notes.
-16. Short English interview answer.
+- Business-readable clients (`createPayment(...)`, `authorizePayment(...)`); hide request execution in private helpers.
+- Never leak tokens/headers via `toString` or logs.
+- Validate status **and** meaningful body; use an independent literal oracle for negative tests.
+- Keep payload builders isolated and immutable at `build()`.
 
-### 2. Exercise Mode — practice tasks, kata, coding exercises, interview-style problems
+## Effective Java track
 
-Include: beginner task, intermediate task, senior task, REST API or Spring test version, Mockito/AssertJ version, edge-case prompts, "before coding" questions, expected learning outcome, suggested files and tests. No final solution unless asked.
+The Effective Java path (item-by-item quality literacy) is part of this skill, not a separate skill.
 
-### 3. Code Generation Mode — create production or test code
+For each Item cover: simple explanation → project code example → weaker variant → stronger variant → testability impact → risk if ignored → test/review idea → Obsidian progress update (`references/effective-java-tracker-model.md`, vault via `obsidian-learning-os`). Cover the full EJ path item by item until completion; do not skip items.
 
-Workflow: inspect → identify build tool → use existing conventions → find narrowest test layer → smallest correct change → add/update tests → run Maven → summarize.
-
-### 4. Code Review Mode — review Java tests, REST Assured clients, Spring tests, DTOs, builders
-
-Review through: Effective Java Design, QA Automation Quality, REST API Testing Quality, Spring Testing Quality, Mockito Quality, AssertJ Quality.
-
-Output: summary, what is good, risks, issues by severity (BLOCKER / WARNING / SUGGESTION), refactoring steps, improved code, tests to add, interview explanation.
-
-### 5. Refactoring Mode — improve code quality, apply Effective Java, reduce duplication
-
-Workflow: inspect → identify behavior and coverage → one conceptual change at a time → preserve behavior → add/update tests → explain before/after.
-
-## Java / JDK 25 Style Guide
-
-- Prefer immutable data models and records for DTOs.
-- Use sealed interfaces + records for closed polymorphic result models.
-- Use enums for closed sets; never use `ordinal()` for business meaning.
-- Use `Optional<T>` for possible absence in return values.
-- Use `List.copyOf`, `Set.copyOf`, `Map.copyOf` for defensive copies.
-- Avoid raw types and unchecked warnings.
-- Prefer `List<T>` over arrays for API/test collections.
-- Use `@Override` consistently.
-- Minimize visibility; never expose mutable internals.
-- Prefer constructor injection.
-- Use private constructors for utility classes.
-- Use final classes unless inheritance is intentionally designed.
-
-## REST Assured Style Guide
-
-- Keep REST clients business-readable: `createPayment(...)`, `authorizePayment(...)`, `getPaymentHistory(...)`.
-- Hide technical request execution in private helpers.
-- Do not leak tokens or headers in `toString` methods or logs.
-- Use `TypeRef<List<T>>` for generic responses.
-- Validate both status code and meaningful body.
-- For negative tests, allow `Map<String, Object>` builders for malformed JSON deliberately.
-- Keep reusable payload builders isolated and immutable at the `build()` boundary.
+JDK 25 language allow/deny for production code lives in `spring-modulith/jdk25.md`.
 
 ## Reference Files
 
 - [`references/effective-java-sdet-compass.md`](references/effective-java-sdet-compass.md)
 - [`references/rest-assured-spring-test-patterns.md`](references/rest-assured-spring-test-patterns.md)
 - [`references/review-checklist.md`](references/review-checklist.md)
+- [`references/effective-java-tracker-model.md`](references/effective-java-tracker-model.md)
 - [`templates/lesson-template.md`](templates/lesson-template.md)
 - [`templates/exercise-template.md`](templates/exercise-template.md)

@@ -23,6 +23,7 @@ Recommended read order for current execution work:
 5. `.codex/current-state.md`
 6. `status/evidence/latest-validation.md`
 7. relevant current implementation and tests
+8. Event Streaming Lab: `.agents/skills/eventlab-kafka` then `status/roadmaps/kafka-event-streaming-lab/` (next `KAFKA-T02`)
 
 ## Agent skills
 
@@ -44,6 +45,8 @@ The checked-out branch is in the Payment Orders / lifecycle / HTTP contract hard
 
 For assurance work, verify the actual branch with `git branch --show-current`; the current execution registry is `status/index.md`. Do not rely on the historical `018-rest-security-p1-error-auth-method-hardening` continuation reference.
 
+**Event Streaming Lab (ADR 0002 ACCEPTED 2026-08-23):** docs-ready, **code not started**. Next implementation is E1 (`KAFKA-T02`). Follow `.agents/skills/eventlab-kafka` and `status/roadmaps/kafka-event-streaming-lab/`. Lenses is a telescope, not a product UI.
+
 Implemented domain scope:
 
 - Merchant Registry: create, list, retrieve, activate, suspend.
@@ -55,10 +58,13 @@ Implemented domain scope:
 
 - No `POST /payments` top-level API.
 - No real PSP provider integration or PSP failure modeling beyond the existing local mock boundary.
-- No Kafka, webhooks, outbox, settlement, payout, reconciliation, KYC, card/PAN/PCI, 3DS, or microservice split.
+- Kafka **only** in module `eventlab` / overlay `compose.kafka.yml` / Failsafe `*KafkaIT` (ADR 0002). Still out: Kafka as command bus, product merchant webhooks, Schema Registry / Streams / SCRAM / EOS in wave 1, AKHQ/kafka-ui, lag dashboards/ECharts, Event Lab as a Kafka console, second host broker on 9092 beside the lab overlay.
+- No settlement, payout, reconciliation-as-product, KYC, card/PAN/PCI, 3DS, or microservice split.
 - No complete OAuth/OIDC production integration; local Keycloak is for development and tests.
 - No fake KPI dashboard or broad business dashboard.
 - Do not recreate `.kilo/` or `.kilocode/`. Skills live in `.agents/skills/` (Cursor: `.cursor/skills/` symlinks).
+
+Lenses CE + MCP (`Lenses` in `~/.grok/config.toml`) are **operator playground / luneta**. Framing lab≠prod (RF=1 is not a product bug): `.agents/skills/eventlab-kafka/references/lenses-lab-vs-prod.md`.
 
 ## Tech Stack
 
@@ -160,7 +166,7 @@ Payment orders:
 - Security tests belong in `security` and import `TestJwtConfiguration`.
 - Architecture/module boundaries are checked by `ModulithArchitectureTest`, `MerchantModuleTest`, and `PaymentModuleTest`.
 - Playwright E2E and BFF REST live under `apps/frontend/tests-pom` (real Keycloak + stack). Vitest is `apps/frontend/tests/unit` and colocated `app/**/*.test.ts`.
-- When writing tests test-first, follow `.agents/skills/tdd`. When changing Spring/Java production code, follow `.agents/skills/spring-modulith`. When changing Nuxt/TypeScript/Nitro production code, follow `.agents/skills/nuxt-frontend`. When writing Playwright POM / live `tests-pom` tests, follow `.agents/skills/playwright-pom`. When reviewing a diff, follow `.agents/skills/code-review` plus the layer skills `java-spring-review`, `rest-api-test-design`, and `playwright-sdet-review`.
+- When writing tests test-first, follow `.agents/skills/tdd`. When changing Spring/Java production code, follow `.agents/skills/spring-modulith`. When changing `eventlab` / Kafka overlay / Event Lab UI, follow `.agents/skills/eventlab-kafka` (then `spring-modulith` or `nuxt-frontend`). When changing Nuxt/TypeScript/Nitro production code, follow `.agents/skills/nuxt-frontend`. When writing Playwright POM / live `tests-pom` tests, follow `.agents/skills/playwright-pom`. When reviewing a diff, follow `.agents/skills/code-review` plus the layer skills `java-spring-review`, `rest-api-test-design`, and `playwright-sdet-review`. Operator Kafka inspection uses Lenses skills (`kafka-topic-audit`, `kafka-consumer-lag`, `kafka-dlq-review`) **after** `eventlab-kafka/references/lenses-lab-vs-prod.md`.
 - Ignore learner copies such as `My*` and `Lesson*` unless the task explicitly concerns learning files.
 
 ## Implementation Rules
@@ -173,7 +179,31 @@ Payment orders:
 - Keep REST contracts stable unless the spec requires a contract change.
 - Use Flyway for schema changes and keep JPA mappings consistent with migrations.
 - Do not add dependencies without explicit need and approval.
-- Follow `status/index.md` for the current execution queue. Do not begin the listed Wave 2 packages until the active assurance validation item is closed or the user explicitly reprioritises it.
+- Kafka code belongs in `lab.paymentquality.eventlab` (not OPEN). Do not put producers/listeners in `shared` or rewrite `audit` onto the broker. Browser never speaks Kafka; no `kafkajs` in `apps/frontend`.
+- Follow `status/index.md` for the current execution queue. Event Streaming Lab implementation starts at `KAFKA-T02` after E0 (done). Do not begin the listed Wave 2 packages until the active assurance validation item is closed or the user explicitly reprioritises it.
+
+## Parallel implementation
+
+### Delegation (parent agent)
+
+- Delegate at most three implementation tasks concurrently.
+- Assign explicit file and module ownership before delegation; never delegate overlapping files.
+- Each implementation agent works in its own Git worktree.
+- Integration, final verification and review are performed by the parent agent;
+  merging worktree branches locally is part of integration.
+- Never push without explicit user instruction.
+
+### Worker rules
+
+- Work only inside paths explicitly assigned in the task.
+- If a required change belongs to another session, report the dependency.
+- Do not edit files owned by another task.
+- Do not run git push, merge, rebase, reset --hard or git clean.
+- Do not modify .env files or real credentials.
+- Do not change dependency versions unless explicitly requested.
+- Run the module-specific formatter, static checks and tests.
+- Finish with a clean, reviewable commit.
+- Report changed files, commands executed, test results and commit SHA.
 
 ## Frontend / UI/UX Work
 
@@ -191,7 +221,7 @@ review gate: `docs/ai/modern-web-guidance-spec-review-gate.md`.
 - Check `Idempotency-Key`, `If-Match`, `ETag`, `X-Correlation-ID`, `Cache-Control`, and `Vary` only where the current code/spec implements them.
 - Confirm REST Assured assertions verify response body, headers, and database state where relevant.
 - Confirm Playwright tests use stable locators, isolated data, deterministic auth/session setup, and clear UI states.
-- Flag scope creep into PSP, Kafka, settlement, reconciliation, KYC, or fake dashboard metrics.
+- Flag scope creep into PSP, settlement, KYC, fake dashboard metrics, Kafka **outside** `eventlab`/overlay, or a Kafka UI clone (Lenses already covers operator view).
 
 ## Safety Rules
 

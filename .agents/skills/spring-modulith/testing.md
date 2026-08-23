@@ -45,6 +45,17 @@ Skip `restkit/` and `paymentsupport/` unless the user includes them. Ignore `My*
 - New tables/columns: SQL migration in the **owning** module’s Flyway directory, then JPA mapping that matches.
 - Write-path REST Assured may assert DB **after** HTTP (lab exception in `tdd`). Module tests do not replace HTTP tests.
 
+## Build / test split (Maven 3.9.11)
+
+- Maven Wrapper is the only entry point (`./mvnw`); do not assume a host Maven.
+- `./mvnw test` runs `*Test.java` via Surefire; `./mvnw verify` additionally runs `*IT.java` via Failsafe.
+- New integration-only suites go to Failsafe naming (`*IT`), not Surefire excludes — keep unit/HTTP suites fast and broker-free.
+- Do not add plugin or dependency bumps as a side effect of feature work.
+
+## DB risk lens
+
+When designing tables, constraints, or persistence-touching tests, always weigh: uniqueness, check constraints, foreign keys, transaction boundaries, locks/isolation, idempotency, auditability, data separation between tenants/merchants, and explain-plan implications when relevant. In this lab that means: unique references enforced by Flyway, tenant/merchant ownership predicates in queries, and per-test unique data (see the isolation pattern in `rest-api-test-design`).
+
 ## Commands
 
 From `apps/backend`:

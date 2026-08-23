@@ -16,6 +16,8 @@ description: Use when maintaining the Obsidian Learning OS vault, including MOCs
 
 ## Learning OS Core Files
 
+All under `01 Projects/Payment_Quality_Engineering_Lab/`:
+
 | File | Purpose |
 |---|---|
 | `START HERE - Learning Dashboard.md` | Single entry point. Open first every session. |
@@ -23,6 +25,8 @@ description: Use when maintaining the Obsidian Learning OS vault, including MOCs
 | `00 Learning OS/Current Lesson.md` | Dashboard: NOW, COVERED, INTRODUCED, NEEDS PRACTICE, DEFERRED |
 | `00 Learning OS/Current Sprint.md` | Sprint status, remaining tasks, next options |
 | `00 Learning OS/Curriculum Backbone.md` | Technology ↔ lesson cross-reference |
+| `Learning Governance/Lesson Evidence Tracker.md` | Per-lesson evidence log (statuses below) |
+| `Learning Governance/Senior SDET Competency Coverage Matrix.md` | Skill coverage matrix |
 
 ## Learning OS Conventions
 

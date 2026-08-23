@@ -14,6 +14,6 @@ description: Use when verifying version-sensitive technology decisions against p
 Write the note through `research` (saves under `.codex/research/`). This skill is the version-routing lens.
 
 ## When Not to Use
-Do not use this for broad exploratory market scans (`web-research-and-data-extraction`) or loose inspiration gathering.
+Do not use this for broad exploratory market scans or loose inspiration gathering; keep even those anchored to primary sources via `research`.
 
 See [`references/research-output-format.md`](references/research-output-format.md).

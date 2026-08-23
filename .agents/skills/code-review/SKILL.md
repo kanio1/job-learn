@@ -42,7 +42,7 @@ Lab-specific standards to always check:
 - Flyway owns schema; JPA validates
 - REST contract stability (status, problem+json, headers only where implemented)
 - Unique test data; no secrets in tests
-- No PSP/Kafka/settlement/KYC/top-level `POST /payments` scope creep
+- No PSP/settlement/KYC/top-level `POST /payments` scope creep; Kafka only in `eventlab` / overlay (ADR 0002). Flag a Kafka UI clone or lag dashboard — Lenses is the telescope.
 
 ## 4. Parallel axes
 

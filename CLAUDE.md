@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Payment Quality Engineering Lab — a learning-oriented payment platform for practicing Java/Spring backend engineering, REST API testing, security testing, frontend contract consumption, and SDET skills.
 
-Engineering process skills: `.agents/skills/README.md`. Tracker: `docs/agents/issue-tracker.md` (local markdown under `.codex/`). Use `tdd` when writing REST Assured, Playwright E2E, or Playwright REST tests; `spring-modulith` for Java 25 / Spring Boot 4 / Modulith 2.0.6 production placement; `nuxt-frontend` for Nuxt 4 / TypeScript 6 / Node 22+ production placement; `code-review` for diffs; `wayfinder` for foggy multi-session work.
+Engineering process skills: `.agents/skills/README.md`. Tracker: `docs/agents/issue-tracker.md` (local markdown under `.codex/`). Use `tdd` when writing REST Assured, Playwright E2E, or Playwright REST tests; `spring-modulith` for Java 25 / Spring Boot 4 / Modulith 2.0.6 production placement; `eventlab-kafka` for Event Streaming Lab (`eventlab` module, overlay, thin UI, Lenses telescope); `nuxt-frontend` for Nuxt 4 / TypeScript 6 / Node 22+ production placement; `code-review` for diffs.
 
 ## Commands
 
@@ -57,6 +57,7 @@ merchant    — depends on tenant PUBLIC API and shared; owns Merchant entity an
 payment     — depends on merchant PUBLIC API; owns PaymentOrder entity and all payment endpoints
 iam         — Keycloak admin integration; user management
 audit       — event-driven audit log; listens to AuditableActionOccurred domain events
+eventlab    — flag-gated Kafka overlay (ADR 0002); not OPEN; implementation tracked on the KAFKA-T* task board
 testing     — shared test fixtures exposed as a module for test scope
 ```
 
@@ -130,6 +131,8 @@ Nuxt 4 app-directory layout. All browser-to-backend traffic is proxied through `
 
 The current branch (`018-rest-security-p1-error-auth-method-hardening`) continues the `tenant-model-and-isolation` spec. Progress is tracked in `.codex/current-state.md`. Specs are read-only under `.kiro/specs/`; update `.codex/current-state.md` (not `.kiro` files) to record progress.
 
+Event Streaming Lab (ADR 0002 ACCEPTED): next implementation `KAFKA-T02`. Skill `eventlab-kafka`. Roadmap `status/roadmaps/kafka-event-streaming-lab/`.
+
 Recommended reading order when resuming tenant work:
 1. `.codex/README.md`
 2. `.codex/current-state.md`
@@ -142,9 +145,12 @@ Recommended reading order when resuming tenant work:
 
 Out of scope for all phases:
 - `POST /payments` top-level API, real PSP integration, PSP failure modeling
-- Kafka, webhooks, outbox, settlement, payout, reconciliation, KYC, card/PAN/PCI, 3DS
+- Kafka **outside** `eventlab` / `compose.kafka.yml` / `*KafkaIT` (ADR 0002 ACCEPTED). Still out: command bus, product webhooks, Schema Registry/Streams/SCRAM in wave 1, Kafka UI clone, lag dashboards
+- Settlement, payout, product reconciliation, KYC, card/PAN/PCI, 3DS
 - Microservice split, fake KPI/business dashboards
 - Production OAuth/OIDC; Keycloak is local-dev and test only
+
+Lenses CE/MCP is an operator telescope. RF=1 on the lab cluster is lab≠prod — see `.agents/skills/eventlab-kafka/references/lenses-lab-vs-prod.md`.
 
 ## Documentation and MCP policy
 

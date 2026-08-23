@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { eventLabRecordSchema } from './event-lab.schema'
 
 const valid = {
-  id: '11111111-1111-1111-1111-111111111111',
-  eventId: '22222222-2222-2222-2222-222222222222',
+  id: '11111111-1111-4111-8111-111111111111',
+  eventId: '22222222-2222-4222-8222-222222222222',
   consumerGroup: 'eventlab-inspector',
   action: 'PAYMENT_AUTHORIZED',
   targetType: 'PAYMENT_ORDER',
-  targetId: '33333333-3333-3333-3333-333333333333',
+  targetId: '33333333-3333-4333-8333-333333333333',
   tenantRef: 'TENANT_ALPHA',
   status: 'PROCESSED' as const,
   attempts: 1,
@@ -15,7 +15,7 @@ const valid = {
   topic: 'lab.auditable-actions.v1',
   partitionNo: 0,
   recordOffset: 0,
-  recordKey: '33333333-3333-3333-3333-333333333333',
+  recordKey: '44444444-4444-4444-8444-444444444444',
 }
 
 describe('VT-KAFKA-001 valid envelope parses', () => {

@@ -43,13 +43,13 @@ public class EventLabInspectorListener {
             properties = {"auto.offset.reset=earliest"}
     )
     @Transactional
-    public void onMessage(ConsumerRecord<String, String> record,
+    public void onMessage(ConsumerRecord<String, byte[]> record,
                           @Header(value = KafkaHeaders.RECEIVED_TOPIC, required = false) String topic,
                           @Header(value = KafkaHeaders.OFFSET, required = false) Long offset,
                           @Header(value = KafkaHeaders.RECEIVED_PARTITION, required = false) Integer partition) {
-        String payload = record.value();
+        String payload = record.value() == null ? null : new String(record.value(), StandardCharsets.UTF_8);
         try {
-            Map<String, Object> map = objectMapper.readValue(payload, new TypeReference<>() {});
+            Map<String, Object> map = payload == null || payload.isBlank() ? Map.of() : objectMapper.readValue(payload, new TypeReference<>() {});
             String eventIdStr = headerOrField(record, "eventId", map);
             String action = headerOrField(record, "action", map);
             String targetType = headerOrField(record, "targetType", map);
@@ -69,6 +69,7 @@ public class EventLabInspectorListener {
                 log.debug("duplicate eventId {} ignored", eventId);
                 return;
             }
+            String recordKey = record.key();
             EventLabProcessed entity = EventLabProcessed.of(
                     GROUP, eventId,
                     action != null ? action : "UNKNOWN",
@@ -79,7 +80,7 @@ public class EventLabInspectorListener {
                     topic != null ? topic : TOPIC,
                     partition != null ? partition : 0,
                     offset != null ? offset : 0L,
-                    record.key());
+                    recordKey);
             repository.save(entity);
         } catch (GamblingException ge) {
             throw ge;
@@ -90,21 +91,22 @@ public class EventLabInspectorListener {
     }
 
     @org.springframework.kafka.annotation.DltHandler
-    public void dlt(ConsumerRecord<String, String> record) {
+    public void dlt(ConsumerRecord<String, byte[]> record) {
         try {
-            Map<String, Object> map = objectMapper.readValue(record.value(), new TypeReference<>() {});
+            String payload = record.value() == null ? null : new String(record.value(), StandardCharsets.UTF_8);
+            Map<String, Object> map = payload == null || payload.isBlank() ? Map.of() : objectMapper.readValue(payload, new TypeReference<>() {});
             String eventIdStr = headerOrField(record, "eventId", map);
             UUID eventId = eventIdStr != null ? UUID.fromString(eventIdStr) : UUID.randomUUID();
             String action = headerOrField(record, "action", map);
             String targetType = headerOrField(record, "targetType", map);
             String targetId = headerOrField(record, "targetId", map);
             String tenantRef = headerOrField(record, "tenantRef", map);
+            String rk = record.key();
             EventLabProcessed dead = EventLabProcessed.of(
                     GROUP, eventId, action != null ? action : "UNKNOWN", targetType != null ? targetType : "UNKNOWN",
                     targetId != null ? targetId : "UNKNOWN", tenantRef != null ? tenantRef : "PLATFORM_TENANT",
-                    "DEAD", "lab.event-lab.dlq.v1", 0, 0L, record.key());
+                    "DEAD", "lab.event-lab.dlq.v1", 0, 0L, rk);
             dead.setLastError("poison");
-            // idempotent save
             if (repository.findByConsumerGroupAndEventId(GROUP, eventId).isEmpty()) {
                 repository.save(dead);
             }
@@ -113,13 +115,13 @@ public class EventLabInspectorListener {
         }
     }
 
-    private static String headerString(ConsumerRecord<String, String> record, String key) {
+    private static String headerString(ConsumerRecord<String, byte[]> record, String key) {
         var h = record.headers().lastHeader(key);
         if (h == null) return null;
         return new String(h.value(), StandardCharsets.UTF_8);
     }
 
-    private static String headerOrField(ConsumerRecord<String, String> record, String key, Map<String, Object> map) {
+    private static String headerOrField(ConsumerRecord<String, byte[]> record, String key, Map<String, Object> map) {
         String hv = headerString(record, key);
         if (hv != null) return hv;
         Object fv = map.get(key);

@@ -1,6 +1,6 @@
 ---
 name: rest-api-test-design
-description: Use to design or review REST Assured tests and Playwright REST/BFF HTTP tests for merchant and payment-order APIs; do not use for PSP, Kafka, or header requirements that are not in current code/spec, or generic REST tutorials.
+description: Use to design or review REST Assured tests and Playwright REST/BFF HTTP tests for merchant and payment-order APIs, including assertion style and data isolation / parallel safety of API suites; Event Lab HTTP/inject uses this plus eventlab-kafka. Do not use for PSP, header requirements that are not in current code/spec, Kafka protocol oracles (that is KafkaIT), or generic REST tutorials.
 ---
 
 # REST API Test Design
@@ -50,9 +50,31 @@ Return:
 6. REST Assured assertions for status, body, headers, and persistence.
 7. Exact prompt for the main Codex session to implement one small test task.
 
+## Assertion review checklist
+
+- Does the assertion verify behavior, not incidental implementation?
+- Is failure output useful?
+- Is `usingRecursiveComparison()` really appropriate?
+- Are soft assertions justified?
+- Would a weaker assertion miss a real regression?
+
+For each proposed or reviewed test clarify: purpose, oracle, layer (see `tdd` seam table), data strategy, why these assertions, what risk it covers.
+
+## Data isolation and parallelism
+
+| Layer | Default stance | Main risk |
+|---|---|---|
+| Unit | High parallelism | hidden shared state |
+| Spring integration | Controlled | context/data coupling |
+| REST Assured | High if data isolated | shared business keys |
+| Testcontainers | Deliberate lifecycle | container/data confusion |
+| Playwright | Worker-aware | shared users/resources |
+
+Namespace every write: `externalReference = PAY-{worker}-{scenario}-{uuid}`, `idempotencyKey = IDEM-{worker}-{uuid}`. The same pattern lives in `tests-pom/data/factories.ts` (`uniqueMerchantReference` / `uniqueOrderReference`). Per-worker merchant/user data, cleanup by owner/tag, rollback only where technically valid; schema-per-worker only when suite complexity justifies it.
+
 ## Guardrails
 
-- Do not add payment/PSP/Kafka/settlement scope.
+- Do not add PSP/settlement scope. Kafka HTTP (Event Lab inject/list) is in scope when the ticket is `KAFKA-T*`; broker protocol stays Java `*KafkaIT` (`eventlab-kafka`).
 - Do not treat learner copies (`My*`, `Lesson*`) as regression coverage.
 - Prefer unique references and idempotency keys.
 - Keep tests readable; avoid framework expansion unless repeated pain is visible.

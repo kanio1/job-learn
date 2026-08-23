@@ -30,16 +30,17 @@ Live Modulith HTML may show 2.1.x. Follow **2.0.6 APIs already in this tree**.
 | Red-green at HTTP/UI seams | `tdd` then `implement` |
 | Deep-module vocabulary | `codebase-design` |
 | Review a diff | `java-spring-review` (do not implement from that skill) |
-| Teach Effective Java | `java25-effective-java-mentor` |
+| Teach Effective Java | `java-rest-api-testing-effective-java-mentor` (Effective Java track) |
 | Version-sensitive fact check | `research` + `official-docs-and-versioned-research` |
+| Event Streaming Lab / Kafka overlay | `eventlab-kafka` first, then this skill |
 
 ## Workflow
 
-1. Name the **owning module** (`merchant`, `payment`, `tenant`, `iam`, `audit`, …). If none fits, stop — do not dump into `shared`.
+1. Name the **owning module** (`merchant`, `payment`, `tenant`, `iam`, `audit`, `eventlab`, …). Kafka overlay work uses `eventlab-kafka` first. If none fits, stop — do not dump into `shared`.
 2. Put the **public seam** at the module root package. Everything else under `internal/{application,domain,infrastructure,web}`.
 3. Schema: new Flyway SQL in `apps/backend/src/main/resources/db/migration/<module>/`. JPA stays `ddl-auto: validate`.
 4. Cross-module: depend on **root-package types only**. Payment must not import `merchant.internal`. Merchant must not import `tenant.internal`.
-5. Tests: HTTP behavior via `tdd` (REST Assured). Module bootstrap / architecture via [testing.md](testing.md).
+5. Tests: HTTP behavior via `tdd` (REST Assured). Module bootstrap / architecture, Maven test split (Surefire/Failsafe), and the DB risk lens via [testing.md](testing.md).
 6. After Java placement, run `ModulithArchitectureTest` (and the module’s `*ModuleTest` if beans/packages changed).
 
 ## Lab mappings
@@ -51,7 +52,7 @@ Live Modulith HTML may show 2.1.x. Follow **2.0.6 APIs already in this tree**.
 | Internal | `*.internal.*` — other modules must not import these |
 | OPEN module | **Only** `lab.paymentquality.shared` |
 | Adapter | JPA repo, `MockPspClient`, Testcontainers Postgres, JWT resource server |
-| Events | `ApplicationEventPublisher` + `shared.events.AuditableActionOccurred` — not Kafka |
+| Events | `ApplicationEventPublisher` + `shared.events.AuditableActionOccurred`. Kafka externalization only in `eventlab` (`eventlab-kafka` skill) |
 
 Package map, allowed dependencies, and “new module” checklist: [modules.md](modules.md).
 
@@ -71,4 +72,4 @@ JDK 25 allow/deny: [jdk25.md](jdk25.md).
 - Frontend / Playwright / Nuxt.
 - REST Assured matrix design (`rest-api-test-design`).
 - Review-only requests (`code-review` → `java-spring-review`).
-- Inventing a microservice split, Kafka, outbox, or real PSP.
+- Inventing a microservice split, a second outbox, real PSP, or Kafka **outside** `eventlab` (see `eventlab-kafka` + ADR 0002).

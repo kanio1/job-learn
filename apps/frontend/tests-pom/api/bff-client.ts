@@ -646,6 +646,29 @@ export class BffClient {
     return { status: response.status(), body }
   }
 
+  async listEventLab(query: Record<string, string | undefined> = {}) {
+    const params = new URLSearchParams()
+    for (const [k, v] of Object.entries(query)) if (v) params.set(k, v)
+    const q = params.toString() ? `?${params.toString()}` : ''
+    const response = await this.context.get(`/api/event-lab${q}`)
+    return { status: response.status(), body: await response.json().catch(() => undefined), headers: response.headers(), raw: await response.text().catch(() => '') }
+  }
+
+  async getEventLabDetail(id: string) {
+    const response = await this.context.get(`/api/event-lab/${encodeURIComponent(id)}`)
+    return { status: response.status(), body: await response.json().catch(() => undefined), headers: response.headers() }
+  }
+
+  async injectDuplicate(eventId: string) {
+    const response = await this.context.post('/api/event-lab/inject/duplicate', { data: { eventId } })
+    return { status: response.status(), body: await response.json().catch(() => undefined), headers: response.headers() }
+  }
+
+  async injectPoison(eventId: string) {
+    const response = await this.context.post('/api/event-lab/inject/poison', { data: { eventId } })
+    return { status: response.status(), body: await response.json().catch(() => undefined), headers: response.headers() }
+  }
+
   async injectOpsFeed(payload: {
     eventId?: string
     occurredAt?: string

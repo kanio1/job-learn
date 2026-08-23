@@ -2,59 +2,64 @@
 name: epic-e1-broker-infra
 parent: kafka-event-streaming-lab
 epic: E1
-tasks: [KAFKA-T02, KAFKA-T03, KAFKA-T04, KAFKA-T05]
-last_updated: 2026-08-21
+tasks: [KAFKA-T02, KAFKA-T03, KAFKA-T04, KAFKA-T05, KAFKA-T19]
+last_updated: 2026-08-23
 ---
 
-# Epic E1 — Broker infrastructure (lab overlay)
+# Epic E1 — Broker overlay + Lenses telescope
 
-**Cel produktowy:** operator może opcjonalnie wystartować stack z brokerem jedną komendą; domyślny stack i CI pozostają bez Kafki.
-**Cel dydaktyczny:** KRaft bez ZooKeeper, advertised listeners host-vs-sieć, topologia tematu (partycje/RF), smoke IT na Testcontainers.
+**Cel produktowy:** opcjonalny broker jedną komendą; domyślny stack bez Kafki.
+**Cel dydaktyczny:** KRaft, advertised listeners, topologia 3×RF1, luneta Lenses na *naszym* temacie.
 
-Gate: E0 DONE (ADR ACCEPTED).
+Gate: E0 DONE. Skill: `eventlab-kafka`.
 
 ## Story E1-S1 — Compose overlay
 
 **Task:** `KAFKA-T02` · P0
 
-Jako operator uruchamiam brokera overlayem compose, aby nie modyfikować domyślnego środowiska reszty milestone'ów.
-
 AC:
-1. `infra/compose/compose.kafka.yml`: `apache/kafka` 4.x KRaft combined, PLAINTEXT, dual listeners (`localhost:9092` host / `payment-quality-kafka:19092` sieć); tag pinowany i udokumentowany vs Testcontainers 2.0.5.
-2. Overlay nie zmienia `compose.yml`; `down` default stacku nie dotyczy brokera dopóki overlay nie użyty.
-3. Docs setup: sekcja w `docs/setup/` (start/stop, port, UI operatora opcjonalne).
-4. `RA-KAFKA-001`: IT smoke — kontener up, create/list topic, produce/consume roundtrip (Awaitility).
+1. `infra/compose/compose.kafka.yml`: `apache/kafka` 4.x KRaft, PLAINTEXT, `localhost:9092` / `payment-quality-kafka:19092`; tag pin vs Testcontainers 2.0.5.
+2. **Brak** AKHQ/kafka-ui.
+3. Overlay nie psuje `compose.yml`.
+4. Docs: `docs/setup/` start/stop + kolizja 9092 z Lenses CE ([02-lenses-telescope.md](../02-lenses-telescope.md)).
+5. `RA-KAFKA-001`: smoke produce/consume (Awaitility).
 
 ## Story E1-S2 — Tryb --kafka
 
 **Task:** `KAFKA-T03` · P1
 
-Jako developer startuję pełny lab z brokerem przez `scripts/dev-stack.sh --kafka`, aby uczyć się na żywym stacku.
-
 AC:
-1. Trzeci tryb (nie łączy się z `--app`/`--full`); Spring dostaje `app.event-lab.enabled=true` + profil `kafka`.
-2. Health check: temat istnieje/auto-tworzony; fail-fast z czytelnym komunikatem.
-3. `RA-KAFKA-002`: skrypt idempotentny (drugi start nie duplikuje tematu).
+1. Trzeci tryb; nie łączy się z `--app`/`--full`.
+2. Spring: `app.event-lab.enabled=true` + profil `kafka`.
+3. Auto-create OFF; skrypt **tworzy** temat (3 partycje, RF1) idempotentnie.
+4. `RA-KAFKA-002`.
 
 ## Story E1-S3 — Wsparcie testowe
 
 **Task:** `KAFKA-T04` · P0
 
-Jako SDET mam `KafkaContainerSupport` obok `PostgresContainerSupport`, aby IT nie odpalały kontenera per klasa.
-
 AC:
-1. Singleton container (`org.testcontainers.kafka.KafkaContainer`, obraz jak compose); współdzielenie między klasami IT.
-2. Awaitility dodane (test scope, pin) LUB house helper — jedna decyzja na cały milestone.
-3. Surefire excludes `**/*KafkaIT*.java`; `AT-KAFKA-001`: pełny kontekst Spring startuje bez brokera przy flagach domyślnych.
+1. `KafkaContainerSupport` singleton (`org.testcontainers.kafka.KafkaContainer`).
+2. Awaitility test-scope.
+3. Surefire excludes `**/*KafkaIT*.java`.
+4. `AT-KAFKA-001`: kontekst bez brokera przy flagach domyślnych.
 
 ## Story E1-S4 — Temat v1
 
 **Task:** `KAFKA-T05` · P0
 
-Jako learner widzę 3 partycje na `lab.auditable-actions.v1`, aby zaobserwować porządek per-key i przeplatanie między kluczami.
+AC:
+1. `lab.auditable-actions.v1`: 3 partycje, RF1.
+2. `RA-KAFKA-003`.
+3. Dokument: RF=1 jest lab-shaped; `kafka-topic-audit` zgłosi critical — lab≠prod.
+
+## Story E1-S5 — Lenses środowisko payment-lab
+
+**Task:** `KAFKA-T19` · P1
 
 AC:
-1. Temat: 3 partycje, RF1, polityka tworzenia jawna (admin client w support lub auto-create z konfiguracją).
-2. `RA-KAFKA-003`: topologia assert (partitions=3, RF=1).
+1. Lenses widzi overlay (agent lub env `payment-lab`); CE demo **nie** binduje host 9092.
+2. Po E2 (gate miękki na SQL): instrukcja `SELECT` na `lab.auditable-actions.v1`.
+3. Zero kodu Nuxt.
 
-Nuxt UI: brak (fala backendowa). Testy: RA-KAFKA-001…003, AT-KAFKA-001.
+Nuxt UI: brak. Testy: RA-KAFKA-001…003, AT-KAFKA-001.

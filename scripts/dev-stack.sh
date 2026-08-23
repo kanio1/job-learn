@@ -535,6 +535,9 @@ if ! kill -0 "$(cat "$BACKEND_PID_FILE")" 2>/dev/null; then
 fi
 
 NUXT_ENV=( NUXT_TYPECHECK=false )
+if [[ "$KAFKA" == "1" ]]; then
+  NUXT_ENV+=(NUXT_PUBLIC_EVENT_LAB_ENABLED=true)
+fi
 if [[ "$TLS" == "1" ]]; then
   mkcert_ca="${MKCERT_CA:-}"
   if [[ -z "$mkcert_ca" && -x "$HOME/.local/bin/mkcert" ]]; then

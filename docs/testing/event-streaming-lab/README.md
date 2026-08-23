@@ -2,91 +2,91 @@
 name: event-streaming-lab-tests
 parent: kafka-event-streaming-lab
 status: DESIGNED_NOT_STARTED
-last_updated: 2026-08-21
+last_updated: 2026-08-23
 ---
 
 # Test catalog — Event Streaming Lab (Kafka)
 
-Mapa biznes→test dla spec [kafka-event-streaming-lab](../../../.codex/specs/kafka-event-streaming-lab.md). Zasady wspólne: live stack (`--kafka`), brak `page.route`/`routeWebSocket`, unikalne referencje zamiast sleepów, Awaitility ≤10 s, wyłączenia `restkit/`+`paymentsupport/` wg AGENTS.md.
+Mapa dla spec [kafka-event-streaming-lab](../../../.codex/specs/kafka-event-streaming-lab.md). Live `--kafka`; zakaz `page.route`/`routeWebSocket`; unikalne referencje; Awaitility ≤10 s; skip `restkit/`+`paymentsupport/`.
 
-## Narzędzie do testowania Kafki — decyzja (TS vs Java)
+Skill: `eventlab-kafka`. Lenses MCP **nie** jest oracle CI.
 
-| Warstwa | Narzędzie | Dlaczego |
+Pełna macierz +/−: [01-acceptance-cases.md](./01-acceptance-cases.md). Prompt implementacyjny: [.codex/prompts/kafka-event-streaming-implement.md](../../../.codex/prompts/kafka-event-streaming-implement.md).
+
+## Narzędzie
+
+| Warstwa | Narzędzie |
+|---|---|
+| Oracle brokera / konsumenta | Java Testcontainers Kafka + Failsafe `*KafkaIT` |
+| TS | opcjonalny `tools/kafka-probe` |
+| UI/BFF | Playwright 1.61 live POM |
+| Operator | Lenses UI/SQL; skills `kafka-consumer-lag` / `kafka-dlq-review` po E3; `kafka-topic-audit` tylko z [lab≠prod](../../../.agents/skills/eventlab-kafka/references/lenses-lab-vs-prod.md) |
+
+## Business cases
+
+| ID | Case | Epik |
 |---|---|---|
-| **Primary oracle: broker + bridge + konsumenci** | **Java**: `org.testcontainers:testcontainers-kafka` 2.0.5 (`org.testcontainers.kafka.KafkaContainer`, obraz `apache/kafka`) + spring-kafka test kit + Awaitility; Failsafe `*KafkaIT` | SUT jest po stronie JVM (Modulith externalizer, `@KafkaListener`); repo ma już wzorzec kontenerów (Postgres) i Failsafe; jeden runtime kontenerów = mniej flake'u |
-| TypeScript — czy możliwe? | Tak technicznie: `kafkajs` + `@testcontainers/kafka` (black-box read tematu) | Ale jako CI oracle to zła warstwa: duplikuje asercje Java IT, dodaje drugi runtime kontenerów; browser/BFF nie może mówić po Kafce (reguła bezpieczeństwa), więc Playwright nie jest oraclum protokołu |
-| **TypeScript — gdzie ma sens** | Opcjonalny read-only probe `tools/kafka-probe` (kafkajs CLI: list topics / tail v1 z key+headers) poza `apps/frontend` | Legalny punkt styku TS dla learnera; zero wpływu na deps/typecheck frontendu |
-| Powierzchnia użytkownika | Playwright 1.61 live POM (`tests-pom`) na żywym stacku | Spójne z Ops Wave 2; asercje po widocznych efektach UI/BFF |
-| Eksploracja ręczna | AKHQ/kafka-ui tylko w overlayu compose | Nauka operatora, nie CI |
+| BC-KAFKA-01 | Proof-of-delivery per paymentOrderId | E3 |
+| BC-KAFKA-02 | Porządek per klucz | E1/E2 |
+| BC-KAFKA-03 | Crash-heal at-least-once | E2 |
+| BC-KAFKA-04 | Idempotencja (duplicate/replay) | E3 |
+| BC-KAFKA-05 | Poison → DLT, biznes bez zmian | E3 |
+| BC-KAFKA-06 | Tenant + inject RBAC | E3 |
+| BC-KAFKA-07 | Checkout HMAC + inbox over Kafka | E4 opcjonalnie |
+| BC-KAFKA-08 | Seeds/flag-off bez brokera | E5 |
+| BC-KAFKA-09 | Telescope: Lenses widzi lab topic (docs/runbook, nie CI) | E1-S5 |
 
-**Werdykt:** najlepsze narzędzie dla tego SUT = Testcontainers Kafka w Javie; TS możliwy, ale jako probe dydaktyczny, nie oracle.
-
-## Business cases (BC)
-
-| ID | Business case | Epik |
-|---|---|---|
-| BC-KAFKA-01 | Dowód dostarczenia lifecycle paymentu do downstream (proof-of-delivery per paymentOrderId) | E3 |
-| BC-KAFKA-02 | Porządek zdarzeń jednej płatności zachowany mimo współbieżności innych | E1/E2 |
-| BC-KAFKA-03 | Awaria konsumenta nie gubi danych (at-least-once + crash-heal) | E2 |
-| BC-KAFKA-04 | Duplikat dostarczenia nie tworzy duplikatu efektu (idempotencja) | E3 |
-| BC-KAFKA-05 | Trująca wiadomość trafia do DLQ bez wpływu na stan biznesowy | E3 |
-| BC-KAFKA-06 | Izolacja tenantów na odczycie labu; inject tylko platform | E3 |
-| BC-KAFKA-07 | Integracja checkout (PSP-like) przez broker bez utraty HMAC i dedupu | E4 |
-| BC-KAFKA-08 | Seeds/lab domyślnie bez brokera; retencja porządkuje dane | E5 |
-
-## Use cases (UC)
+## Use cases
 
 | ID | Use case | Aktor |
 |---|---|---|
-| UC-KAFKA-01 | Authorize → rekord w Event Lab ≤ 5 s | operator |
-| UC-KAFKA-02 | Filtr group/action/outcome → otwarcie detalu (key/headers/payload/status) | operator |
-| UC-KAFKA-03 | Szukka per paymentOrderId → dokładnie 1 processed row + timestamp/grupa | support/integracje |
-| UC-KAFKA-04 | Inject duplicate → nadal 1 row; inject poison → DEAD + banner DLQ | operator |
-| UC-KAFKA-05 | Merchant manager: pusta lista/404 cudze; inject 403 | merchant |
-| UC-KAFKA-06 | Tail tematu probe'em TS podczas lokalnego labu | learner |
+| UC-KAFKA-01 | Authorize → rekord Event Lab / karta payment ≤ 5 s | operator |
+| UC-KAFKA-03 | Search paymentOrderId → 1 processed | operator |
+| UC-KAFKA-04 | Inject duplicate → 1 row; poison → DEAD + DLT banner | operator |
+| UC-KAFKA-05 | Merchant: pusta lista/404; inject 403 | merchant |
+| UC-KAFKA-06 | Lenses SQL po kluczu (runbook) | learner |
+| UC-KAFKA-07 | `kafka-topic-audit` na labie → RF=1 sklasyfikowane lab≠prod | learner |
 
-## Macierz testów
+UC-KAFKA-02 (drawer key/headers jako główny UI) — **obcięte**; metadane Kafka w Lenses.
 
-### Architektura / moduły (AT)
+## Macierz
 
-| ID | Co | Gdzie |
-|---|---|---|
-| AT-KAFKA-001 | Kontekst startuje bez brokera (flagi domyślne) | Surefire |
-| AT-KAFKA-002 | Modulith verify; eventlab nie OPEN; brak internal imports | `ModulithArchitectureTest` rozszerzenia |
-| AT-KAFKA-003 | Final boundary sweep eventlab | Failsafe |
+### AT
 
-### REST Assured + Testcontainers Kafka (RA) — Failsafe `*KafkaIT`
+| ID | Co |
+|---|---|
+| AT-KAFKA-001 | Kontekst bez brokera |
+| AT-KAFKA-002 | Modulith; eventlab nie OPEN |
+| AT-KAFKA-003 | Final sweep |
+
+### RA `*KafkaIT`
 
 | ID | Asertacja | Story |
 |---|---|---|
-| RA-KAFKA-001…003 | Broker smoke; tryb --kafka idempotentny; topologia (3 partycje, RF1) | E1-S1..S4 |
-| RA-KAFKA-010 | eventId stabilny/unikalny; reuse w ops frames | E2-S1 |
-| RA-KAFKA-011 | Flag off ⇒ zero rekordów po authorize | E2-S2 |
-| RA-KAFKA-012…015 | Publish-after-commit; key=paymentOrderId; nagłówki kompletne; rollback ⇒ 0 | E2-S3 |
-| RA-KAFKA-016 | Crash-heal: incomplete publication → republish po restarcie, dokładnie raz | E2-S4 |
-| RA-KAFKA-020…023 | V37 schema/validate; consume PROCESSED; duplicate ⇒ 1 row; replay ⇒ 1 row/grupa | E3-S1 |
-| RA-KAFKA-024…026 | Poison→DLT ≤ budget; business row unchanged; retention purge | E3-S2 |
-| RA-KAFKA-030…033 | Inject 201 admin / 403 merchant / problem+json; maskowane 404 cross-tenant | E3-S3 |
-| RA-KAFKA-040…042 | Checkout: notify→inbox; duplicate⇒DUPLICATE; broker down⇒@Scheduled działa | E4-S1 |
-| RA-KAFKA-050…052 | Rebalance (2 instancje grupy, zero duplikatów); seed-guard flag-off; purge granice | E5 |
+| RA-KAFKA-001…003 | Smoke; `--kafka` idempotentny; 3p RF1 | E1 |
+| RA-KAFKA-010…016 | eventId; flag off; publish/key/headers/rollback; crash-heal | E2 |
+| RA-KAFKA-020…026 | schema; consume; duplicate; replay; poison DLT; purge | E3 |
+| RA-KAFKA-030…033 | Inject 201/403/404 | E3-S3 |
+| RA-KAFKA-040…042 | Checkout (E4) | E4 |
+| RA-KAFKA-050…052 | Rebalance; seed-guard; property | E5 |
 
-### Playwright live POM (PW) — `tests-pom`
+### PW live POM
 
-| ID | Scenariusz | Uwagi |
-|---|---|---|
-| PW-KAFKA-E2E-001 | Authorize (UI) → rekord z unikalną referencją w `/admin/event-lab` (`expect.poll` ≤5 s) | flaga on, stack --kafka |
-| PW-KAFKA-E2E-002 | Capture przez BffClient → timeline row (wzór PW-OPS-E2E-120) | preconditions API |
-| PW-KAFKA-E2E-003 | Detal USlideover: key/headers/payload/status zgodny z kopertą v1 | Zod-before-render |
-| PW-KAFKA-E2E-004 | Inject duplicate ⇒ nadal 1 row (unikalna referencja) | ConfirmModal pattern |
-| PW-KAFKA-E2E-005 | Inject poison ⇒ DEAD + UAlert DLQ banner | bez czekania na realny błąd |
-| PW-KAFKA-E2E-006 | Stany: loading/empty/filtered-empty/error/not-found deep-link | sześć stanów jak audit |
-| PW-KAFKA-API-001…003 | BFF list po lifecycle POST; forbidden bez authority; detail 404→null | `$fetch.raw` oracles |
-| PW-KAFKA-SEC-001…003 | Merchant-scoped: pusta lista/404 cudze; inject 403; brak tokena/adresu brokera w network log | RBAC matrix |
+| ID | Scenariusz |
+|---|---|
+| PW-KAFKA-E2E-001 | Authorize UI → rekord (poll ≤5 s) |
+| PW-KAFKA-E2E-002 | Capture API → karta downstream na payment order |
+| PW-KAFKA-E2E-003 | Search + detal status/group (bez wymogu raw payload) |
+| PW-KAFKA-E2E-004 | Inject duplicate ⇒ 1 row |
+| PW-KAFKA-E2E-005 | Inject poison ⇒ DEAD + DLT banner |
+| PW-KAFKA-E2E-006 | 6 stanów + forbidden |
+| PW-KAFKA-API-001…003 | BFF list; forbidden read; detail 404 |
+| PW-KAFKA-SEC-001…003 | Tenant mask; inject 403; brak brokera w network log |
 
-### Vitest (unit)
+### Vitest
 
-Schematy Zod koperty v1 (valid/invalid/nadmiarowe pola), `useEventLabApi` mapping (detail 404→null), whitelist query proxy.
+Zod read modelu; 404→null; whitelist query.
 
 ## Zakazy
 
-Mockowanie brokera w testach domenowych · `page.route`/`routeWebSocket`/MSW · asercje na globalnym stanie tematu (brak unique group per test) · `Thread.sleep` · broker w Surefire/domyślnym compose · kafkajs w `apps/frontend/package.json`.
+Mock brokera w testach domenowych · `page.route`/`routeWebSocket` · globalny stan tematu bez unique ref · `Thread.sleep` · broker w Surefire · kafkajs w `apps/frontend` · Lenses MCP w CI · lag/ECharts E2E.

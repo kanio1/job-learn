@@ -31,6 +31,7 @@ import { MirrorLabBankPage } from './MirrorLabBankPage'
 import { RlsLabPage } from './RlsLabPage'
 import { VisualLabPage } from './VisualLabPage'
 import { PspRedirectSimulatorPage } from './PspRedirectSimulatorPage'
+import { EventLabPage } from './EventLabPage'
 
 /** Facade: one fixture exposes every page object for the current Page. */
 export class App {
@@ -66,6 +67,7 @@ export class App {
   readonly rlsLab: RlsLabPage
   readonly visualLab: VisualLabPage
   readonly pspSimulator: PspRedirectSimulatorPage
+  readonly eventLab: EventLabPage
 
   constructor(readonly page: Page) {
     this.sidebar = new Sidebar(page)
@@ -100,5 +102,6 @@ export class App {
     this.rlsLab = new RlsLabPage(page)
     this.visualLab = new VisualLabPage(page)
     this.pspSimulator = new PspRedirectSimulatorPage(page)
+    this.eventLab = new EventLabPage(page)
   }
 }

@@ -22,4 +22,4 @@ Do not add JPMS `module-info.java` to “be more modular” — Spring Modulith 
 
 ## Effective Java
 
-Quality literacy and the EJ tracker belong to `java25-effective-java-mentor`. This file only blocks language features that would fight Modulith, Spring, or the existing style.
+Quality literacy and the EJ tracker belong to `java-rest-api-testing-effective-java-mentor` (Effective Java track). This file only blocks language features that would fight Modulith, Spring, or the existing style.

@@ -21,7 +21,7 @@ Out of scope:
 
 - Top-level `POST /payments`
 - Real PSP / card / PAN / PCI / 3DS
-- Kafka, webhooks, outbox, settlement, payout, KYC
+- Product Kafka outside the Event Streaming Lab overlay (`eventlab`, ADR 0002); product webhooks, settlement, payout, KYC
 - Production OAuth/OIDC completion (local Keycloak only)
 - Fake KPI / business dashboards
 - Spark, Airflow, Iceberg, or a warehouse stack — the ETL lab is OLTP source → staging → target in Postgres

@@ -30,7 +30,8 @@ Tracker: `docs/agents/issue-tracker.md`.
 - Handoffs: `.codex/handoffs/`
 - Wizards: `.codex/wizards/`
 - Teach workspaces: `.codex/teach/`
-- ADRs: `.codex/adr/`
+- ADRs: `.codex/adr/` (0002 Event Streaming Lab **ACCEPTED**)
+- Event Streaming Lab tickets: `.codex/tickets/kafka-event-streaming-lab/` → task-board
 - Guides: `.codex/guides/`
 - Prompts: `.codex/prompts/` (e.g. Merchant 360 cache-stable implement)
 - Merchant 360 slice overlay: `.codex/merchant-360-slice.md`

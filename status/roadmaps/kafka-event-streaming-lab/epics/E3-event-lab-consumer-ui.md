@@ -2,71 +2,74 @@
 name: epic-e3-event-lab-consumer-ui
 parent: kafka-event-streaming-lab
 epic: E3
-tasks: [KAFKA-T10, KAFKA-T11, KAFKA-T12, KAFKA-T13, KAFKA-T14, KAFKA-T15, KAFKA-T16]
-last_updated: 2026-08-21
+tasks: [KAFKA-T10, KAFKA-T11, KAFKA-T12, KAFKA-T13, KAFKA-T14, KAFKA-T15, KAFKA-T16, KAFKA-T20]
+last_updated: 2026-08-23
 ---
 
-# Epic E3 — Event Lab: konsument idempotentny + UI
+# Epic E3 — Idempotentny konsument + cienki UI + karta dostarczenia
 
-**Cel produktowy:** operator odpowiada na "czy capture dotarł do downstream?" — szuka per paymentOrderId i widzi dokładnie jeden przetworzony rekord (grupa, timestamp, status); poison widać w DLQ.
-**Cel dydaktyczny:** consumer groups, idempotencja przez unique constraint, retry/DLQ, inject chaosu jak w ops; pełny pion BFF→Zod→Nuxt UI na live stacku.
+**Cel produktowy:** „czy capture dotarł?” — 1 wiersz processed; poison w DLT.
+**Cel dydaktyczny:** grupy, unique constraint, retry/DLT, inject; BFF bez brokera w przeglądarce.
 
-Gate: E2 DONE.
+**Nie budujemy:** konsoli Kafki, lag charts, LIVE/PAUSED, ECharts, generatora load.
+
+Gate: E2 DONE. Skills: `eventlab-kafka`, `nuxt-frontend`, `tdd`, `playwright-pom`.
 
 ## Story E3-S1 — Tabela processed + konsument
 
-**Taski:** `KAFKA-T10`, `KAFKA-T11` · P0
-
-Jako eventlab zapisuję każde dostarczone zdarzenie raz na grupę, aby at-least-once stał się efektywnie exactly-once per grupa.
+**Task:** `KAFKA-T10`, `KAFKA-T11` · P0
 
 AC:
-1. V37 `eventlab_processed`: unique `(consumer_group, event_id)`; kolumny wg PG-2 (status/attempts/consumed_at/last_error); indeksy `(target_id)`, `(consumed_at)`; JPA validate.
-2. Konsument `eventlab-inspector` (`auto.offset.reset=earliest`): PROCESSED raz; duplicate eventId ⇒ zero nowych rows; replay po resecie offsetów ⇒ nadal 1 row/grupa.
-3. `RA-KAFKA-020…023` (schema/validate, consume, duplicate, replay).
-4. Audit_event dalej pisany wyłącznie in-process (liczba wierszy = 1 po retry konumenta).
+1. V37+ `eventlab_processed`: unique `(consumer_group, event_id)`; `id UUID DEFAULT uuidv7()`; status/attempts/consumed_at/last_error; indeksy `(target_id)`, `(consumed_at)`; kolumny telescope `topic, partition_no, record_offset, record_key` (nie renderowane jako główny UI).
+2. Konsument `eventlab-inspector` (`auto.offset.reset=earliest`): PROCESSED raz; duplicate eventId ⇒ 0 nowych rows; replay ⇒ 1 row/grupa.
+3. `RA-KAFKA-020…023`. Flagship: proof-of-delivery per paymentOrderId ≤ 5 s.
+4. `audit_event` nadal 1 po retry.
 
-## Story E3-S2 — Retry / DLQ / retention
+## Story E3-S2 — Retry / DLT / retention
 
 **Task:** `KAFKA-T12` · P1
 
-Jako learner widzę poison pill w DLQ po budgetcie retry, a stare dane same znikają.
-
 AC:
-1. `@RetryableTopic` (backoff index, tylko eventlab) → DLT `lab.event-lab.dlq.v1`; status DEAD + last_error w processed.
-2. `RA-KAFKA-024`: poison → DLT ≤ budget; `RA-KAFKA-025`: business row płatności bez zmian; `RA-KAFKA-026`: purge usuwa starsze niż retention-days (default 7), nie dotyka business tables.
+1. `@RetryableTopic` tylko eventlab → DLT `lab.event-lab.dlq.v1`; status DEAD + last_error.
+2. UI/docs: **dead-letter topic**, nie „DLQ” jako etykieta.
+3. `RA-KAFKA-024…026`.
+4. Lenses: `kafka-dlq-review` na tym temacie (eksploracja, nie CI).
 
-## Story E3-S3 — Authority + inject API
+## Story E3-S3 — Authority + inject
 
 **Task:** `KAFKA-T13` · P0
 
-Jako platform operator injectuję duplicate/poison/delay do labu, aby ćwiczyć semantykę dostarczenia bez czekania na prawdziwe awarie.
-
 AC:
-1. Authority `platform:event-lab:operate` addytywnie (Authorities + converter allowlist + realm JSON + test katalogu ról); brak zmian istniejących authority.
-2. `POST /api/event-lab/inject/*` (wzór ops inject): 201 admin / 403 merchant roles / problem+json; maskowane 404 cross-tenant odczyty.
-3. `RA-KAFKA-030…033`; security matrix PW-KAFKA-SEC-001…003 (w tym: brak tokena/adresu brokera w network logu przeglądarki).
+1. `platform:event-lab:read` + `platform:event-lab:operate` (Authorities, converter, realm, katalog ról).
+2. `POST /api/event-lab/inject/duplicate|poison` (delay opcjonalny): 201 operate / 403 bez operate / problem+json; odczyt cudzego tenanta = maskowany 404.
+3. Confirm copy: duplicate „nie utworzy drugiego efektu”; poison „płatność bez zmian, rekord w DLT”.
+4. `RA-KAFKA-030…033`; `PW-KAFKA-SEC-001…003` (brak tokena/adresu brokera w network logu).
 
-## Story E3-S4 — BFF + Zod + composable
+## Story E3-S4 — BFF + Zod
 
 **Task:** `KAFKA-T14` · P0
 
-Jako frontend mam walidowany read model Event Lab przez BFF, aby przeglądarka nigdy nie widziała brokera.
-
 AC:
-1. `server/api/event-lab/**` GET list/detail + POST inject proxy; whitelist query; forwarding correlation.
-2. `app/schemas/event-lab.schema.ts` (koperta v1, paginacja); `useEventLabApi` jak `useAuditApi` (validate-all, detail 404→null).
-3. Vitest schema/api; `PW-KAFKA-API-001…003` (BFF list po lifecycle POST; forbidden; 404).
+1. `server/api/event-lab/**` GET list/detail + POST inject; whitelist query.
+2. Zod koperty read modelu (bez wymogu pokazywania raw Kafka payload w tabeli).
+3. Vitest; `PW-KAFKA-API-001…003`.
 
-## Story E3-S5 — Strona /admin/event-lab (Nuxt UI)
+## Story E3-S5 — Cienka strona + karta payment order
 
-**Taski:** `KAFKA-T15`, `KAFKA-T16` · P0
-
-Jako operator przeszukuję rekordy po paymentOrderId i otwieram detal, aby udowodnić dostarczenie downstream.
+**Task:** `KAFKA-T15`, `KAFKA-T16` · P0
 
 AC:
 1. Flaga `NUXT_PUBLIC_EVENT_LAB_ENABLED`; nav sibling Error Lab; CSR-only.
-2. Komponenty: `UTable` timeline (time, action badge, targetType+ref, tenantRef, group, status), `USlideover` detal (key/headers/payload/status/attempts), `USelect` filtry (group/action/outcome), `UButton`+ConfirmModal inject, `UAlert` DLQ banner, `UChip` partition/offset.
-3. Sześć stanów: loading / empty / filtered-empty / error / forbidden / not-found-detal.
-4. Zero fake KPI/lag charts; brak surowego payloadu w tabeli (dopiero drawer).
-5. `PW-KAFKA-E2E-001…006`: authorize przez UI/API → rekord z unikalną referencją widoczny ≤5 s (`expect.poll`); duplicate inject ⇒ nadal 1 row; poison ⇒ DEAD + banner; forbidden state; filtr outcome; deep-link detal.
-6. POM: `EventLabPage.ts` (`openRecord(ref)`, `expectRecordVisible(ref)`, `injectDuplicate(ref)`), fixtures `{ app, api }`, `BffClient.eventLab*`.
+2. `/admin/event-lab`: search `paymentOrderId`/`eventId`; `UTable` (time, action, target, status, group); `UAlert` DLT; inject + ConfirmModal; **6 stanów**.
+3. **Karta** na istniejącym detalu payment order: Downstream pending/processed/dead (+ czas).
+4. **Zakaz:** heatmapa, partition chip jako główny widget, LIVE follow, fake KPI.
+5. `PW-KAFKA-E2E-001…006` (authorize → visible; duplicate → 1; poison → DEAD+banner; forbidden; empty; deep-link).
+6. POM: `EventLabPage` + delivery assertions na payment-order page.
+
+## Story E3-S6 — Runbook 45 min
+
+**Task:** `KAFKA-T20` · P1 (docs)
+
+AC:
+1. `docs/setup/` linkuje [03-lesson-runbook.md](../03-lesson-runbook.md).
+2. Krok Lenses SQL + lab≠prod przy topic-audit jest w runbooku.

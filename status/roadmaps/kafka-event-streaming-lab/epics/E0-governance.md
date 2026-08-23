@@ -3,28 +3,27 @@ name: epic-e0-governance
 parent: kafka-event-streaming-lab
 epic: E0
 tasks: [KAFKA-T00, KAFKA-T01]
-last_updated: 2026-08-21
+last_updated: 2026-08-23
+status: DONE
 ---
 
-# Epic E0 — Governance & ADR (gate)
+# Epic E0 — Governance & ADR (gate) — DONE
 
-**Cel produktowy:** brak — fala czysto decyzyjno-dokumentacyjna.
-**Cel dydaktyczny:** zrozumieć, dlaczego broker wchodzi jako externalization na outbox, a nie jako drugie source of truth; spójny język (glossary) przed kodem.
+**Cel:** broker jako externalization, nie drugie SoT; spójny język; agenci nie flagują Kafki w `eventlab` jako creep.
 
-Gate wejścia: brak. Gate wyjścia: user akceptuje ADR 0002 i edycje governance — dopiero wtedy E1+.
+Gate wyjścia: ADR ACCEPTED + edycje governance. **Spełnione 2026-08-23.**
 
 ## Story E0-S1 — Decyzja
 
-**Task:** `KAFKA-T01` · P0
+**Task:** `KAFKA-T01` · P0 · **DONE**
 
-Jako właściciel laba akceptuję/odrzucam ADR 0002, aby dalsze fale nie były flagowane jako scope creep przez agentów.
+AC (wykonane):
 
-AC:
-1. ADR 0002 status → ACCEPTED (lub REJECTED z komentarzem).
-2. `AGENTS.md`: non-goal "No Kafka" → "Kafka only in `eventlab` / approved overlay"; pozostałe non-goals bez zmian (PSP, split, fake KPI…).
-3. `.codex/review-checklist.md`: sekcja boundary review dla eventlab (nie OPEN, brak importów internal, V37+ tylko eventlab).
-4. Skills: `spring-modulith` (+modules), `code-review`, `rest-api-test-design` — dopisek "Kafka only in eventlab" zamiast twardego "No Kafka".
-5. `.codex/CONTEXT.md`: glossary (10 terminów z 00-context) + aktualizacja mapy modułów o eventlab (E5 dopina pełny refresh CONTEXT.md).
-6. Zero zmian w kodzie aplikacji i testach.
+1. ADR 0002 → **ACCEPTED** (iteracja 3: Lenses luneta, cienkie E3, brak E6 produktu).
+2. `AGENTS.md` / `CLAUDE.md`: Kafka only in `eventlab` / overlay.
+3. Skills: `eventlab-kafka` + lab≠prod; `spring-modulith`, `code-review`, `rest-api-test-design`, `ask-engineering-flow`, `grilling`, `implementation-learning-loop`, `wayfinder`, `triage`, `java-spring-review`, `nuxt-frontend`.
+4. Lenses skills (`kafka-topic-audit`, `kafka-security-audit`, `kafka-schema-review`, `kafka-dlq-review`) — dopisek lab≠prod.
+5. Glossary w `.codex/CONTEXT.md`; review checklist eventlab.
+6. Zero kodu aplikacji.
 
-Testy: brak (docs only). Walidacja: przegląd diffów dokumentów; agenci przestają flagować Kafka jako creep po E0.
+Następny: E1 (`KAFKA-T02`).

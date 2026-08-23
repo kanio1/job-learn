@@ -11,8 +11,7 @@ This directory is the **single skill home** for Grok Build, Codex CLI, and Curso
 | Situation | Skill |
 |---|---|
 | Unsure which flow to use | `ask-engineering-flow` |
-| Align before building | `grill-me` / `grill-with-docs` |
-| Foggy work bigger than one session | `wayfinder` |
+| Align before building | `grill-with-docs` (or `grilling` primitive) |
 | Incoming bug/request (not a to-tickets item) | `triage` |
 | Turn a discussion into a spec | `to-spec` |
 | Split a spec into vertical slices | `to-tickets` |
@@ -21,11 +20,12 @@ This directory is the **single skill home** for Grok Build, Codex CLI, and Curso
 | Logic/UI cannot be settled on paper | `prototype` |
 | Primary-source reading | `research` |
 | Human-only setup (Keycloak, mkcert, secrets) | `wizard` |
-| Learn a concept over sessions | `teach` |
+| Learn from a real diff after implementation | `implementation-learning-loop` |
 | Review a branch or diff | `code-review` |
 | Hard bug / flake / regression | `diagnosing-bugs` |
 | Module interface, seam, testability | `codebase-design` |
 | Java 25 / Spring Boot 4 / Modulith 2.0.6 production code | `spring-modulith` |
+| Event Streaming Lab (`eventlab`, Kafka overlay, thin UI, Lenses luneta) | `eventlab-kafka` |
 | Nuxt 4 / TypeScript 6 / Node 22+ production frontend | `nuxt-frontend` |
 | Playwright 1.61 POM / fixtures / live tests-pom | `playwright-pom` |
 | Live browser exploration / locator discovery (`playwright-cli`) | `playwright-cli` |
@@ -33,25 +33,33 @@ This directory is the **single skill home** for Grok Build, Codex CLI, and Curso
 | Hand off to another session | `handoff` |
 | Implement Merchant 360 slices `PW-M360-T*` (Custom Mode) | `merchant-360-implement` |
 | Review Merchant 360 WIP vs HEAD (findings only) | `merchant-360-review` |
-| Confirm tracker layout | `setup-lab-engineering-skills` |
+| Over-engineering check ("be lazy", YAGNI, bloat) | `ponytail` (modes); `ponytail-review` / `ponytail-audit` / `ponytail-debt` — lab reading order in `ponytail/lab-notes.md` |
+| Playwright deep-dive guides (after `tdd` + `playwright-pom`) | `playwright-skill` in `playwright-skill-upstream/` — lab overrides in its `lab-notes.md` |
+
+## Upstream reference packs (not triggerable)
+
+| Directory | What it is |
+|---|---|
+| `java-spring-framework-upstream/` | Boot 4 / Framework 7 / Security 7 / Modulith reference guides from AyrtonAldayr/agent-spring-framework import. **No SKILL.md by design** — start at `REFERENCE.md` + `lab-notes.md`; lab placement skills always win |
 
 ## Compose with existing lab skills
 
 | Layer | Process skill | Domain / review skill |
 |---|---|---|
 | Java/Spring production code | `implement`, `spring-modulith`, `codebase-design` | `java-spring-review` |
-| Nuxt / TypeScript / Nitro BFF | `implement`, `nuxt-frontend`, `codebase-design` | `nuxt-dashboard-zod-pinia-frontend-engineering` |
-| REST Assured | `tdd` | `rest-api-test-design`, `junit6-assertj-restassured-testcraft` |
+| Kafka overlay / Event Lab | `implement`, `eventlab-kafka`, `spring-modulith` | `java-spring-review`; Lenses operator skills only after `eventlab-kafka/references/lenses-lab-vs-prod.md` |
+| Nuxt / TypeScript / Nitro BFF | `implement`, `nuxt-frontend`, `codebase-design` | `nuxt-frontend` (dashboard taste via its `ui.md`) |
+| REST Assured | `tdd` | `rest-api-test-design` (coverage matrix, assertions, data isolation) |
 | Playwright E2E / live POM | `tdd`, `playwright-pom` | `playwright-sdet-review` |
 | Live browser / locator discovery | `playwright-cli` | `playwright-sdet-review` |
 | Playwright REST / BFF HTTP | `tdd`, `playwright-pom` | `rest-api-test-design`, `playwright-sdet-review` |
 | Test conditions / data | `to-spec` Testing Decisions | `test-analysis-design-and-data` |
 | Versioned stack facts | `research` | `official-docs-and-versioned-research` |
-| BA / discovery before spec | `grill-me` | `business-analysis-and-product-discovery-for-payment-lab` |
+| BA / discovery before spec | `grill-with-docs` | `business-analysis-and-product-discovery-for-payment-lab` |
 | Test conditions / ISTQB | `to-spec` | `test-analysis-design-and-data`, `rapid-software-testing-risk-thinking` |
 | REST security / Keycloak | `tdd` | `rest-api-security-oauth-testing` |
-| Dashboard taste / a11y polish | `nuxt-frontend` | `nuxt-dashboard-zod-pinia-frontend-engineering` |
+| Dashboard taste / a11y polish | `nuxt-frontend` (see its `ui.md`) | — |
 
-User-invoked: `ask-engineering-flow`, `grill-me`, `grill-with-docs`, `wayfinder`, `triage`, `to-spec`, `to-tickets`, `implement`, `merchant-360-implement`, `merchant-360-review`, `teach`, `handoff`, `setup-lab-engineering-skills`.
+User-invoked: `ask-engineering-flow`, `grill-with-docs`, `triage`, `to-spec`, `to-tickets`, `implement`, `merchant-360-implement`, `merchant-360-review`, `handoff`.
 
 Model-invoked: `grilling`, `tdd`, `code-review`, `codebase-design`, `spring-modulith`, `nuxt-frontend`, `playwright-pom`, `playwright-cli`, `beautiful-mermaid`, `diagnosing-bugs`, `prototype`, `research`, `wizard`, plus domain skills in this directory when their description matches.

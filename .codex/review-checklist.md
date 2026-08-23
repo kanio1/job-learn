@@ -6,7 +6,8 @@ Use this checklist before and after each implementation wave.
 
 - Do not edit `.kiro/**` for implementation progress.
 - Do not modify `payment` module source files for tenant isolation unless the user explicitly changes scope.
-- Do not add frontend, Playwright, Kafka, PSP, settlement, reconciliation, KYC, or dashboard work.
+- Do not add frontend, Playwright, PSP, settlement, reconciliation, KYC, or dashboard work on tenant-isolation waves.
+- Kafka belongs in Event Streaming Lab tickets only (`KAFKA-T*`, `eventlab-kafka`). See `.codex/review-checklist-eventlab.md`.
 - Do not change existing authority strings or remove existing `@PreAuthorize` annotations.
 - Do not weaken or delete existing tests to make a wave pass.
 
