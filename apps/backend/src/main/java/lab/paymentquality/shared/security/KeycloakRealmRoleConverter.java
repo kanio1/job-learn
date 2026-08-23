@@ -46,7 +46,9 @@ public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<Gra
         Map.entry("platform:support:operate",    Authorities.SUPPORT_OPERATE),
         Map.entry("platform:ops:feed",           Authorities.OPS_FEED),
         Map.entry("platform:ops:inject",         Authorities.OPS_INJECT),
-        Map.entry("platform:notifications:read", Authorities.NOTIFICATIONS_READ));
+        Map.entry("platform:notifications:read", Authorities.NOTIFICATIONS_READ),
+        Map.entry("platform:event-lab:read",     Authorities.EVENT_LAB_READ),
+        Map.entry("platform:event-lab:operate",  Authorities.EVENT_LAB_OPERATE));
 
     /**
      * Keycloak may put only the composite name on the access token. Expand to the
@@ -74,7 +76,9 @@ public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<Gra
                 Authorities.SUPPORT_OPERATE,
                 Authorities.OPS_FEED,
                 Authorities.OPS_INJECT,
-                Authorities.NOTIFICATIONS_READ)),
+                Authorities.NOTIFICATIONS_READ,
+                Authorities.EVENT_LAB_READ,
+                Authorities.EVENT_LAB_OPERATE)),
         Map.entry("TENANT_ADMIN", List.of(
                 Authorities.MERCHANTS_CREATE,
                 Authorities.MERCHANTS_READ,

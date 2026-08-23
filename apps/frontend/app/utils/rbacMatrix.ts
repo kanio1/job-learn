@@ -65,6 +65,8 @@ export interface Capability {
   canReadOpsFeed: boolean
   canInjectOps: boolean
   canReadNotifications: boolean
+  canReadEventLab: boolean
+  canOperateEventLab: boolean
 }
 
 // Convenience constant for a fully-denied capability set (no grants).
@@ -89,6 +91,8 @@ const DENY_ALL: Capability = {
   canReadOpsFeed: false,
   canInjectOps: false,
   canReadNotifications: false,
+  canReadEventLab: false,
+  canOperateEventLab: false,
 }
 
 /**
@@ -126,6 +130,8 @@ export const rbacMatrix: Record<CompositeRole, Capability> = {
     canReadOpsFeed: true,
     canInjectOps: true,
     canReadNotifications: true,
+    canReadEventLab: true,
+    canOperateEventLab: true,
   },
 
   TENANT_ADMIN: {

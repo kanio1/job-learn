@@ -44,6 +44,8 @@ export function useAuthorization() {
       canReadOpsFeed: false,
       canInjectOps: false,
       canReadNotifications: false,
+      canReadEventLab: false,
+      canOperateEventLab: false,
     }
     for (const role of roles.value) {
       const cap = rbacMatrix[role]
@@ -68,6 +70,8 @@ export function useAuthorization() {
       if (cap.canReadOpsFeed) merged.canReadOpsFeed = true
       if (cap.canInjectOps) merged.canInjectOps = true
       if (cap.canReadNotifications) merged.canReadNotifications = true
+      if (cap.canReadEventLab) merged.canReadEventLab = true
+      if (cap.canOperateEventLab) merged.canOperateEventLab = true
     }
     return merged
   })

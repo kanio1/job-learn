@@ -74,6 +74,7 @@ export default defineNuxtConfig({
       mirrorLabEnabled: process.env.NUXT_PUBLIC_MIRROR_LAB_ENABLED !== 'false',
       mirrorLabIdleSeconds: Number(process.env.NUXT_PUBLIC_MIRROR_LAB_IDLE_SECONDS || 120),
       rlsLabEnabled: process.env.NUXT_PUBLIC_RLS_LAB_ENABLED !== 'false',
+      eventLabEnabled: process.env.NUXT_PUBLIC_EVENT_LAB_ENABLED === 'true',
     },
     session: {
       cookie: {

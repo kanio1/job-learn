@@ -16,7 +16,7 @@ spring:
       max-request-size: 5MB
   flyway:
     enabled: true
-    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit,classpath:db/migration/checkoutlab,classpath:db/migration/mirrorlab,classpath:db/migration/rlslab,classpath:db/migration/testing,classpath:db/migration/support,classpath:db/migration/ops,classpath:db/migration/iam
+    locations: classpath:db/migration/tenant,classpath:db/migration/merchant,classpath:db/migration/payment,classpath:db/migration/shared,classpath:db/migration/audit,classpath:db/migration/checkoutlab,classpath:db/migration/mirrorlab,classpath:db/migration/rlslab,classpath:db/migration/testing,classpath:db/migration/support,classpath:db/migration/ops,classpath:db/migration/iam,classpath:db/migration/eventlab
     baseline-on-migrate: false
   modulith:
     events:
@@ -44,6 +44,8 @@ payment-quality:
     authorized-party: ${EXPECTED_AZP:payment-quality-dashboard}
 
 app:
+  event-lab:
+    enabled: false
   testing:
     enabled: false
   checkout-lab:

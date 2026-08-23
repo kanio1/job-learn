@@ -88,5 +88,12 @@ public final class Authorities {
     public static final String OPS_INJECT          = "platform:ops:inject";
     public static final String NOTIFICATIONS_READ  = "platform:notifications:read";
 
+    // -------------------------------------------------------------------------
+    // Event Streaming Lab (platform-scoped)
+    // -------------------------------------------------------------------------
+
+    public static final String EVENT_LAB_READ    = "platform:event-lab:read";
+    public static final String EVENT_LAB_OPERATE = "platform:event-lab:operate";
+
     private Authorities() {}
 }

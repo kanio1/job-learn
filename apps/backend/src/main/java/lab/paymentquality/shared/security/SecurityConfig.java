@@ -153,6 +153,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/notifications/*/read").hasAuthority(Authorities.NOTIFICATIONS_READ)
                         .requestMatchers(HttpMethod.GET, "/api/notifications/*").hasAuthority(Authorities.NOTIFICATIONS_READ)
                         .requestMatchers(HttpMethod.GET, "/api/notifications").hasAuthority(Authorities.NOTIFICATIONS_READ)
+                        .requestMatchers("/api/event-lab/**").hasAnyAuthority(Authorities.EVENT_LAB_READ, Authorities.EVENT_LAB_OPERATE)
                         .requestMatchers("/api/users/me/payment-views", "/api/users/me/payment-views/**")
                                 .hasAnyAuthority(Authorities.MERCHANT_PAYMENTS_READ, Authorities.PLATFORM_PAYMENTS_READ)
                         .anyRequest().authenticated()
@@ -175,13 +176,16 @@ public class SecurityConfig {
     public Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter() {
         JwtAuthenticationConverter delegate = new JwtAuthenticationConverter();
         delegate.setJwtGrantedAuthoritiesConverter(new KeycloakRealmRoleConverter());
-        return jwt -> {
-            AbstractAuthenticationToken token = delegate.convert(jwt);
-            String name = jwt.getClaimAsString("preferred_username");
-            if (name == null || name.isBlank()) {
-                name = jwt.getSubject(); // safe fallback, no error
+        return new Converter<Jwt, AbstractAuthenticationToken>() {
+            @Override
+            public AbstractAuthenticationToken convert(Jwt jwt) {
+                AbstractAuthenticationToken token = delegate.convert(jwt);
+                String name = jwt.getClaimAsString("preferred_username");
+                if (name == null || name.isBlank()) {
+                    name = jwt.getSubject();
+                }
+                return new JwtAuthenticationToken(jwt, token.getAuthorities(), name);
             }
-            return new JwtAuthenticationToken(jwt, token.getAuthorities(), name);
         };
     }
 

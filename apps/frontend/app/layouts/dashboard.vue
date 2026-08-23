@@ -70,6 +70,7 @@ const route = useRoute()
 const checkoutLabEnabled = computed(() => useRuntimeConfig().public.checkoutLabEnabled === true)
 const mirrorLabEnabled = computed(() => useRuntimeConfig().public.mirrorLabEnabled === true)
 const rlsLabEnabled = computed(() => useRuntimeConfig().public.rlsLabEnabled === true)
+const eventLabEnabled = computed(() => useRuntimeConfig().public.eventLabEnabled === true)
 const tenantId = computed(() => (user.value as { tenantId?: string })?.tenantId)
 const canReadPayments = computed(() =>
   can.value.canReadMerchantPayments || can.value.canReadPlatformPayments,
@@ -238,6 +239,16 @@ const visibleLinks = computed<NavigationMenuItem[]>(() => {
       to: '/admin/rls-lab',
       onSelect: closeSidebar,
       'data-testid': 'nav-link-rls-lab',
+    })
+  }
+
+  if (eventLabEnabled.value && can.value.canReadEventLab) {
+    links.push({
+      label: 'Event Lab',
+      icon: 'i-lucide-activity',
+      to: '/admin/event-lab',
+      onSelect: closeSidebar,
+      'data-testid': 'nav-link-event-lab',
     })
   }
 

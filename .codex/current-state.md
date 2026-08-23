@@ -1,5 +1,15 @@
 # Current State for Codex CLI
 
+## Overlay 2026-08-23 — Event Streaming Lab (ADR 0002 ACCEPTED)
+
+- Status: **E2 done — KAFKA-T06..T09 DONE, 14/14 KafkaIT green.** Next ticket: `KAFKA-T10`.
+- Implement goal: `.codex/prompts/kafka-event-streaming-implement.md`
+- Acceptance cases: `docs/testing/event-streaming-lab/01-acceptance-cases.md` (RA-KAFKA-001..019 + 010N/011N/014N/015/019N PASS — evidence e2-verify.log + e1-verify-kafka.log, 14/14 green)
+- Roadmap: `status/roadmaps/kafka-event-streaming-lab/` (task-board KAFKA-T02..T09 DONE)
+- Skill: `.agents/skills/eventlab-kafka`.
+- Lenses = telescope; lab≠prod: `.agents/skills/eventlab-kafka/references/lenses-lab-vs-prod.md`.
+- E1 infra: `infra/compose/compose.kafka.yml` (apache/kafka:4.0.0 KRaft, PLAINTEXT 9092/19092, auto-create OFF), `KafkaContainerSupport` singleton, `EventLabBrokerKafkaIT` 5/5 green, Surefire excludes `*KafkaIT`, evidence ` /tmp/grok-goal-b2806f98f92a/implementer/kafka-001.log`.
+
 ## Branch
 
 `018-rest-security-p1-error-auth-method-hardening`

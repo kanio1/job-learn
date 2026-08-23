@@ -13,6 +13,7 @@ COMPOSE_FILE="$REPO_ROOT/infra/compose/compose.yml"
 COMPOSE_TLS_FILE="$REPO_ROOT/infra/compose/compose.tls.yml"
 COMPOSE_APP_FILE="$REPO_ROOT/infra/compose/compose.app.yml"
 COMPOSE_APP_HTTP_FILE="$REPO_ROOT/infra/compose/compose.app.http.yml"
+COMPOSE_KAFKA_FILE="$REPO_ROOT/infra/compose/compose.kafka.yml"
 LOG_DIR="$REPO_ROOT/tmp/dev-stack"
 BACKEND_LOG="$LOG_DIR/backend.log"
 FRONTEND_LOG="$LOG_DIR/frontend.log"
@@ -22,6 +23,7 @@ FRONTEND_PID_FILE="$LOG_DIR/frontend.pid"
 TLS=0
 FULL=0
 APP=0
+KAFKA=0
 STOP=0
 DOWN=0
 CADDY_HTTPS_PORT="${CADDY_HTTPS_PORT:-8443}"
@@ -29,16 +31,17 @@ KEYCLOAK_PORT="${KEYCLOAK_PORT:-8081}"
 
 usage() {
   cat <<'EOF'
-Usage: scripts/dev-stack.sh [--app] [--tls] [--full] [--stop] [--down]
+Usage: scripts/dev-stack.sh [--app] [--tls] [--full] [--kafka] [--stop] [--down]
 
   (default)  Postgres + Keycloak in Podman; Spring (dev,seed) and Nuxt on the host.
   --app      Real HTTP deploy: Spring + Nuxt images, no Caddy. POM on :3000.
+  --kafka    Lab Kafka overlay (KRaft broker on 9092) + create lab.auditable-actions.v1 (host hybrid).
   --tls      Caddy HTTPS overlay in front of host Spring/Nuxt (hot reload).
   --full     Prod-like HTTPS: Caddy + Spring + Nuxt containers (no hot reload).
   --stop     Stop host Spring/Nuxt processes started by this script.
   --down     --stop plus compose down (keeps the Postgres volume).
 
-Do not combine --app with --tls or --full.
+Do not combine --app with --tls or --full. --kafka is a third mode (do not mix with --app/--full).
 
 HTTP URLs:  http://127.0.0.1:3000  (Nuxt)  http://127.0.0.1:8080/api/status
             http://127.0.0.1:8081  (Keycloak issuer http://localhost:8081)
@@ -60,6 +63,7 @@ while [[ $# -gt 0 ]]; do
     --app) APP=1 ;;
     --tls) TLS=1 ;;
     --full) FULL=1; TLS=1 ;;
+    --kafka) KAFKA=1 ;;
     --stop) STOP=1 ;;
     --down) DOWN=1 ;;
     -h|--help) usage; exit 0 ;;
@@ -72,11 +76,15 @@ if [[ "$APP" == "1" && ( "$TLS" == "1" || "$FULL" == "1" ) ]]; then
   echo "--app is HTTP compose; do not combine with --tls or --full" >&2
   exit 1
 fi
+if [[ "$KAFKA" == "1" && ( "$APP" == "1" || "$FULL" == "1" ) ]]; then
+  echo "--kafka is a third mode; do not combine with --app/--full" >&2
+  exit 1
+fi
 
 compose() {
   local files=(-f "$COMPOSE_FILE")
   if [[ "${1:-}" == "down" ]]; then
-    files+=(-f "$COMPOSE_TLS_FILE" -f "$COMPOSE_APP_FILE" -f "$COMPOSE_APP_HTTP_FILE")
+    files+=(-f "$COMPOSE_TLS_FILE" -f "$COMPOSE_APP_FILE" -f "$COMPOSE_APP_HTTP_FILE" -f "$COMPOSE_KAFKA_FILE")
   else
     if [[ "$TLS" == "1" ]]; then
       files+=(-f "$COMPOSE_TLS_FILE")
@@ -88,6 +96,9 @@ compose() {
     fi
     if [[ "$APP" == "1" ]]; then
       files+=(-f "$COMPOSE_APP_HTTP_FILE")
+    fi
+    if [[ "$KAFKA" == "1" ]]; then
+      files+=(-f "$COMPOSE_KAFKA_FILE")
     fi
   fi
   docker compose --env-file "$COMPOSE_ENV" "${files[@]}" "$@"
@@ -323,6 +334,33 @@ if [[ "$TLS" == "1" && "$FULL" != "1" ]]; then
   rebind_overlay_ports
 fi
 
+if [[ "$KAFKA" == "1" ]]; then
+  echo "Waiting for Kafka broker…"
+  kafka_start="$(date +%s)"
+  while true; do
+    if docker exec payment-quality-kafka /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1; then
+      break
+    fi
+    if (( $(date +%s) - kafka_start > 90 )); then
+      echo "Timed out waiting for Kafka" >&2
+      docker logs --tail 80 payment-quality-kafka >&2 || true
+      exit 1
+    fi
+    sleep 2
+  done
+  echo "Ensuring topic lab.auditable-actions.v1 (3 partitions RF1)…"
+  if ! docker exec payment-quality-kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic lab.auditable-actions.v1 --partitions 3 --replication-factor 1 >/dev/null 2>&1; then
+    echo "Failed to create lab.auditable-actions.v1" >&2
+    docker logs --tail 40 payment-quality-kafka >&2 || true
+    exit 1
+  fi
+  echo "Ensuring DLT topic lab.event-lab.dlq.v1…"
+  docker exec payment-quality-kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic lab.event-lab.dlq.v1 --partitions 3 --replication-factor 1 >/dev/null 2>&1 || true
+  touch "$LOG_DIR/kafka.enabled"
+else
+  rm -f "$LOG_DIR/kafka.enabled"
+fi
+
 stop_host_apps
 
 if [[ "$FULL" == "1" ]]; then
@@ -469,10 +507,18 @@ SPRING_PROFILES="dev,seed"
 if [[ "$TLS" == "1" ]]; then
   SPRING_PROFILES="dev,tls-lab,seed"
 fi
+if [[ "$KAFKA" == "1" ]]; then
+  SPRING_PROFILES="${SPRING_PROFILES},kafka"
+fi
+
+APP_EVENT_LAB_ENABLED="true"
+if [[ "$KAFKA" == "1" ]]; then
+  export APP_EVENT_LAB_ENABLED
+fi
 
 echo "Starting Spring ($SPRING_PROFILES)…"
-bash -c 'cd "$1" && exec env SPRING_PROFILES_ACTIVE="$2" ./mvnw spring-boot:run' \
-  _ "$REPO_ROOT/apps/backend" "$SPRING_PROFILES" \
+bash -c 'cd "$1" && exec env SPRING_PROFILES_ACTIVE="$2" APP_EVENT_LAB_ENABLED="$3" ./mvnw spring-boot:run' \
+  _ "$REPO_ROOT/apps/backend" "$SPRING_PROFILES" "$APP_EVENT_LAB_ENABLED" \
   >"$BACKEND_LOG" 2>&1 &
 echo $! >"$BACKEND_PID_FILE"
 
