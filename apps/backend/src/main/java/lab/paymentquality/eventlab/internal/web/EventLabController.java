@@ -6,7 +6,8 @@ import lab.paymentquality.eventlab.internal.infrastructure.JpaEventLabProcessedR
 import lab.paymentquality.shared.security.Authorities;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -122,11 +123,14 @@ public class EventLabController {
     }
 
     private static ResponseEntity<?> problem(int status, String detail) {
-        return ResponseEntity.status(status).body(Map.of(
+        Map<String, Object> body = Map.of(
                 "type", "about:blank",
                 "title", status == 404 ? "Not Found" : status == 400 ? "Bad Request" : "Error",
                 "status", status,
-                "detail", detail));
+                "detail", detail);
+        return ResponseEntity.status(status)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PROBLEM_JSON_VALUE)
+                .body(body);
     }
 
     private static String tenantRef(Authentication authentication) {
