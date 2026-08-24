@@ -1,7 +1,9 @@
-import { createError, getQuery, defineEventHandler, getRequestHeader } from 'h3'
+import { createError, getQuery, defineEventHandler } from 'h3'
 import { backendApi } from '~~/server/utils/backendApi'
 
 export default defineEventHandler(async (event) => {
+  // SAFETY: getQuery returns string|string[] values; the whitelist below rejects
+  // any key outside {targetId, eventId} and those are used only as single strings.
   const query = getQuery(event) as Record<string, string>
   const allowed = new Set(['targetId', 'eventId'])
   for (const k of Object.keys(query)) {
@@ -11,9 +13,5 @@ export default defineEventHandler(async (event) => {
   if (query.targetId) qs.set('targetId', query.targetId)
   if (query.eventId) qs.set('eventId', query.eventId)
   const path = qs.toString() ? `/api/event-lab?${qs.toString()}` : '/api/event-lab'
-  const res = await backendApi(event, path, { method: 'GET' })
-  // Pass through X-Correlation-ID
-  const cid = getRequestHeader(event, 'x-correlation-id') || res.headers['x-correlation-id']
-  if (cid) event.node.res.setHeader('X-Correlation-ID', cid)
-  return res.data
+  return backendApi(event, path, { method: 'GET' })
 })
