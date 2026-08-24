@@ -99,6 +99,11 @@ public class EventLabProcessed {
     public long getRecordOffset() { return recordOffset; }
     public String getRecordKey() { return recordKey; }
 
+    public void setConsumedAt(Instant consumedAt) { this.consumedAt = consumedAt; }
     public void setStatus(String status) { this.status = status; }
     public void setLastError(String lastError) { this.lastError = lastError; }
+    public void setTopic(String topic) { this.topic = topic; }
+    public void setPartitionNo(int partitionNo) { this.partitionNo = partitionNo; }
+    public void setRecordOffset(long recordOffset) { this.recordOffset = recordOffset; }
+    public void setRecordKey(String recordKey) { this.recordKey = recordKey; }
 }

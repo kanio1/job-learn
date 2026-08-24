@@ -1,0 +1,14 @@
+# Kafka profile overlay. Producer value serializer is ByteArray so the shared
+# Boot KafkaTemplate can carry the externalizer JSON payload and the inject
+# publisher's envelope bytes; the inspector listener deserializes bytes.
+spring:
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      acks: all

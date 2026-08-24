@@ -1,18 +1,23 @@
 package lab.paymentquality.eventlab.internal.web;
 
+import lab.paymentquality.eventlab.internal.application.EventLabKafkaPublisher;
 import lab.paymentquality.eventlab.internal.application.EventLabPurgeService;
 import lab.paymentquality.eventlab.internal.domain.EventLabProcessed;
 import lab.paymentquality.eventlab.internal.infrastructure.JpaEventLabProcessedRepository;
 import lab.paymentquality.shared.security.Authorities;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -22,14 +27,20 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/event-lab")
+@Profile("kafka")
+@ConditionalOnProperty(name = "app.event-lab.enabled", havingValue = "true")
 public class EventLabController {
 
     private final JpaEventLabProcessedRepository repository;
     private final EventLabPurgeService purgeService;
+    private final EventLabKafkaPublisher publisher;
 
-    public EventLabController(JpaEventLabProcessedRepository repository, EventLabPurgeService purgeService) {
+    public EventLabController(JpaEventLabProcessedRepository repository,
+                              EventLabPurgeService purgeService,
+                              EventLabKafkaPublisher publisher) {
         this.repository = repository;
         this.purgeService = purgeService;
+        this.publisher = publisher;
     }
 
     @GetMapping
@@ -81,38 +92,44 @@ public class EventLabController {
     @PreAuthorize("hasAuthority('" + Authorities.EVENT_LAB_OPERATE + "')")
     public ResponseEntity<?> injectDuplicate(@RequestBody(required = false) Map<String, Object> body,
                                              Authentication authentication) {
-        if (body == null || !body.containsKey("eventId")) {
-            return problem(400, "eventId required");
-        }
-        String eventIdStr = String.valueOf(body.get("eventId"));
-        UUID eventId;
-        try { eventId = UUID.fromString(eventIdStr); } catch (Exception e) { return problem(400, "invalid eventId"); }
-        Optional<EventLabProcessed> existing = repository.findByConsumerGroupAndEventId("eventlab-inspector", eventId);
-        if (existing.isEmpty()) return problem(404, "eventId not found");
-        if (!canSee(existing.get(), tenantRef(authentication))) return problem(404, "not found");
-        // duplicate is idempotent: still 1 row, return 201
-        return ResponseEntity.status(201).body(EventLabRecordDto.from(existing.get()));
+        EventLabProcessed existing = requireVisibleEvent(body, authentication);
+        // Re-publish the same envelope (same eventId, same key) through the real topic
+        // so the producer listener, retry budget and idempotency are exercised.
+        publisher.publishDuplicate(existing.getEventId(),
+                existing.getTargetId(), existing.getTenantRef(),
+                existing.getConsumerGroup(), existing.getAction(), existing.getTargetType());
+        return ResponseEntity.status(201).body(EventLabRecordDto.from(existing));
     }
 
     @PostMapping("/inject/poison")
     @PreAuthorize("hasAuthority('" + Authorities.EVENT_LAB_OPERATE + "')")
     public ResponseEntity<?> injectPoison(@RequestBody(required = false) Map<String, Object> body,
                                           Authentication authentication) {
+        EventLabProcessed existing = requireVisibleEvent(body, authentication);
+        // Publish a poisoned envelope through the real topic; the listener's poison path
+        // routes it through retry -> DLT -> dead-letter handler, producing the DEAD row.
+        // No direct DB write happens here.
+        publisher.publishPoison(existing.getEventId(),
+                existing.getTargetId(), existing.getTenantRef(),
+                existing.getConsumerGroup(), existing.getAction(), existing.getTargetType());
+        return ResponseEntity.status(201).body(EventLabRecordDto.from(existing));
+    }
+
+    private EventLabProcessed requireVisibleEvent(Map<String, Object> body, Authentication authentication) {
         if (body == null || !body.containsKey("eventId")) {
-            return problem(400, "eventId required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "eventId required");
         }
         String eventIdStr = String.valueOf(body.get("eventId"));
         UUID eventId;
-        try { eventId = UUID.fromString(eventIdStr); } catch (Exception e) { return problem(400, "invalid eventId"); }
+        try {
+            eventId = UUID.fromString(eventIdStr);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid eventId");
+        }
         Optional<EventLabProcessed> existing = repository.findByConsumerGroupAndEventId("eventlab-inspector", eventId);
-        if (existing.isEmpty()) return problem(404, "eventId not found");
-        if (!canSee(existing.get(), tenantRef(authentication))) return problem(404, "not found");
-        // mark as DEAD to simulate DLT
-        EventLabProcessed rec = existing.get();
-        rec.setStatus("DEAD");
-        rec.setLastError("poison injected");
-        repository.save(rec);
-        return ResponseEntity.status(201).body(EventLabRecordDto.from(rec));
+        if (existing.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "eventId not found");
+        if (!canSee(existing.get(), tenantRef(authentication))) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "not found");
+        return existing.get();
     }
 
     @PostMapping("/purge")

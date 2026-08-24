@@ -2,6 +2,7 @@ package lab.paymentquality.eventlab.internal.application;
 
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
+import lab.paymentquality.eventlab.internal.EventLabTopics;
 import lab.paymentquality.eventlab.internal.domain.EventLabProcessed;
 import lab.paymentquality.eventlab.internal.infrastructure.JpaEventLabProcessedRepository;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -9,7 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.kafka.annotation.BackOff;
+import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.kafka.retrytopic.DltStrategy;
+import org.springframework.kafka.retrytopic.SameIntervalTopicReuseStrategy;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
@@ -25,9 +32,8 @@ import java.util.UUID;
 public class EventLabInspectorListener {
 
     private static final Logger log = LoggerFactory.getLogger(EventLabInspectorListener.class);
-    private static final String GROUP = "eventlab-inspector";
-    private static final String TOPIC = "lab.auditable-actions.v1";
-    private static final String DLT = "lab.event-lab.dlq.v1";
+    private static final String GROUP = EventLabTopics.INSPECTOR_GROUP;
+    private static final String TOPIC = EventLabTopics.AUDITABLE_ACTIONS;
 
     private final JpaEventLabProcessedRepository repository;
     private final ObjectMapper objectMapper;
@@ -37,12 +43,27 @@ public class EventLabInspectorListener {
         this.objectMapper = objectMapper;
     }
 
+    @RetryableTopic(
+            attempts = "3",
+            backOff = @BackOff(delay = 500, multiplier = 1.0),
+            dltStrategy = DltStrategy.FAIL_ON_ERROR,
+            autoCreateTopics = "true",
+            include = GamblingException.class,
+            sameIntervalTopicReuseStrategy = SameIntervalTopicReuseStrategy.SINGLE_TOPIC,
+            retryTopicSuffix = "-retry",
+            dltTopicSuffix = "-dlt",
+            numPartitions = "3",
+            replicationFactor = "1"
+    )
     @KafkaListener(
             topics = TOPIC,
             groupId = GROUP,
-            properties = {"auto.offset.reset=earliest"}
+            properties = {
+                    "auto.offset.reset=earliest",
+                    "key.deserializer=org.apache.kafka.common.serialization.StringDeserializer",
+                    "value.deserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer"
+            }
     )
-    @Transactional
     public void onMessage(ConsumerRecord<String, byte[]> record,
                           @Header(value = KafkaHeaders.RECEIVED_TOPIC, required = false) String topic,
                           @Header(value = KafkaHeaders.OFFSET, required = false) Long offset,
@@ -84,35 +105,47 @@ public class EventLabInspectorListener {
             repository.save(entity);
         } catch (GamblingException ge) {
             throw ge;
+        } catch (DataIntegrityViolationException dup) {
+            log.debug("duplicate eventId ignored via unique constraint");
         } catch (Exception e) {
             log.warn("failed to process record", e);
             throw new GamblingException(e.getMessage(), e);
         }
     }
 
-    @org.springframework.kafka.annotation.DltHandler
-    public void dlt(ConsumerRecord<String, byte[]> record) {
-        try {
-            String payload = record.value() == null ? null : new String(record.value(), StandardCharsets.UTF_8);
-            Map<String, Object> map = payload == null || payload.isBlank() ? Map.of() : objectMapper.readValue(payload, new TypeReference<>() {});
-            String eventIdStr = headerOrField(record, "eventId", map);
-            UUID eventId = eventIdStr != null ? UUID.fromString(eventIdStr) : UUID.randomUUID();
-            String action = headerOrField(record, "action", map);
-            String targetType = headerOrField(record, "targetType", map);
-            String targetId = headerOrField(record, "targetId", map);
-            String tenantRef = headerOrField(record, "tenantRef", map);
-            String rk = record.key();
-            EventLabProcessed dead = EventLabProcessed.of(
-                    GROUP, eventId, action != null ? action : "UNKNOWN", targetType != null ? targetType : "UNKNOWN",
-                    targetId != null ? targetId : "UNKNOWN", tenantRef != null ? tenantRef : "PLATFORM_TENANT",
-                    "DEAD", "lab.event-lab.dlq.v1", 0, 0L, rk);
-            dead.setLastError("poison");
-            if (repository.findByConsumerGroupAndEventId(GROUP, eventId).isEmpty()) {
-                repository.save(dead);
-            }
-        } catch (Exception ex) {
-            log.error("dlt handler failed", ex);
-        }
+    @DltHandler
+    @Transactional
+    public void dlt(ConsumerRecord<String, byte[]> record,
+                    @Header(value = KafkaHeaders.RECEIVED_TOPIC, required = false) String dltTopic) {
+        String payload = record.value() == null ? null : new String(record.value(), StandardCharsets.UTF_8);
+        Map<String, Object> map = payload == null || payload.isBlank() ? Map.of() : objectMapper.readValue(payload, new TypeReference<>() {});
+        String eventIdStr = headerOrField(record, "eventId", map);
+        UUID eventId = eventIdStr != null ? UUID.fromString(eventIdStr) : UUID.randomUUID();
+        String action = headerOrField(record, "action", map);
+        String targetType = headerOrField(record, "targetType", map);
+        String targetId = headerOrField(record, "targetId", map);
+        String tenantRef = headerOrField(record, "tenantRef", map);
+        String rk = record.key();
+        EventLabProcessed dead = EventLabProcessed.of(
+                GROUP, eventId, action != null ? action : "UNKNOWN", targetType != null ? targetType : "UNKNOWN",
+                targetId != null ? targetId : "UNKNOWN", tenantRef != null ? tenantRef : "PLATFORM_TENANT",
+                "DEAD", dltTopic != null ? dltTopic : EventLabTopics.DLT,
+                record.partition() >= 0 ? record.partition() : 0,
+                record.offset(), rk);
+        dead.setLastError("poison");
+        repository.findByConsumerGroupAndEventId(GROUP, eventId)
+                .ifPresentOrElse(existing -> {
+                    // Same event may already be PROCESSED from a prior successful consume;
+                    // poison must flip the observable row to DEAD (idempotent upsert) and
+                    // point it at the contract DLT record.
+                    existing.setStatus("DEAD");
+                    existing.setLastError("poison");
+                    existing.setTopic(dltTopic != null ? dltTopic : EventLabTopics.DLT);
+                    existing.setRecordOffset(record.offset());
+                    existing.setPartitionNo(record.partition() >= 0 ? record.partition() : 0);
+                    existing.setRecordKey(rk);
+                    repository.save(existing);
+                }, () -> repository.save(dead));
     }
 
     private static String headerString(ConsumerRecord<String, byte[]> record, String key) {
