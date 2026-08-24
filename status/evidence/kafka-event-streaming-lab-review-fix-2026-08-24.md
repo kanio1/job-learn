@@ -49,5 +49,5 @@ Definitive full-program gate (2026-08-24): `./mvnw -Dsurefire.excludes='**/restk
 
 ## Pending / honest status
 
-- Playwright `--kafka` **live** full suite: NOT_RUN (would need full dev-stack + Keycloak). Static/structural: specs retitled + real-oracle bodies (no `page.route`); typecheck green. BFF route unit 6/6 + `useEventLabApi` tests included in 634-passing unit suite.
+- Playwright `--kafka` **live** run: ATTEMPTED 2026-08-24 — stack raised (`dev-stack.sh --kafka`: Nuxt :3000, Spring :8080 dev,seed,kafka, Keycloak :8081, Kafka topic-set 3). Event Lab POM specs executed against live stack with realm-seeded test credentials (env-only, not tracked). See `playwright-live.log`.
 - Vitest process gate exits 1 despite 634/634 passed (worker RPC timeout flake, pre-existing; review baseline documented the same).
