@@ -76,3 +76,8 @@ Present:
 Do not merge or pick a winner across axes. End with counts per axis and the worst issue **within each axis**.
 
 This skill may implement fixes only when the user asked for a review-and-fix pass; default is findings only.
+
+## When not to use
+
+- Reviewing a single layer in isolation (use `java-spring-review` / `playwright-sdet-review` / `rest-api-test-design` instead).
+- Implementing features; this skill is findings-only unless the user asked for a review-and-fix pass.

@@ -103,3 +103,8 @@ Live browser exploration before writing a spec is `playwright-cli`, not this loo
 ## Done when
 
 The new test went red, then green, on the agreed seam, and no extra speculative tests were added in the same cycle.
+
+## When not to use
+
+- As a plan-only phase — use `to-spec` / `to-tickets` before tests exist.
+- Reviewing a diff — use `code-review`.

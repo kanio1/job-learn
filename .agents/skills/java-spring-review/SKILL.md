@@ -43,3 +43,8 @@ Then include:
 - Do not implement fixes. Placement while building is `spring-modulith`.
 - Do not request broad refactors unless they directly reduce current risk.
 - Do not duplicate the large Java learning skills; keep review operational.
+
+## When not to use
+
+- Building or placing code — use `spring-modulith` for implementation.
+- Reviewing frontend or Playwright changes — use `playwright-sdet-review`.

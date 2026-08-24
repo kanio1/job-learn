@@ -356,6 +356,8 @@ if [[ "$KAFKA" == "1" ]]; then
   fi
   echo "Ensuring DLT topic lab.event-lab.dlq.v1…"
   docker exec payment-quality-kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic lab.event-lab.dlq.v1 --partitions 3 --replication-factor 1 >/dev/null 2>&1 || true
+  echo "Ensuring retry topic lab.auditable-actions.v1-retry…"
+  docker exec payment-quality-kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic lab.auditable-actions.v1-retry --partitions 3 --replication-factor 1 >/dev/null 2>&1 || true
   touch "$LOG_DIR/kafka.enabled"
 else
   rm -f "$LOG_DIR/kafka.enabled"

@@ -1,3 +1,0 @@
-org.springframework.modulith.events.kafka.KafkaEventExternalizerConfiguration
-org.springframework.modulith.events.kafka.KafkaJackson2Configuration
-org.springframework.modulith.events.kafka.KafkaJacksonConfiguration

@@ -26,6 +26,6 @@ Nie instalujemy AKHQ. Nie wołamy Lenses MCP z testów.
 
 ## Skills — kiedy na klastrze labu
 
-Po E2: `kafka-topic-audit` **tylko z ramką lab≠prod** (RF=1 = critical w skillu, nie ticket).  
+Po E2: `kafka-topic-audit` **tylko z ramką lab≠prod** (RF=1 = critical w skillu, nie ticket).
 Po E3: `kafka-consumer-lag`, `kafka-dlq-review` na grupie `eventlab-inspector` i DLT.  
 Wave 1: **nie** `kafka-schema-review` / ShadowTraffic / connector-review jako praca produktu.

@@ -55,3 +55,8 @@ pass, not this one. A single smoke test or `assert`-based
 self-check is the ponytail minimum, not bloat, never flag it for deletion.
 Does not apply the fixes, only lists them.
 "stop ponytail-review" or "normal mode": revert to verbose review style.
+
+## When not to use
+
+- To fix issues — this mode only reports; pair with the implement path for fixes.
+- Whole-repo audits — use `ponytail-audit` instead.

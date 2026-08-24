@@ -21,7 +21,7 @@ AC (wykonane):
 
 1. ADR 0002 → **ACCEPTED** (iteracja 3: Lenses luneta, cienkie E3, brak E6 produktu).
 2. `AGENTS.md` / `CLAUDE.md`: Kafka only in `eventlab` / overlay.
-3. Skills: `eventlab-kafka` + lab≠prod; `spring-modulith`, `code-review`, `rest-api-test-design`, `ask-engineering-flow`, `grilling`, `implementation-learning-loop`, `wayfinder`, `triage`, `java-spring-review`, `nuxt-frontend`.
+3. Skills: `eventlab-kafka` + lab≠prod; `spring-modulith`, `code-review`, `rest-api-test-design`, `ask-engineering-flow`, `grilling`, `implementation-learning-loop`, `triage`, `java-spring-review`, `nuxt-frontend`.
 4. Lenses skills (`kafka-topic-audit`, `kafka-security-audit`, `kafka-schema-review`, `kafka-dlq-review`) — dopisek lab≠prod.
 5. Glossary w `.codex/CONTEXT.md`; review checklist eventlab.
 6. Zero kodu aplikacji.

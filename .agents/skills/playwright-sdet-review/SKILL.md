@@ -44,3 +44,8 @@ Return:
 - Do not edit tests directly.
 - Do not add broad UI framework abstractions.
 - Do not create fake dashboard behavior to make tests pass.
+
+## When not to use
+
+- Implementing POM specs — use `playwright-pom`.
+- Reviewing REST Assured / KafkaIT backend tests without the Spring layer — use `java-spring-review`/`rest-api-test-design`.

@@ -118,3 +118,8 @@ terse prose). "stop ponytail" / "normal mode": revert. Level persists until
 changed or session end.
 
 The shortest path to done is the right path.
+
+## When not to use
+
+- Where non-trivial correctness (security, tenant isolation, idempotency) is at stake and tests demand it — keep the minimal tests.
+- As a full-codebase architecture change; ponytail recommends, the implementer decides with `implement`.

@@ -34,7 +34,6 @@ This directory is the **single skill home** for Grok Build, Codex CLI, and Curso
 | Implement Merchant 360 slices `PW-M360-T*` (Custom Mode) | `merchant-360-implement` |
 | Review Merchant 360 WIP vs HEAD (findings only) | `merchant-360-review` |
 | Over-engineering check ("be lazy", YAGNI, bloat) | `ponytail` (modes); `ponytail-review` / `ponytail-audit` / `ponytail-debt` — lab reading order in `ponytail/lab-notes.md` |
-| Playwright deep-dive guides (after `tdd` + `playwright-pom`) | `playwright-skill` in `playwright-skill-upstream/` — lab overrides in its `lab-notes.md` |
 
 ## Upstream reference packs (not triggerable)
 

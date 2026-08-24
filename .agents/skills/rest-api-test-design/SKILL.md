@@ -78,3 +78,8 @@ Namespace every write: `externalReference = PAY-{worker}-{scenario}-{uuid}`, `id
 - Do not treat learner copies (`My*`, `Lesson*`) as regression coverage.
 - Prefer unique references and idempotency keys.
 - Keep tests readable; avoid framework expansion unless repeated pain is visible.
+
+## When not to use
+
+- Kafka protocol oracles against a broker — those are `*KafkaIT` concerns.
+- Implementing tests from scratch without a failing case — use `tdd` first.
