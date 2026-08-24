@@ -1,13 +1,22 @@
 ---
 name: kafka-event-streaming-lab-tasks
 origin: POST_KIRO_WORK
-status: E0_DONE_CODE_NOT_STARTED
-last_updated: 2026-08-23
+status: E1_E5_PARTIAL_T17_CANCELLED (review-fix 2026-08-24)
+last_updated: 2026-08-24
 ---
 
 # Task board — kolejność implementacji
 
-Statusy: `OPEN` / `DONE` / `CANCELLED`. Implementacja od `KAFKA-T02`. Skill: `eventlab-kafka`.
+Statusy: `OPEN` / `DONE` / `PARTIAL` / `CANCELLED`. Implementacja od `KAFKA-T02`. Skill: `eventlab-kafka`.
+
+> **2026-08-24 review-fix:** `E1_E5_DONE_T17_CANCELLED` → `PARTIAL`. Werdykt review:
+> `docs/testing/event-streaming-lab/expert-review-results.md` (REQUEST_CHANGES). Rzędy DONE
+> bez świeżego zielonego runu po zmianach (inject-publisher, DLT, retry, topic manifest) są teraz
+> `PARTIAL` dopóki każdy acceptance oracle nie ma świeżego SHA+log w `status/evidence/`.
+> **Fresh (2026-08-24): Failsafe `EventLab.*` 50/50 BUILD SUCCESS** — evidence
+> `status/evidence/kafka-event-streaming-lab-review-fix-2026-08-24.md`.
+> Pozostałe luki: Playwright live `--kafka` NOT_RUN; RA-019 refund/cancel real-REST oracle i
+> RA-016 true-restart broker proof (RA-023 pokrywa restart redelivery).
 
 | ID | Fala | Epic | Treść | Testy | Status |
 |---|---|---|---|---|---|
@@ -27,11 +36,11 @@ Statusy: `OPEN` / `DONE` / `CANCELLED`. Implementacja od `KAFKA-T02`. Skill: `ev
 | KAFKA-T12 | 3 | E3 | Retry + DLT `lab.event-lab.dlq.v1` + purge | RA-KAFKA-024…026 | DONE (2026-08-23) |
 | KAFKA-T13 | 3 | E3 | Authorities read+operate + inject duplicate/poison | RA-KAFKA-030…033 | DONE (2026-08-23) |
 | KAFKA-T14 | 3 | E3 | BFF + Zod + `useEventLabApi` | PW-KAFKA-API-001…003 | DONE (2026-08-23) |
-| KAFKA-T15 | 3 | E3 | Cienkie `/admin/event-lab` + karta downstream na payment order | PW-KAFKA-E2E-001…006 | DONE (2026-08-23) |
-| KAFKA-T16 | 3 | E3 | POM EventLabPage + delivery card | wspiera PW-KAFKA-* | DONE (2026-08-23) |
-| KAFKA-T20 | 3 | E3 | Runbook 45 min w `docs/setup/` | docs | DONE (2026-08-23) |
-| KAFKA-T17 | 4 | E4 | (opcjonalnie) checkout inbox over Kafka | RA-KAFKA-040…042 | OPEN |
-| KAFKA-T18 | 5 | E5 | Rebalance IT + seed-guard + jqwik koperty + wrap-up | RA-KAFKA-050…052, AT-KAFKA-003 | DONE (2026-08-23) |
+| KAFKA-T15 | 3 | E3 | Cienkie `/admin/event-lab` + karta downstream na payment order | PW-KAFKA-E2E-001…006 | PARTIAL (UI present; POM oracles retitled/pending fresh run) |
+| KAFKA-T16 | 3 | E3 | POM EventLabPage + delivery card | wspiera PW-KAFKA-* | PARTIAL (artifact present; delivery-card POM oracle not fresh-run) |
+| KAFKA-T20 | 3 | E3 | Runbook 45 min w `docs/setup/` | docs | PARTIAL (runbook present; retry count corrected 2026-08-24; fresh DOC oracles pending) |
+| KAFKA-T17 | 4 | E4 | (opcjonalnie) checkout inbox over Kafka | RA-KAFKA-040…042 | CANCELLED (2026-08-23 — E4 optional per ADR 0002/plan Non-goals; shipped E1→E3+E5 only, no inbox Kafka) |
+| KAFKA-T18 | 5 | E5 | Rebalance IT + seed-guard + jqwik koperty + wrap-up | RA-KAFKA-050…052, AT-KAFKA-003 | PARTIAL (rebalance rewritten to two real listeners; fresh run pending) |
 | KAFKA-T-E6 | — | — | Observability dashboard / ECharts / load topic | — | CANCELLED |
 
 ## Zależności

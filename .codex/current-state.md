@@ -1,14 +1,21 @@
 # Current State for Codex CLI
 
-## Overlay 2026-08-23 — Event Streaming Lab (ADR 0002 ACCEPTED)
+## Overlay 2026-08-24 — Event Streaming Lab (ADR 0002 ACCEPTED)
 
-- Status: **E2 done — KAFKA-T06..T09 DONE, 14/14 KafkaIT green.** Next ticket: `KAFKA-T10`.
-- Implement goal: `.codex/prompts/kafka-event-streaming-implement.md`
-- Acceptance cases: `docs/testing/event-streaming-lab/01-acceptance-cases.md` (RA-KAFKA-001..019 + 010N/011N/014N/015/019N PASS — evidence e2-verify.log + e1-verify-kafka.log, 14/14 green)
-- Roadmap: `status/roadmaps/kafka-event-streaming-lab/` (task-board KAFKA-T02..T09 DONE)
-- Skill: `.agents/skills/eventlab-kafka`.
+- Status: **PARTIAL → strengthened. Expert review REQUEST_CHANGES addressed:** inject via real Kafka
+  publisher, DLT handler rethrow, topic manifest = exactly 3, spring-retry removed, order claim
+  scoped, runbook retry budget corrected, BFF routes fixed, KafkaIT oracles made real,
+  statuses/evidence truthful. **Fresh green (2026-08-24): Failsafe `EventLab*KafkaIT` +
+  `EventLabInjectKafkaIT` + `EventLabRestAssuredKafkaIT` 50/50 BUILD SUCCESS**; surefire
+  broker-free seam green (envelope 3 + property 1 + DLT-failure-propagation 2); frontend
+  typecheck green; Vitest assertions 634/634 (process gate red on pre-existing worker RPC timeout).
+- Evidence: `status/evidence/kafka-event-streaming-lab-review-fix-2026-08-24.md` (+ scratch logs).
+- Still honest-gap: Playwright `--kafka` live suite NOT_RUN (stack not raised); RA-019 refund/cancel
+  real-REST oracle and RA-016 true-restart broker proof remain PARTIAL (RA-023 covers restart redelivery).
 - Lenses = telescope; lab≠prod: `.agents/skills/eventlab-kafka/references/lenses-lab-vs-prod.md`.
-- E1 infra: `infra/compose/compose.kafka.yml` (apache/kafka:4.0.0 KRaft, PLAINTEXT 9092/19092, auto-create OFF), `KafkaContainerSupport` singleton, `EventLabBrokerKafkaIT` 5/5 green, Surefire excludes `*KafkaIT`, evidence ` /tmp/grok-goal-b2806f98f92a/implementer/kafka-001.log`.
+- E1 infra: `infra/compose/compose.kafka.yml` (apache/kafka:4.0.0 KRaft, PLAINTEXT 9092/19092, auto-create OFF), `KafkaContainerSupport` singleton, `EventLabBrokerKafkaIT` 5/5 green, Surefire excludes `*KafkaIT`, evidence `/tmp/grok-goal-b2806f98f92a/implementer/kafka-001.log`.
+- Live `--kafka` this run: `playwright.log` **31 passed** (`tests-pom/specs/event-lab.spec.ts` PW-KAFKA-API-001..007, E2E-001..014, SEC-003, no `page.route`); `vitest.log` 14/14; `typecheck.log` + `frontend-build.log` green; `event-lab.png`. `application-kafka.yml` sets `spring.kafka.bootstrap-servers=localhost:9092` so host Spring starts.
+- Skeptic fixes (2026-08-24) — *historical record*: `EventLabRetryNamingConfiguration` routes `@RetryableTopic` DLT to `lab.event-lab.dlq.v1`; RA-KAFKA-016 seeds incomplete `event_publication` + `resubmitIncompletePublicationsOlderThan`; RA-KAFKA-019N drives REST authorize replay (same Idempotency-Key+If-Match) asserting one distinct eventId. Committed-time "Failsafe 25/25" (`e3-verify.log`) superseded by 2026-08-24 review-fix fresh run: full filtered `verify` BUILD SUCCESS (Surefire 669 + Failsafe 136, 0 failures; Event Lab subset 50/50) — see `status/evidence/kafka-event-streaming-lab-review-fix-2026-08-24.md`. Historical `playwright.log 31 passed` likewise superseded (live Playwright `--kafka` NOT_RUN on review-fix).
 
 ## Branch
 

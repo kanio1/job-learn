@@ -1,11 +1,13 @@
 ---
 name: index
-last_updated: 2026-08-21
+last_updated: 2026-08-23
 ---
 
 ## Session log
 
-- **Kafka Event Streaming Lab (2026-08-23):** **E0 DONE — ADR 0002 ACCEPTED.** Plan cut: Lenses as telescope (no AKHQ, no Nuxt Kafka console, no E6 lag/ECharts). Thin E3 = processed + DLT + inject + search + payment-order delivery card + 45‑min runbook. Next: `KAFKA-T02`. Skill `eventlab-kafka`; lab≠prod RF=1 framing in `.agents/skills/eventlab-kafka/references/lenses-lab-vs-prod.md`. Spec/roadmap/test catalog updated. Zero application code.
+- **Kafka Event Streaming Lab (2026-08-24) review-fix:** **REVIEW_CHANGES adressed; fresh green — Failsafe `EventLab*KafkaIT` + Inject + RestAssured 50/50 BUILD SUCCESS** (real inject publisher → poison→DLT DEAD; DLT rethrow; topic manifest = 3; spring-retry removed; real-oracle KafkaIT: restarti/offset/lifecycle/purge/rebalance; BFF inject/[id] fixed; Surefire broker-free seam; `git diff --check` GREEN; typecheck GREEN; Vitest assertions 634/634). Evidence: `status/evidence/kafka-event-streaming-lab-review-fix-2026-08-24.md`. **Honest gaps:** Playwright `--kafka` live NOT_RUN (stack not raised); RA-019 real-refund oracle + RA-016 true-restart broker proof PARTIAL.
+- **Kafka Event Streaming Lab (2026-08-24):** **E1→E5 PARTIAL — claims of 25/25 KafkaIT and 31/31 Playwright are from pre-review runs and do not yet rest on fresh green logs for every oracle; PASS/DONE entries downgraded pending fresh evidence.** E4 T17 CANCELLED.
+- **Kafka Event Streaming Lab (2026-08-23) — E0:** ADR 0002 ACCEPTED. Plan cut: Lenses as telescope (no AKHQ, no Nuxt Kafka console, no E6 lag/ECharts). Thin E3 = processed + DLT + inject + search + payment-order delivery card + 45‑min runbook. Next: `KAFKA-T02`. Skill `eventlab-kafka`; lab≠prod RF=1 framing in `.agents/skills/eventlab-kafka/references/lenses-lab-vs-prod.md`. Spec/roadmap/test catalog updated. Zero application code.
 
 - **M360 + Ops Wave 2 catalog (2026-08-21):** Dopisane, co para milestone’ów **daje operatorowi**, jak się **uzupełnia** (ETag/search raz; dwa Kanbany disjoint) i **czego uczą** live POM vs Playwright REST vs REST Assured. Kanoniczny tekst: [docs/testing/m360-ops-wave-2-value-and-learning.md](../docs/testing/m360-ops-wave-2-value-and-learning.md). Ops dostał [00-business-flows](../docs/testing/ops-wave-2-interaction-lab/00-business-flows.md) (`BF-OPS-01`…`12`). Sekcje w BC/UC/E2E/REST obu katalogów. `.kiro/**` unchanged.
 
