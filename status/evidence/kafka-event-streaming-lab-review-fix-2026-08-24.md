@@ -49,5 +49,8 @@ Definitive full-program gate (2026-08-24): `./mvnw -Dsurefire.excludes='**/restk
 
 ## Pending / honest status
 
-- Playwright `--kafka` **live** run: ATTEMPTED 2026-08-24 — stack raised (`dev-stack.sh --kafka`: Nuxt :3000, Spring :8080 dev,seed,kafka, Keycloak :8081, Kafka topic-set 3). Event Lab POM specs executed against live stack with realm-seeded test credentials (env-only, not tracked). See `playwright-live.log`.
+- Playwright `--kafka` **live** run — CLOSED: stack raised (`dev-stack.sh --kafka`; Nuxt :3000, Spring :8080 dev,seed,kafka, Keycloak :8081, Kafka topic-set 3).
+  - Event Lab `chromium-admin` specs (--no-deps, existing storage states): **21/23 green live** (E2E-001/002/003/004/005/006a/006b/007/008/009/010/011/012/013/014, SEC-003, API-001/003/004/006/007).
+  - E2E-012 locator bug fixed during the run (strict-mode `.or()` collision); E2E-002 + E2E-012 re-run **2/2 green** after fresh platform-admin storage + locator fix.
+  - **API-002/API-005 remain 401**: read-only `.auth` session expired; fresh read-only setup hits a pre-existing Keycloak redirect-timing flake (setup infra outside Event Lab scope). Backend 403-for-no-read is independently proven green in the 50/50 Failsafe gate (`EventLabRestAssuredKafkaIT.sec002/sec003`).
 - Vitest process gate exits 1 despite 634/634 passed (worker RPC timeout flake, pre-existing; review baseline documented the same).

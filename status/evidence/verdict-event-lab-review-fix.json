@@ -20,7 +20,7 @@
     "frontend_typecheck": "GREEN",
     "frontend_unit_assertions": "634/634 passed",
     "lint": "RED_PRE_EXISTING_NOT_WORSENED",
-    "playwright_live": "NOT_RUN",
+    "playwright_live": "21/23 GREEN — E2E-002/012 2/2 after locator fix + fresh admin storage; API-002/005 401 from stale read-only session (pre-existing auth-setup flake; backend 403 proven in Failsafe gate)",
     "git_diff_check": "CLEAN"
   },
   "commits": [
