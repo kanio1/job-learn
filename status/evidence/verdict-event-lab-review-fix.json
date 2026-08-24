@@ -1,0 +1,39 @@
+{
+  "goal": ".codex/goals/event-lab-review-fix.md",
+  "branch": "001-project-foundation",
+  "base": "7f0e54d",
+  "head": "df28b64",
+  "verdict": "COMPLETE_WITH_RECORDED_GAPS",
+  "date": "2026-08-24",
+  "acceptance": {
+    "broker_free_surefire_seam": "PASS",
+    "bff_passthrough": "PASS",
+    "inject_real_pipeline": "PASS",
+    "kafkait_real_oracles": "PASS",
+    "retry_dlt_semantics": "PASS",
+    "cleanup": "PASS",
+    "status_truthful": "PASS"
+  },
+  "verification": {
+    "full_filtered_backend_verify": "BUILD SUCCESS — Surefire 669 + Failsafe 136, 0 failures/errors",
+    "eventlab_kafkait_subset": "50/50 GREEN",
+    "frontend_typecheck": "GREEN",
+    "frontend_unit_assertions": "634/634 passed",
+    "lint": "RED_PRE_EXISTING_NOT_WORSENED",
+    "playwright_live": "NOT_RUN",
+    "git_diff_check": "CLEAN"
+  },
+  "commits": [
+    "6d203b5 eventlab: inject through real Kafka publisher; DLT rethrow; topic manifest = 3",
+    "fc9324b eventlab: real-oracle KafkaIT program; REST Assured -> Failsafe",
+    "2251f1f eventlab BFF: return backendApi body; route contract tests; POM real oracles",
+    "fa5ca5f cleanup: root META-INF + skills symlink; When-not-to-Use; dev-stack 3 topics",
+    "df28b64 eventlab evidence/status: truthfulness + fresh 50/50 + 669/136"
+  ],
+  "honest_gaps": [
+    "Playwright live --kafka suite NOT_RUN (stack not raised; spec retitled + real-body; typecheck green)",
+    "RA-016 true-restart broker proof PARTIAL (resubmit seam; restart redelivery via RA-023)",
+    "RA-019 real-REST refund/cancel oracle PARTIAL",
+    "Vitest process gate red on pre-existing worker RPC timeout (634/634 assertions green)"
+  ]
+}
