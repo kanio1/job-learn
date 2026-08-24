@@ -9,7 +9,9 @@ import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 export async function saveKeycloakStorageState(page: Page, account: PomAccount, path: string): Promise<void> {
   mkdirSync(dirname(path), { recursive: true })
   await completeKeycloakLogin(page, account.username, account.password)
-  await page.waitForURL('**/admin/merchants', { timeout: 30_000 })
+  // Fresh logins under parallel setup projects can take >30s (Keycloak + Nuxt OIDC
+  // round-trip during stack warm-up); allow a generous window.
+  await page.waitForURL('**/admin/merchants', { timeout: 120_000 })
   const session = await page.evaluate(async () => {
     const response = await fetch('/api/_auth/session')
     if (!response.ok) {
@@ -49,7 +51,7 @@ export async function saveDeniedStorageState(
   await page.waitForURL((url) => {
     const href = url.href
     return !href.includes('/login') && !href.includes('/realms/') && !href.includes('/auth/keycloak')
-  }, { timeout: 30_000 })
+  }, { timeout: 120_000 })
 
   const session = await page.evaluate(async () => {
     const response = await fetch('/api/_auth/session')
