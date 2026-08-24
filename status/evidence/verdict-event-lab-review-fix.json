@@ -20,7 +20,7 @@
     "frontend_typecheck": "GREEN",
     "frontend_unit_assertions": "634/634 passed",
     "lint": "RED_PRE_EXISTING_NOT_WORSENED",
-    "playwright_live": "21/23 GREEN — E2E-002/012 2/2 after locator fix + fresh admin storage; API-002/005 401 from stale read-only session (pre-existing auth-setup flake; backend 403 proven in Failsafe gate)",
+    "playwright_live": "21-23 scope exercised live: deterministic Event Lab core green in whole-suite runs (15-19 of 23; variance = shared admin session-TTL churn causing 401s on worker BFF calls mid-suite), E2E-002+E2E-012 2/2 green in isolation with fresh admin + locator fix; API-002/005 need fresh read-only sessions (pre-existing setup redirect flake; backend 403 proven in Failsafe gate)",
     "git_diff_check": "CLEAN"
   },
   "commits": [

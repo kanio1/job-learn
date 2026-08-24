@@ -49,8 +49,9 @@ Definitive full-program gate (2026-08-24): `./mvnw -Dsurefire.excludes='**/restk
 
 ## Pending / honest status
 
-- Playwright `--kafka` **live** run — CLOSED: stack raised (`dev-stack.sh --kafka`; Nuxt :3000, Spring :8080 dev,seed,kafka, Keycloak :8081, Kafka topic-set 3).
-  - Event Lab `chromium-admin` specs (--no-deps, existing storage states): **21/23 green live** (E2E-001/002/003/004/005/006a/006b/007/008/009/010/011/012/013/014, SEC-003, API-001/003/004/006/007).
-  - E2E-012 locator bug fixed during the run (strict-mode `.or()` collision); E2E-002 + E2E-012 re-run **2/2 green** after fresh platform-admin storage + locator fix.
-  - **API-002/API-005 remain 401**: read-only `.auth` session expired; fresh read-only setup hits a pre-existing Keycloak redirect-timing flake (setup infra outside Event Lab scope). Backend 403-for-no-read is independently proven green in the 50/50 Failsafe gate (`EventLabRestAssuredKafkaIT.sec002/sec003`).
+- Playwright `--kafka` **live** — CLOSED with documented environment variance. Stack raised (`dev-stack.sh --kafka`; Nuxt :3000, Spring :8080 dev,seed,kafka, Keycloak :8081, Kafka topic-set 3).
+  - Whole-suite `chromium-admin` event-lab runs (--no-deps, storage states): **19/23 and 15/23 passed** across two runs. Deterministic core green in every run: API-001/003/004/006/007, E2E-001/003/004/006a/006b/007/010/011, SEC-003 — BFF passthrough, duplicate/poison real-broker flows, no-POST, search/empty/forbidden/not-found, no auth/kafka leakage.
+  - **E2E-002 + E2E-012 (payment-detail delivery card) 2/2 GREEN in isolation** after (a) fresh platform-admin storage state and (b) fixing a real locator bug in E2E-012 (strict-mode `.or()` collision — commit `aa8583a`).
+  - Variance cause: **shared admin session TTL churn** — expired sealed `nuxt-session` → all `workerWorld` BFF calls 401 mid-suite (create/authorize), not a product failure.
+  - **API-002/API-005 remain 401**: need fresh read-only state; `read-only-user.setup` hits a pre-existing Keycloak redirect-timing flake (setup infra outside Event Lab scope). Backend 403-for-no-read proven green in the 50/50 Failsafe gate (`EventLabRestAssuredKafkaIT.sec002/sec003`).
 - Vitest process gate exits 1 despite 634/634 passed (worker RPC timeout flake, pre-existing; review baseline documented the same).
