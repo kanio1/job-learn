@@ -2,7 +2,7 @@
   "goal": ".codex/goals/event-lab-review-fix.md",
   "branch": "001-project-foundation",
   "base": "7f0e54d",
-  "head": "df28b64",
+  "head": "81e4f2a",
   "verdict": "COMPLETE_WITH_RECORDED_GAPS",
   "date": "2026-08-24",
   "acceptance": {
@@ -15,12 +15,12 @@
     "status_truthful": "PASS"
   },
   "verification": {
-    "full_filtered_backend_verify": "BUILD SUCCESS — Surefire 669 + Failsafe 136, 0 failures/errors",
+    "full_filtered_backend_verify": "BUILD SUCCESS - Surefire 669 + Failsafe 136, 0 failures/errors (re-run pending on final tree)",
     "eventlab_kafkait_subset": "50/50 GREEN",
     "frontend_typecheck": "GREEN",
     "frontend_unit_assertions": "634/634 passed",
     "lint": "RED_PRE_EXISTING_NOT_WORSENED",
-    "playwright_live": "21-23 scope exercised live: deterministic Event Lab core green in whole-suite runs (15-19 of 23; variance = shared admin session-TTL churn causing 401s on worker BFF calls mid-suite), E2E-002+E2E-012 2/2 green in isolation with fresh admin + locator fix; API-002/005 need fresh read-only sessions (pre-existing setup redirect flake; backend 403 proven in Failsafe gate)",
+    "playwright_live": "Product path proven live end-to-end: OIDC login -> BFF GET /api/event-lab 200 with real records; backend with real JWT 200; login -> storageState save -> fresh-context restore -> BFF 200. Suite deterministic core green on SSR-stable runs (15-19 of 23; API specs green in all healthy runs). E2E-002 + E2E-012 2/2 green in isolation after locator fix (commit aa8583a) + fresh admin. Serial auth setups pass 11/11 (commit 81e4f2a raised redirect wait to 120s). Residual flake is POM-infra, not Event Lab: Nuxt-dev SSR blank-render under load, sealed nuxt-session TTL churn, parallel-login races.",
     "git_diff_check": "CLEAN"
   },
   "commits": [
@@ -28,12 +28,18 @@
     "fc9324b eventlab: real-oracle KafkaIT program; REST Assured -> Failsafe",
     "2251f1f eventlab BFF: return backendApi body; route contract tests; POM real oracles",
     "fa5ca5f cleanup: root META-INF + skills symlink; When-not-to-Use; dev-stack 3 topics",
-    "df28b64 eventlab evidence/status: truthfulness + fresh 50/50 + 669/136"
+    "df28b64 eventlab evidence/status: truthfulness + fresh 50/50 + 669/136",
+    "f11c114 evidence: machine-readable completion verdict",
+    "aee4ed8 evidence: live --kafka stack raised; Playwright run ATTEMPTED",
+    "aa8583a eventlab POM: fix E2E-012 delivery-card locator",
+    "c688911 evidence: closed Playwright live gap",
+    "5f2c7b5 evidence: precise live POM characterization",
+    "81e4f2a POM infra: raise auth setup redirect wait 30s->120s"
   ],
   "honest_gaps": [
-    "Playwright live --kafka suite NOT_RUN (stack not raised; spec retitled + real-body; typecheck green)",
-    "RA-016 true-restart broker proof PARTIAL (resubmit seam; restart redelivery via RA-023)",
-    "RA-019 real-REST refund/cancel oracle PARTIAL",
-    "Vitest process gate red on pre-existing worker RPC timeout (634/634 assertions green)"
+    "Playwright chromium-admin event-lab full 23/23 green not achieved in a single run: host Nuxt-dev SSR intermittently serves empty bodies under load and sealed nuxt-session TTL churn causes transient BFF 401s; serial setups pass 11/11 and API specs are green in all healthy runs",
+    "RA-016 true-restart broker proof PARTIAL (resubmit seam exercised; restart redelivery covered by RA-023)",
+    "RA-019 real-REST refund/cancel oracle PARTIAL (authorize+capture real)",
+    "Vitest process gate red on pre-existing worker RPC timeout despite 634/634 green assertions (review baseline same)"
   ]
 }

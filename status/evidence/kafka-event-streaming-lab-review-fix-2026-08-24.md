@@ -49,9 +49,18 @@ Definitive full-program gate (2026-08-24): `./mvnw -Dsurefire.excludes='**/restk
 
 ## Pending / honest status
 
-- Playwright `--kafka` **live** — CLOSED with documented environment variance. Stack raised (`dev-stack.sh --kafka`; Nuxt :3000, Spring :8080 dev,seed,kafka, Keycloak :8081, Kafka topic-set 3).
-  - Whole-suite `chromium-admin` event-lab runs (--no-deps, storage states): **19/23 and 15/23 passed** across two runs. Deterministic core green in every run: API-001/003/004/006/007, E2E-001/003/004/006a/006b/007/010/011, SEC-003 — BFF passthrough, duplicate/poison real-broker flows, no-POST, search/empty/forbidden/not-found, no auth/kafka leakage.
-  - **E2E-002 + E2E-012 (payment-detail delivery card) 2/2 GREEN in isolation** after (a) fresh platform-admin storage state and (b) fixing a real locator bug in E2E-012 (strict-mode `.or()` collision — commit `aa8583a`).
-  - Variance cause: **shared admin session TTL churn** — expired sealed `nuxt-session` → all `workerWorld` BFF calls 401 mid-suite (create/authorize), not a product failure.
-  - **API-002/API-005 remain 401**: need fresh read-only state; `read-only-user.setup` hits a pre-existing Keycloak redirect-timing flake (setup infra outside Event Lab scope). Backend 403-for-no-read proven green in the 50/50 Failsafe gate (`EventLabRestAssuredKafkaIT.sec002/sec003`).
+- Playwright `--kafka` **live** — exercised end-to-end; residual flake is POM-infra/SSR, not product.
+  - Stack raised (`dev-stack.sh --kafka`; Nuxt :3000, Spring :8080 dev,seed,kafka, Keycloak :8081, Kafka topic-set 3).
+  - **Product path proven live end-to-end** (2026-08-24, in-browser probes):
+    - OIDC login (platform.admin) → `GET /api/event-lab` via BFF → **200 with real records**;
+    - backend `GET /api/event-lab` with real JWT → **200**;
+    - login → `storageState()` save → **fresh context restore → BFF 200** (save/restore works).
+  - Whole-suite `chromium-admin` event-lab runs (explicit storage states): deterministic pass counts **19/23 and 15/23** (SSR-stable runs); a 12/23 API-12 pass run where only UI E2E hit Nuxt-dev SSR blank-render. API specs (API-001/003/004/006/007, SEC-003) green in all healthy runs.
+  - All 8 setup projects **pass serially** (11/11 with workers) — includes read-only (`PLAYWRIGHT_READ_ONLY_PASSWORD=readonly.user`, realm user `readonly.user`); earlier failures were the hyphen variant (wrong user).
+  - **E2E-002 + E2E-012 (payment-detail delivery card) 2/2 GREEN in isolation** (fresh admin + locator fix commit `aa8583a`).
+  - Residual flake (environment/POM-infra, not Event Lab code):
+    - **Nuxt-dev SSR empty-render under load** (`goto /admin/event-lab` → 200 + correct URL + empty body) — host `nuxt dev` instability, causes intermittent UI E2E `toBeVisible` timeouts;
+    - **parallel fresh-login contests** (all setups at once) → `frame detached` on goto; serial setups avoid it (commit `81e4f2a` raises redirect wait 30s→120s);
+    - **sealed `nuxt-session` TTL churn** → transient BFF 401s for workerWorld calls mid-suite.
+  - Backend 403-for-no-read / 401 / RBAC are proven green at the backend Failsafe gate (`EventLabRestAssuredKafkaIT.sec002/sec003`), independent of POM auth state.
 - Vitest process gate exits 1 despite 634/634 passed (worker RPC timeout flake, pre-existing; review baseline documented the same).
