@@ -434,11 +434,16 @@ test('PW-KAFKA-E2E-012 delivery card pending before listener then PROCESSED', as
   expect(order.status).toBe(201)
   const pid = order.body!.paymentOrderId as string
 
-  // Before the lifecycle event, the delivery card must show the pending/empty state
-  // (no record yet, or waiting for the inspector ≤5s).
+  // Before the lifecycle event, the Delivery Proof card must be visible and in
+  // its pending (waiting for the inspector ≤5s) or processed state — never error.
   await app.paymentDetail.gotoOrder(mid, pid)
   await app.paymentDetail.expectLoaded()
-  await expect(app.page.getByTestId('eventlab-delivery-card').or(app.page.getByTestId('eventlab-delivery-pending'))).toBeVisible({ timeout: 5000 })
+  await expect(app.page.getByTestId('eventlab-delivery-card')).toBeVisible({ timeout: 5000 })
+  await expect(
+    app.page.getByTestId('eventlab-delivery-pending')
+      .or(app.page.getByTestId('eventlab-delivery-processed'))
+      .or(app.page.getByTestId('eventlab-delivery-empty')),
+  ).toBeVisible({ timeout: 5000 })
 
   const etag = etagOf((await workerWorld.api.getPaymentOrder(mid, pid)).headers)
   await workerWorld.api.authorizePayment(mid, pid, etag as string | undefined, uniqueIdempotencyKey(testInfo, 'PEND-A'))
