@@ -52,7 +52,7 @@ class EventLabBrokerKafkaIT {
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consProps)) {
             consumer.subscribe(List.of(topic));
             ConsumerRecord<String, String> rec = Awaitility.await()
-                    .atMost(Duration.ofSeconds(10))
+                    .atMost(Duration.ofSeconds(5))
                     .until(() -> {
                         ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
                         if (records.isEmpty()) return null;
@@ -149,6 +149,21 @@ class EventLabBrokerKafkaIT {
             // Additionally verify broker reports unknown for describe
             assertThatThrownBy(() -> admin.describeTopics(List.of(randomTopic)).topicNameValues().get(randomTopic).get(5, TimeUnit.SECONDS))
                     .hasCauseInstanceOf(UnknownTopicOrPartitionException.class);
+        }
+    }
+
+    @Test
+    void raKafka003N_labTopicSetExactlyThreeNoDefaultDlt() throws Exception {
+        // Contract manifest: main + retry + contract DLT. The default `-dlt` topic
+        // must never be created by KafkaAdmin or the naming override.
+        KafkaContainerSupport.ensureLabTopics();
+        try (AdminClient admin = AdminClient.create(adminProps())) {
+            var names = admin.listTopics().names().get(5, TimeUnit.SECONDS);
+            assertThat(names).contains(
+                    "lab.auditable-actions.v1",
+                    "lab.auditable-actions.v1-retry",
+                    "lab.event-lab.dlq.v1");
+            assertThat(names).doesNotContain("lab.auditable-actions.v1-dlt");
         }
     }
 

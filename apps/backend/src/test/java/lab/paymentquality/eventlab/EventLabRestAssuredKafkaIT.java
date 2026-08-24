@@ -1,4 +1,4 @@
-package lab.paymentquality.rest;
+package lab.paymentquality.eventlab;
 
 import io.restassured.http.ContentType;
 import lab.paymentquality.eventlab.internal.domain.EventLabProcessed;
@@ -7,6 +7,7 @@ import lab.paymentquality.testsupport.KafkaContainerSupport;
 import lab.paymentquality.testsupport.PostgresContainerSupport;
 import lab.paymentquality.testsupport.TestJwtConfiguration;
 import lab.paymentquality.testsupport.TestJwtSupport;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,13 +32,19 @@ import static org.hamcrest.Matchers.*;
 @ActiveProfiles({"test", "kafka"})
 @Import(TestJwtConfiguration.class)
 @Testcontainers
-public class EventLabRestAssuredTest extends PostgresContainerSupport {
+public class EventLabRestAssuredKafkaIT extends PostgresContainerSupport {
     @Container static PostgreSQLContainer postgres = newPostgresContainer("eventlab_http");
     @DynamicPropertySource static void props(DynamicPropertyRegistry r) {
+        KafkaContainerSupport.ensureLabTopics();
         registerPostgresProperties(r, postgres);
         r.add("spring.kafka.bootstrap-servers", KafkaContainerSupport::bootstrapServers);
         r.add("app.event-lab.enabled", () -> "true");
     }
+    @BeforeAll
+    static void ensureTopics() {
+        KafkaContainerSupport.ensureLabTopics();
+    }
+
     @LocalServerPort int port;
     @Autowired JpaEventLabProcessedRepository repo;
 
