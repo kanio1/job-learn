@@ -93,7 +93,7 @@ public class PaymentRefundApprovalController {
                 merchantId, paymentOrderId, approvalId, jwt.getSubject(),
                 idempotencyKey.keyHash(), expectedVersion, correlationId);
         PaymentLifecycleResponse body = PaymentOrderMapper.toLifecycleResponse(order);
-        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+        return PaymentHttpHeaders.versionedPaymentResponse(ResponseEntity.ok(),
                         PaymentHttpHeaders.VARY_AUTHORIZATION_IF_MATCH)
                 .header("ETag", PaymentEtag.from(order))
                 .body(body);

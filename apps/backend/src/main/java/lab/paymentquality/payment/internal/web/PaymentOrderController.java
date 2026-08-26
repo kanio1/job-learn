@@ -87,14 +87,14 @@ public class PaymentOrderController {
 
         if (result.created()) {
             URI location = URI.create("/api/merchants/" + merchantId + "/payment-orders/" + result.paymentOrder().getPaymentOrderId());
-            return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.created(location),
+            return PaymentHttpHeaders.versionedPaymentResponse(ResponseEntity.created(location),
                             PaymentHttpHeaders.VARY_AUTHORIZATION_IDEMPOTENCY_KEY)
                     .header("ETag", etag)
                     .header("Idempotency-Replayed", "false")
                     .body(response);
         }
 
-        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+        return PaymentHttpHeaders.versionedPaymentResponse(ResponseEntity.ok(),
                         PaymentHttpHeaders.VARY_AUTHORIZATION_IDEMPOTENCY_KEY)
                 .header("ETag", etag)
                 .header("Idempotency-Replayed", "true")
@@ -129,7 +129,7 @@ public class PaymentOrderController {
             return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
                     .header("ETag", etag)
                     .header(PaymentHttpHeaders.X_CORRELATION_ID, PaymentHttpHeaders.correlationId())
-                    .header("Cache-Control", "no-store")
+                    .cacheControl(org.springframework.http.CacheControl.noStore().noTransform())
                     .header("Vary", PaymentHttpHeaders.VARY_AUTHORIZATION)
                     .build();
         }
@@ -137,7 +137,7 @@ public class PaymentOrderController {
         PaymentOrderResponse response = PaymentOrderMapper.toResponse(order);
         String lastModified = DateTimeFormatter.RFC_1123_DATE_TIME.format(order.getUpdatedAt().atOffset(ZoneOffset.UTC));
 
-        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+        return PaymentHttpHeaders.versionedPaymentResponse(ResponseEntity.ok(),
                         PaymentHttpHeaders.VARY_AUTHORIZATION)
                 .header("ETag", etag)
                 .header("Last-Modified", lastModified)
@@ -160,13 +160,13 @@ public class PaymentOrderController {
             return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
                     .header("ETag", etag)
                     .header(PaymentHttpHeaders.X_CORRELATION_ID, PaymentHttpHeaders.correlationId())
-                    .header("Cache-Control", "no-store")
+                    .cacheControl(org.springframework.http.CacheControl.noStore().noTransform())
                     .header("Vary", PaymentHttpHeaders.VARY_AUTHORIZATION)
                     .header("Last-Modified", lastModified)
                     .build();
         }
 
-        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+        return PaymentHttpHeaders.versionedPaymentResponse(ResponseEntity.ok(),
                         PaymentHttpHeaders.VARY_AUTHORIZATION)
                 .header("ETag", etag)
                 .header("Last-Modified", lastModified)
@@ -336,7 +336,7 @@ public class PaymentOrderController {
 
     private ResponseEntity<PaymentLifecycleResponse> lifecycleResponse(PaymentOrder order) {
         PaymentLifecycleResponse body = PaymentOrderMapper.toLifecycleResponse(order);
-        return PaymentHttpHeaders.sensitivePaymentResponse(ResponseEntity.ok(),
+        return PaymentHttpHeaders.versionedPaymentResponse(ResponseEntity.ok(),
                         PaymentHttpHeaders.VARY_AUTHORIZATION_IF_MATCH)
                 .header("ETag", PaymentEtag.from(order))
                 .body(body);

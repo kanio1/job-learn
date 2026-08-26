@@ -36,6 +36,8 @@ class MerchantControllerTest {
         var response = controller.create(new CreateMerchantRequest("MERCH-001", "Merchant One"), jwt);
 
         assertThat(response.getStatusCode().value()).isEqualTo(201);
+        assertThat(response.getHeaders().getCacheControl()).contains("no-transform");
+        assertThat(response.getHeaders().getETag()).isEqualTo("\"v0\"");
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().status()).isEqualTo("DRAFT");
     }

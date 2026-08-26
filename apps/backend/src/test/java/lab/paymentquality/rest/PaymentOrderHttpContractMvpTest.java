@@ -106,6 +106,7 @@ class PaymentOrderHttpContractMvpTest extends PostgresContainerSupport {
                 .then()
                 .statusCode(200)
                 .header("ETag", notNullValue())
+                .header("Cache-Control", containsString("no-transform"))
                 .extract().header("ETag");
 
         MerchantApiTestSupport.requestWithToken(port, readerToken)
@@ -114,7 +115,8 @@ class PaymentOrderHttpContractMvpTest extends PostgresContainerSupport {
                 .get("/api/merchants/{merchantId}/payment-orders/{id}", merchantId, paymentOrderId)
                 .then()
                 .statusCode(304)
-                .header("ETag", equalTo(etag));
+                .header("ETag", equalTo(etag))
+                .header("Cache-Control", containsString("no-transform"));
     }
 
     // BE-P2-001 — Last-Modified on GET payment order

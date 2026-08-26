@@ -63,6 +63,7 @@ class SupportCaseRestAssuredTest extends PostgresContainerSupport {
                 .statusCode(201)
                 .header("Location", startsWith("/api/support/cases/"))
                 .header("ETag", equalTo("\"v0\""))
+                .header("Cache-Control", startsWith("no-transform"))
                 .body("caseId", notNullValue())
                 .body("caseReference", startsWith("INC-"))
                 .body("status", equalTo("NEW"))
@@ -86,6 +87,7 @@ class SupportCaseRestAssuredTest extends PostgresContainerSupport {
                 .statusCode(200)
                 .body("status", equalTo("IN_PROGRESS"))
                 .header("ETag", not(equalTo(created.etag())))
+                .header("Cache-Control", startsWith("no-transform"))
                 .extract()
                 .header("ETag");
         assertThat(nextEtag).isEqualTo("\"v1\"");

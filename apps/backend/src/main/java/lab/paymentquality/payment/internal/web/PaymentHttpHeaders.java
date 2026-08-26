@@ -33,8 +33,19 @@ public final class PaymentHttpHeaders {
     }
 
     public static <T> ResponseEntity.BodyBuilder sensitivePaymentResponse(ResponseEntity.BodyBuilder builder, String vary) {
+        return paymentResponse(builder, vary, org.springframework.http.CacheControl.noStore());
+    }
+
+    public static ResponseEntity.BodyBuilder versionedPaymentResponse(ResponseEntity.BodyBuilder builder, String vary) {
+        return paymentResponse(builder, vary, org.springframework.http.CacheControl.noStore().noTransform());
+    }
+
+    private static ResponseEntity.BodyBuilder paymentResponse(
+            ResponseEntity.BodyBuilder builder,
+            String vary,
+            org.springframework.http.CacheControl cacheControl) {
         return builder
-                .cacheControl(org.springframework.http.CacheControl.noStore())
+                .cacheControl(cacheControl)
                 .varyBy(vary.split(", "))
                 .header(X_CORRELATION_ID, correlationId());
     }

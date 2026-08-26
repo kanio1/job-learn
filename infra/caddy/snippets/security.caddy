@@ -21,6 +21,8 @@
 }
 
 (compression) {
+	# Versioned API responses declare Cache-Control: no-transform, so this
+	# encoder preserves their origin ETag for a subsequent If-Match request.
 	encode gzip zstd
 }
 

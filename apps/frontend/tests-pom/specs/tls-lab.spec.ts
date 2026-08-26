@@ -5,6 +5,8 @@ import { expectNoTokenInBrowserStorage, expectSessionCookieSameSiteLax, expectSe
 import { pomAuthFiles } from '../utils/env'
 import { App } from '../pages/App'
 import { BffClient } from '../api/bff-client'
+import { requestHeader } from '../utils/network'
+import { waitForBffRequest, waitForBffResponse } from '../utils/wait-bff'
 
 const OTHER_ITEM = '00000000-0000-0000-0000-0000000000a2'
 
@@ -75,8 +77,15 @@ test('merchant manager authorizes then captures over the TLS origin', async ({ a
   )
   expect(created.status).toBe(201)
   const paymentOrderId = created.body.paymentOrderId!
+  const detailPath = `/api/merchants/${merchantAlphaId}/payment-orders/${paymentOrderId}`
 
+  const initialDetail = waitForBffResponse(page, { method: 'GET', pathExact: detailPath })
   await app.paymentDetail.gotoOrder(merchantAlphaId, paymentOrderId)
+  const initial = await initialDetail
+  const initialEtag = initial.headers()['etag']
+  expect(initialEtag, 'Caddy must preserve the origin ETag').toMatch(/^"v\d+"$/)
+  expect(initial.headers()['cache-control'] ?? '').toMatch(/no-transform/i)
+  expect(initial.headers()['content-encoding']).toBeUndefined()
   await app.paymentDetail.expectLoaded()
   await app.paymentDetail.openLifecycle('authorize')
   await app.paymentDetail.fillIfMatch('"v99"')
@@ -89,11 +98,25 @@ test('merchant manager authorizes then captures over the TLS origin', async ({ a
   const stillCreated = await client.getPaymentOrder(merchantAlphaId, paymentOrderId)
   expect(stillCreated.body?.status).toBe('CREATED')
 
+  const reloadedDetail = waitForBffResponse(page, { method: 'GET', pathExact: detailPath })
   await app.page.reload()
+  const reloaded = await reloadedDetail
+  const reloadedEtag = reloaded.headers()['etag']
+  expect(reloadedEtag, 'reloaded TLS detail must retain an origin ETag').toMatch(/^"v\d+"$/)
+  expect(reloaded.headers()['cache-control'] ?? '').toMatch(/no-transform/i)
   await app.paymentDetail.expectLoaded()
+  const authorizeRequest = waitForBffRequest(page, { method: 'POST', pathExact: `${detailPath}/authorize` })
+  const authorizeResponse = waitForBffResponse(page, { method: 'POST', pathExact: `${detailPath}/authorize` })
   await app.paymentDetail.authorize()
+  expect(requestHeader(await authorizeRequest, 'If-Match')).toBe(reloadedEtag)
+  const authorized = await authorizeResponse
+  const authorizedEtag = authorized.headers()['etag']
+  expect(authorizedEtag, 'authorized TLS response must retain an origin ETag').toMatch(/^"v\d+"$/)
+  expect(authorized.headers()['cache-control'] ?? '').toMatch(/no-transform/i)
   await expect(app.paymentDetail.statusInDetail('Authorized')).toBeVisible()
+  const captureRequest = waitForBffRequest(page, { method: 'POST', pathExact: `${detailPath}/capture` })
   await app.paymentDetail.capture(2100)
+  expect(requestHeader(await captureRequest, 'If-Match')).toBe(authorizedEtag)
   await expect(app.paymentDetail.statusInDetail('Captured')).toBeVisible()
   expect(new URL(app.page.url()).protocol).toBe('https:')
 })

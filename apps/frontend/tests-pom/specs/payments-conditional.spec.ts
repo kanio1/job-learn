@@ -23,6 +23,7 @@ test('GET If-None-Match is 304 empty; HEAD is 200 empty with ETag', async ({ api
   const etag = etagOf(initial.headers)
   expect(etag, 'GET detail must return ETag').toBeTruthy()
   expect(headerOf(initial.headers, 'cache-control') ?? '').toMatch(/no-store/i)
+  expect(headerOf(initial.headers, 'cache-control') ?? '').toMatch(/no-transform/i)
   expect(headerOf(initial.headers, 'vary') ?? '').toMatch(/authorization/i)
 
   const conditional = await client.getPaymentOrder(ownedMerchantId, paymentOrderId!, {
@@ -32,12 +33,14 @@ test('GET If-None-Match is 304 empty; HEAD is 200 empty with ETag', async ({ api
   expect(conditional.raw ?? '').toBe('')
   expect(etagOf(conditional.headers)).toBe(etag)
   expect(headerOf(conditional.headers, 'cache-control') ?? '').toMatch(/no-store/i)
+  expect(headerOf(conditional.headers, 'cache-control') ?? '').toMatch(/no-transform/i)
   expect(headerOf(conditional.headers, 'vary') ?? '').toMatch(/authorization/i)
 
   const head = await client.headPaymentOrder(ownedMerchantId, paymentOrderId!)
   expect(head.status).toBe(200)
   expect(head.raw).toBe('')
   expect(etagOf(head.headers)).toBeTruthy()
+  expect(headerOf(head.headers, 'cache-control') ?? '').toMatch(/no-transform/i)
   expectNoAuthTokenLeak(head.headers, head.raw)
 })
 

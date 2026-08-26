@@ -48,7 +48,7 @@ class TenantSettingsController {
         var result = settingsService.getSettings(ctx);
         String etag = TenantSettingsEtag.from(result.version());
         return ResponseEntity.ok()
-                .cacheControl(CacheControl.noStore())
+                .cacheControl(CacheControl.noStore().noTransform())
                 .varyBy(VARY_AUTHORIZATION)
                 .header("ETag", etag)
                 .header(X_CORRELATION_ID, correlationId())
@@ -67,7 +67,7 @@ class TenantSettingsController {
         var result = settingsService.updateSettings(ctx, request, expectedVersion);
         String etag = TenantSettingsEtag.from(result.version());
         return ResponseEntity.ok()
-                .cacheControl(CacheControl.noStore())
+                .cacheControl(CacheControl.noStore().noTransform())
                 .varyBy(VARY_AUTHORIZATION)
                 .header("ETag", etag)
                 .header(X_CORRELATION_ID, correlationId())

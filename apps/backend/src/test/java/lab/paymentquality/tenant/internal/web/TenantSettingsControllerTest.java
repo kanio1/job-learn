@@ -72,6 +72,7 @@ class TenantSettingsControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("ETag", "\"v3\""))
                 .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")))
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-transform")))
                 .andExpect(jsonPath("$.contactEmail").value("ops@example.com"))
                 .andExpect(jsonPath("$.timezone").value("Europe/Warsaw"));
     }
@@ -91,6 +92,7 @@ class TenantSettingsControllerTest {
                         .content("{\"timezone\":\"UTC\",\"contactEmail\":\"new@example.com\"}"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("ETag", "\"v4\""))
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-transform")))
                 .andExpect(jsonPath("$.contactEmail").value("new@example.com"))
                 .andExpect(jsonPath("$.timezone").value("UTC"));
     }

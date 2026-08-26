@@ -5,6 +5,7 @@ import lab.paymentquality.shared.security.Authorities;
 import lab.paymentquality.support.internal.application.SupportCaseService;
 import lab.paymentquality.tenant.TenantContext;
 import lab.paymentquality.tenant.TenantResolver;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,6 +45,7 @@ public class SupportCaseController {
         SupportCaseResponse response = supportCaseService.create(request, tenantContext);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .location(URI.create("/api/support/cases/" + response.caseId()))
+                .cacheControl(CacheControl.empty().noTransform())
                 .header("ETag", SupportEtag.from(response.version()))
                 .body(response);
     }
@@ -78,6 +80,7 @@ public class SupportCaseController {
         TenantContext tenantContext = tenantResolver.resolve(jwt);
         SupportCaseResponse response = supportCaseService.getById(caseId, tenantContext);
         return ResponseEntity.ok()
+                .cacheControl(CacheControl.empty().noTransform())
                 .header("ETag", SupportEtag.from(response.version()))
                 .body(response);
     }
@@ -94,6 +97,7 @@ public class SupportCaseController {
         long expectedVersion = SupportEtag.requireVersion(ifMatch);
         SupportCaseResponse response = supportCaseService.update(caseId, request, tenantContext, expectedVersion);
         return ResponseEntity.ok()
+                .cacheControl(CacheControl.empty().noTransform())
                 .header("ETag", SupportEtag.from(response.version()))
                 .body(response);
     }

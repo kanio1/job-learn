@@ -7,6 +7,7 @@ import lab.paymentquality.tenant.TenantReference;
 import lab.paymentquality.tenant.TenantResolutionException;
 import lab.paymentquality.tenant.TenantResolver;
 import jakarta.validation.Valid;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -40,6 +41,7 @@ public class MerchantController {
                 request.tenantReference());
         var response = MerchantMapper.toResponse(merchant);
         return ResponseEntity.status(HttpStatus.CREATED)
+                .cacheControl(CacheControl.empty().noTransform())
                 .header("ETag", MerchantEtag.from(response.version()))
                 .body(response);
     }
@@ -52,6 +54,7 @@ public class MerchantController {
         TenantContext tenantContext = tenantResolver.resolve(jwt);
         var response = merchantService.findById(uuid, tenantContext);
         return ResponseEntity.ok()
+                .cacheControl(CacheControl.empty().noTransform())
                 .header("ETag", MerchantEtag.from(response.version()))
                 .body(response);
     }
@@ -83,6 +86,7 @@ public class MerchantController {
         long expectedVersion = MerchantEtag.requireVersion(ifMatch);
         var response = merchantService.activate(uuid, tenantContext, expectedVersion);
         return ResponseEntity.ok()
+                .cacheControl(CacheControl.empty().noTransform())
                 .header("ETag", MerchantEtag.from(response.version()))
                 .body(response);
     }
@@ -97,6 +101,7 @@ public class MerchantController {
         long expectedVersion = MerchantEtag.requireVersion(ifMatch);
         var response = merchantService.suspend(uuid, tenantContext, expectedVersion);
         return ResponseEntity.ok()
+                .cacheControl(CacheControl.empty().noTransform())
                 .header("ETag", MerchantEtag.from(response.version()))
                 .body(response);
     }
@@ -110,6 +115,7 @@ public class MerchantController {
         long expectedVersion = MerchantEtag.requireVersion(ifMatch);
         var response = merchantService.updateRiskFlag(uuid, request.riskFlagged(), expectedVersion);
         return ResponseEntity.ok()
+                .cacheControl(CacheControl.empty().noTransform())
                 .header("ETag", MerchantEtag.from(response.version()))
                 .body(response);
     }
@@ -125,6 +131,7 @@ public class MerchantController {
         long expectedVersion = MerchantEtag.requireVersion(ifMatch);
         var response = merchantService.patch(uuid, request, tenantContext, expectedVersion);
         return ResponseEntity.ok()
+                .cacheControl(CacheControl.empty().noTransform())
                 .header("ETag", MerchantEtag.from(response.version()))
                 .body(response);
     }
