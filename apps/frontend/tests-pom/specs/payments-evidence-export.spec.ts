@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { expectNoAuthorizationInNetworkResponse, expectNoTokenInText } from '../utils/network'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 
@@ -15,7 +16,7 @@ test('uploads evidence on a live payment order', async ({ app, api, page, ownedM
     { amountMinor: 800, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'EVD'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId
   expect(paymentOrderId).toBeTruthy()
 
@@ -48,21 +49,21 @@ test('BFF multipart evidence upload is 201 RECEIPT', async ({ api, ownedMerchant
     },
     uniqueIdempotencyKey(testInfo, 'EVREST'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const uploaded = await client.uploadEvidence(
     ownedMerchantId,
     created.body.paymentOrderId!,
     { name: 'live-proof.txt', mimeType: 'text/plain', buffer: Buffer.from('playwright-rest-evidence') },
     'RECEIPT',
   )
-  expect(uploaded.status).toBe(201)
+  expectStatus(uploaded, 201)
   expect(uploaded.body?.evidenceId).toBeTruthy()
   expect(uploaded.body?.category).toBe('RECEIPT')
 
   const downloaded = await client.getEvidence(
     ownedMerchantId,
-    created.body.paymentOrderId!,
-    uploaded.body!.evidenceId!,
+    created.body.paymentOrderId,
+    uploaded.body.evidenceId,
   )
   expect(downloaded.status).toBe(200)
   expect(downloaded.headers['authorization']).toBeUndefined()

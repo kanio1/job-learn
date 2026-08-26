@@ -1,5 +1,5 @@
 import { merchantManagerAccountForWorker, POM_WORKER_COUNT } from '../auth/accounts'
-import { BffClient } from '../api/bff-client'
+import { BffClient, expectStatus } from '../api/bff-client'
 import { uniqueIdempotencyKey, uniqueOrderReference, uniqueToken } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
 import { App } from '../pages/App'
@@ -7,6 +7,26 @@ import { pomAuthFiles, pomBrowserBaseURL, pomNodeBaseURL } from '../utils/env'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 
 const LARGE_EUR_VIEW = 'Large EUR captured'
+
+// Each example mutates the persistent views for its authenticated user. Keep
+// this file on one worker so teardown cannot delete another example's default
+// view; other POM files remain fully parallel across the four worker worlds.
+test.describe.configure({ mode: 'serial' })
+
+async function clearPaymentViews(api: BffClient | undefined): Promise<void> {
+  const client = requireApi(api)
+  const listed = await client.listPaymentViews()
+  expectStatus(listed, 200)
+  await Promise.all((listed.body.content ?? []).map(view => client.deletePaymentView(view.id)))
+}
+
+test.beforeEach(async ({ api }) => {
+  await clearPaymentViews(api)
+})
+
+test.afterEach(async ({ api }) => {
+  await clearPaymentViews(api)
+})
 
 async function sessionUserId(page: import('@playwright/test').Page): Promise<string> {
   const session = await page.evaluate(async () => {
@@ -33,7 +53,7 @@ test('PW-OPS-E2E-140 save payment view then reload restores filters', async ({
     { amountMinor: 15000, currency: 'EUR', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'VIEW'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
 
   await app.payments.gotoForMerchant(ownedMerchantId)
   await app.payments.expectLoaded()
@@ -100,13 +120,13 @@ test('PW-OPS-API-050 payment views CRUD through BFF cookie; other user 404', asy
     filters: { status: 'CAPTURED', currency: 'EUR', minAmount: 10000, sort: 'createdAt,desc' },
     columns: ['clientOrderReference', 'amountMinor', 'status', 'createdAt'],
   })
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   expect(created.body.id).toBeTruthy()
   expect(created.body.filters).toMatchObject({ status: 'CAPTURED', currency: 'EUR', minAmount: 10000 })
   expect(created.body.filters).not.toHaveProperty('page')
 
   const listed = await client.listPaymentViews()
-  expect(listed.status).toBe(200)
+  expectStatus(listed, 200)
   expect(listed.body.content?.some(view => view.id === created.body.id && view.name === name)).toBe(true)
 
   const renamed = `${name} updated`
@@ -115,7 +135,7 @@ test('PW-OPS-API-050 payment views CRUD through BFF cookie; other user 404', asy
     filters: { status: 'CAPTURED', currency: 'EUR', minAmount: 10000, sort: 'createdAt,desc' },
     columns: ['clientOrderReference', 'status'],
   })
-  expect(updated.status).toBe(200)
+  expectStatus(updated, 200)
   expect(updated.body.name).toBe(renamed)
 
   const operator = await BffClient.create(playwright, pomAuthFiles.platformOperator, pomNodeBaseURL())
@@ -124,17 +144,18 @@ test('PW-OPS-API-050 payment views CRUD through BFF cookie; other user 404', asy
       name: renamed,
       filters: { status: 'AUTHORIZED' },
     })
-    expect(otherGet.status).toBe(404)
+    expectStatus(otherGet, 404)
     const otherDelete = await operator.deletePaymentView(created.body.id!)
-    expect(otherDelete.status).toBe(404)
+    expectStatus(otherDelete, 404)
   }
   finally {
     await operator.dispose()
   }
 
   const deleted = await client.deletePaymentView(created.body.id!)
-  expect(deleted.status).toBe(204)
+  expectStatus(deleted, 204)
   const after = await client.listPaymentViews()
+  expectStatus(after, 200)
   expect(after.body.content?.some(view => view.id === created.body.id)).toBe(false)
   void testInfo
 })
@@ -146,29 +167,34 @@ test('PW-OPS-E2E-142 save API then logout login restores view', async ({
 }, testInfo) => {
   const client = requireApi(api)
   const name = `Large EUR captured ${uniqueToken()}`
-  await app.payments.gotoForMerchant(ownedMerchantId)
-  await app.payments.expectLoaded()
-  await app.payments.filters.applyLargeEurCaptured()
-  await app.payments.views.saveAs(name)
-  const stored = await client.listPaymentViews()
-  expect(stored.body.content?.some(view => view.name === name)).toBe(true)
-
-  await app.userMenu.signOut()
-  await app.page.evaluate(() => window.localStorage.clear())
-  const account = merchantManagerAccountForWorker(testInfo.parallelIndex % POM_WORKER_COUNT)
-  await app.page.goto('/auth/keycloak')
-  const username = app.page.getByLabel('Username or email')
-  if (await username.isVisible().catch(() => false)) {
-    await username.fill(account.username)
-    await app.page.getByRole('textbox', { name: 'Password' }).fill(account.password)
-    await app.page.getByRole('button', { name: /sign in/i }).click()
-  }
-  await app.page.waitForURL(/\/admin\//, { timeout: 30_000 })
-
-  await app.payments.gotoForMerchant(ownedMerchantId)
-  await app.payments.expectLoaded()
-  await app.payments.views.openMenuButton().click()
-  await expect(app.payments.views.item(name)).toBeVisible()
+  await test.step('save the large-EUR filter as a view and confirm it persists', async () => {
+    await app.payments.gotoForMerchant(ownedMerchantId)
+    await app.payments.expectLoaded()
+    await app.payments.filters.applyLargeEurCaptured()
+    await app.payments.views.saveAs(name)
+    const stored = await client.listPaymentViews()
+    expectStatus(stored, 200)
+    expect(stored.body.content?.some(view => view.name === name)).toBe(true)
+  })
+  await test.step('sign out and sign back in as the same manager', async () => {
+    await app.userMenu.signOut()
+    await app.page.evaluate(() => window.localStorage.clear())
+    const account = merchantManagerAccountForWorker(testInfo.parallelIndex % POM_WORKER_COUNT)
+    await app.page.goto('/auth/keycloak')
+    const username = app.page.getByLabel('Username or email')
+    if (await username.isVisible().catch(() => false)) {
+      await username.fill(account.username)
+      await app.page.getByRole('textbox', { name: 'Password' }).fill(account.password)
+      await app.page.getByRole('button', { name: /sign in/i }).click()
+    }
+    await app.page.waitForURL(/\/admin\//, { timeout: 30_000 })
+  })
+  await test.step('verify the restored view is listed after re-login', async () => {
+    await app.payments.gotoForMerchant(ownedMerchantId)
+    await app.payments.expectLoaded()
+    await app.payments.views.openMenuButton().click()
+    await expect(app.payments.views.item(name)).toBeVisible()
+  })
 })
 
 test('PW-OPS-E2E-143 other user does not see saved view', async ({
@@ -249,9 +275,10 @@ test('PW-OPS-E2E-146 set default star posts default', async ({
   await app.payments.expectLoaded()
   await app.payments.filters.applyLargeEurCaptured()
   await app.payments.views.saveAs(name)
-  await app.payments.views.setDefault(name)
+  expect(await app.payments.views.setDefault(name)).toBe(200)
   await app.page.keyboard.press('Escape')
   const listed = await client.listPaymentViews()
+  expectStatus(listed, 200)
   expect(listed.body.content?.find(view => view.name === name)?.isDefault).toBe(true)
   await app.payments.filters.clear()
   await app.payments.views.openMenuButton().click()
@@ -270,7 +297,7 @@ test('PW-OPS-E2E-147 uncheck Created by hides header; API field remains', async 
     { amountMinor: 15000, currency: 'EUR', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'COL'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
 
   await app.payments.gotoForMerchant(ownedMerchantId)
   await app.payments.expectLoaded()
@@ -283,7 +310,7 @@ test('PW-OPS-E2E-147 uncheck Created by hides header; API field remains', async 
   await expect(app.page.getByRole('columnheader', { name: 'Created by' })).toHaveCount(0)
 
   const listed = await client.listPaymentOrders(ownedMerchantId)
-  expect(listed.status).toBe(200)
+  expectStatus(listed, 200)
   const row = listed.body.content?.find(item => item.clientOrderReference === reference)
   expect(row).toBeTruthy()
   expect((row as { createdAt?: string }).createdAt).toBeTruthy()

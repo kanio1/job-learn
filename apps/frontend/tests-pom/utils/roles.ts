@@ -1,7 +1,6 @@
 import type { Browser, BrowserContext, Page } from '@playwright/test'
 import { App } from '../pages/App'
-import { BffClient } from '../api/bff-client'
-import type { Playwright } from '@playwright/test'
+import { BffClient, type Playwright } from '../api/bff-client'
 
 /**
  * Second BrowserContext for dual-role journeys (RBAC, dual-control).

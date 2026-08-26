@@ -1,5 +1,6 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { etagOf, expectNoAuthTokenLeak, expectProblem, headerOf } from '../utils/http'
 import { ifMatchPatchMatrix } from '../methods/decision-table/IfMatchActionMatrix'
 
@@ -14,12 +15,12 @@ test('GET If-None-Match is 304 empty; HEAD is 200 empty with ETag', async ({ api
     },
     uniqueIdempotencyKey(testInfo, 'COND'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId
   expect(paymentOrderId).toBeTruthy()
 
   const initial = await client.getPaymentOrder(ownedMerchantId, paymentOrderId!)
-  expect(initial.status).toBe(200)
+  expectStatus(initial, 200)
   const etag = etagOf(initial.headers)
   expect(etag, 'GET detail must return ETag').toBeTruthy()
   expect(headerOf(initial.headers, 'cache-control') ?? '').toMatch(/no-store/i)
@@ -29,7 +30,7 @@ test('GET If-None-Match is 304 empty; HEAD is 200 empty with ETag', async ({ api
   const conditional = await client.getPaymentOrder(ownedMerchantId, paymentOrderId!, {
     'If-None-Match': etag!,
   })
-  expect(conditional.status).toBe(304)
+  expectStatus(conditional, 304)
   expect(conditional.raw ?? '').toBe('')
   expect(etagOf(conditional.headers)).toBe(etag)
   expect(headerOf(conditional.headers, 'cache-control') ?? '').toMatch(/no-store/i)
@@ -37,7 +38,7 @@ test('GET If-None-Match is 304 empty; HEAD is 200 empty with ETag', async ({ api
   expect(headerOf(conditional.headers, 'vary') ?? '').toMatch(/authorization/i)
 
   const head = await client.headPaymentOrder(ownedMerchantId, paymentOrderId!)
-  expect(head.status).toBe(200)
+  expectStatus(head, 200)
   expect(head.raw).toBe('')
   expect(etagOf(head.headers)).toBeTruthy()
   expect(headerOf(head.headers, 'cache-control') ?? '').toMatch(/no-transform/i)
@@ -56,14 +57,14 @@ test('PATCH metadata without If-Match is 428; stale If-Match is 412; fresh If-Ma
     },
     uniqueIdempotencyKey(testInfo, 'P428'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
   const missing = await client.patchPaymentOrder(
     ownedMerchantId,
     paymentOrderId,
     { metadata: { note: 'pom-rest' } },
   )
-  expect(missing.status).toBe(428)
+  expectStatus(missing, 428)
   expectProblem(missing.body, 428)
 
   const stale = await client.patchPaymentOrder(
@@ -72,7 +73,7 @@ test('PATCH metadata without If-Match is 428; stale If-Match is 412; fresh If-Ma
     { metadata: { note: 'pom-stale' } },
     '"v99"',
   )
-  expect(stale.status).toBe(412)
+  expectStatus(stale, 412)
   expectProblem(stale.body, 412)
 
   const before = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
@@ -84,7 +85,7 @@ test('PATCH metadata without If-Match is 428; stale If-Match is 412; fresh If-Ma
     { metadata: { note: 'pom-ok' } },
     etag,
   )
-  expect(patched.status).toBe(200)
+  expectStatus(patched, 200)
   const after = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
   expect(etagOf(after.headers)).toBeTruthy()
   expect(etagOf(after.headers)).not.toBe(etag)

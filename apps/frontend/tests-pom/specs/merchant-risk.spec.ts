@@ -1,12 +1,13 @@
 import { uniqueMerchantReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 
 test('risk toggle on a unique merchant shows the list badge', { tag: ['@ux'] }, async ({ app, api, page }, testInfo) => {
   const client = requireApi(api)
   const reference = uniqueMerchantReference(testInfo)
   const displayName = `Risk ${reference}`
   const created = await client.createMerchant(reference, displayName)
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const merchantId = created.body.merchantId
   expect(merchantId).toBeTruthy()
 

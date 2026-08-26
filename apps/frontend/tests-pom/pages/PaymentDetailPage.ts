@@ -113,6 +113,12 @@ export class PaymentDetailPage extends BasePage {
     await this.page.getByRole('tab', { name: 'History' }).click()
   }
 
+  /** Approve a pending refund approval (the spec owns the outcome assertion). */
+  async approveRefundApproval(): Promise<void> {
+    await this.assertNoDevErrorOverlay()
+    await this.byTestId('refund-approval-approve').click()
+  }
+
   historyTimeline() {
     return this.page.getByTestId('payment-history-timeline')
   }

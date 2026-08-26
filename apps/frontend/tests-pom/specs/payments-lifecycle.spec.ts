@@ -1,5 +1,6 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { requestHeader } from '../utils/network'
 import { waitForBffRequest, waitForBffResponse } from '../utils/wait-bff'
 import { lifecycleStDtE2e } from '../methods/combinations/LifecycleStDt'
@@ -16,7 +17,7 @@ test('authorize then capture from the payment detail drawer with If-Match', asyn
     { amountMinor: 2100, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'CREATE'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId
   expect(paymentOrderId).toBeTruthy()
 
@@ -47,8 +48,8 @@ test('authorize then capture from the payment detail drawer with If-Match', asyn
   await app.paymentDetail.openHistoryTab()
   await expect(app.page.getByRole('tab', { name: 'History' })).toHaveAttribute('aria-selected', 'true')
   await expect(app.page.getByText('No lifecycle history recorded.')).toHaveCount(0)
-  await expect(app.page.getByText('AUTHORIZE', { exact: true })).toBeVisible()
-  await expect(app.page.getByText('CAPTURE', { exact: true })).toBeVisible()
+  await expect(app.page.getByText('CREATED → AUTHORIZED · AUTHORIZE · System', { exact: true })).toBeVisible()
+  await expect(app.page.getByText('AUTHORIZED → CAPTURED · CAPTURE · System', { exact: true })).toBeVisible()
   await expectNoTokenInBrowserStorage(app.page)
 })
 
@@ -60,7 +61,7 @@ test('stale If-Match on authorize shows 412 problem+json in the drawer', async (
     { amountMinor: 1100, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'STALE'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
 
   await app.paymentDetail.gotoOrder(ownedMerchantId, paymentOrderId)
@@ -85,7 +86,7 @@ test('stale If-Match on authorize shows 412 problem+json in the drawer', async (
     '"v99"',
     uniqueIdempotencyKey(testInfo, 'API412'),
   )
-  expect(apiStale.status).toBe(412)
+  expectStatus(apiStale, 412)
 })
 
 test('cancel from CREATED uses ConfirmModal', async ({ app, api, ownedMerchantId }, testInfo) => {
@@ -96,7 +97,7 @@ test('cancel from CREATED uses ConfirmModal', async ({ app, api, ownedMerchantId
     { amountMinor: 500, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'CAN'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
 
   await app.paymentDetail.gotoOrder(ownedMerchantId, created.body.paymentOrderId!)
   await app.paymentDetail.expectLoaded()
@@ -112,7 +113,7 @@ test('merchant manager does not see the internal notes form', async ({ app, api,
     { amountMinor: 700, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'NONOTE'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
 
   await app.paymentDetail.gotoOrder(ownedMerchantId, created.body.paymentOrderId!)
   await app.paymentDetail.expectLoaded()
@@ -127,7 +128,7 @@ test('list filters by date, status, and client reference in the query string', a
     { amountMinor: 999, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'FILT'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
 
   const today = utcToday()
   await app.payments.gotoForMerchant(ownedMerchantId)
@@ -155,7 +156,7 @@ test('copy payment reference writes the client order reference to the clipboard'
     { amountMinor: 600, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'CLIP'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
   await app.paymentDetail.gotoOrder(ownedMerchantId, created.body.paymentOrderId!)
   await app.paymentDetail.expectLoaded()
@@ -175,7 +176,7 @@ test('capture amount above authorized in the drawer is 422 and stays Authorized'
     { amountMinor: 2100, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'CAPUI') },
     uniqueIdempotencyKey(testInfo, 'CAPUI'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
   const authorized = await client.authorizePayment(
     ownedMerchantId,
@@ -183,7 +184,7 @@ test('capture amount above authorized in the drawer is 422 and stays Authorized'
     etagOf((await client.getPaymentOrder(ownedMerchantId, paymentOrderId)).headers),
     uniqueIdempotencyKey(testInfo, 'CAPUI-A'),
   )
-  expect(authorized.status).toBe(200)
+  expectStatus(authorized, 200)
 
   await app.paymentDetail.gotoOrder(ownedMerchantId, paymentOrderId)
   await app.paymentDetail.expectLoaded()

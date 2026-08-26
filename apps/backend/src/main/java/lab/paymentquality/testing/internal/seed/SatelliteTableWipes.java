@@ -8,6 +8,7 @@ final class SatelliteTableWipes {
     }
 
     static void clearCheckoutAuditAndPublications(JdbcTemplate jdbc) {
+        jdbc.update("DELETE FROM user_saved_views");
         jdbc.update("DELETE FROM checkout_anomaly");
         jdbc.update("DELETE FROM checkout_event");
         jdbc.update("DELETE FROM checkout_fulfillment");

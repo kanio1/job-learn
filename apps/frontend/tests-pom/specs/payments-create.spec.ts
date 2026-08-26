@@ -1,6 +1,7 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
-import { expectProblem, headerOf, locationOf } from '../utils/http'
+import { expectStatus } from '../api/bff-client'
+import { correlationIdOf, expectNoAuthTokenLeak, expectProblem, headerOf, locationOf } from '../utils/http'
 import { requestHeader } from '../utils/network'
 import { waitForBffRequest, waitForBffResponse } from '../utils/wait-bff'
 import { createUcEpRest } from '../methods/combinations/CreateUcEpRest'
@@ -41,19 +42,19 @@ test('replaying the same Idempotency-Key returns the same order; mismatch is 409
   const payload = { amountMinor: 1700, currency: 'PLN' as const, clientOrderReference: reference }
 
   const first = await client.createPaymentOrder(ownedMerchantId, payload, key)
-  expect(first.status).toBe(201)
+  expectStatus(first, 201)
   expect(first.body.paymentOrderId).toBeTruthy()
   expect(locationOf(first.headers) ?? '').toMatch(/\/payment-orders\//)
   expect(headerOf(first.headers, 'idempotency-replayed') ?? 'false').toBe('false')
 
   const replay = await client.createPaymentOrder(ownedMerchantId, payload, key)
-  expect(replay.status).toBe(200)
+  expectStatus(replay, 200)
   expect(replay.body.paymentOrderId).toBe(first.body.paymentOrderId)
   expect(headerOf(replay.headers, 'idempotency-replayed')).toBe('true')
   expect(headerOf(replay.headers, 'etag')).toBe(headerOf(first.headers, 'etag'))
 
   const persisted = await client.getPaymentOrder(ownedMerchantId, first.body.paymentOrderId!)
-  expect(persisted.status).toBe(200)
+  expectStatus(persisted, 200)
   expect(persisted.body?.clientOrderReference).toBe(reference)
 
   const listed = await client.listPaymentOrders(ownedMerchantId, {
@@ -61,7 +62,7 @@ test('replaying the same Idempotency-Key returns the same order; mismatch is 409
     page: 0,
     size: 20,
   })
-  expect(listed.status).toBe(200)
+  expectStatus(listed, 200)
   expect(listed.body?.totalElements).toBe(1)
   expect((listed.body?.content ?? []).map(row => row.paymentOrderId)).toEqual([first.body.paymentOrderId])
 
@@ -70,8 +71,22 @@ test('replaying the same Idempotency-Key returns the same order; mismatch is 409
     { amountMinor: 9999, currency: 'EUR', clientOrderReference: `${reference}-X` },
     key,
   )
-  expect(conflict.status).toBe(409)
+  expectStatus(conflict, 409)
   expectProblem(conflict.body, 409, 'idempotency_conflict')
+})
+
+test('BFF forwards a caller correlation id on create without exposing session material', async ({ api, ownedMerchantId }, testInfo) => {
+  const client = requireApi(api)
+  const correlationId = `pom-correlation-${testInfo.workerIndex}-${testInfo.testId}`
+  const created = await client.createPaymentOrder(
+    ownedMerchantId,
+    { amountMinor: 1600, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'CORR') },
+    uniqueIdempotencyKey(testInfo, 'CORR'),
+    correlationId,
+  )
+  expectStatus(created, 201)
+  expect(correlationIdOf(created.headers)).toBe(correlationId)
+  expectNoAuthTokenLeak(created.headers, JSON.stringify(created.body))
 })
 
 test('create-order amount BVA/EP partitions stay on BFF REST (SCN-PAY-06..11)', async ({ api, ownedMerchantId }, testInfo) => {
@@ -87,12 +102,13 @@ test('create-order amount BVA/EP partitions stay on BFF REST (SCN-PAY-06..11)', 
         },
         uniqueIdempotencyKey(testInfo, row.id),
       )
-      expect(created.status, row.id).toBe(row.expectStatus)
       if (row.expectStatus === 400) {
+        expect(created.status, row.id).toBe(400)
         expectProblem(created.body, 400)
         return
       }
-      expect(created.body?.paymentOrderId, row.id).toBeTruthy()
+      expectStatus(created, 201, row.id)
+      expect(created.body.paymentOrderId, row.id).toBeTruthy()
     })
   }
 })
@@ -110,12 +126,13 @@ test('create-order reference length BVA stays on BFF REST (SCN-PAY-12..15)', asy
         },
         uniqueIdempotencyKey(testInfo, row.id),
       )
-      expect(created.status, row.id).toBe(row.expectStatus)
       if (row.expectStatus === 400) {
+        expect(created.status, row.id).toBe(400)
         expectProblem(created.body, 400)
         return
       }
-      expect(created.body?.paymentOrderId, row.id).toBeTruthy()
+      expectStatus(created, 201, row.id)
+      expect(created.body.paymentOrderId, row.id).toBeTruthy()
     })
   }
 })
@@ -134,7 +151,8 @@ test('BFF mints a key when Idempotency-Key is missing or empty (SCN-PAY-04/05)',
       },
       key,
     )
-    expect(created.status, row.id).toBe(row.expectStatus)
+    expect(row.expectStatus, row.id).toBe(201)
+    expectStatus(created, 201, row.id)
     expect(created.body.paymentOrderId, row.id).toBeTruthy()
     ids.push(created.body.paymentOrderId!)
   }

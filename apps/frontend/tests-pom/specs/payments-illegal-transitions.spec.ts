@@ -1,16 +1,18 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { illegalStDtRest, headerStDtRest } from '../methods/combinations/IllegalStDt'
 import { authorizeHeaderBoundaries } from '../methods/ep-bva/IfMatchAndKeyBoundaries'
 import { ifMatchActionMatrix } from '../methods/decision-table/IfMatchActionMatrix'
 import type { BffClient } from '../api/bff-client'
 import { expectProblem } from '../utils/http'
+import type { TestInfo } from '@playwright/test'
 import type { PaymentStatus } from '../methods/state/PaymentStatusMachine'
 
 async function createCreated(
   client: BffClient,
   merchantId: string,
-  testInfo: { titlePath: string[] },
+  testInfo: TestInfo,
   tag: string,
 ) {
   const created = await client.createPaymentOrder(
@@ -18,7 +20,7 @@ async function createCreated(
     { amountMinor: 2100, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, tag) },
     uniqueIdempotencyKey(testInfo, tag),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId
   expect(paymentOrderId).toBeTruthy()
   return paymentOrderId!
@@ -26,7 +28,7 @@ async function createCreated(
 
 async function etag(client: BffClient, merchantId: string, paymentOrderId: string) {
   const get = await client.getPaymentOrder(merchantId, paymentOrderId)
-  expect(get.status).toBe(200)
+  expectStatus(get, 200)
   const value = get.headers['etag']
   expect(value).toBeTruthy()
   return value!
@@ -36,7 +38,7 @@ async function bringTo(
   client: BffClient,
   merchantId: string,
   paymentOrderId: string,
-  testInfo: { titlePath: string[] },
+  testInfo: TestInfo,
   target: PaymentStatus,
 ) {
   if (target === 'CREATED') {
@@ -47,13 +49,13 @@ async function bringTo(
     const cancelled = await client.cancelPayment(
       merchantId, paymentOrderId, fresh, uniqueIdempotencyKey(testInfo, 'TO-CAN'),
     )
-    expect(cancelled.status).toBe(200)
+    expectStatus(cancelled, 200)
     return
   }
   const authorized = await client.authorizePayment(
     merchantId, paymentOrderId, fresh, uniqueIdempotencyKey(testInfo, 'TO-AUTH'),
   )
-  expect(authorized.status).toBe(200)
+  expectStatus(authorized, 200)
   if (target === 'AUTHORIZED') {
     return
   }
@@ -61,7 +63,7 @@ async function bringTo(
   const captured = await client.capturePayment(
     merchantId, paymentOrderId, afterAuth, uniqueIdempotencyKey(testInfo, 'TO-CAP'), 2100,
   )
-  expect(captured.status).toBe(200)
+  expectStatus(captured, 200)
 }
 
 test('illegal lifecycle edges stay on BFF REST (SCN-ILL)', async ({ api, ownedMerchantId }, testInfo) => {
@@ -81,7 +83,7 @@ test('illegal lifecycle edges stay on BFF REST (SCN-ILL)', async ({ api, ownedMe
         : row.action === 'cancel'
           ? await client.cancelPayment(ownedMerchantId, paymentOrderId, match, key)
           : await client.authorizePayment(ownedMerchantId, paymentOrderId, match, key)
-    expect(result.status, row.id).toBe(row.expectStatus)
+    expectStatus(result, row.expectStatus, row.id)
     expectProblem(result.body, row.expectStatus)
     const after = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
     expect(after.body?.status, row.id).toBe(row.to)
@@ -98,7 +100,7 @@ test('If-Match BVA on authorize is REST (absent 428, v99 412, malformed 400)', a
     const result = await client.authorizePayment(
       ownedMerchantId, paymentOrderId, ifMatch, uniqueIdempotencyKey(testInfo, row.id),
     )
-    expect(result.status, row.id).toBe(row.expectStatus)
+    expectStatus(result, row.expectStatus, row.id)
     expectProblem(result.body, row.expectStatus)
     const after = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
     expect(after.body?.status).toBe('CREATED')
@@ -116,7 +118,7 @@ test('If-Match × action DT stays on BFF REST (SCN-IFM)', async ({ api, ownedMer
     const result = row.action === 'capture'
       ? await client.capturePayment(ownedMerchantId, paymentOrderId, ifMatch, key, 2100)
       : await client.cancelPayment(ownedMerchantId, paymentOrderId, ifMatch, key)
-    expect(result.status, row.id).toBe(row.expectStatus)
+    expectStatus(result, row.expectStatus, row.id)
     expectProblem(result.body, row.expectStatus)
     const after = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
     expect(after.body?.status, row.id).toBe(row.to)

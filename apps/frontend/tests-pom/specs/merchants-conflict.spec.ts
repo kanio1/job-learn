@@ -1,5 +1,6 @@
 import { uniqueMerchantReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { etagOf, expectProblem } from '../utils/http'
 import { waitForBffResponse } from '../utils/wait-bff'
 import { openAdminAndOperator } from '../fixtures/multi-user.fixture'
@@ -9,15 +10,15 @@ test.describe('Merchant contact conflict', { tag: ['@security'] }, () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `Api ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
     const etag = etagOf(created.headers)!
     const patched = await client.patchMerchant(merchantId, { contactPhone: '+48111111111' }, etag)
-    expect(patched.status).toBe(200)
+    expectStatus(patched, 200)
     expect(etagOf(patched.headers)).toBeTruthy()
     expect(etagOf(patched.headers)).not.toBe(etag)
     const stale = await client.patchMerchant(merchantId, { contactAddress: 'Nope' }, etag)
-    expect(stale.status).toBe(412)
+    expectStatus(stale, 412)
     expectProblem(stale.body, 412, 'merchant_version_mismatch')
   })
 
@@ -29,7 +30,7 @@ test.describe('Merchant contact conflict', { tag: ['@security'] }, () => {
     const seed = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await seed.createMerchant(reference, `Race ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
     const sessions = await openAdminAndOperator(browser, playwright)
@@ -39,13 +40,13 @@ test.describe('Merchant contact conflict', { tag: ['@security'] }, () => {
       await sessions.adminApp.merchantDetail.fillContact({ contactPhone: '+48111111111' })
 
       const current = await sessions.operatorApi.getMerchant(merchantId)
-      expect(current.status).toBe(200)
+      expectStatus(current, 200)
       const operatorSave = await sessions.operatorApi.patchMerchant(
         merchantId,
         { contactAddress: 'Operator Street' },
         etagOf(current.headers)!,
       )
-      expect(operatorSave.status).toBe(200)
+      expectStatus(operatorSave, 200)
 
       const patch = waitForBffResponse(sessions.adminPage, {
         method: 'PATCH',
@@ -68,7 +69,7 @@ test.describe('Merchant contact conflict', { tag: ['@security'] }, () => {
     const seed = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await seed.createMerchant(reference, `Discard ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
     const sessions = await openAdminAndOperator(browser, playwright)
@@ -114,7 +115,7 @@ test.describe('Merchant contact conflict', { tag: ['@security'] }, () => {
     const seed = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await seed.createMerchant(reference, `Tabs ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
     const sessions = await openAdminAndOperator(browser, playwright)
@@ -148,7 +149,7 @@ test.describe('Merchant contact conflict', { tag: ['@security'] }, () => {
     const seed = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await seed.createMerchant(reference, `Esc ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
     const sessions = await openAdminAndOperator(browser, playwright)
@@ -182,7 +183,7 @@ test.describe('Merchant contact conflict', { tag: ['@security'] }, () => {
     const seed = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await seed.createMerchant(reference, `Aria ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
     const sessions = await openAdminAndOperator(browser, playwright)

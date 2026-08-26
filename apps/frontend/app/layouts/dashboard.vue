@@ -30,7 +30,17 @@
           orientation="vertical"
           tooltip
           popover
-        />
+        >
+          <template #merchant-navigation-group>
+            <UIcon name="i-lucide-store" data-slot="linkLeadingIcon" class="shrink-0 size-5" />
+            <span data-slot="linkLabel" class="truncate">Merchants</span>
+            <UIcon
+              name="i-lucide-chevron-down"
+              data-slot="linkTrailingIcon"
+              class="size-5 transform shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180"
+            />
+          </template>
+        </UNavigationMenu>
       </template>
 
       <template #footer="{ collapsed }">
@@ -155,6 +165,7 @@ const visibleLinks = computed<NavigationMenuItem[]>(() => {
       label: 'Merchants',
       icon: 'i-lucide-store',
       type: 'trigger',
+      slot: 'merchant-navigation-group',
       defaultOpen: true,
       'data-testid': 'nav-group-merchants',
       children: [

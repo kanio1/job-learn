@@ -1,10 +1,10 @@
-import type { Playwright, TestInfo } from '@playwright/test'
+import type { TestInfo } from '@playwright/test'
+import { BffClient, type Playwright , expectStatus } from '../api/bff-client'
 import { merchantAlphaId } from '../auth/accounts'
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect } from '../fixtures'
 import { pomAuthFiles } from '../utils/env'
 import { App } from '../pages/App'
-import { BffClient } from '../api/bff-client'
 
 async function createEurPayment(playwright: Playwright, testInfo: TestInfo) {
   const api = await BffClient.create(playwright, pomAuthFiles.merchantManager)
@@ -18,7 +18,7 @@ async function createEurPayment(playwright: Playwright, testInfo: TestInfo) {
       },
       uniqueIdempotencyKey(testInfo, 'LOC'),
     )
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     return created.body.paymentOrderId!
   }
   finally {

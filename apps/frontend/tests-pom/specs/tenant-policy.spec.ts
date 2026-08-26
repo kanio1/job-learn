@@ -1,5 +1,6 @@
 import { uniqueToken } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { pomAuthFiles } from '../utils/env'
 import { requestHeader } from '../utils/network'
 import type { TenantSettingsBody } from '../api/bff-client'
@@ -11,7 +12,7 @@ let snapshot: { settings: TenantSettingsBody, etag: string } | undefined
 test.beforeEach(async ({ api }) => {
   const client = requireApi(api)
   const get = await client.getTenantSettings()
-  expect(get.status, 'PLATFORM_ADMIN must have platform:tenant:settings:read').toBe(200)
+  expectStatus(get, 200, 'PLATFORM_ADMIN must have platform:tenant:settings:read')
   snapshot = {
     settings: get.body,
     etag: get.headers['etag'] || '',

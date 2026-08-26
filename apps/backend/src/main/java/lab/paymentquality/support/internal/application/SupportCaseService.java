@@ -59,6 +59,11 @@ public class SupportCaseService implements SupportCaseSeedCapability {
         this.assignmentWriter = assignmentWriter;
     }
 
+    @Override
+    public void clear() {
+        repository.deleteAllInBatch();
+    }
+
     public SupportCaseResponse create(CreateSupportCaseRequest request, TenantContext tenantContext) {
         MerchantOwnership merchant = merchantOwnershipLocator.find(request.merchantId())
                 .orElseThrow(() -> new SupportMerchantNotFoundException(String.valueOf(request.merchantId())));

@@ -3,7 +3,7 @@ import { test, expect, requireApi } from '../fixtures'
 import { etagOf } from '../utils/http'
 import { waitForBffResponse } from '../utils/wait-bff'
 import { pomAuthFiles } from '../utils/env'
-import { BffClient } from '../api/bff-client'
+import { BffClient , expectStatus } from '../api/bff-client'
 
 async function seedNewCase(
   api: BffClient,
@@ -16,7 +16,7 @@ async function seedNewCase(
     title,
     caseReference: uniqueCaseReference(testInfo),
   })
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   return {
     caseId: created.body.caseId!,
     caseReference: created.body.caseReference!,
@@ -35,7 +35,7 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
       uniqueMerchantReference(testInfo),
       'Support kanban merchant',
     )
-    expect(merchant.status).toBe(201)
+    expectStatus(merchant, 201)
     const merchantId = merchant.body.merchantId!
     const seeded = await seedNewCase(client, merchantId, testInfo, 'Menu move')
 
@@ -67,7 +67,7 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
       uniqueMerchantReference(testInfo),
       'Support drag merchant',
     )
-    expect(merchant.status).toBe(201)
+    expectStatus(merchant, 201)
     const seeded = await seedNewCase(client, merchant.body.merchantId!, testInfo, 'Drag move')
 
     await app.support.goto()
@@ -93,7 +93,7 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
       uniqueMerchantReference(testInfo),
       'Support conflict merchant',
     )
-    expect(merchant.status).toBe(201)
+    expectStatus(merchant, 201)
     const seeded = await seedNewCase(client, merchant.body.merchantId!, testInfo, 'Conflict move')
 
     await app.support.goto()
@@ -108,7 +108,7 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
         { status: 'IN_PROGRESS' },
         seeded.etag,
       )
-      expect(raced.status).toBe(200)
+      expectStatus(raced, 200)
     } finally {
       await operatorApi.dispose()
     }
@@ -129,7 +129,7 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
       uniqueMerchantReference(testInfo),
       'Support aria merchant',
     )
-    expect(merchant.status).toBe(201)
+    expectStatus(merchant, 201)
     await seedNewCase(client, merchant.body.merchantId!, testInfo, 'Aria case')
 
     await app.support.goto()
@@ -153,7 +153,7 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
       uniqueMerchantReference(testInfo),
       'Support illegal merchant',
     )
-    expect(merchant.status).toBe(201)
+    expectStatus(merchant, 201)
     const seeded = await seedNewCase(client, merchant.body.merchantId!, testInfo, 'Illegal drop')
 
     await app.support.goto()

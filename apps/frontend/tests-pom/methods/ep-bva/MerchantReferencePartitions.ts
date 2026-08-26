@@ -30,7 +30,8 @@ export function merchantReferenceForLength(length: number, uniqueSeed: string): 
   if (length <= 0) {
     return ''
   }
-  const core = seed.slice(-Math.min(seed.length, length))
+  const token = seed.match(/[A-F0-9]{8,}/)?.[0] ?? seed
+  const core = token.slice(-Math.min(token.length, length))
   const padded = (core + 'X'.repeat(length)).slice(0, length)
   return padded.replace(/[^A-Z0-9]$/, 'Z').replace(/^[^A-Z0-9]/, 'A')
 }

@@ -1,5 +1,6 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 
 test('status USelect is not a native select and list badge carries data-status', async ({ app, api, ownedMerchantId }, testInfo) => {
   const client = requireApi(api)
@@ -9,7 +10,7 @@ test('status USelect is not a native select and list badge carries data-status',
     { amountMinor: 1400, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'BADGE'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
 
   await app.payments.gotoForMerchant(ownedMerchantId)
   await app.payments.expectLoaded()
@@ -35,7 +36,7 @@ test('dismissing ConfirmModal does not cancel the payment', async ({ app, api, p
     { amountMinor: 1600, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'DISC'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
 
   await app.paymentDetail.gotoOrder(ownedMerchantId, paymentOrderId)

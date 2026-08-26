@@ -3,7 +3,8 @@
 Implementacja = `test()` w [03](03-playwright-e2e-catalog.md) / [04](04-playwright-api-http.md).  
 Techniki kanoniczne: [playbook 03](../playwright-method-playbook/03-test-architect-techniques.md) + [05 combinations](../playwright-method-playbook/05-combinations.md).
 
-**Pairwise** (`CheckoutModeOutcome`): **poza M360** (CPL). Nie mieszać.
+**Pairwise checkout** jest poza M360/POM (CPL); ta suite nie utrzymuje jego
+katalogowych wierszy. Nie mieszać światów.
 
 Pokrycie: **designed**. Klasy: [09](09-agent-tests-pom-plan.md).
 

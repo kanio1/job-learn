@@ -6,13 +6,13 @@ tests-pom/
   fixtures/    App + opcjonalny BffClient
   pages/       cienki BasePage, intent methods
   api/         BffClient — zero seedLearning
-  data/        factories + PaymentOrderDraft
+  data/        unique factories
   utils/       env, http, wait-bff, roles.openAs, dates, problem, persistence
   methods/     ISTQB rows
   specs/       tylko przepływy
 ```
 
-Wzorce: Facade (`App`), composition (`ConfirmModal`), factory (unique*), adapter (`BffClient`), type guard (`isProblemDetails`), fixture DI, builder (`PaymentOrderDraft`).
+Wzorce: Facade (`App`), composition (`ConfirmModal`), factory (unique*), adapter (`BffClient`), type guard (`isProblemDetails`), fixture DI.
 
 Nie: tłusty BasePage, Screenplay, `page.route` w live, hasła w repo, import z `tests-pom` do learnera.
 

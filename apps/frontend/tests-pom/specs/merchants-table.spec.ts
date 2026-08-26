@@ -1,5 +1,6 @@
 import { uniqueMerchantReference, uniqueToken } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { waitForBffResponse } from '../utils/wait-bff'
 import { App } from '../pages/App'
 import { pomAuthFiles } from '../utils/env'
@@ -23,7 +24,7 @@ test('PW-M360-E2E-021 search unique ref Apply shows row and GET q=', async ({ ap
   const client = requireApi(api)
   const reference = uniqueMerchantReference(testInfo)
   const created = await client.createMerchant(reference, `Search ${reference}`)
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
 
   await app.merchants.goto()
   await app.merchants.expectLoaded()
@@ -43,13 +44,15 @@ test('PW-M360-E2E-022 status ACTIVE plus q returns only ACTIVE rows', async ({ a
   const activeRef = `POM-${testInfo.workerIndex}-${token}A`.slice(0, 32)
   const draft = await client.createMerchant(draftRef, `Draft ${token}`)
   const active = await client.createMerchant(activeRef, `Active ${token}`)
-  expect(draft.status).toBe(201)
-  expect(active.status).toBe(201)
+  expectStatus(draft, 201)
+  expectStatus(active, 201)
   expect((await client.activateMerchant(active.body.merchantId!, etagOf(active.headers)!)).status).toBe(200)
 
   await app.merchants.goto()
   await app.merchants.expectLoaded()
   await app.merchants.filterByText(token)
+  // Network oracle: select the status option without the POM's internal wait
+  // so the spec captures the exact GET /api/merchants response and its query.
   await app.page.getByLabel('Filter status').click()
   await app.page.getByRole('option', { name: 'Active' }).click()
   const listed = waitForBffResponse(page, { method: 'GET', pathExact: '/api/merchants' })
@@ -84,9 +87,9 @@ test('PW-M360-E2E-024 displayName sort is monotonic for three owned merchants', 
   const client = requireApi(api)
   const token = uniqueToken().slice(0, 10)
   const names = [`Aaa ${token}`, `Mmm ${token}`, `Zzz ${token}`]
+  const references = names.map((_, index) => `POM-${testInfo.workerIndex}-${token}${index}`.slice(0, 32))
   for (const [index, displayName] of names.entries()) {
-    const reference = `POM-${testInfo.workerIndex}-${token}${index}`.slice(0, 32)
-    expect((await client.createMerchant(reference, displayName)).status).toBe(201)
+    expect((await client.createMerchant(references[index]!, displayName)).status).toBe(201)
   }
 
   await app.merchants.goto()
@@ -99,11 +102,11 @@ test('PW-M360-E2E-024 displayName sort is monotonic for three owned merchants', 
   const response = await sorted
   expect(response.status()).toBe(200)
   expect(merchantsListQuery(response.url()).get('sort') ?? '').toMatch(/displayName/)
-  for (const name of names) {
-    await expect(app.page.getByRole('link', { name })).toBeVisible()
+  for (const [index, name] of names.entries()) {
+    await expect(app.page.getByRole('button', { name: `Open ${references[index]!}` })).toHaveText(name)
   }
   const tops = await Promise.all(
-    names.map(name => app.page.getByRole('link', { name }).evaluate(el => el.getBoundingClientRect().top)),
+    references.map(reference => app.page.getByRole('button', { name: `Open ${reference}` }).evaluate(el => el.getBoundingClientRect().top)),
   )
   const ordered = names
     .map((name, index) => ({ name, top: tops[index]! }))
@@ -136,7 +139,7 @@ test('PW-M360-E2E-031 Back from detail keeps filter URL and row', async ({ app, 
   const reference = uniqueMerchantReference(testInfo)
   const displayName = `Back ${reference}`
   const created = await client.createMerchant(reference, displayName)
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
 
   await app.merchants.goto()
   await app.merchants.expectLoaded()
@@ -187,36 +190,42 @@ test('PW-M360-API-010 BffClient totalElements matches registry caption', async (
   await app.merchants.applyFilters()
   await app.merchants.expectLoaded()
   const listed = await client.listMerchants({ q: reference })
-  expect(listed.status).toBe(200)
+  expectStatus(listed, 200)
   expect(listed.body?.totalElements).toBe(1)
   await expect(app.merchants.caption()).toHaveText('1 merchant(s)')
 })
 
 test('PW-M360-E2E-040 bulk activate two DRAFT merchants posts twice', async ({ app, api, page }, testInfo) => {
-  const client = requireApi(api)
-  const token = uniqueToken().slice(0, 10)
-  const firstRef = `POM-${testInfo.workerIndex}-${token}1`.slice(0, 32)
-  const secondRef = `POM-${testInfo.workerIndex}-${token}2`.slice(0, 32)
-  const first = await client.createMerchant(firstRef, `Bulk ${firstRef}`)
-  const second = await client.createMerchant(secondRef, `Bulk ${secondRef}`)
-  expect(first.status).toBe(201)
-  expect(second.status).toBe(201)
-  const firstId = first.body.merchantId!
-  const secondId = second.body.merchantId!
+  await test.step('arrange two DRAFT merchants via the BFF', async () => {
+    const client = requireApi(api)
+    const token = uniqueToken().slice(0, 10)
+    const firstRef = `POM-${testInfo.workerIndex}-${token}1`.slice(0, 32)
+    const secondRef = `POM-${testInfo.workerIndex}-${token}2`.slice(0, 32)
+    const first = await client.createMerchant(firstRef, `Bulk ${firstRef}`)
+    const second = await client.createMerchant(secondRef, `Bulk ${secondRef}`)
+    expectStatus(first, 201)
+    expectStatus(second, 201)
+    const firstId = first.body.merchantId!
+    const secondId = second.body.merchantId!
 
-  await app.merchants.goto()
-  await app.merchants.expectLoaded()
-  await app.merchants.filterByText(token)
-  await app.merchants.applyFilters()
-  await app.merchants.selectRow(firstRef)
-  await app.merchants.selectRow(secondRef)
-  const firstPost = waitForBffResponse(page, { method: 'POST', pathExact: `/api/merchants/${firstId}/activate` })
-  const secondPost = waitForBffResponse(page, { method: 'POST', pathExact: `/api/merchants/${secondId}/activate` })
-  await app.merchants.bulkActivate()
-  expect((await firstPost).status()).toBe(200)
-  expect((await secondPost).status()).toBe(200)
-  await expect(app.merchants.rowByReference(firstRef)).toContainText('ACTIVE')
-  await expect(app.merchants.rowByReference(secondRef)).toContainText('ACTIVE')
+    await test.step('select both rows and bulk activate', async () => {
+      await app.merchants.goto()
+      await app.merchants.expectLoaded()
+      await app.merchants.filterByText(token)
+      await app.merchants.applyFilters()
+      await app.merchants.selectRow(firstRef)
+      await app.merchants.selectRow(secondRef)
+      const firstPost = waitForBffResponse(page, { method: 'POST', pathExact: `/api/merchants/${firstId}/activate` })
+      const secondPost = waitForBffResponse(page, { method: 'POST', pathExact: `/api/merchants/${secondId}/activate` })
+      await app.merchants.bulkActivate()
+      await test.step('assert one POST per merchant and the ACTIVE rows', async () => {
+        expect((await firstPost).status()).toBe(200)
+        expect((await secondPost).status()).toBe(200)
+        await expect(app.merchants.rowByReference(firstRef)).toContainText('ACTIVE')
+        await expect(app.merchants.rowByReference(secondRef)).toContainText('ACTIVE')
+      })
+    })
+  })
 })
 
 test('PW-M360-E2E-041 mixed DRAFT and ACTIVE bulk activate continues after 409', async ({ app, api, page }, testInfo) => {
@@ -226,8 +235,8 @@ test('PW-M360-E2E-041 mixed DRAFT and ACTIVE bulk activate continues after 409',
   const activeRef = `POM-${testInfo.workerIndex}-${token}A`.slice(0, 32)
   const draft = await client.createMerchant(draftRef, `Mix ${draftRef}`)
   const active = await client.createMerchant(activeRef, `Mix ${activeRef}`)
-  expect(draft.status).toBe(201)
-  expect(active.status).toBe(201)
+  expectStatus(draft, 201)
+  expectStatus(active, 201)
   expect((await client.activateMerchant(active.body.merchantId!, etagOf(active.headers)!)).status).toBe(200)
 
   await app.merchants.goto()
@@ -300,7 +309,7 @@ test('PW-M360-API-060 PATCH displayName 200 via BFF', async ({ api }, testInfo) 
   const client = requireApi(api)
   const reference = uniqueMerchantReference(testInfo)
   const created = await client.createMerchant(reference, `Orig ${reference}`)
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const merchantId = created.body.merchantId!
   const nextName = `Renamed ${uniqueToken()}`
   const patched = await client.patchMerchantDisplayName(
@@ -308,11 +317,11 @@ test('PW-M360-API-060 PATCH displayName 200 via BFF', async ({ api }, testInfo) 
     nextName,
     etagOf(created.headers)!,
   )
-  expect(patched.status).toBe(200)
+  expectStatus(patched, 200)
   expect(patched.body.displayName).toBe(nextName)
   expect(patched.body.merchantReference).toBe(reference)
   const got = await client.getMerchant(merchantId)
-  expect(got.status).toBe(200)
+  expectStatus(got, 200)
   expect(got.body.displayName).toBe(nextName)
 })
 
@@ -320,7 +329,7 @@ test('PW-M360-E2E-150 inline save 200 updates the row name', async ({ app, api, 
   const client = requireApi(api)
   const reference = uniqueMerchantReference(testInfo)
   const created = await client.createMerchant(reference, `Before ${reference}`)
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const nextName = `After ${uniqueToken()}`
 
   await app.merchants.goto()
@@ -344,7 +353,7 @@ test('PW-M360-E2E-151 stale If-Match 412 keeps the old name', async ({ app, api,
   const reference = uniqueMerchantReference(testInfo)
   const originalName = `Keep ${reference}`
   const created = await client.createMerchant(reference, originalName)
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const merchantId = created.body.merchantId!
 
   await app.merchants.goto()
@@ -362,7 +371,7 @@ test('PW-M360-E2E-151 stale If-Match 412 keeps the old name', async ({ app, api,
   await app.merchants.saveDisplayName(reference)
   expect((await patched).status()).toBe(412)
   const got = await client.getMerchant(merchantId)
-  expect(got.status).toBe(200)
+  expectStatus(got, 200)
   expect(got.body.displayName).toBe(originalName)
   await expect(app.page.getByTestId('error-state')).toBeVisible()
   await expect(app.page.getByTestId('merchant-name-input')).toBeVisible()
@@ -372,7 +381,7 @@ test('PW-M360-E2E-066 Payments row action opens the merchant payment list', asyn
   const client = requireApi(api)
   const reference = uniqueMerchantReference(testInfo)
   const created = await client.createMerchant(reference, `RowPay ${reference}`)
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const merchantId = created.body.merchantId!
 
   await app.merchants.goto()
@@ -384,5 +393,3 @@ test('PW-M360-E2E-066 Payments row action opens the merchant payment list', asyn
   await expect(app.page).toHaveURL(new RegExp(`/admin/merchants/${merchantId}/payments`))
   await expect(app.page.getByRole('heading', { name: 'Payment Orders', exact: true })).toBeVisible()
 })
-
-

@@ -17,6 +17,13 @@ describe('paymentOrderResponseSchema', () => {
     expect(paymentOrderResponseSchema.safeParse(seededPaymentOrder).success).toBe(true)
   })
 
+  it('accepts metadata returned by the backend as a JSON object', () => {
+    expect(paymentOrderResponseSchema.safeParse({
+      ...seededPaymentOrder,
+      metadata: { note: 'pom-ok' },
+    }).success).toBe(true)
+  })
+
   it('rejects malformed payment identifiers', () => {
     expect(paymentOrderResponseSchema.safeParse({ ...seededPaymentOrder, paymentOrderId: 'not-a-uuid' }).success)
       .toBe(false)

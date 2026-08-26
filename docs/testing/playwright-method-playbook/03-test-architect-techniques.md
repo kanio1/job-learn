@@ -11,7 +11,7 @@ Pętla: ryzyko → BC → UC → technika → warstwa → dane (~104) → `test(
 | Granice amount/reference/If-Match? | EP/BVA | `AmountPartitions`, `OrderReferencePartitions`, `MerchantReferencePartitions`, `IfMatchAndKeyBoundaries` — REST |
 | Relacja dwóch wykonań? | metamorphic | `methods/metamorphic/` — REST (MR-IDEM/UNIQ/ETAG/FILTER/ISO) |
 | Kroki aktora + nie-oracle? | UC | `GuestToLoginJourney`, `CreateOrderJourney`, tenant.admin create (JWT) |
-| Mode × outcome checkout? | pairwise | `CheckoutModeOutcome` (świat CPL) |
+| Mode × outcome checkout? | pairwise | poza `tests-pom` (świat CPL; bez artefaktu POM) |
 | Overlay / IPv6 / dwa logouty? | EG | `OverlayAndIpv6` + 2 asercje w specach |
 
 Metamorphic (relacja, nie pojedynczy expected):

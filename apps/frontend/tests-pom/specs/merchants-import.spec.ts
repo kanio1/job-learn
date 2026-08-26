@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { uniqueMerchantReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { expectProblem } from '../utils/http'
 import { waitForBffResponse } from '../utils/wait-bff'
 import { merchantImportJourney } from '../methods/use-case/MerchantImportJourney'
@@ -38,7 +39,7 @@ test.describe('Merchant CSV import', () => {
     expect(body.rejectedCount).toBe(0)
     await expect(app.page.getByTestId('merchant-import-valid')).toHaveText('Valid: 1')
     const listed = await client.listMerchants({ q: reference })
-    expect(listed.status).toBe(200)
+    expectStatus(listed, 200)
     expect(listed.body?.content ?? []).toHaveLength(0)
   })
 
@@ -67,7 +68,7 @@ test.describe('Merchant CSV import', () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `Dup ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     await app.merchants.goto()
     await app.merchants.expectLoaded()
     await app.merchants.openImport()
@@ -107,13 +108,13 @@ test.describe('Merchant CSV import', () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const preview = await client.previewMerchantImport(csvPayload('valid.csv', { __REF__: reference }))
-    expect(preview.status).toBe(200)
+    expectStatus(preview, 200)
     expect(preview.body?.previewId).toBeTruthy()
-    const first = await client.commitMerchantImport(preview.body!.previewId!)
-    expect(first.status).toBe(200)
+    const first = await client.commitMerchantImport(preview.body.previewId)
+    expectStatus(first, 200)
     expect(first.body?.createdCount).toBe(1)
-    const second = await client.commitMerchantImport(preview.body!.previewId!)
-    expect(second.status).toBe(409)
+    const second = await client.commitMerchantImport(preview.body.previewId)
+    expectStatus(second, 409)
     expectProblem(second.body, 409, 'import_already_committed')
   })
 
@@ -121,7 +122,7 @@ test.describe('Merchant CSV import', () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const preview = await client.previewMerchantImport(csvPayload('valid.csv', { __REF__: reference }))
-    expect(preview.status).toBe(200)
+    expectStatus(preview, 200)
     expect(preview.body?.validCount).toBe(1)
     expect(preview.body?.previewId).toBeTruthy()
   })

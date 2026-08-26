@@ -2,7 +2,7 @@ import { expect, type Locator } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class UsersPage extends BasePage {
-  async goto(): Promise<void> {
+  override async goto(): Promise<void> {
     await super.goto('/admin/users')
   }
 

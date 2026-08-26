@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { TestInfo } from '@playwright/test'
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
-import { BffClient } from '../api/bff-client'
+import { BffClient , expectStatus } from '../api/bff-client'
 import { workerMerchant } from '../auth/accounts'
 import { workerManagerAuthFile } from '../utils/env'
 import { expectNoAuthTokenLeak, expectProblem } from '../utils/http'
@@ -18,7 +18,7 @@ async function createOrder(api: BffClient, merchantId: string, testInfo: TestInf
     { amountMinor: 1200, currency: 'EUR', clientOrderReference: uniqueOrderReference(testInfo, label) },
     uniqueIdempotencyKey(testInfo, label),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   return created.body.paymentOrderId!
 }
 
@@ -63,7 +63,7 @@ test('PW-OPS-E2E-222 download still works', async ({ app, api, page, ownedMercha
     paymentOrderId,
     { name: 'keep.png', mimeType: 'image/png', buffer: PNG },
   )
-  expect(uploaded.status).toBe(201)
+  expectStatus(uploaded, 201)
   await app.paymentDetail.gotoOrder(ownedMerchantId, paymentOrderId)
   await app.paymentDetail.expectLoaded()
   const download = app.page.getByTestId('evidence-download')
@@ -100,8 +100,8 @@ test('PW-OPS-E2E-224 other merchant evidence 404', async ({ app, api, ownedMerch
       otherOrder,
       { name: 'foreign.png', mimeType: 'image/png', buffer: PNG },
     )
-    expect(foreign.status).toBe(201)
-    const denied = await client.getEvidence(ownedMerchantId, paymentOrderId, foreign.body.evidenceId!)
+    expectStatus(foreign, 201)
+    const denied = await client.getEvidence(ownedMerchantId, paymentOrderId, foreign.body.evidenceId)
     expect(denied.status).toBe(404)
     await app.paymentDetail.gotoOrder(ownedMerchantId, paymentOrderId, `?evidence=${foreign.body.evidenceId}`)
     await app.paymentDetail.expectLoaded()

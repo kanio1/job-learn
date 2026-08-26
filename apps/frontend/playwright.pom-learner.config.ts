@@ -5,9 +5,11 @@ import { defineConfig, devices } from '@playwright/test'
  * before adding My*.spec.ts. Do not use page.route / route.fulfill.
  */
 process.env.PLAYWRIGHT_POM_AUTH_DIR ??= 'tests-pom-learner/.auth'
+// `passWithNoTests` is runtime-supported in 1.61 (lib/runner) but absent from
+// the published Config type, so it is not set here; the learner suite must
+// contain at least one spec (it currently ships with three copies).
 export default defineConfig({
   testDir: './tests-pom-learner',
-  passWithNoTests: true,
   fullyParallel: false,
   forbidOnly: true,
   retries: 0,
@@ -19,7 +21,7 @@ export default defineConfig({
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
     ...devices['Desktop Chrome'],
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },

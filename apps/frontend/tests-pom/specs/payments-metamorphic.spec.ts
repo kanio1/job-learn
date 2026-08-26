@@ -1,5 +1,6 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { mrIdem, mrUniq } from '../methods/metamorphic/IdempotentIdentity'
 import { mrEtag } from '../methods/metamorphic/EtagStability'
 import { metamorphicListFilter } from '../methods/combinations/MetamorphicListFilter'
@@ -13,9 +14,9 @@ test('MR-IDEM replay keeps the same paymentOrderId; MR-UNIQ issues two ids', asy
   }
   const key = uniqueIdempotencyKey(testInfo, mrIdem.id)
   const first = await client.createPaymentOrder(ownedMerchantId, payload, key)
-  expect(first.status).toBe(201)
+  expectStatus(first, 201)
   const replay = await client.createPaymentOrder(ownedMerchantId, payload, key)
-  expect(replay.status).toBe(mrIdem.replayStatus)
+  expectStatus(replay, mrIdem.replayStatus)
   expect(replay.body.paymentOrderId).toBe(first.body.paymentOrderId)
 
   const second = await client.createPaymentOrder(
@@ -23,7 +24,7 @@ test('MR-IDEM replay keeps the same paymentOrderId; MR-UNIQ issues two ids', asy
     { amountMinor: 2100, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, mrUniq.id) },
     uniqueIdempotencyKey(testInfo, mrUniq.id),
   )
-  expect(second.status).toBe(mrUniq.secondStatus)
+  expectStatus(second, mrUniq.secondStatus)
   expect(second.body.paymentOrderId).not.toBe(first.body.paymentOrderId)
 })
 
@@ -34,7 +35,7 @@ test('MR-ETAG is stable across GET then changes after authorize', async ({ api, 
     { amountMinor: 1800, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, mrEtag.id) },
     uniqueIdempotencyKey(testInfo, mrEtag.id),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
   const first = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
   const second = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
@@ -44,7 +45,7 @@ test('MR-ETAG is stable across GET then changes after authorize', async ({ api, 
   const authorized = await client.authorizePayment(
     ownedMerchantId, paymentOrderId, first.headers['etag']!, uniqueIdempotencyKey(testInfo, `${mrEtag.id}-A`),
   )
-  expect(authorized.status).toBe(200)
+  expectStatus(authorized, 200)
   const after = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
   expect(after.headers['etag']).toBeTruthy()
   expect(after.headers['etag']).not.toBe(first.headers['etag'])
@@ -73,8 +74,8 @@ test('MR-FILTER: narrower minAmount results are included in the wider list', asy
     minAmount: metamorphicListFilter.wideMin,
     size: 200,
   })
-  expect(narrow.status).toBe(200)
-  expect(wide.status).toBe(200)
+  expectStatus(narrow, 200)
+  expectStatus(wide, 200)
   const narrowRefs = (narrow.body?.content ?? []).map(row => row.clientOrderReference)
   const wideRefs = (wide.body?.content ?? []).map(row => row.clientOrderReference)
   expect(narrowRefs).toContain(highRef)

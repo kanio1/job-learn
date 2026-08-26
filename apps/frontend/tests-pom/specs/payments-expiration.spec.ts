@@ -1,5 +1,6 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { etagOf } from '../utils/http'
 
 /**
@@ -18,7 +19,7 @@ test('CREATED has no countdown; AUTHORIZED shows a live expiresAt countdown', as
     },
     uniqueIdempotencyKey(testInfo, 'EXP'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId
   expect(paymentOrderId).toBeTruthy()
 
@@ -33,7 +34,7 @@ test('CREATED has no countdown; AUTHORIZED shows a live expiresAt countdown', as
     etagOf(before.headers),
     uniqueIdempotencyKey(testInfo, 'EXPAUTH'),
   )
-  expect(authorized.status).toBe(200)
+  expectStatus(authorized, 200)
 
   await app.paymentDetail.refreshStatus()
   await expect(app.paymentDetail.statusInDetail('Authorized')).toBeVisible()

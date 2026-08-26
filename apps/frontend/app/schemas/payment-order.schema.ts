@@ -41,7 +41,9 @@ export const paymentOrderResponseSchema = z.object({
   refundedAt: z.string().nullable().optional(),
   cancellationReason: z.string().nullable().optional(),
   refundReason: z.string().nullable().optional(),
-  metadata: z.string().nullable().optional(),
+  // PaymentOrderResponse uses @JsonRawValue for persisted metadata, so a
+  // non-null value arrives as the JSON object supplied to the PATCH endpoint.
+  metadata: z.record(z.string(), z.string()).nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   // Application-held version marker (derived from ETag or response field)

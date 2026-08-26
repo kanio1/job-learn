@@ -31,3 +31,4 @@ docker exec payment-quality-kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-ser
 
 - Broker-free: `./mvnw test` (Surefire excludes `*KafkaIT`)
 - With broker: `./mvnw -Dit.test=EventLabBrokerKafkaIT verify`
+- Live POM: `PLAYWRIGHT_KAFKA=1 corepack pnpm --dir apps/frontend exec playwright test --config playwright.pom.config.ts --project=chromium-kafka`

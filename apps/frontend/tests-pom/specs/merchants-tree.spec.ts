@@ -1,7 +1,7 @@
 import { uniqueMerchantReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
 import { App } from '../pages/App'
-import { BffClient } from '../api/bff-client'
+import { BffClient , expectStatus } from '../api/bff-client'
 import { pomAuthFiles } from '../utils/env'
 
 function waitForOrgTreeChildren(page: import('@playwright/test').Page) {
@@ -102,13 +102,13 @@ test.describe('Merchant org tree', { tag: ['@a11y'] }, () => {
     expect((await client.createMerchant(reference, `ApiTree ${reference}`)).status).toBe(201)
 
     const roots = await client.getOrgTree()
-    expect(roots.status).toBe(200)
+    expectStatus(roots, 200)
     const alpha = roots.body.nodes?.find(node => node.reference === 'TENANT_ALPHA')
     expect(alpha?.id).toBeTruthy()
     expect(alpha?.lazy).toBe(true)
 
     const children = await client.getOrgTree(alpha!.id)
-    expect(children.status).toBe(200)
+    expectStatus(children, 200)
     expect(children.body.nodes?.some(node => node.reference === reference)).toBe(true)
   })
 

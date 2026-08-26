@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { pomAuthFiles } from './tests-pom/utils/env'
 
 /**
  * FE RLS hub on, Spring `RLS_LAB_ENABLED=false` on a second backend (:8082)
@@ -10,6 +11,7 @@ process.env.PLAYWRIGHT_POM_AUTH_DIR ??= 'tests-pom/.auth'
 process.env.PLAYWRIGHT_RLS_SPRING_OFF = '1'
 const loginOrigin = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000'
 const springOffOrigin = process.env.PLAYWRIGHT_RLS_SPRING_OFF_BASE_URL || 'http://127.0.0.1:3011'
+process.env.PLAYWRIGHT_BFF_BASE_URL ??= springOffOrigin
 
 export default defineConfig({
   testDir: './tests-pom',
@@ -20,8 +22,9 @@ export default defineConfig({
   reporter: 'list',
   expect: { timeout: 15_000 },
   use: {
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
   },
   projects: [
     {
@@ -36,7 +39,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         baseURL: springOffOrigin,
-        storageState: './tests-pom/.auth/platform-admin.json',
+        storageState: pomAuthFiles.platformAdmin,
       },
     },
   ],

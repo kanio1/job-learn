@@ -1,5 +1,6 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { captureAmountPartitions } from '../methods/ep-bva/CaptureAmountPartitions'
 import { etagOf, expectProblem } from '../utils/http'
 
@@ -14,7 +15,7 @@ test('capture amount above authorized is 422 (SCN-CAP-OVER)', async ({ api, owne
     },
     uniqueIdempotencyKey(testInfo, 'CAPOVER'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
   const authorized = await client.authorizePayment(
     ownedMerchantId,
@@ -22,7 +23,7 @@ test('capture amount above authorized is 422 (SCN-CAP-OVER)', async ({ api, owne
     etagOf((await client.getPaymentOrder(ownedMerchantId, paymentOrderId)).headers),
     uniqueIdempotencyKey(testInfo, 'CAPOVER-A'),
   )
-  expect(authorized.status).toBe(200)
+  expectStatus(authorized, 200)
   const captured = await client.capturePayment(
     ownedMerchantId,
     paymentOrderId,
@@ -39,6 +40,6 @@ test('capture amount above authorized is 422 (SCN-CAP-OVER)', async ({ api, owne
 test('merchant manager expiration sweep is 403', async ({ api }) => {
   const client = requireApi(api)
   const sweep = await client.runExpirationSweep()
-  expect(sweep.status).toBe(403)
+  expectStatus(sweep, 403)
   expectProblem(sweep.body, 403)
 })

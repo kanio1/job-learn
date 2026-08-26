@@ -13,7 +13,7 @@ export class OverviewPage extends BasePage {
     this.notifications = new NotificationCenterComponent(page)
   }
 
-  async goto(): Promise<void> {
+  override async goto(): Promise<void> {
     await super.goto('/')
   }
 

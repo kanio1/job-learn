@@ -1,5 +1,6 @@
 import { uniqueMerchantReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 
 test('Ctrl+K palette navigates to Error Lab', { tag: ['@a11y', '@ux'] }, async ({ app }) => {
   await app.merchants.goto()
@@ -61,7 +62,7 @@ test.describe('Command palette entity search', () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `Palette ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
 
     await app.merchants.goto()
     await app.merchants.expectLoaded()
@@ -77,7 +78,7 @@ test.describe('Command palette entity search', () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `Jump ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
     await app.merchants.goto()
@@ -115,7 +116,7 @@ test.describe('Command palette entity search', () => {
     const reference = uniqueMerchantReference(testInfo)
     expect((await client.createMerchant(reference, `ApiSearch ${reference}`)).status).toBe(201)
     const searched = await client.searchEntities(reference)
-    expect(searched.status).toBe(200)
+    expectStatus(searched, 200)
     expect(searched.body.merchants?.some(row => row.merchantReference === reference)).toBe(true)
   })
 })

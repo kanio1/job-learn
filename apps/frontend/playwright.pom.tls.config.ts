@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { defineConfig, devices } from '@playwright/test'
+import { pomAuthFiles } from './tests-pom/utils/env'
 
 createRequire(import.meta.url)('../../scripts/tls-lab-node-preload.cjs')
 
@@ -64,7 +65,7 @@ export default defineConfig({
         '--host-resolver-rules=MAP app.payment-quality.local 127.0.0.1,MAP api.payment-quality.local 127.0.0.1,MAP auth.payment-quality.local 127.0.0.1',
       ],
     },
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
@@ -95,7 +96,7 @@ export default defineConfig({
       dependencies: ['setup-platform-admin'],
       use: {
         ...devices['Desktop Chrome'],
-        storageState: './tests-pom/.auth/platform-admin.json',
+        storageState: pomAuthFiles.platformAdmin,
       },
     },
     {
@@ -105,7 +106,7 @@ export default defineConfig({
       dependencies: ['setup-merchant-manager'],
       use: {
         ...devices['Desktop Chrome'],
-        storageState: './tests-pom/.auth/merchant-manager.json',
+        storageState: pomAuthFiles.merchantManager,
       },
     },
   ],

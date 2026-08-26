@@ -2,6 +2,7 @@ package lab.paymentquality.testing.internal.seed;
 
 import lab.paymentquality.merchant.MerchantSeedCapability;
 import lab.paymentquality.payment.PaymentSeedCapability;
+import lab.paymentquality.support.SupportCaseSeedCapability;
 import lab.paymentquality.tenant.TenantSeedCapability;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,34 +33,39 @@ class DeterministicDatasetTest {
     PaymentSeedCapability payments;
 
     @Mock
+    SupportCaseSeedCapability supportCases;
+
+    @Mock
     JdbcTemplate jdbc;
 
     @InjectMocks
     DeterministicDataset dataset;
 
     @Test
-    void resetCallsClearInPaymentMerchantTenantOrder() {
+    void resetClearsSupportCasesBeforeTheirMerchantAndPaymentParents() {
         dataset.reset();
 
-        InOrder order = inOrder(payments, merchants, tenants);
+        InOrder order = inOrder(supportCases, payments, merchants, tenants);
+        order.verify(supportCases).clear();
         order.verify(payments).clear();
         order.verify(merchants).clear();
         order.verify(tenants).clear();
-        verifyNoMoreInteractions(tenants, merchants, payments);
+        verifyNoMoreInteractions(supportCases, tenants, merchants, payments);
     }
 
     @Test
-    void seedClearsInFkReverseOrderThenSeedsInFkForwardOrder() {
+    void seedClearsSupportCasesInFkReverseOrderThenSeedsInFkForwardOrder() {
         dataset.seed();
 
-        InOrder order = inOrder(payments, merchants, tenants);
+        InOrder order = inOrder(supportCases, payments, merchants, tenants);
+        order.verify(supportCases).clear();
         order.verify(payments).clear();
         order.verify(merchants).clear();
         order.verify(tenants).clear();
         order.verify(tenants).seed(Fixtures.tenants());
         order.verify(merchants).seed(Fixtures.merchants());
         order.verify(payments).seed(Fixtures.paymentOrders());
-        verifyNoMoreInteractions(tenants, merchants, payments);
+        verifyNoMoreInteractions(supportCases, tenants, merchants, payments);
     }
 
     @Test
@@ -72,6 +78,7 @@ class DeterministicDatasetTest {
                 TenantSeedCapability.class,
                 MerchantSeedCapability.class,
                 PaymentSeedCapability.class,
+                SupportCaseSeedCapability.class,
                 JdbcTemplate.class);
     }
 }

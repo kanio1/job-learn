@@ -1,12 +1,13 @@
 import { uniqueMerchantReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 
 test.describe('Merchant unsaved guard', () => {
   test('PW-OPS-E2E-160 goBack Stay keeps edit URL', async ({ app, api, page }, testInfo) => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `Dirty ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
     await app.merchants.goto()
@@ -25,7 +26,7 @@ test.describe('Merchant unsaved guard', () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `Leave ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
     await app.merchantDetail.gotoMerchant(merchantId)
@@ -41,7 +42,7 @@ test.describe('Merchant unsaved guard', () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `Clean ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
     await app.merchantDetail.gotoMerchant(merchantId)
@@ -55,7 +56,7 @@ test.describe('Merchant unsaved guard', () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `Unload ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
     await app.merchants.goto()
@@ -76,7 +77,7 @@ test.describe('Merchant unsaved guard', () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `Zero ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
     await app.merchants.goto()

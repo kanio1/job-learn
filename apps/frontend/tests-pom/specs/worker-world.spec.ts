@@ -1,6 +1,7 @@
 import { merchantAlphaId } from '../auth/accounts'
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 
 test.describe.configure({ mode: 'parallel' })
 
@@ -11,7 +12,7 @@ test('worker REST create is 201 on MERCHANT-Wn and 403 on Alpha', async ({ worke
     { amountMinor: 1600, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, `W${workerWorld.index}`),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   expect(created.body.paymentOrderId).toBeTruthy()
 
   const listed = await workerWorld.api.listPaymentOrders(workerWorld.merchantId, {
@@ -19,7 +20,7 @@ test('worker REST create is 201 on MERCHANT-Wn and 403 on Alpha', async ({ worke
     page: 0,
     size: 20,
   })
-  expect(listed.status).toBe(200)
+  expectStatus(listed, 200)
   expect(listed.body?.totalElements).toBe(1)
   expect((listed.body?.content ?? []).map(row => row.paymentOrderId)).toEqual([created.body.paymentOrderId])
 
@@ -28,7 +29,7 @@ test('worker REST create is 201 on MERCHANT-Wn and 403 on Alpha', async ({ worke
     { amountMinor: 1600, currency: 'PLN', clientOrderReference: `${reference}-ALPHA` },
     uniqueIdempotencyKey(testInfo, `W${workerWorld.index}A`),
   )
-  expect(foreign.status).toBe(403)
+  expectStatus(foreign, 403)
 })
 
 test('worker UI create lands on that worker merchant detail', async ({ workerWorld, workerApp, page }, testInfo) => {

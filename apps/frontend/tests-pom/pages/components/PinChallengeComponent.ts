@@ -26,4 +26,12 @@ export class PinChallengeComponent {
     const slots = this.input().locator('input')
     await slots.first().fill(pin)
   }
+
+  /** Submit the PIN when the verify button is enabled (PIN may need typing). */
+  async submitIfEnabled(): Promise<void> {
+    const verify = this.page.getByTestId('refund-pin-verify')
+    if (await verify.isEnabled()) {
+      await verify.click()
+    }
+  }
 }

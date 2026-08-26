@@ -76,10 +76,7 @@ export function merchantManagerAccountForWorker(index: number): PomAccount {
   const world = workerMerchant(index)
   return {
     username: optionalEnv(`PLAYWRIGHT_MERCHANT_MANAGER_W${index}_USERNAME`, `merchant.manager.w${index}`),
-    password: optionalEnv(
-      `PLAYWRIGHT_MERCHANT_MANAGER_W${index}_PASSWORD`,
-      `merchant.manager.w${index}`,
-    ),
+    password: requiredEnv(`PLAYWRIGHT_MERCHANT_MANAGER_W${index}_PASSWORD`),
     role: 'MERCHANT_MANAGER',
     tenantId: 'TENANT_ALPHA',
     merchantId: world.merchantId,

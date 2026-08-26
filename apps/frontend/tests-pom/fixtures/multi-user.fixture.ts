@@ -1,6 +1,6 @@
-import type { Browser, Playwright } from '@playwright/test'
+import type { Browser } from '@playwright/test'
 import { App } from '../pages/App'
-import { BffClient } from '../api/bff-client'
+import { BffClient, type Playwright } from '../api/bff-client'
 import { pomAuthFiles, pomBrowserBaseURL, pomNodeBaseURL } from '../utils/env'
 
 export async function openAdminAndOperator(browser: Browser, playwright: Playwright) {

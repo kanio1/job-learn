@@ -2,6 +2,7 @@ package lab.paymentquality.testing.internal.seed;
 
 import lab.paymentquality.merchant.MerchantSeedCapability;
 import lab.paymentquality.payment.PaymentSeedCapability;
+import lab.paymentquality.support.SupportCaseSeedCapability;
 import lab.paymentquality.tenant.TenantSeedCapability;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -13,20 +14,24 @@ public class DeterministicDataset {
     private final TenantSeedCapability tenants;
     private final MerchantSeedCapability merchants;
     private final PaymentSeedCapability payments;
+    private final SupportCaseSeedCapability supportCases;
     private final JdbcTemplate jdbc;
 
     public DeterministicDataset(TenantSeedCapability tenants,
                                 MerchantSeedCapability merchants,
                                 PaymentSeedCapability payments,
+                                SupportCaseSeedCapability supportCases,
                                 JdbcTemplate jdbc) {
         this.tenants = tenants;
         this.merchants = merchants;
         this.payments = payments;
+        this.supportCases = supportCases;
         this.jdbc = jdbc;
     }
 
     @Transactional
     public void reset() {
+        supportCases.clear();
         payments.clear();
         merchants.clear();
         clearRlsLabItems();
@@ -36,6 +41,7 @@ public class DeterministicDataset {
 
     @Transactional
     public void seed() {
+        supportCases.clear();
         payments.clear();
         merchants.clear();
         clearRlsLabItems();

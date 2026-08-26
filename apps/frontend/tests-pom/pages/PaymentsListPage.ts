@@ -15,6 +15,11 @@ export class PaymentsListPage extends BasePage {
     await expect(this.byTestId('payment-orders-table')).toBeVisible()
   }
 
+  /** Click the toolbar's expiration-sweep button (the POST oracle stays in the spec). */
+  async runExpirationSweep(): Promise<void> {
+    await this.byTestId('run-expiration-sweep').click()
+  }
+
   async openCreate(): Promise<void> {
     await this.page.getByRole('link', { name: 'New payment' }).click()
   }
@@ -30,7 +35,7 @@ export class PaymentsListPage extends BasePage {
   }
 
   async applyStatusFilter(label: string): Promise<void> {
-    await this.page.getByLabel('Status').click()
+    await this.byTestId('payment-filter-status').click()
     await this.page.getByRole('option', { name: label }).click()
     await this.byTestId('payment-filter-apply').click()
   }
@@ -42,7 +47,7 @@ export class PaymentsListPage extends BasePage {
   }
 
   async applyCurrencyFilter(label: string): Promise<void> {
-    await this.page.getByLabel('Currency').click()
+    await this.byTestId('payment-filter-currency').click()
     await this.page.getByRole('option', { name: label }).click()
     await this.byTestId('payment-filter-apply').click()
   }
@@ -115,6 +120,15 @@ export class PaymentsListPage extends BasePage {
     const card = this.card(paymentOrderId)
     await card.getByRole('button', { name: /^Move / }).click()
     await this.page.getByRole('menuitem', { name: `Move to ${status}` }).click()
+  }
+
+  async dragCardTo(paymentOrderId: string, status: string): Promise<void> {
+    const dataTransfer = await this.page.evaluateHandle(() => new DataTransfer())
+    const card = this.card(paymentOrderId)
+    const target = this.stage(status)
+    await card.dispatchEvent('dragstart', { dataTransfer })
+    await target.dispatchEvent('dragover', { dataTransfer })
+    await target.dispatchEvent('drop', { dataTransfer })
   }
 
   statusChart() {

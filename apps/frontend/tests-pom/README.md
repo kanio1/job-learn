@@ -42,21 +42,14 @@ scripts/dev-stack.sh --app
 
 Host hybrid (hot reload) is `scripts/dev-stack.sh` without `--app`: Compose Postgres+Keycloak, then Spring `dev,seed` and Nuxt on the host. Runbook: [`docs/setup/run-stack-and-pom.md`](../../../docs/setup/run-stack-and-pom.md).
 
-Passwords (realm defaults match usernames; still do not commit them):
+All passwords are required environment-only inputs. Set them in your shell or
+secret manager; never put values in a command, document, or tracked file:
 
-```bash
-export PLAYWRIGHT_PLATFORM_ADMIN_PASSWORD=platform.admin
-export PLAYWRIGHT_MERCHANT_MANAGER_PASSWORD=merchant.manager
-export PLAYWRIGHT_TENANT_ADMIN_PASSWORD=tenant.admin
-export PLAYWRIGHT_SUPPORT_AGENT_PASSWORD=support.agent
-export PLAYWRIGHT_READ_ONLY_PASSWORD=readonly.user
-export PLAYWRIGHT_MERCHANT_DENIED_PASSWORD=merchant.denied
-# optional until Fala 2 worker setup; realm defaults match usernames
-export PLAYWRIGHT_MERCHANT_MANAGER_W0_PASSWORD=merchant.manager.w0
-export PLAYWRIGHT_MERCHANT_MANAGER_W1_PASSWORD=merchant.manager.w1
-export PLAYWRIGHT_MERCHANT_MANAGER_W2_PASSWORD=merchant.manager.w2
-export PLAYWRIGHT_MERCHANT_MANAGER_W3_PASSWORD=merchant.manager.w3
-```
+`PLAYWRIGHT_PLATFORM_OPERATOR_PASSWORD`, `PLAYWRIGHT_PLATFORM_ADMIN_PASSWORD`,
+`PLAYWRIGHT_TENANT_ADMIN_PASSWORD`, `PLAYWRIGHT_MERCHANT_MANAGER_PASSWORD`,
+`PLAYWRIGHT_SUPPORT_AGENT_PASSWORD`, `PLAYWRIGHT_READ_ONLY_PASSWORD`,
+`PLAYWRIGHT_MERCHANT_DENIED_PASSWORD`, and
+`PLAYWRIGHT_MERCHANT_MANAGER_W{0-3}_PASSWORD`.
 
 Optional usernames: `PLAYWRIGHT_PLATFORM_ADMIN_USERNAME`, `PLAYWRIGHT_MERCHANT_MANAGER_USERNAME`, `PLAYWRIGHT_TENANT_ADMIN_USERNAME`, `PLAYWRIGHT_SUPPORT_AGENT_USERNAME`, `PLAYWRIGHT_MERCHANT_MANAGER_W{0-3}_USERNAME`.
 
@@ -98,7 +91,7 @@ Or from `apps/frontend` (`pnpm test:e2e` is the live POM; it does not start mock
 corepack pnpm test:e2e
 ```
 
-Learner tree (starts with zero tests):
+Learner tree (currently contains three learner copies):
 
 ```bash
 corepack pnpm exec playwright test --config playwright.pom-learner.config.ts
@@ -116,6 +109,7 @@ OIDC origin must match `NUXT_OAUTH_OIDC_REDIRECT_URL` (canon: [`docs/setup/run-s
 |---|---|---|
 | Host DX (`scripts/dev-stack.sh`) | `http://localhost:3000` | `corepack pnpm test:e2e` |
 | Compose `--app` | `http://127.0.0.1:3000` | `corepack pnpm test:e2e:app` or `scripts/run-app-stack-tests.sh` |
+| Kafka lab (`scripts/dev-stack.sh --kafka`) | `http://localhost:3000` | `PLAYWRIGHT_KAFKA=1 corepack pnpm test:e2e` |
 
 Always set `PLAYWRIGHT_SKIP_WEBSERVER=1` against a running Nuxt. Node `BffClient` uses the same origin as the browser (IPv4 via `ipv4-first`).
 
@@ -123,10 +117,27 @@ Always set `PLAYWRIGHT_SKIP_WEBSERVER=1` against a running Nuxt. Node `BffClient
 - `chromium-serial` — tenant settings + dual-control (project default is platform-admin; specs may `test.use` manager).
 - `chromium-session` — own `platform-admin-session.json` so logout/revoke cannot skip or poison admin.
 - `chromium-rbac` / `chromium-visual` — `fullyParallel: false` (seed-world / goldens).
+- `chromium-kafka` — `fullyParallel: false`, one worker (Kafka delivery proof on the live Nuxt stack).
 
 FE on + Spring RLS off (`playwright.pom.rls-spring-off.config.ts`): `RLS_LAB_ENABLED=false` on Spring and `PLAYWRIGHT_RLS_SPRING_OFF=1`.
 
 FE Mirror/Session lab flag off (`playwright.mirror-flag-off.config.ts`): second Nuxt on `:3012`, `NUXT_PUBLIC_MIRROR_LAB_ENABLED=false`. `scripts/run-app-stack-tests.sh --mirror-off`.
+
+## Discovery matrix
+
+Run these commands from `apps/frontend`. They prove config reachability only;
+they do not run the live suite or replace the stack/password preflight.
+
+| Scope | Command |
+|---|---|
+| Main POM | `corepack pnpm exec playwright test --config playwright.pom.config.ts --list` |
+| Kafka Event Lab | `PLAYWRIGHT_KAFKA=1 corepack pnpm exec playwright test --config playwright.pom.config.ts --list` |
+| Visual | `PLAYWRIGHT_VISUAL=1 corepack pnpm exec playwright test --config playwright.pom.config.ts --list` |
+| TLS | `corepack pnpm exec playwright test --config playwright.pom.tls.config.ts --list` |
+| RLS flag off | `corepack pnpm exec playwright test --config playwright.rls-flag-off.config.ts --list` |
+| RLS Spring off | `corepack pnpm exec playwright test --config playwright.pom.rls-spring-off.config.ts --list` |
+| Mirror flag off | `corepack pnpm exec playwright test --config playwright.mirror-flag-off.config.ts --list` |
+| Learner | `corepack pnpm exec playwright test --config playwright.pom-learner.config.ts --list` |
 
 ## Layout (classic skeleton)
 
@@ -135,7 +146,7 @@ auth/        storageState setup (real OIDC) — admin, tenant.admin, manager
 fixtures/    test.extend — App facade + BffClient + workerWorld
 pages/       POM (BasePage, components including IdleOverlay, one class per screen)
 api/         app-as-API against the BFF (no seed-learning / ETL)
-data/        unique factories + PaymentOrderDraft
+data/        unique factories
 utils/       env, http, wait-bff, roles.openAs, dates, problem, persistence
 methods/     ISTQB rows + combinations (see methods/README.md)
 specs/       flows only

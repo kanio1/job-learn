@@ -3,7 +3,7 @@ import { test, expect, requireApi } from '../fixtures'
 import { waitForBffResponse } from '../utils/wait-bff'
 import { merchant360Journey } from '../methods/use-case/Merchant360Journey'
 import { etagOf } from '../utils/http'
-import { BffClient } from '../api/bff-client'
+import { BffClient , expectStatus } from '../api/bff-client'
 import { workerMerchant, POM_WORKER_COUNT } from '../auth/accounts'
 import { workerManagerAuthFile } from '../utils/env'
 
@@ -13,7 +13,7 @@ test.describe('Merchant 360 slideover', { tag: ['@a11y'] }, () => {
     const reference = uniqueMerchantReference(testInfo)
     const displayName = `360 ${reference}`
     const created = await client.createMerchant(reference, displayName)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
     const detailPath = `/api/merchants/${merchantId}`
 
@@ -36,10 +36,10 @@ test.describe('Merchant 360 slideover', { tag: ['@a11y'] }, () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `Api360 ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
     const listed = await client.getMerchant(merchantId)
-    expect(listed.status).toBe(200)
+    expectStatus(listed, 200)
     expect(listed.body.merchantId).toBe(merchantId)
 
     await app.merchants.goto()
@@ -97,7 +97,7 @@ test.describe('Merchant 360 slideover', { tag: ['@a11y'] }, () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `Susp ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     expect((await client.activateMerchant(created.body.merchantId!, etagOf(created.headers)!)).status).toBe(200)
     const suspendPath = `/api/merchants/${created.body.merchantId}/suspend`
 
@@ -138,7 +138,7 @@ test.describe('Merchant 360 slideover', { tag: ['@a11y'] }, () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `Tl ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     expect((await client.activateMerchant(created.body.merchantId!, etagOf(created.headers)!)).status).toBe(200)
 
     await app.merchants.goto()
@@ -166,7 +166,7 @@ test.describe('Merchant 360 slideover', { tag: ['@a11y'] }, () => {
         { amountMinor: 1800, currency: 'PLN', clientOrderReference: reference },
         uniqueIdempotencyKey(testInfo, '360HC'),
       )
-      expect(created.status).toBe(201)
+      expectStatus(created, 201)
       expect((await managerApi.authorizePayment(
         world.merchantId,
         created.body.paymentOrderId!,
@@ -203,7 +203,7 @@ test.describe('Merchant 360 slideover', { tag: ['@a11y'] }, () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `PayNav ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
     await app.merchants.goto()

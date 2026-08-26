@@ -30,6 +30,15 @@ export function etagOf(headers: Record<string, string>): string | undefined {
   return headerOf(headers, 'etag')
 }
 
+/** Assert a response carries an ETag and return it (specs keep the oracle). */
+export function requireEtag(headers: Record<string, string>): string {
+  const etag = etagOf(headers)
+  if (!etag) {
+    throw new Error('response must carry an ETag')
+  }
+  return etag
+}
+
 export function locationOf(headers: Record<string, string>): string | undefined {
   return headerOf(headers, 'location')
 }

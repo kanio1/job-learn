@@ -2,7 +2,7 @@ import { expect, type FrameLocator } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class CheckoutLabWidgetPage extends BasePage {
-  async goto(): Promise<void> {
+  override async goto(): Promise<void> {
     await super.goto('/admin/checkout-lab/widget')
   }
 

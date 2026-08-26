@@ -2,6 +2,7 @@
   "id": "payment-quality",
   "realm": "payment-quality",
   "enabled": true,
+  "accessTokenLifespan": 1800,
   "displayName": "Payment Quality Engineering Lab",
   "roles": {
     "realm": [

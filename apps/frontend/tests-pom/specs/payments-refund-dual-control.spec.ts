@@ -4,7 +4,7 @@ import { test, expect } from '../fixtures'
 import { pomAuthFiles } from '../utils/env'
 import { App } from '../pages/App'
 import { dualControlSteps } from '../methods/combinations/DualControlStDt'
-import { BffClient } from '../api/bff-client'
+import { BffClient, expectStatus } from '../api/bff-client'
 import { etagOf, expectProblem } from '../utils/http'
 import type { TestInfo } from '@playwright/test'
 
@@ -17,7 +17,7 @@ async function captureOrder(client: BffClient, testInfo: TestInfo, tag: string, 
     { amountMinor, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, `${tag}-CREATE`),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
   const detail = await client.getPaymentOrder(merchantAlphaId, paymentOrderId)
   const authorized = await client.authorizePayment(
@@ -26,7 +26,7 @@ async function captureOrder(client: BffClient, testInfo: TestInfo, tag: string, 
     etagOf(detail.headers),
     uniqueIdempotencyKey(testInfo, `${tag}-AUTH`),
   )
-  expect(authorized.status).toBe(200)
+  expectStatus(authorized, 200)
   const captured = await client.capturePayment(
     merchantAlphaId,
     paymentOrderId,
@@ -34,7 +34,7 @@ async function captureOrder(client: BffClient, testInfo: TestInfo, tag: string, 
     uniqueIdempotencyKey(testInfo, `${tag}-CAP`),
     amountMinor,
   )
-  expect(captured.status).toBe(200)
+  expectStatus(captured, 200)
   const afterCapture = await client.getPaymentOrder(merchantAlphaId, paymentOrderId)
   return { paymentOrderId, amountMinor, etag: etagOf(afterCapture.headers)! }
 }
@@ -104,7 +104,7 @@ test('dual-control refund HTTP is 409 then 201 then 409 then 200 (SCN-DC-01…04
       amountMinor,
       reason: 'pom-dc',
     })
-    expect(requested.status).toBe(dualControlSteps[1].expectStatus)
+    expectStatus(requested, dualControlSteps[1].expectStatus)
     const approvalId = requested.body?.approvalId
     expect(approvalId).toBeTruthy()
 
@@ -147,7 +147,7 @@ test('refund-approval amount above captured is 422 on checker approve', { tag: [
       amountMinor: amountMinor + 1,
       reason: 'too-much',
     })
-    expect(requested.status).toBe(201)
+    expectStatus(requested, 201)
     const approved = await checker.approveRefundApproval(
       merchantAlphaId,
       paymentOrderId,
@@ -155,7 +155,7 @@ test('refund-approval amount above captured is 422 on checker approve', { tag: [
       etag,
       uniqueIdempotencyKey(testInfo, 'DCOVER'),
     )
-    expect(approved.status).toBe(422)
+    expectStatus(approved, 422)
     expectProblem(approved.body, 422, 'refund_amount_exceeds_captured')
   } finally {
     await checker.dispose()

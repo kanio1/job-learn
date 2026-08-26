@@ -1,8 +1,3 @@
 - text: Amount (minor units)
 - spinbutton "Amount (minor units)"
-- text: Currency
-- combobox "Currency": Select currency
-- text: Client Order Reference
-- textbox "Client Order Reference":
-  - /placeholder: PAY-001
-- button "Create payment order": Create Payment Order
+- button "Next"

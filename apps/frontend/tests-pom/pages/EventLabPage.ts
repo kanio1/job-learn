@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class EventLabPage extends BasePage {
-  async goto(search = ''): Promise<void> {
+  override async goto(search = ''): Promise<void> {
     await super.goto(search ? `/admin/event-lab?targetId=${encodeURIComponent(search)}` : '/admin/event-lab')
   }
 
@@ -34,7 +34,7 @@ export class EventLabPage extends BasePage {
     await expect(this.byTestId('event-lab-error')).toBeVisible()
   }
 
-  async expectNotFound(): Promise<void> {
+  override async expectNotFound(): Promise<void> {
     await expect(this.byTestId('event-lab-not-found')).toBeVisible()
   }
 

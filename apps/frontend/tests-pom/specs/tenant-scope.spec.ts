@@ -6,15 +6,18 @@ import {
   merchantBetaId,
   merchantBetaReference,
 } from '../auth/accounts'
-import { BffClient } from '../api/bff-client'
+import { BffClient , expectStatus } from '../api/bff-client'
 import { uniqueIdempotencyKey, uniqueMerchantReference, uniqueOrderReference } from '../data/factories'
-import { PaymentOrderDraft } from '../data/payment-order-draft'
 import { pomAuthFiles } from '../utils/env'
 import { expectProblem } from '../utils/http'
 import { App } from '../pages/App'
 import { isolationDtUcE2eRows } from '../methods/combinations/IsolationDtUc'
 import { mrIso } from '../methods/metamorphic/IsolationInclusion'
 import { createMerchantJourney } from '../methods/use-case/CreateMerchantJourney'
+
+function paymentOrderDraft(clientOrderReference: string) {
+  return { amountMinor: 1000, currency: 'PLN' as const, clientOrderReference }
+}
 
 /**
  * SCN-ISO-01 / 03 / 06 / 09 / 10 — DT+UC: RBAC ≠ tenant scope.
@@ -52,9 +55,9 @@ test.describe('tenant scope vs RBAC @security', () => {
       await expect(page.getByTestId('merchant-reference')).toHaveCount(0)
       const own = await api.getMerchant(merchantAlphaId)
       const foreign = await api.getMerchant(merchantBetaId)
-      expect(own.status).toBe(200)
+      expectStatus(own, 200)
       expect(own.body?.merchantReference).toBe(merchantAlphaReference)
-      expect(foreign.status).toBe(404)
+      expectStatus(foreign, 404)
     }
     finally {
       await api.dispose()
@@ -79,11 +82,11 @@ test.describe('tenant scope vs RBAC @security', () => {
     const api = await BffClient.create(playwright, pomAuthFiles.tenantAdmin)
     try {
       const own = await api.getMerchant(merchantAlphaId)
-      expect(own.status).toBe(200)
+      expectStatus(own, 200)
       expect(own.body?.merchantReference).toBe(merchantAlphaReference)
 
       const foreign = await api.getMerchant(merchantBetaId)
-      expect(foreign.status).toBe(404)
+      expectStatus(foreign, 404)
       expectProblem(foreign.body, 404)
       const detail = `${foreign.body?.detail ?? ''} ${foreign.body?.title ?? ''}`
       expect(detail.includes('MERCHANT_BETA')).toBe(false)
@@ -99,12 +102,12 @@ test.describe('tenant scope vs RBAC @security', () => {
     try {
       const created = await api.createPaymentOrder(
         merchantAlphaId,
-        PaymentOrderDraft.builder().amount(1000).pln().reference(uniqueOrderReference(testInfo, 'BOLA-GET')).build(),
+        paymentOrderDraft(uniqueOrderReference(testInfo, 'BOLA-GET')),
         uniqueIdempotencyKey(testInfo, 'BOLA-GET'),
       )
-      expect(created.status).toBe(201)
+      expectStatus(created, 201)
       const foreign = await api.getPaymentOrder(merchantAlphaTwoId, created.body.paymentOrderId!)
-      expect(foreign.status).toBe(404)
+      expectStatus(foreign, 404)
       expectProblem(foreign.body, 404)
     }
     finally {
@@ -117,10 +120,10 @@ test.describe('tenant scope vs RBAC @security', () => {
     try {
       const created = await api.createPaymentOrder(
         merchantAlphaTwoId,
-        PaymentOrderDraft.builder().amount(1000).pln().reference(uniqueOrderReference(testInfo, 'BOLA')).build(),
+        paymentOrderDraft(uniqueOrderReference(testInfo, 'BOLA')),
         uniqueIdempotencyKey(testInfo, 'BOLA'),
       )
-      expect(created.status).toBe(403)
+      expectStatus(created, 403)
     }
     finally {
       await api.dispose()
@@ -151,7 +154,7 @@ test.describe('tenant scope vs RBAC @security', () => {
     const platform = await BffClient.create(playwright, pomAuthFiles.platformAdmin)
     try {
       const tenantList = await tenant.listMerchants()
-      expect(tenantList.status).toBe(200)
+      expectStatus(tenantList, 200)
       expect((await platform.getMerchant(merchantBetaId)).status).toBe(200)
       expect((await tenant.getMerchant(merchantBetaId)).status).toBe(404)
       expect((tenantList.body.content ?? []).map(row => row.merchantReference))
@@ -174,10 +177,10 @@ test.describe('tenant scope vs RBAC @security', () => {
     const manager = await BffClient.create(playwright, pomAuthFiles.merchantManager)
     try {
       const listed = await tenant.listUsers()
-      expect(listed.status).toBe(200)
+      expectStatus(listed, 200)
       expect(Array.isArray(listed.body?.users)).toBe(true)
       const denied = await manager.listUsers()
-      expect(denied.status).toBe(403)
+      expectStatus(denied, 403)
       expectProblem(denied.body, 403)
     } finally {
       await tenant.dispose()

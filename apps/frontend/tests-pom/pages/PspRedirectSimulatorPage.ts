@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class PspRedirectSimulatorPage extends BasePage {
@@ -11,11 +11,14 @@ export class PspRedirectSimulatorPage extends BasePage {
     await expect(this.byTestId('psp-approve')).toBeVisible()
   }
 
+  outcome(): Locator {
+    return this.byTestId('psp-outcome')
+  }
+
+  /** Approve once; the spec owns the visible business-outcome assertion. */
   async approve(): Promise<void> {
     await this.assertNoDevErrorOverlay()
-    await expect(async () => {
-      await this.byTestId('psp-approve').click()
-      await expect(this.byTestId('psp-outcome')).toContainText('Payment approved', { timeout: 1_000 })
-    }).toPass({ timeout: 15_000 })
+    await expect(this.byTestId('psp-approve')).toBeVisible()
+    await this.byTestId('psp-approve').click()
   }
 }

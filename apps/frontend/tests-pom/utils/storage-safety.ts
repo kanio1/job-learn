@@ -22,10 +22,12 @@ function sessionCookie(page: Page) {
   return page.context().cookies(page.url()).then(cookies => cookies.find(cookie => cookie.name === 'nuxt-session'))
 }
 
-/** App logout (deep Sign out or idle Unlock / shallow): sealed blob is gone. Empty value is as-built, not RFC 6265 delete. */
+/** App logout clears the BFF session; its opaque empty-session cookie may remain. */
 export async function expectSessionCookieCleared(page: Page): Promise<void> {
-  const session = await sessionCookie(page)
-  expect(session?.value ?? '', 'nuxt-session must not carry a sealed session after app logout').toBe('')
+  const response = await page.request.get('/api/_auth/session')
+  expect(response.status(), 'logout must leave the session endpoint reachable').toBe(200)
+  const session = await response.json() as { user?: unknown }
+  expect(session.user, 'logout must remove the BFF user session').toBeFalsy()
 }
 
 /** RFC 6265 delete: cookie absent (Max-Age=0 / past Expires). Do not use for path A while the product leaves an empty session cookie. */

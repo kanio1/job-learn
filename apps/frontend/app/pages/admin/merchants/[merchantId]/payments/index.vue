@@ -289,8 +289,20 @@ function applyKanbanUpdate(order: PaymentOrderListResponse['content'][number]) {
 
 async function openCalendar() {
   paymentsView.value = 'calendar'
-  const response = await listOrders(merchantId, { page: 0, size: 100, sort: 'createdAt,desc' })
-  calendarOrders.value = response.data?.content ?? []
+  const pageSize = 100
+  const orders: PaymentOrderListResponse['content'] = []
+  let page = 0
+  let totalPages = 1
+  while (page < totalPages) {
+    const response = await listOrders(merchantId, { page, size: pageSize, sort: 'createdAt,desc' })
+    if (!response.data) {
+      break
+    }
+    orders.push(...response.data.content)
+    totalPages = response.data.totalPages
+    page += 1
+  }
+  calendarOrders.value = orders
   const captured = calendarOrders.value.filter(order => order.status === 'CAPTURED')
   const dues: typeof calendarDues.value = []
   await Promise.all(captured.map(async (order) => {

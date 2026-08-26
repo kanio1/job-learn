@@ -4,7 +4,7 @@ import { test, expect, requireApi } from '../fixtures'
 import { expectNoTokenInBrowserStorage, expectSessionCookieSameSiteLax, expectSessionCookieSecure } from '../utils/storage-safety'
 import { pomAuthFiles } from '../utils/env'
 import { App } from '../pages/App'
-import { BffClient } from '../api/bff-client'
+import { BffClient, expectStatus } from '../api/bff-client'
 import { requestHeader } from '../utils/network'
 import { waitForBffRequest, waitForBffResponse } from '../utils/wait-bff'
 
@@ -28,7 +28,7 @@ test('platform admin compare shows unprotected leak over the TLS origin', async 
   const unprotected = Number(await app.page.getByTestId('rls-lab-compare-unprotected').innerText())
   expect(unprotected).toBeGreaterThan(0)
   const compare = await client.rlsCompare()
-  expect(compare.status).toBe(200)
+  expectStatus(compare, 200)
   expect(compare.body?.restrictedWithoutTenantGuc).toBe(0)
   await expectNoTokenInBrowserStorage(app.page)
 })
@@ -57,7 +57,7 @@ test('merchant manager applies a payment amount filter over the TLS origin', asy
     { amountMinor: 7700, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'TLS'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
 
   await app.payments.gotoForMerchant(merchantAlphaId)
   await app.payments.expectLoaded()
@@ -75,7 +75,7 @@ test('merchant manager authorizes then captures over the TLS origin', async ({ a
     { amountMinor: 2100, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'TLSLIFE'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
   const detailPath = `/api/merchants/${merchantAlphaId}/payment-orders/${paymentOrderId}`
 
@@ -128,7 +128,7 @@ test('merchant manager dismissing ConfirmModal does not cancel over TLS', async 
     { amountMinor: 1600, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'TLSDISC') },
     uniqueIdempotencyKey(testInfo, 'TLSDISC'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
   await app.paymentDetail.gotoOrder(merchantAlphaId, paymentOrderId)
   await app.paymentDetail.expectLoaded()
@@ -169,7 +169,7 @@ test('merchant manager sees only Alpha row over the TLS origin', async ({ browse
     await app.problem.expectVisible()
     await app.problem.expectError('not_found')
     const compare = await api.rlsCompare()
-    expect(compare.status).toBe(403)
+    expectStatus(compare, 403)
     expect(new URL(page.url()).protocol).toBe('https:')
   }
   finally {

@@ -1,5 +1,6 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { waitForBffResponse } from '../utils/wait-bff'
 
 test('manual refresh GETs the live order and then shows Authorized after API authorize', async ({ app, api, page, ownedMerchantId }, testInfo) => {
@@ -9,7 +10,7 @@ test('manual refresh GETs the live order and then shows Authorized after API aut
     { amountMinor: 2100, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'POLL') },
     uniqueIdempotencyKey(testInfo, 'POLL'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId
   expect(paymentOrderId).toBeTruthy()
   const detailPath = `/api/merchants/${ownedMerchantId}/payment-orders/${paymentOrderId}`
@@ -33,7 +34,7 @@ test('manual refresh GETs the live order and then shows Authorized after API aut
     etag,
     uniqueIdempotencyKey(testInfo, 'POLLAUTH'),
   )
-  expect(authorized.status).toBe(200)
+  expectStatus(authorized, 200)
 
   const afterAuthorize = waitForBffResponse(page, { method: 'GET', pathExact: detailPath })
   await app.paymentDetail.refreshStatus()
@@ -48,7 +49,7 @@ test('auto refresh issues a live GET without a mocked status flip', async ({ app
     { amountMinor: 1800, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'AUTOPOLL') },
     uniqueIdempotencyKey(testInfo, 'AUTOPOLL'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId
   expect(paymentOrderId).toBeTruthy()
   const detailPath = `/api/merchants/${ownedMerchantId}/payment-orders/${paymentOrderId}`

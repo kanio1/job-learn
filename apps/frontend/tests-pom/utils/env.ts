@@ -44,7 +44,7 @@ export function pomBrowserBaseURL(): string {
  * `ipv4-first` makes Node resolve localhost to 127.0.0.1 so this is not ::1.
  */
 export function pomNodeBaseURL(): string {
-  return pomBrowserBaseURL()
+  return optionalEnv('PLAYWRIGHT_BFF_BASE_URL', pomBrowserBaseURL())
 }
 
 /** @deprecated Use pomBrowserBaseURL (UI) or pomNodeBaseURL (BffClient). */

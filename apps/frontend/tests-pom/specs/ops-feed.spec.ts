@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { merchantAlphaId } from '../auth/accounts'
-import { BffClient } from '../api/bff-client'
+import { BffClient , expectStatus } from '../api/bff-client'
 import { pomAuthFiles } from '../utils/env'
 import { etagOf } from '../utils/http'
 import { test, expect, requireApi } from '../fixtures'
@@ -23,7 +23,7 @@ test.describe('Live operations feed', { tag: ['@ops-feed'] }, () => {
       merchantId: merchantAlphaId,
       paymentOrderId: randomUUID(),
     })
-    expect(injected.status).toBe(201)
+    expectStatus(injected, 201)
     expect(injected.body.eventId).toBe(eventId)
 
     const readonlyApi = await BffClient.create(playwright, pomAuthFiles.readOnlyUser)
@@ -32,7 +32,7 @@ test.describe('Live operations feed', { tag: ['@ops-feed'] }, () => {
         type: 'PAYMENT_CAPTURED',
         label: 'PO-API-020-RO  CAPTURED',
       })
-      expect(denied.status).toBe(403)
+      expectStatus(denied, 403)
     }
     finally {
       await readonlyApi.dispose()
@@ -55,37 +55,46 @@ test.describe('Live operations feed', { tag: ['@ops-feed'] }, () => {
     const managerApi = await BffClient.create(playwright, pomAuthFiles.merchantManager)
     try {
       const reference = uniqueOrderReference(testInfo, 'OPS120')
-      const created = await managerApi.createPaymentOrder(
-        merchantAlphaId,
-        { amountMinor: 1500, currency: 'PLN', clientOrderReference: reference },
-        uniqueIdempotencyKey(testInfo, 'OPS120-C'),
-      )
-      expect(created.status).toBe(201)
-      const paymentOrderId = created.body.paymentOrderId!
-      const authorized = await managerApi.authorizePayment(
-        merchantAlphaId,
-        paymentOrderId,
-        etagOf((await managerApi.getPaymentOrder(merchantAlphaId, paymentOrderId)).headers),
-        uniqueIdempotencyKey(testInfo, 'OPS120-A'),
-      )
-      expect(authorized.status).toBe(200)
+      let paymentOrderId: string
+      await test.step('authorize a merchant payment', async () => {
+        const created = await managerApi.createPaymentOrder(
+          merchantAlphaId,
+          { amountMinor: 1500, currency: 'PLN', clientOrderReference: reference },
+          uniqueIdempotencyKey(testInfo, 'OPS120-C'),
+        )
+        expectStatus(created, 201)
+        paymentOrderId = created.body.paymentOrderId!
+        const authorized = await managerApi.authorizePayment(
+          merchantAlphaId,
+          paymentOrderId,
+          etagOf((await managerApi.getPaymentOrder(merchantAlphaId, paymentOrderId)).headers),
+          uniqueIdempotencyKey(testInfo, 'OPS120-A'),
+        )
+        expectStatus(authorized, 200)
+      })
 
-      const wsPromise = app.overview.opsFeed.attachWebSocket()
-      await app.overview.goto()
-      await app.overview.opsFeed.expectLoaded()
-      const ws = await wsPromise
-      const framePromise = ws.waitForEvent('framereceived')
-      const captured = await managerApi.capturePayment(
-        merchantAlphaId,
-        paymentOrderId,
-        etagOf((await managerApi.getPaymentOrder(merchantAlphaId, paymentOrderId)).headers),
-        uniqueIdempotencyKey(testInfo, 'OPS120-P'),
-        1500,
-      )
-      expect(captured.status).toBe(200)
-      const frame = await framePromise
-      expect(String(frame.payload)).toContain('PAYMENT_CAPTURED')
-      await app.overview.opsFeed.waitForOpsEvent({ orderRef: reference, type: 'CAPTURED' })
+      const wsPromise = await test.step('open the operations feed and subscribe to live events', async () => {
+        const socket = app.overview.opsFeed.attachWebSocket()
+        await app.overview.goto()
+        await app.overview.opsFeed.expectLoaded()
+        return socket
+      })
+
+      await test.step('capture the payment and observe its live feed entry', async () => {
+        const ws = await wsPromise
+        const framePromise = ws.waitForEvent('framereceived')
+        const captured = await managerApi.capturePayment(
+          merchantAlphaId,
+          paymentOrderId!,
+          etagOf((await managerApi.getPaymentOrder(merchantAlphaId, paymentOrderId!)).headers),
+          uniqueIdempotencyKey(testInfo, 'OPS120-P'),
+          1500,
+        )
+        expectStatus(captured, 200)
+        const frame = await framePromise
+        expect(String(frame.payload)).toContain('PAYMENT_CAPTURED')
+        await app.overview.opsFeed.waitForOpsEvent({ orderRef: reference, type: 'CAPTURED' })
+      })
     }
     finally {
       await managerApi.dispose()

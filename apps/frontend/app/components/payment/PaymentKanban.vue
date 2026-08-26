@@ -118,7 +118,14 @@ function onDrop(event: DragEvent, status: PaymentStatus) {
 }
 
 async function moveOrder(order: PaymentOrderResponse, target: PaymentStatus) {
-  const ifMatch = etags.value[order.paymentOrderId]
+  let ifMatch = etags.value[order.paymentOrderId]
+  if (!ifMatch) {
+    const detail = await getOrder(props.merchantId, order.paymentOrderId)
+    ifMatch = detail.headers.etag
+    if (ifMatch) {
+      etags.value = { ...etags.value, [order.paymentOrderId]: ifMatch }
+    }
+  }
   if (!ifMatch) {
     toast.add({ title: 'Reload the board to obtain an ETag', color: 'warning' })
     return

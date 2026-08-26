@@ -1,11 +1,12 @@
 import { readFile } from 'node:fs/promises'
 import { uniqueMerchantReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { expectNoAuthorizationInNetworkResponse, expectNoTokenInText } from '../utils/network'
 
 test('audit log filters load and export downloads JSON', async ({ app, api, page }, testInfo) => {
   const created = await requireApi(api).createMerchant(uniqueMerchantReference(testInfo), 'Audit seed')
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
 
   await app.audit.goto()
   await app.audit.expectLoaded()
@@ -39,14 +40,14 @@ test('opening an audit row shows the entry drawer', async ({ app }) => {
 test('audit action filter and GET by id match a merchant-created event', async ({ app, api }, testInfo) => {
   const client = requireApi(api)
   const created = await client.createMerchant(uniqueMerchantReference(testInfo), 'Audit filter seed')
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
 
   const listed = await client.listAudit({ action: 'MERCHANT_CREATED', size: 50 })
-  expect(listed.status).toBe(200)
+  expectStatus(listed, 200)
   const eventId = listed.body?.content?.find(entry => entry.action === 'MERCHANT_CREATED')?.id
   expect(eventId).toBeTruthy()
   const entry = await client.getAuditEntry(eventId!)
-  expect(entry.status).toBe(200)
+  expectStatus(entry, 200)
   expect(entry.body?.id).toBe(eventId)
 
   await app.audit.goto()

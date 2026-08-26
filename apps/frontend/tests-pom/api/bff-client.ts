@@ -1,7 +1,85 @@
-import { type APIRequestContext, type Playwright } from '@playwright/test'
+import { expect, type APIRequestContext } from '@playwright/test'
+import type { PlaywrightWorkerArgs } from '@playwright/test'
 import { isProblemDetails, type ProblemDetails } from '../utils/problem'
 import { parseJson, parseJsonText } from '../utils/http'
 import { pomNodeBaseURL } from '../utils/env'
+
+/**
+ * The Playwright runner's `playwright` fixture. `@playwright/test` 1.61.0 does
+ * not export a `Playwright` type name and the `playwright` package is not
+ * resolvable from this pnpm tree, so take the exact fixture type the runner
+ * provides (`PlaywrightWorkerArgs['playwright']`).
+ */
+export type Playwright = PlaywrightWorkerArgs['playwright']
+
+/**
+ * Transport result of one BFF call. `body` is `T | undefined`; specs assert
+ * `result.status` first, which narrows `body` to `T` (see `HttpResult`).
+ */
+export type RawResult<T> = {
+  status: number
+  body?: T
+  headers?: Record<string, string>
+  raw?: string
+}
+
+/**
+ * Status-narrowed view of a {@link RawResult}: the spec has asserted an
+ * expected success/error status, so `body` and `headers` are present.
+ */
+export type HttpResult<T> = {
+  status: number
+  body: T
+  headers: Record<string, string>
+  raw?: string
+}
+
+/**
+ * Narrow a transport result by asserted status. Throws (test fails) when the
+ * observed status differs from any expectation — no silent undefined body.
+ * `T` is the success DTO; `ProblemDetails` stays a separate shape that specs
+ * narrow with `expectProblem` on error paths.
+ */
+export function requireStatus<T>(result: RawResult<T | ProblemDetails>, ...expected: number[]): HttpResult<T> {
+  if (!expected.includes(result.status)) {
+    throw new Error(`Expected status ${expected.join('|')}, got ${result.status}`)
+  }
+  // SAFETY: requireStatus throws unless result.status is in `expected`, so the
+  // success body shape asserted by the spec (`parseJson<T>` at the BFF
+  // boundary) is what the caller reads here.
+  return {
+    status: result.status,
+    body: result.body as T,
+    headers: result.headers ?? {},
+    raw: 'raw' in result ? result.raw : undefined,
+  }
+}
+
+/**
+ * Assert an expected BFF status and narrow the result to {@link HttpResult}:
+ * after the call, `result.body` is the success DTO (not `ProblemDetails`) and
+ * `result.headers` is non-undefined. Specs keep their status oracle as an
+ * assertion; the narrowing is type-only.
+ */
+type SuccessStatus = 200 | 201 | 202
+
+export function expectStatus<T>(
+  result: RawResult<T | ProblemDetails>,
+  expected: SuccessStatus,
+  message?: string,
+): asserts result is HttpResult<T>
+export function expectStatus<T>(
+  result: RawResult<T | ProblemDetails>,
+  expected: number,
+  message?: string,
+): void
+export function expectStatus<T>(
+  result: RawResult<T | ProblemDetails>,
+  expected: number,
+  message?: string,
+): void {
+  expect(result.status, message).toBe(expected)
+}
 
 export type PaymentPolicyBody = {
   autoCapture: boolean
@@ -15,6 +93,19 @@ export type TenantSettingsBody = {
   timezone?: string
   webhookBaseUrl?: string | null
   paymentPolicy?: PaymentPolicyBody
+}
+
+/** One row of the Event Lab BFF list endpoint. */
+export type EventLabListRow = {
+  eventId: string
+  id: string
+  targetId: string
+  status: 'PROCESSED' | 'RETRYING' | 'DEAD'
+}
+
+/** Result of the Event Lab duplicate/poison inject endpoints. */
+export type EventLabInjectResult = {
+  eventId: string
 }
 
 export class BffClient {
@@ -38,7 +129,15 @@ export class BffClient {
 
   async getMerchant(merchantId: string) {
     const response = await this.context.get(`/api/merchants/${merchantId}`)
-    const body = await parseJson<{ merchantId?: string, merchantReference?: string } & ProblemDetails>(response)
+    const body = await parseJson<{
+      merchantId: string
+      merchantReference: string
+      displayName: string
+      status: string
+      version?: number
+      contactPhone?: string | null
+      contactAddress?: string | null
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -52,12 +151,12 @@ export class BffClient {
     const suffix = params.toString() ? `?${params.toString()}` : ''
     const response = await this.context.get(`/api/merchants${suffix}`)
     const body = await parseJson<{
-      content?: Array<{ merchantId?: string, merchantReference?: string, status?: string }>
+      content?: Array<{ merchantId: string, merchantReference: string, status?: string }>
       page?: number
       size?: number
       totalElements?: number
       totalPages?: number
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -66,7 +165,7 @@ export class BffClient {
     const body = await parseJson<{
       merchants?: Array<{ merchantId?: string, merchantReference?: string, displayName?: string }>
       payments?: Array<{ paymentOrderId?: string, merchantId?: string, clientOrderReference?: string }>
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -81,7 +180,7 @@ export class BffClient {
         reference?: string
         lazy?: boolean
       }>
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -95,7 +194,13 @@ export class BffClient {
       data.tenantReference = tenantReference
     }
     const response = await this.context.post('/api/merchants', { data })
-    const body = await parseJson<{ merchantId?: string } & ProblemDetails>(response)
+    const body = await parseJson<{
+      merchantId: string
+      merchantReference: string
+      displayName: string
+      status: string
+      version?: number
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -103,16 +208,20 @@ export class BffClient {
     merchantId: string,
     payload: { amountMinor: number, currency: string, clientOrderReference: string },
     idempotencyKey?: string | null,
+    correlationId?: string,
   ) {
     const headers: Record<string, string> = {}
     if (idempotencyKey !== undefined && idempotencyKey !== null) {
       headers['Idempotency-Key'] = idempotencyKey
     }
+    if (correlationId !== undefined) {
+      headers['X-Correlation-ID'] = correlationId
+    }
     const response = await this.context.post(`/api/merchants/${merchantId}/payment-orders`, {
       data: payload,
       headers,
     })
-    const body = await parseJson<{ paymentOrderId?: string, status?: string } & ProblemDetails>(response)
+    const body = await parseJson<{ paymentOrderId: string, status?: string } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -182,17 +291,17 @@ export class BffClient {
 
   async getRlsItem(itemId: string) {
     const response = await this.context.get(`/api/rls-lab/items/${itemId}`)
-    const body = parseJsonText<ProblemDetails & { itemId?: string, label?: string }>(await response.text())
+    const body = parseJsonText<{ itemId?: string, label?: string } | ProblemDetails>(await response.text())
     return { status: response.status(), body }
   }
 
   async rlsCompare() {
     const response = await this.context.get('/api/rls-lab/compare')
-    const body = parseJsonText<ProblemDetails & {
+    const body = parseJsonText<{
       bypassRoleCount?: number
       restrictedWithoutTenantGuc?: number
       unprotected?: number
-    }>(await response.text())
+    } | ProblemDetails>(await response.text())
     return { status: response.status(), body }
   }
 
@@ -223,7 +332,7 @@ export class BffClient {
         headers,
       },
     )
-    return { status: response.status(), headers: response.headers(), body: await response.json().catch(() => undefined) }
+    return { status: response.status(), headers: response.headers(), body: parseJsonText<{ status?: string } | ProblemDetails>(await response.text()) }
   }
 
   async cancelPayment(
@@ -284,7 +393,7 @@ export class BffClient {
       `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/refund-approvals`,
       { data: payload },
     )
-    const body = await parseJson<{ approvalId?: string, status?: string } & ProblemDetails>(response)
+    const body = await parseJson<{ approvalId: string, status?: string } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -303,7 +412,7 @@ export class BffClient {
       `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/refund-approvals/${approvalId}/approve`,
       { data: {}, headers },
     )
-    return { status: response.status(), headers: response.headers(), body: await response.json().catch(() => undefined) }
+    return { status: response.status(), headers: response.headers(), body: parseJsonText<{ status?: string } | ProblemDetails>(await response.text()) }
   }
 
   async postNote(merchantId: string, paymentOrderId: string, bodyText: string) {
@@ -311,7 +420,7 @@ export class BffClient {
       `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/notes`,
       { data: { body: bodyText } },
     )
-    const body = await parseJson<{ id?: string, body?: string } & ProblemDetails>(response)
+    const body = await parseJson<{ id: string, body?: string } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -325,12 +434,18 @@ export class BffClient {
 
   async runExpirationSweep() {
     const response = await this.context.post('/api/payment-ops/expiration-sweep', { data: {} })
-    const body = await parseJson<{ expiredCount?: number } & ProblemDetails>(response)
+    const body = await parseJson<{ expiredCount: number } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
   async listAudit(query: Record<string, string | number | undefined> = {}) {
-    const response = await this.context.get('/api/audit', { params: query })
+    const params = new URLSearchParams()
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== '') {
+        params.set(key, String(value))
+      }
+    }
+    const response = await this.context.get(`/api/audit${params.toString() ? `?${params.toString()}` : ''}`)
     const body = await parseJson<{
       content?: Array<{ id?: string, action?: string, actorDisplay?: string, targetType?: string }>
       totalElements?: number
@@ -340,7 +455,7 @@ export class BffClient {
 
   async getAuditEntry(eventId: string) {
     const response = await this.context.get(`/api/audit/${encodeURIComponent(eventId)}`)
-    const body = await parseJson<{ id?: string, action?: string } & ProblemDetails>(response)
+    const body = await parseJson<{ id?: string, action?: string } | ProblemDetails>(response)
     return { status: response.status(), body }
   }
 
@@ -364,13 +479,13 @@ export class BffClient {
     return {
       status: response.status(),
       body: await parseJson<{
-        displayName?: string
-        merchantReference?: string
-        merchantId?: string
+        merchantId: string
+        merchantReference: string
+        displayName: string
+        version: number
         contactPhone?: string | null
         contactAddress?: string | null
-        version?: number
-      } & ProblemDetails>(response),
+      } | ProblemDetails>(response),
       headers: response.headers(),
     }
   }
@@ -394,7 +509,7 @@ export class BffClient {
       headers['If-Match'] = ifMatch
     }
     const response = await this.context.post(`/api/merchants/${merchantId}/suspend`, { headers })
-    return { status: response.status(), body: await response.json().catch(() => undefined), headers: response.headers() }
+    return { status: response.status(), body: parseJsonText<ProblemDetails>(await response.text()), headers: response.headers() }
   }
 
   async previewMerchantImport(file: { name: string, mimeType: string, buffer: Buffer }) {
@@ -402,7 +517,7 @@ export class BffClient {
       multipart: { file },
     })
     const body = await parseJson<{
-      previewId?: string
+      previewId: string
       validCount?: number
       warningCount?: number
       rejectedCount?: number
@@ -429,24 +544,24 @@ export class BffClient {
   }) {
     const response = await this.context.post('/api/support/cases', { data: payload })
     const body = await parseJson<{
-      caseId?: string
-      caseReference?: string
-      status?: string
-      version?: number
+      caseId: string
+      caseReference: string
+      status: string
+      version: number
       assigneeSubject?: string | null
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
   async getSupportCase(caseId: string) {
     const response = await this.context.get(`/api/support/cases/${caseId}`)
     const body = await parseJson<{
-      caseId?: string
-      caseReference?: string
-      status?: string
-      version?: number
+      caseId: string
+      caseReference: string
+      status: string
+      version: number
       assigneeSubject?: string | null
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -461,7 +576,7 @@ export class BffClient {
     const response = await this.context.get(`/api/support/cases${suffix}`)
     const body = await parseJson<{
       content?: Array<{ caseId?: string, status?: string, caseReference?: string }>
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -479,11 +594,12 @@ export class BffClient {
       headers,
     })
     const body = await parseJson<{
-      caseId?: string
-      status?: string
-      version?: number
+      caseId: string
+      caseReference: string
+      status: string
+      version: number
       assigneeSubject?: string | null
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -494,7 +610,7 @@ export class BffClient {
     const body = await parseJson<{
       succeeded?: number
       failed?: Array<{ caseId?: string, caseReference?: string, error?: string }>
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -504,11 +620,11 @@ export class BffClient {
       { data: {} },
     )
     const body = await parseJson<{
-      challengeId?: string
-      pin?: string
+      challengeId: string
+      pin: string
       expiresAt?: string
       error?: string
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -523,10 +639,10 @@ export class BffClient {
       { data: { pin } },
     )
     const body = await parseJson<{
-      challengeId?: string
+      challengeId: string
       verifiedAt?: string
       error?: string
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -546,7 +662,7 @@ export class BffClient {
       `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/${action}`,
       { data, headers },
     )
-    return { status: response.status(), headers: response.headers(), body: await response.json().catch(() => undefined) }
+    return { status: response.status(), headers: response.headers(), body: parseJsonText<{ status?: string } | ProblemDetails>(await response.text()) }
   }
 
   async patchPaymentOrder(
@@ -563,7 +679,11 @@ export class BffClient {
       `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}`,
       { data, headers },
     )
-    return { status: response.status(), headers: response.headers(), body: await response.json().catch(() => undefined) }
+    return {
+      status: response.status(),
+      headers: response.headers(),
+      body: parseJsonText<{ status?: string } | ProblemDetails>(await response.text()),
+    }
   }
 
   async uploadEvidence(
@@ -576,19 +696,19 @@ export class BffClient {
       `/api/merchants/${merchantId}/payment-orders/${paymentOrderId}/evidence`,
       { multipart: { file, category } },
     )
-    const body = await parseJson<{ evidenceId?: string, category?: string }>(response)
+    const body = await parseJson<{ evidenceId: string, category?: string }>(response)
     return { status: response.status(), headers: response.headers(), body }
   }
 
   async createExportJob(merchantId: string) {
     const response = await this.context.post(`/api/merchants/${merchantId}/payment-orders/export-jobs`)
-    const body = await parseJson<{ jobId?: string, status?: string }>(response)
+    const body = await parseJson<{ jobId: string, status?: string }>(response)
     return { status: response.status(), headers: response.headers(), body }
   }
 
   async getExportJob(merchantId: string, jobId: string) {
     const response = await this.context.get(`/api/merchants/${merchantId}/payment-orders/export-jobs/${jobId}`)
-    const body = await parseJson<{ jobId?: string, status?: string }>(response)
+    const body = await parseJson<{ jobId: string, status?: string }>(response)
     return { status: response.status(), headers: response.headers(), body }
   }
 
@@ -611,14 +731,20 @@ export class BffClient {
       data: settings,
       headers,
     })
-    return { status: response.status(), headers: response.headers(), body: await response.json().catch(() => undefined) }
+    return { status: response.status(), headers: response.headers(), body: parseJsonText<TenantSettingsBody | ProblemDetails>(await response.text()) }
   }
 
   async listUsers(query?: { search?: string, status?: 'enabled' | 'disabled', role?: string }) {
-    const response = await this.context.get('/api/users', { params: query })
+    const params = new URLSearchParams()
+    for (const [key, value] of Object.entries(query ?? {})) {
+      if (value !== undefined && value !== '') {
+        params.set(key, value)
+      }
+    }
+    const response = await this.context.get(`/api/users${params.toString() ? `?${params.toString()}` : ''}`)
     const body = await parseJson<{
       users?: Array<{ id?: string, username?: string, enabled?: boolean, roles?: string[] }>
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body }
   }
 
@@ -630,19 +756,19 @@ export class BffClient {
     roles: string[]
   }) {
     const response = await this.context.post('/api/users', { data: payload })
-    const body = await parseJson<{ id?: string, username?: string, enabled?: boolean, roles?: string[] }>(response)
+    const body = await parseJson<{ id: string, username: string, enabled: boolean, roles: string[] }>(response)
     return { status: response.status(), body }
   }
 
   async updateUser(userId: string, payload: { enabled?: boolean, email?: string }) {
     const response = await this.context.patch(`/api/users/${encodeURIComponent(userId)}`, { data: payload })
-    const body = await parseJson<{ id?: string, username?: string, enabled?: boolean, roles?: string[] }>(response)
+    const body = await parseJson<{ id: string, username: string, enabled: boolean, roles: string[] }>(response)
     return { status: response.status(), body }
   }
 
   async assignUserRoles(userId: string, payload: { assign: string[], remove: string[] }) {
     const response = await this.context.post(`/api/users/${encodeURIComponent(userId)}/roles`, { data: payload })
-    const body = await parseJson<{ id?: string, username?: string, roles?: string[] }>(response)
+    const body = await parseJson<{ id: string, username: string, roles: string[] }>(response)
     return { status: response.status(), body }
   }
 
@@ -651,22 +777,27 @@ export class BffClient {
     for (const [k, v] of Object.entries(query)) if (v) params.set(k, v)
     const q = params.toString() ? `?${params.toString()}` : ''
     const response = await this.context.get(`/api/event-lab${q}`)
-    return { status: response.status(), body: await response.json().catch(() => undefined), headers: response.headers(), raw: await response.text().catch(() => '') }
+    const text = await response.text()
+    const body = parseJsonText<EventLabListRow[] | ProblemDetails>(text)
+    return { status: response.status(), body, headers: response.headers(), raw: text }
   }
 
   async getEventLabDetail(id: string) {
     const response = await this.context.get(`/api/event-lab/${encodeURIComponent(id)}`)
-    return { status: response.status(), body: await response.json().catch(() => undefined), headers: response.headers() }
+    const body = parseJsonText<EventLabListRow | ProblemDetails>(await response.text())
+    return { status: response.status(), body, headers: response.headers() }
   }
 
   async injectDuplicate(eventId: string) {
     const response = await this.context.post('/api/event-lab/inject/duplicate', { data: { eventId } })
-    return { status: response.status(), body: await response.json().catch(() => undefined), headers: response.headers() }
+    const body = parseJsonText<EventLabInjectResult | ProblemDetails>(await response.text())
+    return { status: response.status(), body, headers: response.headers() }
   }
 
   async injectPoison(eventId: string) {
     const response = await this.context.post('/api/event-lab/inject/poison', { data: { eventId } })
-    return { status: response.status(), body: await response.json().catch(() => undefined), headers: response.headers() }
+    const body = parseJsonText<EventLabInjectResult | ProblemDetails>(await response.text())
+    return { status: response.status(), body, headers: response.headers() }
   }
 
   async injectOpsFeed(payload: {
@@ -680,14 +811,14 @@ export class BffClient {
   }) {
     const response = await this.context.post('/api/ops/feed/inject', { data: payload })
     const body = await parseJson<{
-      eventId?: string
+      eventId: string
       occurredAt?: string
       merchantId?: string
       paymentOrderId?: string
       type?: string
       label?: string
       malformed?: boolean
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -708,13 +839,13 @@ export class BffClient {
         body?: string
         readAt?: string | null
       }>
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
   async markNotificationRead(notificationId: string) {
     const response = await this.context.post(`/api/notifications/${notificationId}/read`)
-    const body = await parseJson<{ notificationId?: string, readAt?: string | null } & ProblemDetails>(response)
+    const body = await parseJson<{ notificationId: string, readAt?: string | null } | ProblemDetails>(response)
     return { status: response.status(), body }
   }
 
@@ -727,14 +858,14 @@ export class BffClient {
     const response = await this.context.get('/api/users/me/payment-views')
     const body = await parseJson<{
       content?: Array<{
-        id?: string
-        name?: string
+        id: string
+        name: string
         resource?: string
         filters?: Record<string, unknown>
         columns?: string[]
         isDefault?: boolean
       }>
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -746,12 +877,12 @@ export class BffClient {
   }) {
     const response = await this.context.post('/api/users/me/payment-views', { data: payload })
     const body = await parseJson<{
-      id?: string
-      name?: string
+      id: string
+      name: string
       resource?: string
       filters?: Record<string, unknown>
       isDefault?: boolean
-    } & ProblemDetails>(response)
+    } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -760,7 +891,7 @@ export class BffClient {
     payload: { name: string, filters: Record<string, unknown>, columns?: string[] },
   ) {
     const response = await this.context.put(`/api/users/me/payment-views/${id}`, { data: payload })
-    const body = await parseJson<{ id?: string, name?: string } & ProblemDetails>(response)
+    const body = await parseJson<{ id: string, name: string } | ProblemDetails>(response)
     return { status: response.status(), body, headers: response.headers() }
   }
 
@@ -771,7 +902,7 @@ export class BffClient {
 
   async setDefaultPaymentView(id: string) {
     const response = await this.context.post(`/api/users/me/payment-views/${id}/default`)
-    const body = await parseJson<{ id?: string, isDefault?: boolean } & ProblemDetails>(response)
+    const body = await parseJson<{ id: string, isDefault: boolean } | ProblemDetails>(response)
     return { status: response.status(), body }
   }
 

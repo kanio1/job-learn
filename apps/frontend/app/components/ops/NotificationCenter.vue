@@ -3,28 +3,26 @@
     v-if="canReadNotifications"
     :content="{ side: 'right', align: 'start', sideOffset: 8, collisionPadding: 16 }"
   >
-    <div class="inline-flex items-center">
-      <UChip
-        :show="unreadCount > 0"
-        :text="String(unreadCount)"
-        color="error"
-        size="sm"
-      >
-        <UButton
-          icon="i-lucide-bell"
-          color="neutral"
-          variant="ghost"
-          square
-          data-testid="notification-bell"
-          aria-label="Notifications"
-        />
-      </UChip>
+    <UButton
+      color="neutral"
+      variant="ghost"
+      square
+      class="relative"
+      data-testid="notification-bell"
+      aria-label="Notifications"
+    >
+      <UIcon name="i-lucide-bell" class="size-5" />
+      <span
+        v-if="unreadCount > 0"
+        class="absolute -end-1 -top-1 grid min-w-4 place-items-center rounded-full bg-error px-1 text-[10px] leading-4 text-inverted"
+        aria-hidden="true"
+      >{{ unreadCount }}</span>
       <span
         v-if="unreadCount > 0"
         data-testid="notification-unread-count"
         class="sr-only"
       >{{ unreadCount }}</span>
-    </div>
+    </UButton>
     <template #content>
       <div
         class="w-80 max-h-[min(28rem,calc(100vh-5rem))] overflow-y-auto p-3 space-y-3"

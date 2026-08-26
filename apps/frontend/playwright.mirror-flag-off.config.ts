@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { pomAuthFiles } from './tests-pom/utils/env'
 
 /**
  * FE Mirror / Session lab flag off on a second compose Nuxt (:3012).
@@ -17,6 +18,7 @@ import { defineConfig, devices } from '@playwright/test'
 process.env.PLAYWRIGHT_POM_AUTH_DIR ??= 'tests-pom/.auth'
 const loginOrigin = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000'
 const flagOffOrigin = process.env.PLAYWRIGHT_MIRROR_OFF_BASE_URL || 'http://127.0.0.1:3012'
+process.env.PLAYWRIGHT_BFF_BASE_URL ??= flagOffOrigin
 
 export default defineConfig({
   testDir: './tests-pom',
@@ -27,8 +29,9 @@ export default defineConfig({
   reporter: 'list',
   expect: { timeout: 15_000 },
   use: {
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
   },
   projects: [
     {
@@ -43,7 +46,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         baseURL: flagOffOrigin,
-        storageState: './tests-pom/.auth/platform-admin.json',
+        storageState: pomAuthFiles.platformAdmin,
       },
     },
   ],

@@ -3,7 +3,7 @@ import { test, expect, requireApi } from '../fixtures'
 import { waitForBffResponse } from '../utils/wait-bff'
 import { pomAuthFiles } from '../utils/env'
 import { App } from '../pages/App'
-import { BffClient } from '../api/bff-client'
+import { expectStatus } from '../api/bff-client'
 
 test.describe('Payment summary chart', () => {
   test('PW-M360-API-052 GET summary 200 matches Zod-shaped byStatus', async ({ api, ownedMerchantId }, testInfo) => {
@@ -16,7 +16,7 @@ test.describe('Payment summary chart', () => {
     )).status).toBe(201)
 
     const summary = await client.getPaymentOrdersSummary(ownedMerchantId)
-    expect(summary.status).toBe(200)
+    expectStatus(summary, 200)
     expect(Array.isArray(summary.body.byStatus)).toBe(true)
     expect(summary.body.byStatus?.every(row =>
       typeof row.status === 'string' && typeof row.orderCount === 'number',

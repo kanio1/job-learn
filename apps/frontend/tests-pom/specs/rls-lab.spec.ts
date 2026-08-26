@@ -1,7 +1,8 @@
 import { expect, test } from '../fixtures'
 import { pomAuthFiles } from '../utils/env'
 import { App } from '../pages/App'
-import { BffClient } from '../api/bff-client'
+import { BffClient, expectStatus } from '../api/bff-client'
+import { expectProblem } from '../utils/http'
 
 const OTHER_ITEM = '00000000-0000-0000-0000-0000000000a2'
 
@@ -28,7 +29,7 @@ test('merchant manager sees only Alpha row; probe of other tenant is 404', async
 
     const hidden = await api.getRlsItem(OTHER_ITEM)
     expect(hidden.status).toBe(404)
-    expect(hidden.body?.error).toBe('not_found')
+    expectProblem(hidden.body, 404, 'not_found')
 
     const compare = await api.rlsCompare()
     expect(compare.status).toBe(403)
@@ -54,9 +55,9 @@ test('platform admin compare shows unprotected leak and zero without GUC', async
     expect(unprotected).toBeGreaterThan(0)
 
     const compare = await api.rlsCompare()
-    expect(compare.status).toBe(200)
-    expect(compare.body?.restrictedWithoutTenantGuc).toBe(0)
-    expect(compare.body?.unprotected).toBeGreaterThanOrEqual(2)
+    expectStatus(compare, 200)
+    expect(compare.body.restrictedWithoutTenantGuc).toBe(0)
+    expect(compare.body.unprotected).toBeGreaterThanOrEqual(2)
   }
   finally {
     await api.dispose()

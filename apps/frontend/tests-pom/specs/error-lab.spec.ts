@@ -35,15 +35,12 @@ test.describe('Error Lab live triggers (platform admin)', () => {
     await expect(app.page.getByTestId('error-lab-trigger-429')).toBeVisible()
     const response = await liveTrigger(page, 401)
     await expectProblemStatus(response, 401)
-    await expect(async () => {
-      const responsePromise = page.waitForResponse(
-        res => res.url().includes('/api/error-lab/trigger-401') && res.request().method() === 'GET',
-        { timeout: 5_000 },
-      )
-      await app.errorLab.trigger(401)
-      const uiResponse = await responsePromise
-      expect(uiResponse.status()).toBe(401)
-    }).toPass({ timeout: 20_000 })
+    const responsePromise = page.waitForResponse(
+      res => res.url().includes('/api/error-lab/trigger-401') && res.request().method() === 'GET',
+      { timeout: 20_000 },
+    )
+    await app.errorLab.trigger(401)
+    expect((await responsePromise).status()).toBe(401)
     await app.errorLab.problem.expectVisible()
   })
 

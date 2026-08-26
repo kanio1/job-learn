@@ -2,7 +2,7 @@ import { expect } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class CheckoutLabInspectorPage extends BasePage {
-  async goto(): Promise<void> {
+  override async goto(): Promise<void> {
     await super.goto('/admin/checkout-lab/inspector')
   }
 

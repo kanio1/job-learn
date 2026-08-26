@@ -1,5 +1,7 @@
 import { test, expect } from '../fixtures'
 
+test.describe.configure({ mode: 'serial' })
+
 test('live 503 retry uses waitForResponse not fulfill', async ({ app }) => {
   test.setTimeout(45_000)
   await app.networkLab.goto()
@@ -22,6 +24,12 @@ test('retry window expires to a fresh 503 without a 200', async ({ app, page }) 
   test.setTimeout(45_000)
   await app.networkLab.goto()
   await app.networkLab.expectLoaded()
+  await expect.poll(async () => {
+    const window = await page.request.get('/api/network-lab/retry-window')
+    expect(window.status()).toBe(200)
+    const body = await window.json() as { remainingMs?: number }
+    return body.remainingMs ?? -1
+  }, { timeout: 20_000 }).toBe(0)
   const first = page.waitForResponse(response =>
     response.url().includes('/api/network-lab/trigger-503-retry') && response.request().method() === 'POST')
   await app.networkLab.trigger503()

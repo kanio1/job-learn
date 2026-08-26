@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 import './tests-pom/utils/ipv4-first'
 import { POM_WORKER_COUNT } from './tests-pom/auth/accounts'
+import { pomAuthFiles } from './tests-pom/utils/env'
 
 /**
  * Live POM framework — real Keycloak + Nuxt BFF + Spring + Postgres.
@@ -18,12 +19,16 @@ import { POM_WORKER_COUNT } from './tests-pom/auth/accounts'
 process.env.PLAYWRIGHT_POM_AUTH_DIR ??= 'tests-pom/.auth'
 const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === '1'
 const includeVisual = process.env.PLAYWRIGHT_VISUAL === '1'
+const includeKafka = process.env.PLAYWRIGHT_KAFKA === '1'
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000'
 const workerCap = Number(process.env.PLAYWRIGHT_WORKERS)
 const requested = Number.isFinite(workerCap) && workerCap > 0
   ? workerCap
   : (process.env.CI ? 2 : 4)
 const workers = Math.min(requested, POM_WORKER_COUNT)
+// Fresh parallel Keycloak logins during stack warm-up exceed the 30s default
+// test timeout (keycloak.setup.ts already allows 120s for the OIDC redirect).
+const setupTimeout = 120_000
 export default defineConfig({
   testDir: './tests-pom',
   fullyParallel: true,
@@ -36,7 +41,7 @@ export default defineConfig({
   },
   use: {
     baseURL,
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
@@ -45,46 +50,55 @@ export default defineConfig({
       name: 'setup-platform-admin',
       testMatch: /auth\/platform-admin\.setup\.ts/,
       fullyParallel: false,
+      timeout: setupTimeout,
     },
     {
       name: 'setup-platform-operator',
       testMatch: /auth\/platform-operator\.setup\.ts/,
       fullyParallel: false,
+      timeout: setupTimeout,
     },
     {
       name: 'setup-platform-admin-session',
       testMatch: /auth\/platform-admin-session\.setup\.ts/,
       fullyParallel: false,
+      timeout: setupTimeout,
     },
     {
       name: 'setup-tenant-admin',
       testMatch: /auth\/tenant-admin\.setup\.ts/,
       fullyParallel: false,
+      timeout: setupTimeout,
     },
     {
       name: 'setup-merchant-manager',
       testMatch: /auth\/merchant-manager\.setup\.ts/,
       fullyParallel: false,
+      timeout: setupTimeout,
     },
     {
       name: 'setup-worker-managers',
       testMatch: /auth\/worker-managers\.setup\.ts/,
       fullyParallel: false,
+      timeout: setupTimeout,
     },
     {
       name: 'setup-support-agent',
       testMatch: /auth\/support-agent\.setup\.ts/,
       fullyParallel: false,
+      timeout: setupTimeout,
     },
     {
       name: 'setup-read-only-user',
       testMatch: /auth\/read-only-user\.setup\.ts/,
       fullyParallel: false,
+      timeout: setupTimeout,
     },
     {
       name: 'setup-merchant-denied',
       testMatch: /auth\/merchant-denied\.setup\.ts/,
       fullyParallel: false,
+      timeout: setupTimeout,
     },
     {
       name: 'chromium-guest',
@@ -96,13 +110,29 @@ export default defineConfig({
     },
     {
       name: 'chromium-admin',
-      testMatch: /specs\/(merchants|merchants-table|merchants-slideover|merchants-concurrency|merchants-conflict|merchants-unsaved|merchants-import|merchants-tree|users|audit|error-lab|checkout-lab|session-lab|network-lab|mirror-lab|command-palette|internal-notes|merchant-risk|support-admin|support-kanban|support-bulk|admin-bff|a11y-axe|psp-redirect|ops-feed|ops-notifications|ops-search|event-lab)\.spec\.ts/,
-      dependencies: ['setup-platform-admin', 'setup-platform-operator', 'setup-tenant-admin', 'setup-read-only-user', 'setup-merchant-manager'],
+      testMatch: /specs\/(merchants|merchants-table|merchants-slideover|merchants-concurrency|merchants-conflict|merchants-unsaved|merchants-import|merchants-tree|users|audit|error-lab|checkout-lab|session-lab|network-lab|mirror-lab|command-palette|internal-notes|merchant-risk|support-admin|support-kanban|support-bulk|admin-bff|a11y-axe|psp-redirect|ops-feed|ops-notifications|ops-search)\.spec\.ts/,
+      dependencies: ['setup-platform-admin', 'setup-platform-operator', 'setup-tenant-admin', 'setup-read-only-user', 'setup-merchant-manager', 'setup-worker-managers'],
       use: {
         ...devices['Desktop Chrome'],
-        storageState: './tests-pom/.auth/platform-admin.json',
+        storageState: pomAuthFiles.platformAdmin,
       },
     },
+    ...(includeKafka
+      ? [{
+          name: 'chromium-kafka',
+          testMatch: /specs\/event-lab\.spec\.ts/,
+          // Event delivery mutates and inspects one Kafka-backed lab state. Keep
+          // this integration proof serial so route compilation on a live Nuxt
+          // dev server cannot hide the delivery result behind a loading screen.
+          fullyParallel: false,
+          workers: 1,
+          dependencies: ['setup-platform-admin', 'setup-platform-operator', 'setup-tenant-admin', 'setup-read-only-user', 'setup-merchant-manager', 'setup-worker-managers'],
+          use: {
+            ...devices['Desktop Chrome'],
+            storageState: pomAuthFiles.platformAdmin,
+          },
+        }]
+      : []),
     {
       name: 'chromium-manager',
       testMatch: /specs\/(payments-(?!refund-dual-control|pin).*|support|error-lab-manager)\.spec\.ts/,
@@ -121,7 +151,7 @@ export default defineConfig({
       dependencies: ['setup-platform-admin', 'setup-merchant-manager'],
       use: {
         ...devices['Desktop Chrome'],
-        storageState: './tests-pom/.auth/platform-admin.json',
+        storageState: pomAuthFiles.platformAdmin,
       },
     },
     {
@@ -131,7 +161,7 @@ export default defineConfig({
       dependencies: ['setup-platform-admin-session'],
       use: {
         ...devices['Desktop Chrome'],
-        storageState: './tests-pom/.auth/platform-admin-session.json',
+        storageState: pomAuthFiles.platformAdminSession,
       },
     },
     {
@@ -153,7 +183,7 @@ export default defineConfig({
           grepInvert: /@visual-negative/,
           use: {
             ...devices['Desktop Chrome'],
-            storageState: './tests-pom/.auth/platform-admin.json',
+            storageState: pomAuthFiles.platformAdmin,
           },
         }]
       : []),
@@ -163,7 +193,7 @@ export default defineConfig({
       dependencies: ['setup-platform-admin', 'setup-read-only-user', 'setup-merchant-manager'],
       use: {
         ...devices['Desktop Chrome'],
-        storageState: './tests-pom/.auth/platform-admin.json',
+        storageState: pomAuthFiles.platformAdmin,
       },
     },
     {

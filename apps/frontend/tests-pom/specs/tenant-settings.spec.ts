@@ -1,5 +1,6 @@
 import { uniqueToken } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { pomAuthFiles } from '../utils/env'
 import { requestHeader } from '../utils/network'
 import type { TenantSettingsBody } from '../api/bff-client'
@@ -11,7 +12,7 @@ let snapshot: { settings: TenantSettingsBody, etag: string } | undefined
 test.beforeEach(async ({ api }) => {
   const client = requireApi(api)
   const get = await client.getTenantSettings()
-  expect(get.status, 'PLATFORM_ADMIN must have platform:tenant:settings:read').toBe(200)
+  expectStatus(get, 200, 'PLATFORM_ADMIN must have platform:tenant:settings:read')
   snapshot = {
     settings: get.body,
     etag: get.headers['etag'] || '',
@@ -39,11 +40,11 @@ test.afterEach(async ({ api }) => {
 test('PATCH tenant settings without If-Match is 428; stale If-Match is 412', async ({ api }) => {
   const client = requireApi(api)
   const get = await client.getTenantSettings()
-  expect(get.status).toBe(200)
+  expectStatus(get, 200)
   const missing = await client.updateTenantSettings({ timezone: get.body?.timezone })
-  expect(missing.status).toBe(428)
+  expectStatus(missing, 428)
   const stale = await client.updateTenantSettings({ timezone: get.body?.timezone }, '"v99"')
-  expect(stale.status).toBe(412)
+  expectStatus(stale, 412)
 })
 
 test('PATCH tenant settings forwards GET ETag as If-Match', async ({ app, page }) => {

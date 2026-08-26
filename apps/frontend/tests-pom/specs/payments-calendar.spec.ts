@@ -1,5 +1,6 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { etagOf } from '../utils/http'
 
 test.describe('Payment expiry calendar', () => {
@@ -32,7 +33,7 @@ test.describe('Payment expiry calendar', () => {
       { amountMinor, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'DUEC'),
     )
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const paymentOrderId = created.body.paymentOrderId!
     const authorized = await client.authorizePayment(
       ownedMerchantId,
@@ -40,7 +41,7 @@ test.describe('Payment expiry calendar', () => {
       etagOf(created.headers),
       uniqueIdempotencyKey(testInfo, 'DUEA'),
     )
-    expect(authorized.status).toBe(200)
+    expectStatus(authorized, 200)
     const captured = await client.capturePayment(
       ownedMerchantId,
       paymentOrderId,
@@ -48,7 +49,7 @@ test.describe('Payment expiry calendar', () => {
       uniqueIdempotencyKey(testInfo, 'DUEP'),
       amountMinor,
     )
-    expect(captured.status).toBe(200)
+    expectStatus(captured, 200)
     expect((await client.createRefundApproval(ownedMerchantId, paymentOrderId)).status).toBe(201)
 
     await app.payments.gotoForMerchant(ownedMerchantId)
@@ -71,7 +72,7 @@ test.describe('Payment history timeline', () => {
       { amountMinor: 2300, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'TL'),
     )
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const paymentOrderId = created.body.paymentOrderId!
     expect((await client.authorizePayment(
       ownedMerchantId,
@@ -81,7 +82,7 @@ test.describe('Payment history timeline', () => {
     )).status).toBe(200)
 
     const history = await client.getPaymentOrderHistory(ownedMerchantId, paymentOrderId)
-    expect(history.status).toBe(200)
+    expectStatus(history, 200)
     const toStatuses = (history.body.content ?? []).map(entry => entry.toStatus)
 
     await app.paymentDetail.gotoOrder(ownedMerchantId, paymentOrderId)

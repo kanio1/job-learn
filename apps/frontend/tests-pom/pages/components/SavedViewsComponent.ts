@@ -56,7 +56,11 @@ export class SavedViewsComponent {
     await this.item(name).click()
   }
 
-  async setDefault(name: string): Promise<void> {
+  /**
+   * Set the default view. Returns the observed POST status so the spec owns
+   * the business assertion (`expect(await ...setDefault(name)).toBe(200)`).
+   */
+  async setDefault(name: string): Promise<number> {
     const posted = this.page.waitForResponse((response) => {
       if (response.request().method() !== 'POST') {
         return false
@@ -70,6 +74,6 @@ export class SavedViewsComponent {
     })
     await this.openMenuButton().click()
     await this.defaultStar(name).click()
-    expect((await posted).status()).toBe(200)
+    return (await posted).status()
   }
 }

@@ -4,5 +4,7 @@ import { test } from '@playwright/test'
 // Do not import from tests-pom.
 
 test.describe('visual lab (learner)', () => {
-  test.skip(true, 'Implement after copying App facade from tests-pom')
+  // Deliberately skipped: discoverable but never executed — the learner copies
+  // the reference page object from tests-pom before implementing this spec.
+  test.skip('Implement after copying App facade from tests-pom', () => {})
 })

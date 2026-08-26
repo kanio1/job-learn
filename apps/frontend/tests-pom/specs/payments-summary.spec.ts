@@ -1,5 +1,6 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { mrSummary } from '../methods/metamorphic/SummaryInclusion'
 import { etagOf } from '../utils/http'
 
@@ -13,9 +14,9 @@ test('GET summary totalOrders is at least the unfiltered list size (MR-SUMMARY)'
   )).status).toBe(201)
 
   const listed = await client.listPaymentOrders(ownedMerchantId, { size: 200 })
-  expect(listed.status).toBe(200)
+  expectStatus(listed, 200)
   const summary = await client.getPaymentOrdersSummary(ownedMerchantId)
-  expect(summary.status).toBe(200)
+  expectStatus(summary, 200)
   const listSize = listed.body?.totalElements ?? listed.body?.content?.length ?? 0
   expect(summary.body?.totalOrders).toBeGreaterThanOrEqual(listSize)
 })
@@ -28,7 +29,7 @@ test('payment list summary cards match GET summary totalOrders', async ({ app, a
     uniqueIdempotencyKey(testInfo, 'SUMUI'),
   )).status).toBe(201)
   const summary = await client.getPaymentOrdersSummary(ownedMerchantId)
-  expect(summary.status).toBe(200)
+  expectStatus(summary, 200)
   const total = summary.body?.totalOrders
   expect(total).toBeGreaterThan(0)
 
@@ -45,10 +46,10 @@ test('GET history grows after authorize then capture', async ({ api, ownedMercha
     { amountMinor: 1600, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'HIST') },
     uniqueIdempotencyKey(testInfo, 'HIST'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
   const before = await client.getPaymentOrderHistory(ownedMerchantId, paymentOrderId)
-  expect(before.status).toBe(200)
+  expectStatus(before, 200)
   const beforeCount = before.body?.content?.length ?? 0
 
   const detail = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
@@ -58,7 +59,7 @@ test('GET history grows after authorize then capture', async ({ api, ownedMercha
     etagOf(detail.headers),
     uniqueIdempotencyKey(testInfo, 'HIST-A'),
   )
-  expect(authorized.status).toBe(200)
+  expectStatus(authorized, 200)
   const captured = await client.capturePayment(
     ownedMerchantId,
     paymentOrderId,
@@ -66,10 +67,10 @@ test('GET history grows after authorize then capture', async ({ api, ownedMercha
     uniqueIdempotencyKey(testInfo, 'HIST-C'),
     1600,
   )
-  expect(captured.status).toBe(200)
+  expectStatus(captured, 200)
 
   const after = await client.getPaymentOrderHistory(ownedMerchantId, paymentOrderId)
-  expect(after.status).toBe(200)
+  expectStatus(after, 200)
   const entries = after.body?.content ?? []
   expect(entries.length).toBeGreaterThan(beforeCount)
   const toStatuses = entries.map(entry => entry.toStatus)

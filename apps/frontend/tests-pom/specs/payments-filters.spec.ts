@@ -1,5 +1,6 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 import { utcToday } from '../utils/dates'
 import { etagOf } from '../utils/http'
@@ -19,8 +20,8 @@ test('list filters by amount with API oracle and BFF composition', async ({ app,
     { amountMinor: 8800, currency: 'PLN', clientOrderReference: highRef },
     uniqueIdempotencyKey(testInfo, 'HIGH'),
   )
-  expect(low.status).toBe(201)
-  expect(high.status).toBe(201)
+  expectStatus(low, 201)
+  expectStatus(high, 201)
 
   const listRequest = page.waitForRequest((request) => {
     if (request.method() !== 'GET') {
@@ -45,7 +46,7 @@ test('list filters by amount with API oracle and BFF composition', async ({ app,
   await app.payments.expectReferenceHidden(lowRef)
 
   const oracle = await client.listPaymentOrders(ownedMerchantId, { minAmount: 5000, maxAmount: 20000 })
-  expect(oracle.status).toBe(200)
+  expectStatus(oracle, 200)
   const refs = (oracle.body?.content ?? []).map(row => row.clientOrderReference)
   expect(refs).toContain(highRef)
   expect(refs).not.toContain(lowRef)
@@ -60,7 +61,7 @@ test('PW-M360-E2E-027 date status and reference filters agree with API oracle', 
     { amountMinor: 2500, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'PAIR'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const today = utcToday()
 
   await app.payments.gotoForMerchant(ownedMerchantId)
@@ -78,7 +79,7 @@ test('PW-M360-E2E-027 date status and reference filters agree with API oracle', 
     status: 'CREATED',
     clientOrderReference: reference,
   })
-  expect(oracle.status).toBe(200)
+  expectStatus(oracle, 200)
   expect(oracle.body?.content?.some(row => row.clientOrderReference === reference)).toBe(true)
 })
 
@@ -96,8 +97,8 @@ test('status and currency pairwise filter agrees with API oracle', async ({ app,
     { amountMinor: 2200, currency: 'EUR', clientOrderReference: eurRef },
     uniqueIdempotencyKey(testInfo, 'EUR'),
   )
-  expect(pln.status).toBe(201)
-  expect(eur.status).toBe(201)
+  expectStatus(pln, 201)
+  expectStatus(eur, 201)
 
   await app.payments.gotoForMerchant(ownedMerchantId)
   await app.payments.expectLoaded()
@@ -109,7 +110,7 @@ test('status and currency pairwise filter agrees with API oracle', async ({ app,
   await app.payments.expectReferenceHidden(eurRef)
 
   const oracle = await client.listPaymentOrders(ownedMerchantId, { status: 'CREATED', currency: 'PLN' })
-  expect(oracle.status).toBe(200)
+  expectStatus(oracle, 200)
   const refs = (oracle.body?.content ?? []).map(row => row.clientOrderReference)
   expect(refs).toContain(plnRef)
   expect(refs).not.toContain(eurRef)
@@ -123,7 +124,7 @@ test('PW-M360-E2E-028 applying filters from a stale page query resets to page 0'
     { amountMinor: 1300, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'PAGE'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
 
   await app.payments.gotoForMerchant(ownedMerchantId, '?page=1')
   await app.payments.expectLoaded()
@@ -189,7 +190,7 @@ test('PW-M360-E2E-026 status CAPTURED Apply shows captured row', async ({ app, a
     { amountMinor: 2400, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'CAP-CREATE'),
   )
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
   const authorized = await client.authorizePayment(
     ownedMerchantId,
@@ -197,7 +198,7 @@ test('PW-M360-E2E-026 status CAPTURED Apply shows captured row', async ({ app, a
     etagOf(created.headers),
     uniqueIdempotencyKey(testInfo, 'CAP-AUTH'),
   )
-  expect(authorized.status).toBe(200)
+  expectStatus(authorized, 200)
   const captured = await client.capturePayment(
     ownedMerchantId,
     paymentOrderId,
@@ -205,7 +206,7 @@ test('PW-M360-E2E-026 status CAPTURED Apply shows captured row', async ({ app, a
     uniqueIdempotencyKey(testInfo, 'CAP-CAP'),
     2400,
   )
-  expect(captured.status).toBe(200)
+  expectStatus(captured, 200)
 
   await app.payments.gotoForMerchant(ownedMerchantId)
   await app.payments.expectLoaded()

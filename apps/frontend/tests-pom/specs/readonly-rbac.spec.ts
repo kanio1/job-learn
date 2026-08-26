@@ -1,6 +1,6 @@
 import { merchantAlphaId } from '../auth/accounts'
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
-import { BffClient } from '../api/bff-client'
+import { BffClient , expectStatus } from '../api/bff-client'
 import { pomAuthFiles } from '../utils/env'
 import { test, expect } from '../fixtures'
 import { App } from '../pages/App'
@@ -16,7 +16,7 @@ test('read-only user can list merchants but cannot create or run lifecycle', { t
       { amountMinor: 1500, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'RO') },
       uniqueIdempotencyKey(testInfo, 'RO'),
     )
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
 
     await app.merchants.goto()
     await app.merchants.expectRegistryTable()

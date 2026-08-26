@@ -33,6 +33,6 @@ export abstract class BasePage {
   }
 
   async expectNotFound(): Promise<void> {
-    await expect(this.page.getByRole('heading', { name: /404|not found/i })).toBeVisible()
+    await expect(this.page.getByRole('heading', { name: /404|not found/i }).first()).toBeVisible()
   }
 }

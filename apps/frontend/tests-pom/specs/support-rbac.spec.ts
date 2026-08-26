@@ -1,6 +1,6 @@
 import { merchantAlphaId } from '../auth/accounts'
 import { uniqueIdempotencyKey, uniqueOrderReference, uniqueToken } from '../data/factories'
-import { BffClient } from '../api/bff-client'
+import { BffClient , expectStatus } from '../api/bff-client'
 import { pomAuthFiles } from '../utils/env'
 import { test, expect } from '../fixtures'
 import { App } from '../pages/App'
@@ -16,7 +16,7 @@ test('support agent sees the registry but not create; notes POST is 201 on the l
       { amountMinor: 2100, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'SUPNOTE') },
       uniqueIdempotencyKey(testInfo, 'SUPNOTE'),
     )
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const paymentOrderId = created.body.paymentOrderId
     expect(paymentOrderId).toBeTruthy()
 
@@ -35,9 +35,9 @@ test('support agent sees the registry but not create; notes POST is 201 on the l
     const restNote = await BffClient.create(playwright, pomAuthFiles.supportAgent)
     try {
       const postedRest = await restNote.postNote(merchantAlphaId, paymentOrderId!, body)
-      expect(postedRest.status).toBe(201)
+      expectStatus(postedRest, 201)
       const notes = await restNote.listNotes(merchantAlphaId, paymentOrderId!)
-      expect(notes.status).toBe(200)
+      expectStatus(notes, 200)
       expect(JSON.stringify(notes.body)).toContain(body)
     } finally {
       await restNote.dispose()

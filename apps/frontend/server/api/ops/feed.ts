@@ -1,7 +1,8 @@
-import { createRequire } from 'node:module'
 import { createEvent } from 'h3'
-
-const require = createRequire(import.meta.url)
+// `ws` publishes no bundled declaration file; Nitro still needs this static import
+// to include the runtime client in the standalone server output.
+// @ts-expect-error TS7016
+import WebSocket from 'ws'
 
 
 
@@ -14,10 +15,6 @@ type WsClient = {
   send(data: string): void
   close(): void
   readyState: number
-}
-
-type WsCtor = {
-  new (url: string, options: { headers: Record<string, string> }): WsClient
 }
 
 type FeedPeer = {
@@ -38,9 +35,7 @@ function messageText(data: string | Uint8Array): string {
 }
 
 function createUpstream(url: string, accessToken: string): WsClient {
-  // SAFETY: `ws` is the Node handshake client; createRequire avoids DOM WebSocket types.
-  const Ws = require('ws') as WsCtor
-  return new Ws(url, {
+  return new WebSocket(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
 }

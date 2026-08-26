@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs'
-import type { Browser, Playwright, TestInfo } from '@playwright/test'
+import type { Browser } from '@playwright/test'
 import { merchantManagerAccountForWorker, POM_WORKER_COUNT, workerMerchant } from '../auth/accounts'
 import { saveKeycloakStorageState } from '../auth/keycloak.setup'
-import { BffClient } from '../api/bff-client'
+import { BffClient, type Playwright } from '../api/bff-client'
 import { pomBrowserBaseURL, pomNodeBaseURL, workerManagerAuthFile } from '../utils/env'
 
 export type WorkerWorld = {
@@ -16,7 +16,7 @@ export type WorkerWorld = {
 export async function ensureWorkerWorld(
   browser: Browser,
   playwright: Playwright,
-  testInfo: TestInfo,
+  testInfo: { parallelIndex: number },
 ): Promise<WorkerWorld> {
   const index = testInfo.parallelIndex % POM_WORKER_COUNT
   const world = workerMerchant(index)

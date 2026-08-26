@@ -1,0 +1,34 @@
+{
+  /**
+   * Strict TypeScript gate for the live POM framework (`tests-pom/**`) plus the
+   * active Playwright configs. Standalone on purpose:
+   * - `.nuxt/tsconfig.json` excludes `tests-pom/**`, so `nuxt typecheck` never sees it;
+   * - extending it would drag in generated app-only `paths` entries.
+   * `typeRoots` points at pnpm's hidden hoisted store because this lab may not add
+   * an explicit `@types/node` dependency and the frontend `node_modules` tree does
+   * not expose one for upward auto-discovery.
+   */
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["esnext", "dom", "dom.iterable", "webworker"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "types": ["node"],
+    "typeRoots": ["../node_modules/.pnpm/node_modules/@types"],
+    "strict": true,
+    "noEmit": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "./**/*.ts",
+    "../playwright*.config.ts"
+  ],
+  "exclude": [
+    "./.auth/**"
+  ]
+}

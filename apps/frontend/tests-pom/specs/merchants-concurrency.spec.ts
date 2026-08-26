@@ -1,5 +1,5 @@
 import { uniqueMerchantReference } from '../data/factories'
-import { BffClient } from '../api/bff-client'
+import { BffClient , expectStatus } from '../api/bff-client'
 import { pomAuthFiles } from '../utils/env'
 import { test, expect, requireApi } from '../fixtures'
 import { App } from '../pages/App'
@@ -13,10 +13,10 @@ test.describe('Merchant ETag / If-Match', { tag: ['@security'] }, () => {
     const client = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await client.createMerchant(reference, `Stale ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
     const stale = await client.activateMerchant(merchantId, '"v99"')
-    expect(stale.status).toBe(412)
+    expectStatus(stale, 412)
     expectProblem(stale.body, 412, 'merchant_version_mismatch')
   })
 
@@ -28,7 +28,7 @@ test.describe('Merchant ETag / If-Match', { tag: ['@security'] }, () => {
     const seed = requireApi(api)
     const reference = uniqueMerchantReference(testInfo)
     const created = await seed.createMerchant(reference, `Race ${reference}`)
-    expect(created.status).toBe(201)
+    expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
     const contextA = await browser.newContext({ storageState: pomAuthFiles.platformAdmin })

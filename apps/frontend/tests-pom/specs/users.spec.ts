@@ -1,9 +1,10 @@
 import { uniqueLabUser } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 
 test('platform admin sees the users table and page summary', async ({ app, api }) => {
   const listed = await requireApi(api).listUsers()
-  expect(listed.status).toBe(200)
+  expectStatus(listed, 200)
 
   await app.users.goto()
   await app.users.expectLoaded()
@@ -29,7 +30,7 @@ test('platform admin creates a unique user that appears in the table', async ({ 
   await expect(app.users.rowByUsername(user.username)).toBeVisible()
 
   const listed = await client.listUsers({ search: user.username })
-  expect(listed.status).toBe(200)
+  expectStatus(listed, 200)
   expect(listed.body?.users?.some(entry => entry.username === user.username)).toBe(true)
 })
 
@@ -41,7 +42,7 @@ test('platform admin disables a created user', async ({ app, api }, testInfo) =>
     tenantId: 'TENANT_ALPHA',
     roles: ['READ_ONLY_USER'],
   })
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   expect(created.body?.id).toBeTruthy()
 
   await app.users.goto()
@@ -53,7 +54,7 @@ test('platform admin disables a created user', async ({ app, api }, testInfo) =>
   await expect(app.page.getByRole('button', { name: `Enable ${user.username}` })).toBeVisible()
 
   const listed = await client.listUsers({ search: user.username, status: 'disabled' })
-  expect(listed.status).toBe(200)
+  expectStatus(listed, 200)
   const match = listed.body?.users?.find(entry => entry.username === user.username)
   expect(match?.enabled).toBe(false)
 })
@@ -66,7 +67,7 @@ test('platform admin assigns an extra role on a created user', async ({ app, api
     tenantId: 'TENANT_ALPHA',
     roles: ['READ_ONLY_USER'],
   })
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
 
   await app.users.goto()
   await app.users.expectLoaded()
@@ -80,7 +81,7 @@ test('platform admin assigns an extra role on a created user', async ({ app, api
   await expect(app.users.rowByUsername(user.username).getByText('SUPPORT AGENT', { exact: true })).toBeVisible()
 
   const listed = await client.listUsers({ search: user.username })
-  expect(listed.status).toBe(200)
+  expectStatus(listed, 200)
   const match = listed.body?.users?.find(entry => entry.username === user.username)
   expect(match?.roles).toEqual(expect.arrayContaining(['READ_ONLY_USER', 'SUPPORT_AGENT']))
 })
@@ -94,7 +95,7 @@ test('platform admin create user with a short password is 400', async ({ api }, 
     tenantId: 'TENANT_ALPHA',
     roles: ['READ_ONLY_USER'],
   })
-  expect(created.status).toBe(400)
+  expectStatus(created, 400)
 })
 
 test('platform admin filters users by role and disabled status', async ({ app, api }, testInfo) => {
@@ -105,9 +106,9 @@ test('platform admin filters users by role and disabled status', async ({ app, a
     tenantId: 'TENANT_ALPHA',
     roles: ['READ_ONLY_USER'],
   })
-  expect(created.status).toBe(201)
+  expectStatus(created, 201)
   expect(created.body?.id).toBeTruthy()
-  expect((await client.updateUser(created.body!.id!, { enabled: false })).status).toBe(200)
+  expect((await client.updateUser(created.body.id, { enabled: false })).status).toBe(200)
 
   await app.users.goto()
   await app.users.expectLoaded()
@@ -123,6 +124,6 @@ test('platform admin filters users by role and disabled status', async ({ app, a
   await app.users.filterByStatus('Disabled')
   await expect(app.users.rowByUsername(user.username)).toBeVisible()
   const listed = await client.listUsers({ search: user.username, status: 'disabled', role: 'READ_ONLY_USER' })
-  expect(listed.status).toBe(200)
+  expectStatus(listed, 200)
   expect(listed.body?.users?.some(entry => entry.username === user.username)).toBe(true)
 })

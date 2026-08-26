@@ -10,7 +10,7 @@ export class ErrorLabPage extends BasePage {
     this.problem = new ProblemDetailsCard(page)
   }
 
-  async goto(): Promise<void> {
+  override async goto(): Promise<void> {
     await super.goto('/error-lab')
   }
 

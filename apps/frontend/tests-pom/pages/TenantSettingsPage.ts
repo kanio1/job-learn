@@ -10,7 +10,7 @@ export class TenantSettingsPage extends BasePage {
     this.rules = new RuleConfiguratorComponent(page)
   }
 
-  async goto(): Promise<void> {
+  override async goto(): Promise<void> {
     await super.goto('/admin/tenant/settings')
   }
 

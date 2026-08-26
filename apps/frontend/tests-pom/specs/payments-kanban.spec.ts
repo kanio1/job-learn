@@ -1,5 +1,6 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
 import { etagOf } from '../utils/http'
 import { waitForBffResponse } from '../utils/wait-bff'
 import { paymentKanbanEdges } from '../methods/state/PaymentKanbanEdges'
@@ -44,8 +45,8 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
       { amountMinor: 1500, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'KAN'),
     )
-    expect(created.status).toBe(201)
-    const paymentOrderId = created.body.paymentOrderId!
+    expectStatus(created, 201)
+    const paymentOrderId = created.body.paymentOrderId
 
     await app.payments.gotoForMerchant(ownedMerchantId)
     await app.payments.expectLoaded()
@@ -70,8 +71,8 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
       { amountMinor: 1600, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'DRAG'),
     )
-    expect(created.status).toBe(201)
-    const paymentOrderId = created.body.paymentOrderId!
+    expectStatus(created, 201)
+    const paymentOrderId = created.body.paymentOrderId
 
     await app.payments.gotoForMerchant(ownedMerchantId)
     await app.payments.expectLoaded()
@@ -80,7 +81,7 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
       method: 'POST',
       pathExact: `/api/merchants/${ownedMerchantId}/payment-orders/${paymentOrderId}/authorize`,
     })
-    await app.payments.card(paymentOrderId).dragTo(app.payments.stage('AUTHORIZED'))
+    await app.payments.dragCardTo(paymentOrderId, 'AUTHORIZED')
     expect((await authorize).status()).toBe(200)
     await expect(app.payments.stage('AUTHORIZED').getByTestId(`payment-card-${paymentOrderId}`)).toBeVisible()
   })
@@ -93,7 +94,8 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
       { amountMinor: 1700, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'REL'),
     )
-    const paymentOrderId = created.body.paymentOrderId!
+    expectStatus(created, 201)
+    const paymentOrderId = created.body.paymentOrderId
     const detail = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
     expect((await client.authorizePayment(
       ownedMerchantId,
@@ -129,7 +131,8 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
       { amountMinor: 1800, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'STALE'),
     )
-    const paymentOrderId = created.body.paymentOrderId!
+    expectStatus(created, 201)
+    const paymentOrderId = created.body.paymentOrderId
     const afterCreate = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
     expect((await client.authorizePayment(
       ownedMerchantId,
@@ -191,7 +194,8 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
       { amountMinor: 1900, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'ILL'),
     )
-    const paymentOrderId = created.body.paymentOrderId!
+    expectStatus(created, 201)
+    const paymentOrderId = created.body.paymentOrderId
     await app.payments.gotoForMerchant(ownedMerchantId)
     await app.payments.expectLoaded()
     await openBoardWithPrefetch(app, page, ownedMerchantId, paymentOrderId)
@@ -199,7 +203,7 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
       method: 'POST',
       pathExact: `/api/merchants/${ownedMerchantId}/payment-orders/${paymentOrderId}/capture`,
     })
-    await app.payments.card(paymentOrderId).dragTo(app.payments.stage('CAPTURED'))
+    await app.payments.dragCardTo(paymentOrderId, 'CAPTURED')
     const status = (await capture).status()
     expect(status).toBeGreaterThanOrEqual(400)
     await expect(app.payments.stage('CREATED').getByTestId(`payment-card-${paymentOrderId}`)).toBeVisible()
@@ -213,7 +217,8 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
       { amountMinor: 1400, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'API31'),
     )
-    const paymentOrderId = created.body.paymentOrderId!
+    expectStatus(created, 201)
+    const paymentOrderId = created.body.paymentOrderId
     const detail = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
     const authorized = await client.authorizePayment(
       ownedMerchantId,
@@ -221,7 +226,7 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
       etagOf(detail.headers)!,
       uniqueIdempotencyKey(testInfo, 'API31A'),
     )
-    expect(authorized.status).toBe(200)
+    expectStatus(authorized, 200)
     expect((await client.getPaymentOrder(ownedMerchantId, paymentOrderId)).body?.status).toBe('AUTHORIZED')
   })
 })

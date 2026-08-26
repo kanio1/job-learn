@@ -4,15 +4,11 @@ export class NotificationCenterComponent {
   constructor(private readonly page: Page) {}
 
   bell(): Locator {
-    return this.page.getByTestId('notification-bell')
+    return this.page.getByRole('button', { name: 'Notifications' })
   }
 
   popover(): Locator {
     return this.page.getByTestId('notification-popover')
-  }
-
-  chipText(): Locator {
-    return this.bell().locator('xpath=ancestor::*[contains(@class,"chip") or self::button][1]')
   }
 
   unreadBadge(): Locator {
@@ -29,7 +25,11 @@ export class NotificationCenterComponent {
   }
 
   markReadButton(notificationId: string): Locator {
-    return this.page.getByTestId(`notification-mark-read-${notificationId}`)
+    return this.item(notificationId).getByRole('button', { name: 'Mark as read' })
+  }
+
+  readAllButton(): Locator {
+    return this.popover().getByRole('button', { name: 'Read all' })
   }
 
   async markRead(notificationId: string): Promise<void> {

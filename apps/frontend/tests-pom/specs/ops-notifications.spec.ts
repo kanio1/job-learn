@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import { merchantAlphaId } from '../auth/accounts'
 import { test, expect, requireApi } from '../fixtures'
+import { expectStatus } from '../api/bff-client'
+import type { BffClient } from '../api/bff-client'
 
 async function injectActionable(
-  api: { injectOpsFeed: (payload: Record<string, string>) => Promise<{ status: number, body?: { eventId?: string } }> },
+  api: BffClient,
   label: string,
 ) {
   const eventId = randomUUID()
@@ -15,7 +17,7 @@ async function injectActionable(
     merchantId: merchantAlphaId,
     paymentOrderId: randomUUID(),
   })
-  expect(injected.status).toBe(201)
+  expectStatus(injected, 201)
   return eventId
 }
 
@@ -26,39 +28,47 @@ test.describe('Notification center', { tag: ['@ops-notifications'] }, () => {
     page,
   }) => {
     const client = requireApi(api)
-    expect((await client.markAllNotificationsRead()).status).toBe(204)
-    await injectActionable(client, 'PO-190-A  FAILED')
-    await injectActionable(client, 'PO-190-B  FAILED')
-    const third = await injectActionable(client, 'PO-190-C  FAILED')
-    await app.overview.goto()
-    await app.overview.expectLoaded()
-    await app.overview.notifications.expectBadge(3)
-
-    const fourth = await injectActionable(client, 'PO-190-D  FAILED')
-    await expect.poll(async () => {
+    let fourthId: string | undefined
+    await test.step('seed three unread payment-failed notifications', async () => {
+      expect((await client.markAllNotificationsRead()).status).toBe(204)
+      await injectActionable(client, 'PO-190-A  FAILED')
+      await injectActionable(client, 'PO-190-B  FAILED')
+      await injectActionable(client, 'PO-190-C  FAILED')
       await app.overview.goto()
       await app.overview.expectLoaded()
-      return app.overview.notifications.unreadBadge().textContent()
-    }).toBe('4')
+      await app.overview.notifications.expectBadge(3)
+    })
 
-    await app.overview.notifications.open()
-    const listed = await client.listNotifications()
-    expect(listed.status).toBe(200)
-    const fourthId = listed.body.content?.find(item => item.eventId === fourth)?.notificationId
+    await test.step('surface the fourth notification in the overview badge', async () => {
+      const fourth = await injectActionable(client, 'PO-190-D  FAILED')
+      await expect.poll(async () => {
+        await app.overview.goto()
+        await app.overview.expectLoaded()
+        return app.overview.notifications.unreadBadge().textContent()
+      }).toBe('4')
+
+      await app.overview.notifications.open()
+      const listed = await client.listNotifications()
+      expectStatus(listed, 200)
+      fourthId = listed.body.content?.find(item => item.eventId === fourth)?.notificationId
+      expect(fourthId).toBeTruthy()
+      await expect(app.overview.notifications.item(fourthId!)).toBeVisible()
+    })
+
+    await test.step('mark the notification read, persist it, then clear the inbox', async () => {
+      await expect(app.overview.notifications.markReadButton(fourthId!)).toBeInViewport()
+      await app.overview.notifications.markRead(fourthId!)
+      await app.overview.notifications.expectBadge(3)
+
+      await page.reload()
+      await app.overview.expectLoaded()
+      await app.overview.notifications.expectBadge(3)
+
+      await app.overview.notifications.open()
+      await app.overview.notifications.readAllButton().click()
+      await app.overview.notifications.expectBadge(0)
+    })
+
     expect(fourthId).toBeTruthy()
-    await expect(app.overview.notifications.item(fourthId!)).toBeVisible()
-    await expect(app.overview.notifications.markReadButton(fourthId!)).toBeInViewport()
-    await app.overview.notifications.markRead(fourthId!)
-    await app.overview.notifications.expectBadge(3)
-
-    await page.reload()
-    await app.overview.expectLoaded()
-    await app.overview.notifications.expectBadge(3)
-
-    await app.overview.notifications.open()
-    await page.getByTestId('notification-read-all').click()
-    await app.overview.notifications.expectBadge(0)
-
-    expect(third).toBeTruthy()
   })
 })

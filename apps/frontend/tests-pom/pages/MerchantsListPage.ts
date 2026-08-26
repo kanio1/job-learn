@@ -3,13 +3,18 @@ import { BasePage } from './BasePage'
 import { waitForBffResponse } from '../utils/wait-bff'
 
 export class MerchantsListPage extends BasePage {
-  async goto(query = ''): Promise<void> {
+  override async goto(query = ''): Promise<void> {
     await super.goto(`/admin/merchants${query}`)
   }
 
   async expectLoaded(): Promise<void> {
     await this.expectHeading('Merchants')
     await expect(this.page.getByTestId('loading-state')).toHaveCount(0)
+  }
+
+  /** Registry caption — the rendered `totalElements merchant(s)` line. */
+  caption(): Locator {
+    return this.byTestId('merchant-registry-caption')
   }
 
   /** SCN-ISO-09: merchants:read is false — alert, no registry table. */
