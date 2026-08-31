@@ -32,6 +32,7 @@ import { RlsLabPage } from './RlsLabPage'
 import { VisualLabPage } from './VisualLabPage'
 import { PspRedirectSimulatorPage } from './PspRedirectSimulatorPage'
 import { EventLabPage } from './EventLabPage'
+import { ForbiddenPage } from './ForbiddenPage'
 
 /** Facade: one fixture exposes every page object for the current Page. */
 export class App {
@@ -68,6 +69,7 @@ export class App {
   readonly visualLab: VisualLabPage
   readonly pspSimulator: PspRedirectSimulatorPage
   readonly eventLab: EventLabPage
+  readonly forbidden: ForbiddenPage
 
   constructor(readonly page: Page) {
     this.sidebar = new Sidebar(page)
@@ -103,5 +105,6 @@ export class App {
     this.visualLab = new VisualLabPage(page)
     this.pspSimulator = new PspRedirectSimulatorPage(page)
     this.eventLab = new EventLabPage(page)
+    this.forbidden = new ForbiddenPage(page)
   }
 }

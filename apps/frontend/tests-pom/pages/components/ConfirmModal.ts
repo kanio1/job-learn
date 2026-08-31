@@ -1,11 +1,13 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 
 export class ConfirmModal {
   constructor(private readonly page: Page) {}
 
-  root() {
+  root(): Locator {
     return this.page.getByTestId('confirm-action-modal')
   }
+
+  heading(title: string | RegExp): Locator { return this.page.getByRole('heading', { name: title }) }
 
   async expectOpen(title?: string | RegExp): Promise<void> {
     if (title) {
@@ -25,10 +27,5 @@ export class ConfirmModal {
    */
   async dismiss(): Promise<void> {
     await this.page.getByTestId('confirm-action-dismiss').click()
-  }
-
-  /** @deprecated Use {@link dismiss} — "cancel" collides with payment Cancel. */
-  async cancel(): Promise<void> {
-    await this.dismiss()
   }
 }

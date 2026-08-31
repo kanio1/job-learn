@@ -5,6 +5,18 @@ import '../utils/ipv4-first'
 import type { PomAccount } from './accounts'
 import { LoginPage } from '../pages/LoginPage'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
+import { z } from 'zod'
+
+const authenticatedSessionSchema = z.object({
+  user: z.object({
+    roles: z.array(z.string()).optional(),
+    tenantId: z.string().optional(),
+    merchantId: z.string().optional(),
+  }).optional(),
+}).passthrough()
+const deniedSessionSchema = z.object({
+  user: z.object({ roles: z.array(z.string()).optional() }).optional(),
+}).passthrough()
 
 export async function saveKeycloakStorageState(page: Page, account: PomAccount, path: string): Promise<void> {
   mkdirSync(dirname(path), { recursive: true })
@@ -17,11 +29,12 @@ export async function saveKeycloakStorageState(page: Page, account: PomAccount, 
     if (!response.ok) {
       throw new Error(`sealed Nuxt session must exist after Keycloak login (${response.status})`)
     }
-    return await response.json() as { user?: { roles?: string[], tenantId?: string, merchantId?: string } }
+    return await response.json()
   })
-  expect(session.user?.roles).toContain(account.role)
-  expect(session.user?.tenantId).toBe(account.tenantId)
-  expect(session.user?.merchantId ?? undefined).toBe(account.merchantId)
+  const parsedSession = authenticatedSessionSchema.parse(session)
+  expect(parsedSession.user?.roles).toContain(account.role)
+  expect(parsedSession.user?.tenantId).toBe(account.tenantId)
+  expect(parsedSession.user?.merchantId).toBe(account.merchantId)
   await expectNoTokenInBrowserStorage(page)
   await page.context().storageState({ path })
 }
@@ -58,10 +71,11 @@ export async function saveDeniedStorageState(
     if (!response.ok) {
       throw new Error(`sealed Nuxt session must exist after Keycloak login (${response.status})`)
     }
-    return await response.json() as { user?: { roles?: string[] } }
+    return await response.json()
   })
-  expect(session.user, 'denied user must have a Nuxt session').toBeTruthy()
-  const roles = session.user?.roles ?? []
+  const parsedSession = deniedSessionSchema.parse(session)
+  expect(parsedSession.user, 'denied user must have a Nuxt session').toBeTruthy()
+  const roles = parsedSession.user?.roles ?? []
   expect(roles.some(role => role.startsWith('platform:') || role.startsWith('merchant:'))).toBe(false)
   expect(roles).not.toContain('PLATFORM_ADMIN')
   expect(roles).not.toContain('MERCHANT_MANAGER')

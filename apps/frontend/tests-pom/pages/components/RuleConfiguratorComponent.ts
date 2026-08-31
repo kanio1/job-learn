@@ -16,6 +16,7 @@ export class RuleConfiguratorComponent {
   }
 
   maxAmountInput(): Locator {
+    // Nuxt InputNumber nests its actual input inside the labelled control.
     return this.maxAmount().locator('input')
   }
 
@@ -57,9 +58,4 @@ export class RuleConfiguratorComponent {
     await this.maxAmountInput().fill(String(value))
   }
 
-  async expectSlider(value: number): Promise<void> {
-    await expect(this.riskSlider()).toHaveAttribute('aria-valuenow', String(value))
-    await expect(this.riskSlider()).toHaveAttribute('aria-valuemin', '0')
-    await expect(this.riskSlider()).toHaveAttribute('aria-valuemax', '100')
-  }
 }

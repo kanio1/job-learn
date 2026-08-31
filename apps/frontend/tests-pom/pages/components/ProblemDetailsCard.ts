@@ -1,9 +1,9 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 
 export class ProblemDetailsCard {
   constructor(private readonly page: Page) {}
 
-  root() {
+  root(): Locator {
     return this.page.getByTestId('problem-details-card')
   }
 
@@ -11,11 +11,11 @@ export class ProblemDetailsCard {
     await expect(this.root()).toBeVisible()
   }
 
-  async expectStatusBadge(status: number | string): Promise<void> {
-    await expect(this.root().getByText(new RegExp(`^${status}\\b`))).toBeVisible()
+  statusBadge(status: number | string): Locator {
+    return this.root().getByText(new RegExp(`^${status}\\b`))
   }
 
-  async expectError(code: string): Promise<void> {
-    await expect(this.root().getByTestId('problem-error')).toHaveText(code)
+  errorCode(): Locator {
+    return this.root().getByTestId('problem-error')
   }
 }

@@ -7,7 +7,7 @@ test.describe.configure({ mode: 'parallel' })
 
 test('worker REST create is 201 on MERCHANT-Wn and 403 on Alpha', async ({ workerWorld }, testInfo) => {
   const reference = uniqueOrderReference(testInfo, `W${workerWorld.index}`)
-  const created = await workerWorld.api.createPaymentOrder(
+  const created = await workerWorld.api.payments.createOrder(
     workerWorld.merchantId,
     { amountMinor: 1600, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, `W${workerWorld.index}`),
@@ -15,7 +15,7 @@ test('worker REST create is 201 on MERCHANT-Wn and 403 on Alpha', async ({ worke
   expectStatus(created, 201)
   expect(created.body.paymentOrderId).toBeTruthy()
 
-  const listed = await workerWorld.api.listPaymentOrders(workerWorld.merchantId, {
+  const listed = await workerWorld.api.payments.list(workerWorld.merchantId, {
     clientOrderReference: reference,
     page: 0,
     size: 20,
@@ -24,7 +24,7 @@ test('worker REST create is 201 on MERCHANT-Wn and 403 on Alpha', async ({ worke
   expect(listed.body?.totalElements).toBe(1)
   expect((listed.body?.content ?? []).map(row => row.paymentOrderId)).toEqual([created.body.paymentOrderId])
 
-  const foreign = await workerWorld.api.createPaymentOrder(
+  const foreign = await workerWorld.api.payments.createOrder(
     merchantAlphaId,
     { amountMinor: 1600, currency: 'PLN', clientOrderReference: `${reference}-ALPHA` },
     uniqueIdempotencyKey(testInfo, `W${workerWorld.index}A`),
@@ -48,7 +48,7 @@ test('worker UI create lands on that worker merchant detail', async ({ workerWor
   await workerApp.paymentCreate.submit()
 
   await workerApp.paymentDetail.expectLoaded()
-  await expect(workerApp.page.getByTestId('payment-order-detail').getByText(reference)).toBeVisible()
+  await expect(workerApp.paymentDetail.displayedReference(reference)).toBeVisible()
   await expect(workerApp.page).toHaveURL(
     new RegExp(`/admin/merchants/${workerWorld.merchantId}/payments/[0-9a-f-]{36}`),
   )

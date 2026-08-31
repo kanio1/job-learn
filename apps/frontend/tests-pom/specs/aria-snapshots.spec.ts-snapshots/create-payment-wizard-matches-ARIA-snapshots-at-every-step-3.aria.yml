@@ -1,0 +1,5 @@
+- text: Client Order Reference
+- textbox "Client Order Reference":
+  - /placeholder: PAY-001
+- button "Back"
+- button "Next"

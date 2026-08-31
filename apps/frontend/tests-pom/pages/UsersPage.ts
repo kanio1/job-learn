@@ -10,6 +10,10 @@ export class UsersPage extends BasePage {
     await expect(this.byTestId('users-table')).toBeVisible()
   }
 
+  heading(): Locator { return this.page.getByRole('heading', { name: 'Users' }) }
+  pageSummary(): Locator { return this.page.getByText(/Page \d+ · .+ user\(s\) shown/i) }
+  enableButton(username: string): Locator { return this.page.getByRole('button', { name: `Enable ${username}` }) }
+
   async expectForbidden(): Promise<void> {
     await expect(this.byTestId('forbidden-state')).toBeVisible()
   }

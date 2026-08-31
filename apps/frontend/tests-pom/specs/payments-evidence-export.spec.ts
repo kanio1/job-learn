@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { expectStatus } from '../api/bff-client'
 import { expectNoAuthorizationInNetworkResponse, expectNoTokenInText } from '../utils/network'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
@@ -9,9 +9,9 @@ import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 const evidenceFile = fileURLToPath(new URL('../data/files/sample-evidence.txt', import.meta.url))
 
 test('uploads evidence on a live payment order', async ({ app, api, page, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const reference = uniqueOrderReference(testInfo, 'EVD')
-  const created = await client.createPaymentOrder(
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 800, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'EVD'),
@@ -24,8 +24,8 @@ test('uploads evidence on a live payment order', async ({ app, api, page, ownedM
   await app.paymentDetail.expectLoaded()
   await app.paymentDetail.uploadEvidence(evidenceFile)
 
-  await expect(app.page.getByTestId('evidence-file-name')).toHaveText('sample-evidence.txt')
-  const download = app.page.getByTestId('evidence-download')
+  await expect(app.paymentDetail.evidenceFileName()).toHaveText('sample-evidence.txt')
+  const download = app.paymentDetail.evidenceDownload()
   await expect(download).toBeVisible()
   const href = await download.getAttribute('href')
   expect(href).toMatch(/\/evidence\/[0-9a-f-]+$/i)
@@ -39,8 +39,8 @@ test('uploads evidence on a live payment order', async ({ app, api, page, ownedM
 })
 
 test('BFF multipart evidence upload is 201 RECEIPT', async ({ api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
-  const created = await client.createPaymentOrder(
+  const client = api
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     {
       amountMinor: 850,
@@ -50,7 +50,7 @@ test('BFF multipart evidence upload is 201 RECEIPT', async ({ api, ownedMerchant
     uniqueIdempotencyKey(testInfo, 'EVREST'),
   )
   expectStatus(created, 201)
-  const uploaded = await client.uploadEvidence(
+  const uploaded = await client.payments.uploadEvidence(
     ownedMerchantId,
     created.body.paymentOrderId!,
     { name: 'live-proof.txt', mimeType: 'text/plain', buffer: Buffer.from('playwright-rest-evidence') },
@@ -60,21 +60,21 @@ test('BFF multipart evidence upload is 201 RECEIPT', async ({ api, ownedMerchant
   expect(uploaded.body?.evidenceId).toBeTruthy()
   expect(uploaded.body?.category).toBe('RECEIPT')
 
-  const downloaded = await client.getEvidence(
+  const downloaded = await client.payments.getEvidence(
     ownedMerchantId,
     created.body.paymentOrderId,
     uploaded.body.evidenceId,
   )
   expect(downloaded.status).toBe(200)
   expect(downloaded.headers['authorization']).toBeUndefined()
-  expect(downloaded.raw.toString('utf8')).toContain('playwright-rest-evidence')
-  expect(downloaded.raw.toString('utf8').includes('Bearer eyJ')).toBe(false)
+  expect(downloaded.body.toString('utf8')).toContain('playwright-rest-evidence')
+  expect(downloaded.body.toString('utf8').includes('Bearer eyJ')).toBe(false)
 })
 
 test('exports payment orders CSV from the list toolbar', async ({ app, api, page, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const reference = uniqueOrderReference(testInfo, 'CSV')
-  expect((await client.createPaymentOrder(
+  expect((await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 900, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'CSV'),

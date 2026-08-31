@@ -6,9 +6,9 @@ test('payment list shows the offline banner when the browser loses network', asy
 
   await context.setOffline(true)
   await app.page.evaluate(() => window.dispatchEvent(new Event('offline')))
-  await expect(app.page.getByTestId('payments-offline-banner')).toBeVisible()
+  await expect(app.payments.offlineBanner()).toBeVisible()
 
   await context.setOffline(false)
   await app.page.evaluate(() => window.dispatchEvent(new Event('online')))
-  await expect(app.page.getByTestId('payments-offline-banner')).toHaveCount(0)
+  await expect(app.payments.offlineBanner()).toHaveCount(0)
 })

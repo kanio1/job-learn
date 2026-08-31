@@ -19,7 +19,7 @@ export type MerchantColumnAccessRow = {
   testId: string
 }
 
-export const merchantColumnAccessMatrix: readonly MerchantColumnAccessRow[] = [
+export const merchantColumnAccessMatrix = [
   {
     id: 'DT-M360-01-admin',
     actor: 'PLATFORM_ADMIN',
@@ -70,4 +70,4 @@ export const merchantColumnAccessMatrix: readonly MerchantColumnAccessRow[] = [
     importCsv: false,
     testId: 'PW-M360-SEC-014',
   },
-]
+] as const satisfies readonly MerchantColumnAccessRow[]

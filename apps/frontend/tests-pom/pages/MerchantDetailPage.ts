@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 import { BasePage } from './BasePage'
 import { ConflictDiffComponent } from './components/ConflictDiffComponent'
 import { UnsavedGuardDialog } from './components/UnsavedGuardDialog'
@@ -7,7 +7,7 @@ export class MerchantDetailPage extends BasePage {
   readonly conflict: ConflictDiffComponent
   readonly unsaved: UnsavedGuardDialog
 
-  constructor(page: import('@playwright/test').Page) {
+  constructor(page: Page) {
     super(page)
     this.conflict = new ConflictDiffComponent(page)
     this.unsaved = new UnsavedGuardDialog(page)
@@ -22,9 +22,13 @@ export class MerchantDetailPage extends BasePage {
     await expect(this.byTestId('merchant-name')).toBeVisible()
   }
 
-  async expectStatus(label: 'Draft' | 'Active' | 'Suspended'): Promise<void> {
-    await expect(this.byTestId('merchant-status-badge')).toContainText(label)
+  statusBadge(): Locator {
+    return this.byTestId('merchant-status-badge')
   }
+
+  reference(): Locator { return this.byTestId('merchant-reference') }
+  riskToggle(): Locator { return this.byTestId('merchant-risk-toggle') }
+  reloadButton(): Locator { return this.page.getByRole('button', { name: 'Reload' }) }
 
   async activate(): Promise<void> {
     await this.byTestId('action-activate-merchant').click()
@@ -39,16 +43,15 @@ export class MerchantDetailPage extends BasePage {
   }
 
   async reloadAfterConflict(): Promise<void> {
-    await this.page.getByRole('button', { name: 'Reload' }).click()
+    await this.reloadButton().click()
   }
 
   async toggleRisk(): Promise<void> {
     await this.byTestId('merchant-risk-toggle').click()
   }
 
-  async expectRiskFlagged(flagged: boolean): Promise<void> {
-    const label = flagged ? 'Risk flagged' : 'No risk flag'
-    await expect(this.byTestId('merchant-risk-status')).toContainText(label)
+  riskStatus(): Locator {
+    return this.byTestId('merchant-risk-status')
   }
 
   async fillContact(fields: { displayName?: string, contactPhone?: string, contactAddress?: string }): Promise<void> {
@@ -71,7 +74,7 @@ export class MerchantDetailPage extends BasePage {
     await this.byTestId('merchant-back-to-list').click()
   }
 
-  phoneInput() {
+  phoneInput(): Locator {
     return this.byTestId('merchant-contact-phone-input')
   }
 }

@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class NetworkLabPage extends BasePage {
@@ -18,11 +18,11 @@ export class NetworkLabPage extends BasePage {
     await this.byTestId('network-lab-lie').click()
   }
 
-  result() {
+  result(): Locator {
     return this.byTestId('network-lab-result')
   }
 
-  errorState() {
+  errorState(): Locator {
     return this.byTestId('error-state')
   }
 }

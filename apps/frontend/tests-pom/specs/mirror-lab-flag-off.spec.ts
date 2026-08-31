@@ -3,13 +3,13 @@ import { test, expect } from '../fixtures'
 test('mirror lab nav and pages are absent when the public flag is off', async ({ app }) => {
   await app.merchants.goto()
   await app.merchants.expectLoaded()
-  await expect(app.page.getByTestId('nav-link-mirror-lab')).toHaveCount(0)
+  await expect(app.sidebar.mirrorLab()).toHaveCount(0)
 
   await app.page.goto('/admin/mirror-lab')
   await app.mirrorHub.expectNotFound()
 
   await app.page.goto('/admin/session-lab')
-  await expect(app.page.getByTestId('session-lab-js-cookies')).toHaveCount(0)
+  await expect(app.sessionLab.jsCookies()).toHaveCount(0)
   await app.sessionLab.expectNotFound()
 })
 

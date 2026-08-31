@@ -38,12 +38,4 @@ export class NotificationCenterComponent {
     await button.click()
   }
 
-  async expectBadge(count: number): Promise<void> {
-    if (count === 0) {
-      await expect(this.bell()).toBeVisible()
-      await expect(this.unreadBadge()).toHaveCount(0)
-      return
-    }
-    await expect(this.unreadBadge()).toHaveText(String(count))
-  }
 }

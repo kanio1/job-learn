@@ -7,6 +7,11 @@ export abstract class BasePage {
     return this.page.getByTestId(testId)
   }
 
+  developerErrorOverlay(): Locator {
+    // Vite injects this custom element without an accessible role or label.
+    return this.page.locator('vite-plugin-checker-error-overlay')
+  }
+
   async goto(path: string): Promise<void> {
     await this.page.goto(path)
     await this.assertNoDevErrorOverlay()
@@ -18,7 +23,7 @@ export abstract class BasePage {
    * instead of $fetch typed routes to avoid generating the overlay in the first place.
    */
   protected async assertNoDevErrorOverlay(): Promise<void> {
-    const overlay = this.page.locator('vite-plugin-checker-error-overlay')
+    const overlay = this.developerErrorOverlay()
     if (await overlay.count() > 0) {
       throw new Error(
         'vite-plugin-checker-error-overlay is present. Fix the typecheck error; do not dismiss the overlay from POM.',
@@ -33,6 +38,6 @@ export abstract class BasePage {
   }
 
   async expectNotFound(): Promise<void> {
-    await expect(this.page.getByRole('heading', { name: /404|not found/i }).first()).toBeVisible()
+    await expect(this.page.getByRole('heading', { name: /404|not found/i })).toBeVisible()
   }
 }

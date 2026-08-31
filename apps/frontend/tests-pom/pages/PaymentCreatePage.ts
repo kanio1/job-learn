@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class PaymentCreatePage extends BasePage {
@@ -10,6 +10,8 @@ export class PaymentCreatePage extends BasePage {
     await expect(this.page.getByRole('heading', { name: 'New Payment Order' })).toBeVisible()
     await expect(this.byTestId('create-payment-order-form')).toBeVisible()
   }
+
+  form(): Locator { return this.byTestId('create-payment-order-form') }
 
   async fillIdempotencyKey(key: string): Promise<void> {
     await this.page.getByLabel('Idempotency Key').fill(key)
@@ -35,4 +37,8 @@ export class PaymentCreatePage extends BasePage {
   async submit(): Promise<void> {
     await this.byTestId('action-create-payment-order').click()
   }
+
+  amountError(): Locator { return this.page.getByText('Amount must be at least 1', { exact: true }) }
+  review(): Locator { return this.byTestId('create-payment-order-review') }
+  submitButton(): Locator { return this.byTestId('action-create-payment-order') }
 }

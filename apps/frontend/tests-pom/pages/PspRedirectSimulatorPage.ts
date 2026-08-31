@@ -15,10 +15,13 @@ export class PspRedirectSimulatorPage extends BasePage {
     return this.byTestId('psp-outcome')
   }
 
+  root(): Locator { return this.byTestId('psp-redirect-simulator') }
+  approveButton(): Locator { return this.byTestId('psp-approve') }
+
   /** Approve once; the spec owns the visible business-outcome assertion. */
   async approve(): Promise<void> {
     await this.assertNoDevErrorOverlay()
-    await expect(this.byTestId('psp-approve')).toBeVisible()
-    await this.byTestId('psp-approve').click()
+    await expect(this.approveButton()).toBeVisible()
+    await this.approveButton().click()
   }
 }

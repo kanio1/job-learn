@@ -1,4 +1,9 @@
 import { test, expect } from '../fixtures'
+import { z } from 'zod'
+
+const retryWindowSchema = z.object({ remainingMs: z.number().optional() }).passthrough()
+const lieFulfillmentSchema = z.object({ status: z.string().optional(), warning: z.string().optional() }).passthrough()
+const corsCookieSchema = z.object({ hostedNote: z.string().optional() }).passthrough()
 
 test.describe.configure({ mode: 'serial' })
 
@@ -27,7 +32,7 @@ test('retry window expires to a fresh 503 without a 200', async ({ app, page }) 
   await expect.poll(async () => {
     const window = await page.request.get('/api/network-lab/retry-window')
     expect(window.status()).toBe(200)
-    const body = await window.json() as { remainingMs?: number }
+    const body = retryWindowSchema.parse(await window.json())
     return body.remainingMs ?? -1
   }, { timeout: 20_000 }).toBe(0)
   const first = page.waitForResponse(response =>
@@ -37,7 +42,7 @@ test('retry window expires to a fresh 503 without a 200', async ({ app, page }) 
   await expect.poll(async () => {
     const window = await page.request.get('/api/network-lab/retry-window')
     expect(window.status()).toBe(200)
-    const body = await window.json() as { remainingMs?: number }
+    const body = retryWindowSchema.parse(await window.json())
     return body.remainingMs ?? -1
   }, { timeout: 20_000 }).toBe(0)
   const afterTtl = await page.request.post('/api/network-lab/trigger-503-retry')
@@ -52,10 +57,10 @@ test('lie fulfillment returns success JSON that is not a persistence oracle', as
   await app.networkLab.triggerLie()
   const response = await lie
   expect(response.status()).toBe(200)
-  const body = await response.json() as { status?: string, warning?: string }
+  const body = lieFulfillmentSchema.parse(await response.json())
   expect(body.status).toBe('success')
   expect(body.warning ?? '').toMatch(/not an oracle/i)
-  await expect(app.page.getByTestId('network-lab-result')).toContainText('success')
+  await expect(app.networkLab.result()).toContainText('success')
 })
 
 test('OPTIONS cors-cookie is 204 with lab origin ACAO', { tag: ['@security'] }, async ({ page }) => {
@@ -73,7 +78,7 @@ test('GET cors-cookie with evil Origin still returns lab ACAO', { tag: ['@securi
     headers: { Origin: 'https://evil.example' },
   })
   expect(response.status()).toBe(200)
-  const body = await response.json() as { hostedNote?: string }
+  const body = corsCookieSchema.parse(await response.json())
   expect(body.hostedNote ?? '').toMatch(/hosted checkout/i)
   expect(response.headers()['access-control-allow-origin']).toBe('http://localhost:3000')
   expect(response.headers()['access-control-allow-origin']).not.toBe('https://evil.example')

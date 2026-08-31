@@ -1,21 +1,20 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { expectStatus } from '../api/bff-client'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
 import { utcToday } from '../utils/dates'
 import { etagOf } from '../utils/http'
-import { waitForBffResponse } from '../utils/wait-bff'
 
 test('list filters by amount with API oracle and BFF composition', async ({ app, api, page, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const lowRef = uniqueOrderReference(testInfo, 'LOW')
   const highRef = uniqueOrderReference(testInfo, 'HIGH')
-  const low = await client.createPaymentOrder(
+  const low = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 1100, currency: 'PLN', clientOrderReference: lowRef },
     uniqueIdempotencyKey(testInfo, 'LOW'),
   )
-  const high = await client.createPaymentOrder(
+  const high = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 8800, currency: 'PLN', clientOrderReference: highRef },
     uniqueIdempotencyKey(testInfo, 'HIGH'),
@@ -41,11 +40,11 @@ test('list filters by amount with API oracle and BFF composition', async ({ app,
   expect(new URL(seen.url()).port, 'list must hit Nuxt BFF :3000').toBe('3000')
   await app.payments.expectLoaded()
 
-  await app.payments.applyAmountFilter(5000, 20000)
-  await app.payments.expectReferenceVisible(highRef)
-  await app.payments.expectReferenceHidden(lowRef)
+  await app.payments.filters.applyAmountRange(5000, 20000)
+  await expect(app.payments.referenceInTable(highRef)).toBeVisible()
+  await expect(app.payments.referenceInTable(lowRef)).toHaveCount(0)
 
-  const oracle = await client.listPaymentOrders(ownedMerchantId, { minAmount: 5000, maxAmount: 20000 })
+  const oracle = await client.payments.list(ownedMerchantId, { minAmount: 5000, maxAmount: 20000 })
   expectStatus(oracle, 200)
   const refs = (oracle.body?.content ?? []).map(row => row.clientOrderReference)
   expect(refs).toContain(highRef)
@@ -54,9 +53,9 @@ test('list filters by amount with API oracle and BFF composition', async ({ app,
 })
 
 test('PW-M360-E2E-027 date status and reference filters agree with API oracle', async ({ app, api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const reference = uniqueOrderReference(testInfo, 'PAIR')
-  const created = await client.createPaymentOrder(
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 2500, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'PAIR'),
@@ -66,14 +65,14 @@ test('PW-M360-E2E-027 date status and reference filters agree with API oracle', 
 
   await app.payments.gotoForMerchant(ownedMerchantId)
   await app.payments.expectLoaded()
-  await app.payments.applyDateFilter(today, today)
-  await app.payments.applyStatusFilter('Created')
-  await app.payments.filterByClientReference(reference)
+  await app.payments.filters.applyDateRange(today, today)
+  await app.payments.filters.applyStatus('Created')
+  await app.payments.filters.applyClientReference(reference)
   await expect(app.page).toHaveURL(new RegExp(`status=CREATED`))
   await expect(app.page).toHaveURL(new RegExp(`clientOrderReference=${reference}`))
-  await app.payments.expectReferenceVisible(reference)
+  await expect(app.payments.referenceInTable(reference)).toBeVisible()
 
-  const oracle = await client.listPaymentOrders(ownedMerchantId, {
+  const oracle = await client.payments.list(ownedMerchantId, {
     fromDate: today,
     toDate: today,
     status: 'CREATED',
@@ -84,15 +83,15 @@ test('PW-M360-E2E-027 date status and reference filters agree with API oracle', 
 })
 
 test('status and currency pairwise filter agrees with API oracle', async ({ app, api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const plnRef = uniqueOrderReference(testInfo, 'PLN')
   const eurRef = uniqueOrderReference(testInfo, 'EUR')
-  const pln = await client.createPaymentOrder(
+  const pln = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 2100, currency: 'PLN', clientOrderReference: plnRef },
     uniqueIdempotencyKey(testInfo, 'PLN'),
   )
-  const eur = await client.createPaymentOrder(
+  const eur = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 2200, currency: 'EUR', clientOrderReference: eurRef },
     uniqueIdempotencyKey(testInfo, 'EUR'),
@@ -102,14 +101,14 @@ test('status and currency pairwise filter agrees with API oracle', async ({ app,
 
   await app.payments.gotoForMerchant(ownedMerchantId)
   await app.payments.expectLoaded()
-  await app.payments.applyStatusFilter('Created')
-  await app.payments.applyCurrencyFilter('PLN')
+  await app.payments.filters.applyStatus('Created')
+  await app.payments.filters.applyCurrency('PLN')
   await expect(app.page).toHaveURL(/status=CREATED/)
   await expect(app.page).toHaveURL(/currency=PLN/)
-  await app.payments.expectReferenceVisible(plnRef)
-  await app.payments.expectReferenceHidden(eurRef)
+  await expect(app.payments.referenceInTable(plnRef)).toBeVisible()
+  await expect(app.payments.referenceInTable(eurRef)).toHaveCount(0)
 
-  const oracle = await client.listPaymentOrders(ownedMerchantId, { status: 'CREATED', currency: 'PLN' })
+  const oracle = await client.payments.list(ownedMerchantId, { status: 'CREATED', currency: 'PLN' })
   expectStatus(oracle, 200)
   const refs = (oracle.body?.content ?? []).map(row => row.clientOrderReference)
   expect(refs).toContain(plnRef)
@@ -117,9 +116,9 @@ test('status and currency pairwise filter agrees with API oracle', async ({ app,
 })
 
 test('PW-M360-E2E-028 applying filters from a stale page query resets to page 0', async ({ app, api, page, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const reference = uniqueOrderReference(testInfo, 'PAGE')
-  const created = await client.createPaymentOrder(
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 1300, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'PAGE'),
@@ -145,18 +144,18 @@ test('PW-M360-E2E-028 applying filters from a stale page query resets to page 0'
       return false
     }
   })
-  await app.payments.filterByClientReference(reference)
+  await app.payments.filters.applyClientReference(reference)
   const seen = await reset
   const pageParam = new URL(seen.url()).searchParams.get('page')
   expect(pageParam === null || pageParam === '0').toBe(true)
   await expect(app.page).not.toHaveURL(/page=1/)
-  await app.payments.expectReferenceVisible(reference)
+  await expect(app.payments.referenceInTable(reference)).toBeVisible()
 })
 
 test('PW-M360-E2E-025 Amount columnheader sends sort=amountMinor', async ({ app, api, page, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const reference = uniqueOrderReference(testInfo, 'AMT')
-  expect((await client.createPaymentOrder(
+  expect((await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 1500, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'AMT'),
@@ -177,29 +176,29 @@ test('PW-M360-E2E-025 Amount columnheader sends sort=amountMinor', async ({ app,
       return false
     }
   })
-  await app.page.getByRole('button', { name: 'Amount' }).click()
+  await app.payments.amountColumnButton().click()
   const response = await sorted
   expect(response.status()).toBe(200)
 })
 
 test('PW-M360-E2E-026 status CAPTURED Apply shows captured row', async ({ app, api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const reference = uniqueOrderReference(testInfo, 'CAP')
-  const created = await client.createPaymentOrder(
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 2400, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'CAP-CREATE'),
   )
   expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
-  const authorized = await client.authorizePayment(
+  const authorized = await client.payments.authorize(
     ownedMerchantId,
     paymentOrderId,
     etagOf(created.headers),
     uniqueIdempotencyKey(testInfo, 'CAP-AUTH'),
   )
   expectStatus(authorized, 200)
-  const captured = await client.capturePayment(
+  const captured = await client.payments.capture(
     ownedMerchantId,
     paymentOrderId,
     etagOf(authorized.headers),
@@ -210,9 +209,8 @@ test('PW-M360-E2E-026 status CAPTURED Apply shows captured row', async ({ app, a
 
   await app.payments.gotoForMerchant(ownedMerchantId)
   await app.payments.expectLoaded()
-  await app.payments.applyStatusFilter('Captured')
-  await app.payments.expectReferenceVisible(reference)
+  await app.payments.filters.applyStatus('Captured')
+  await expect(app.payments.referenceInTable(reference)).toBeVisible()
   await expect(app.page).toHaveURL(/status=CAPTURED/)
   await expect(app.payments.statusBadgeForReference(reference)).toHaveAttribute('data-status', 'CAPTURED')
 })
-

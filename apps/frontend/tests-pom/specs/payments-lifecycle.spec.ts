@@ -1,5 +1,5 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { expectStatus } from '../api/bff-client'
 import { requestHeader } from '../utils/network'
 import { waitForBffRequest, waitForBffResponse } from '../utils/wait-bff'
@@ -9,10 +9,10 @@ import { utcToday } from '../utils/dates'
 import { etagOf } from '../utils/http'
 
 test('authorize then capture from the payment detail drawer with If-Match', async ({ app, api, page, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   expect(lifecycleStDtE2e.map(edge => edge.id)).toEqual(expect.arrayContaining(['SCN-LIF-01', 'SCN-LIF-02']))
   const reference = uniqueOrderReference(testInfo, 'LIFE')
-  const created = await client.createPaymentOrder(
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 2100, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'CREATE'),
@@ -39,24 +39,24 @@ test('authorize then capture from the payment detail drawer with If-Match', asyn
 
   const captureIfMatch = waitForBffRequest(page, { method: 'POST', pathExact: `${detailPath}/capture` })
   await app.paymentDetail.openLifecycle('capture')
-  await app.page.getByTestId('lifecycle-amount-input').fill('2100')
+  await app.paymentDetail.lifecycleAmountInput().fill('2100')
   const drawerIfMatch = await app.paymentDetail.ifMatchValue()
   expect(drawerIfMatch, 'capture drawer must pre-fill If-Match').toBeTruthy()
   await app.paymentDetail.submitLifecycle()
   expect(requestHeader(await captureIfMatch, 'If-Match')).toBe(drawerIfMatch)
   await expect(app.paymentDetail.statusInDetail('Captured')).toBeVisible()
   await app.paymentDetail.openHistoryTab()
-  await expect(app.page.getByRole('tab', { name: 'History' })).toHaveAttribute('aria-selected', 'true')
-  await expect(app.page.getByText('No lifecycle history recorded.')).toHaveCount(0)
-  await expect(app.page.getByText('CREATED → AUTHORIZED · AUTHORIZE · System', { exact: true })).toBeVisible()
-  await expect(app.page.getByText('AUTHORIZED → CAPTURED · CAPTURE · System', { exact: true })).toBeVisible()
+  await expect(app.paymentDetail.historyTab()).toHaveAttribute('aria-selected', 'true')
+  await expect(app.paymentDetail.emptyHistory()).toHaveCount(0)
+  await expect(app.paymentDetail.historyEntry('CREATED → AUTHORIZED · AUTHORIZE · System')).toBeVisible()
+  await expect(app.paymentDetail.historyEntry('AUTHORIZED → CAPTURED · CAPTURE · System')).toBeVisible()
   await expectNoTokenInBrowserStorage(app.page)
 })
 
 test('stale If-Match on authorize shows 412 problem+json in the drawer', async ({ app, api, page, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const reference = uniqueOrderReference(testInfo, 'STALE')
-  const created = await client.createPaymentOrder(
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 1100, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'STALE'),
@@ -76,11 +76,11 @@ test('stale If-Match on authorize shows 412 problem+json in the drawer', async (
   await app.paymentDetail.submitLifecycle()
   expect((await authorizeResponse).status()).toBe(412)
   await app.problem.expectVisible()
-  await app.problem.expectStatusBadge(412)
+  await expect(app.problem.statusBadge(412)).toBeVisible()
 
-  const stillCreated = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
+  const stillCreated = await client.payments.get(ownedMerchantId, paymentOrderId)
   expect(stillCreated.body?.status).toBe('CREATED')
-  const apiStale = await client.authorizePayment(
+  const apiStale = await client.payments.authorize(
     ownedMerchantId,
     paymentOrderId,
     '"v99"',
@@ -90,9 +90,9 @@ test('stale If-Match on authorize shows 412 problem+json in the drawer', async (
 })
 
 test('cancel from CREATED uses ConfirmModal', async ({ app, api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const reference = uniqueOrderReference(testInfo, 'CAN')
-  const created = await client.createPaymentOrder(
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 500, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'CAN'),
@@ -106,9 +106,9 @@ test('cancel from CREATED uses ConfirmModal', async ({ app, api, ownedMerchantId
 })
 
 test('merchant manager does not see the internal notes form', async ({ app, api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const reference = uniqueOrderReference(testInfo, 'NONOTE')
-  const created = await client.createPaymentOrder(
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 700, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'NONOTE'),
@@ -117,13 +117,13 @@ test('merchant manager does not see the internal notes form', async ({ app, api,
 
   await app.paymentDetail.gotoOrder(ownedMerchantId, created.body.paymentOrderId!)
   await app.paymentDetail.expectLoaded()
-  await expect(app.page.getByTestId('payment-note-body')).toHaveCount(0)
+  await expect(app.paymentDetail.notesForm()).toHaveCount(0)
 })
 
 test('list filters by date, status, and client reference in the query string', async ({ app, api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const reference = uniqueOrderReference(testInfo, 'FILT')
-  const created = await client.createPaymentOrder(
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 999, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'FILT'),
@@ -133,14 +133,14 @@ test('list filters by date, status, and client reference in the query string', a
   const today = utcToday()
   await app.payments.gotoForMerchant(ownedMerchantId)
   await app.payments.expectLoaded()
-  await app.payments.applyDateFilter(today, today)
+  await app.payments.filters.applyDateRange(today, today)
   await expect(app.page).toHaveURL(new RegExp(`fromDate=${today}`))
   await expect(app.page).toHaveURL(new RegExp(`toDate=${today}`))
-  await app.payments.applyStatusFilter('Created')
+  await app.payments.filters.applyStatus('Created')
   await expect(app.page).toHaveURL(/status=CREATED/)
-  await app.payments.filterByClientReference(reference)
+  await app.payments.filters.applyClientReference(reference)
   await expect(app.page).toHaveURL(new RegExp(`clientOrderReference=${reference}`))
-  await app.payments.expectReferenceVisible(reference)
+  await expect(app.payments.referenceInTable(reference)).toBeVisible()
 })
 
 test('copy payment reference writes the client order reference to the clipboard', async ({
@@ -149,9 +149,9 @@ test('copy payment reference writes the client order reference to the clipboard'
   context,
   ownedMerchantId,
 }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const reference = uniqueOrderReference(testInfo, 'CLIP')
-  const created = await client.createPaymentOrder(
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 600, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'CLIP'),
@@ -170,18 +170,18 @@ test('capture amount above authorized in the drawer is 422 and stays Authorized'
   page,
   ownedMerchantId,
 }, testInfo) => {
-  const client = requireApi(api)
-  const created = await client.createPaymentOrder(
+  const client = api
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 2100, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'CAPUI') },
     uniqueIdempotencyKey(testInfo, 'CAPUI'),
   )
   expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
-  const authorized = await client.authorizePayment(
+  const authorized = await client.payments.authorize(
     ownedMerchantId,
     paymentOrderId,
-    etagOf((await client.getPaymentOrder(ownedMerchantId, paymentOrderId)).headers),
+    etagOf((await client.payments.get(ownedMerchantId, paymentOrderId)).headers),
     uniqueIdempotencyKey(testInfo, 'CAPUI-A'),
   )
   expectStatus(authorized, 200)

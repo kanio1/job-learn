@@ -1,12 +1,12 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { expectStatus } from '../api/bff-client'
 import { etagOf } from '../utils/http'
 import { waitForBffResponse } from '../utils/wait-bff'
 import { paymentKanbanEdges } from '../methods/state/PaymentKanbanEdges'
-import { pomBrowserBaseURL } from '../utils/env'
 import { App } from '../pages/App'
 import type { Page } from '@playwright/test'
+import { z } from 'zod'
 
 async function openBoardWithPrefetch(
   app: App,
@@ -38,9 +38,9 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
     ownedMerchantId,
   }, testInfo) => {
     expect(paymentKanbanEdges.createdToAuthorized.action).toBe('authorize')
-    const client = requireApi(api)
+    const client = api
     const reference = uniqueOrderReference(testInfo, 'KAN')
-    const created = await client.createPaymentOrder(
+    const created = await client.payments.createOrder(
       ownedMerchantId,
       { amountMinor: 1500, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'KAN'),
@@ -59,14 +59,14 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
     await app.payments.moveCardTo(paymentOrderId, 'AUTHORIZED')
     expect((await authorize).status()).toBe(200)
     await expect(app.payments.stage('AUTHORIZED').getByTestId(`payment-card-${paymentOrderId}`)).toBeVisible()
-    const detail = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
+    const detail = await client.payments.get(ownedMerchantId, paymentOrderId)
     expect(detail.body?.status).toBe('AUTHORIZED')
   })
 
   test('PW-M360-E2E-091 dragTo CREATED onto AUTHORIZED', async ({ app, api, page, ownedMerchantId }, testInfo) => {
-    const client = requireApi(api)
+    const client = api
     const reference = uniqueOrderReference(testInfo, 'DRAG')
-    const created = await client.createPaymentOrder(
+    const created = await client.payments.createOrder(
       ownedMerchantId,
       { amountMinor: 1600, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'DRAG'),
@@ -87,17 +87,17 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
   })
 
   test('PW-M360-E2E-092 reload keeps AUTHORIZED card in column', async ({ app, api, ownedMerchantId }, testInfo) => {
-    const client = requireApi(api)
+    const client = api
     const reference = uniqueOrderReference(testInfo, 'REL')
-    const created = await client.createPaymentOrder(
+    const created = await client.payments.createOrder(
       ownedMerchantId,
       { amountMinor: 1700, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'REL'),
     )
     expectStatus(created, 201)
     const paymentOrderId = created.body.paymentOrderId
-    const detail = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
-    expect((await client.authorizePayment(
+    const detail = await client.payments.get(ownedMerchantId, paymentOrderId)
+    expect((await client.payments.authorize(
       ownedMerchantId,
       paymentOrderId,
       etagOf(detail.headers)!,
@@ -116,25 +116,26 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
   test('PW-M360-E2E-093 second context capture yields 412 rollback', async ({
     app,
     api,
-    browser,
+    actors,
     storageState,
     ownedMerchantId,
     page,
   }, testInfo) => {
-    const client = requireApi(api)
-    if (typeof storageState !== 'string') {
+    const client = api
+    const storageStatePath = z.string().safeParse(storageState)
+    if (!storageStatePath.success) {
       throw new Error('storageState path required')
     }
     const reference = uniqueOrderReference(testInfo, 'STALE')
-    const created = await client.createPaymentOrder(
+    const created = await client.payments.createOrder(
       ownedMerchantId,
       { amountMinor: 1800, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'STALE'),
     )
     expectStatus(created, 201)
     const paymentOrderId = created.body.paymentOrderId
-    const afterCreate = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
-    expect((await client.authorizePayment(
+    const afterCreate = await client.payments.get(ownedMerchantId, paymentOrderId)
+    expect((await client.payments.authorize(
       ownedMerchantId,
       paymentOrderId,
       etagOf(afterCreate.headers)!,
@@ -150,8 +151,8 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
     await app.payments.openBoard()
     await prefetch
 
-    const afterAuth = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
-    expect((await client.capturePayment(
+    const afterAuth = await client.payments.get(ownedMerchantId, paymentOrderId)
+    expect((await client.payments.capture(
       ownedMerchantId,
       paymentOrderId,
       etagOf(afterAuth.headers)!,
@@ -167,17 +168,11 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
     expect((await capture).status()).toBe(412)
     await expect(app.payments.stage('AUTHORIZED').getByTestId(`payment-card-${paymentOrderId}`)).toBeVisible()
 
-    const other = await browser.newContext({ storageState, baseURL: pomBrowserBaseURL() })
-    try {
-      const otherApp = new App(await other.newPage())
-      await otherApp.payments.gotoForMerchant(ownedMerchantId)
-      await otherApp.payments.expectLoaded()
-      await otherApp.payments.openBoard()
-      await expect(otherApp.payments.stage('CAPTURED').getByTestId(`payment-card-${paymentOrderId}`)).toBeVisible()
-    }
-    finally {
-      await other.close()
-    }
+    const { app: otherApp } = await actors.openStorageState(storageStatePath.data)
+    await otherApp.payments.gotoForMerchant(ownedMerchantId)
+    await otherApp.payments.expectLoaded()
+    await otherApp.payments.openBoard()
+    await expect(otherApp.payments.stage('CAPTURED').getByTestId(`payment-card-${paymentOrderId}`)).toBeVisible()
   })
 
   test('PW-M360-E2E-094 illegal drop CREATED onto CAPTURED is 4xx and card stays', async ({
@@ -187,9 +182,9 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
     ownedMerchantId,
   }, testInfo) => {
     expect(paymentKanbanEdges.createdToCapturedIllegal.to).toBe('CAPTURED')
-    const client = requireApi(api)
+    const client = api
     const reference = uniqueOrderReference(testInfo, 'ILL')
-    const created = await client.createPaymentOrder(
+    const created = await client.payments.createOrder(
       ownedMerchantId,
       { amountMinor: 1900, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'ILL'),
@@ -210,23 +205,23 @@ test.describe('Payment kanban', { tag: ['@kanban'] }, () => {
   })
 
   test('PW-M360-API-031 authorize through BffClient stays AUTHORIZED', async ({ api, ownedMerchantId }, testInfo) => {
-    const client = requireApi(api)
+    const client = api
     const reference = uniqueOrderReference(testInfo, 'API31')
-    const created = await client.createPaymentOrder(
+    const created = await client.payments.createOrder(
       ownedMerchantId,
       { amountMinor: 1400, currency: 'PLN', clientOrderReference: reference },
       uniqueIdempotencyKey(testInfo, 'API31'),
     )
     expectStatus(created, 201)
     const paymentOrderId = created.body.paymentOrderId
-    const detail = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
-    const authorized = await client.authorizePayment(
+    const detail = await client.payments.get(ownedMerchantId, paymentOrderId)
+    const authorized = await client.payments.authorize(
       ownedMerchantId,
       paymentOrderId,
       etagOf(detail.headers)!,
       uniqueIdempotencyKey(testInfo, 'API31A'),
     )
     expectStatus(authorized, 200)
-    expect((await client.getPaymentOrder(ownedMerchantId, paymentOrderId)).body?.status).toBe('AUTHORIZED')
+    expect((await client.payments.get(ownedMerchantId, paymentOrderId)).body?.status).toBe('AUTHORIZED')
   })
 })

@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 
 export class Sidebar {
   constructor(private readonly page: Page) {}
@@ -7,7 +7,26 @@ export class Sidebar {
     await this.page.getByTestId('nav-link-merchants').click()
   }
 
-  paymentOrders() {
+  merchants(): Locator {
+    return this.page.getByTestId('nav-link-merchants')
+  }
+
+  checkoutLab(): Locator {
+    return this.page.getByTestId('nav-link-checkout-lab')
+  }
+
+  eventLab(): Locator {
+    return this.page.getByTestId('nav-link-event-lab')
+  }
+
+  overview(): Locator { return this.page.getByTestId('nav-link-overview') }
+  users(): Locator { return this.page.getByTestId('nav-link-users') }
+  audit(): Locator { return this.page.getByTestId('nav-link-audit') }
+  support(): Locator { return this.page.getByTestId('nav-link-support') }
+  mirrorLab(): Locator { return this.page.getByTestId('nav-link-mirror-lab') }
+  rlsLab(): Locator { return this.page.getByTestId('nav-link-rls-lab') }
+
+  paymentOrders(): Locator {
     return this.page.getByTestId('nav-link-payment-orders')
   }
 
@@ -28,7 +47,7 @@ export class Sidebar {
   }
 
   async openCheckoutLab(): Promise<void> {
-    await this.page.getByTestId('nav-link-checkout-lab').click()
+    await this.checkoutLab().click()
   }
 
   async openMirrorLab(): Promise<void> {
@@ -39,19 +58,4 @@ export class Sidebar {
     await this.page.getByTestId('nav-link-rls-lab').click()
   }
 
-  async expectUsersVisible(visible: boolean): Promise<void> {
-    if (visible) {
-      await expect(this.page.getByTestId('nav-link-users')).toBeVisible()
-    } else {
-      await expect(this.page.getByTestId('nav-link-users')).toHaveCount(0)
-    }
-  }
-
-  async expectAuditVisible(visible: boolean): Promise<void> {
-    if (visible) {
-      await expect(this.page.getByTestId('nav-link-audit')).toBeVisible()
-    } else {
-      await expect(this.page.getByTestId('nav-link-audit')).toHaveCount(0)
-    }
-  }
 }

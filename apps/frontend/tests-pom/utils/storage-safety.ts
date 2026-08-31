@@ -1,18 +1,17 @@
+import { ok } from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import type { Page } from '@playwright/test'
 import { expect } from '@playwright/test'
+import { z } from 'zod'
 import { expectNoTokenInText } from './network'
 
 /** Token must stay in the sealed Nuxt session cookie, never in Web Storage. */
 export async function expectNoTokenInBrowserStorage(page: Page): Promise<void> {
-  const [localHasJwt, sessionHasJwt] = await page.evaluate(() => {
-    const local = JSON.stringify(Object.entries(localStorage))
-    const session = JSON.stringify(Object.entries(sessionStorage))
-    return [
-      local.includes('eyJ') || local.includes('Bearer '),
-      session.includes('eyJ') || session.includes('Bearer '),
-    ]
-  })
+  const [local, session] = await Promise.all([page.localStorage.items(), page.sessionStorage.items()])
+  const localText = JSON.stringify(local)
+  const sessionText = JSON.stringify(session)
+  const localHasJwt = localText.includes('eyJ') || localText.includes('Bearer ')
+  const sessionHasJwt = sessionText.includes('eyJ') || sessionText.includes('Bearer ')
 
   expect(localHasJwt, 'localStorage must not contain a JWT or Bearer token').toBe(false)
   expect(sessionHasJwt, 'sessionStorage must not contain a JWT or Bearer token').toBe(false)
@@ -26,7 +25,7 @@ function sessionCookie(page: Page) {
 export async function expectSessionCookieCleared(page: Page): Promise<void> {
   const response = await page.request.get('/api/_auth/session')
   expect(response.status(), 'logout must leave the session endpoint reachable').toBe(200)
-  const session = await response.json() as { user?: unknown }
+  const session = z.object({ user: z.unknown().optional() }).passthrough().parse(await response.json())
   expect(session.user, 'logout must remove the BFF user session').toBeFalsy()
 }
 
@@ -38,37 +37,40 @@ export async function expectSessionCookieDeleted(page: Page): Promise<void> {
 
 export async function expectSessionCookieHttpOnly(page: Page): Promise<void> {
   const session = await sessionCookie(page)
-  expect(session, 'nuxt-session cookie must be present').toBeTruthy()
-  expect(session!.httpOnly, 'nuxt-session must be HttpOnly').toBe(true)
+  ok(session, 'nuxt-session cookie must be present')
+  expect(session.httpOnly, 'nuxt-session must be HttpOnly').toBe(true)
 }
 
 /** RFC 6265 §6.1 — UA may drop cookies ≥ 4096 bytes. Do not decode the sealed blob. */
 export async function expectSessionCookieUnderUaLimit(page: Page): Promise<void> {
   const session = await sessionCookie(page)
-  expect(session, 'nuxt-session cookie must be present').toBeTruthy()
-  expect(session!.name.length + session!.value.length, 'nuxt-session must fit under the 4 KB UA limit').toBeLessThan(4096)
-  expect(session!.value.includes('id_token'), 'sealed session must not store id_token').toBe(false)
+  ok(session, 'nuxt-session cookie must be present')
+  expect(session.name.length + session.value.length, 'nuxt-session must fit under the 4 KB UA limit').toBeLessThan(4096)
+  expect(session.value.includes('id_token'), 'sealed session must not store id_token').toBe(false)
 }
 
 /** Playwright 1.61 cookies().sameSite is "Lax" | "Strict" | "None", not the cookie-policy JSON. */
 export async function expectSessionCookieSameSiteLax(page: Page): Promise<void> {
   const session = await sessionCookie(page)
-  expect(session, 'nuxt-session cookie must be present').toBeTruthy()
-  expect(session!.sameSite, 'nuxt-session SameSite must come from the live cookie').toBe('Lax')
+  ok(session, 'nuxt-session cookie must be present')
+  expect(session.sameSite, 'nuxt-session SameSite must come from the live cookie').toBe('Lax')
 }
 
 export async function expectSessionCookieSecure(page: Page, secure: boolean): Promise<void> {
   const cookies = await page.context().cookies()
   const session = cookies.find(cookie => cookie.name === 'nuxt-session')
-  expect(session, 'nuxt-session cookie must be present').toBeTruthy()
-  expect(session!.secure, `nuxt-session Secure must be ${secure}`).toBe(secure)
+  ok(session, 'nuxt-session cookie must be present')
+  expect(session.secure, `nuxt-session Secure must be ${secure}`).toBe(secure)
 }
 
 /** Sealed cookie blobs may coincidentally contain "eyJ"; only Web Storage origins are checked. */
 export function expectNoJwtInStorageStateFile(path: string): void {
-  const parsed = JSON.parse(readFileSync(path, 'utf8')) as {
-    origins?: { localStorage?: { name: string, value: string }[], sessionStorage?: { name: string, value: string }[] }[]
-  }
+  const parsed = z.object({
+    origins: z.array(z.object({
+      localStorage: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
+      sessionStorage: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
+    }).passthrough()).optional(),
+  }).passthrough().parse(JSON.parse(readFileSync(path, 'utf8')))
   const blobs = (parsed.origins ?? []).flatMap((origin) => {
     const local = (origin.localStorage ?? []).map(entry => `${entry.name}=${entry.value}`)
     const session = (origin.sessionStorage ?? []).map(entry => `${entry.name}=${entry.value}`)

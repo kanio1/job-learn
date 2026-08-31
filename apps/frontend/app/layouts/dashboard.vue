@@ -85,6 +85,7 @@ const tenantId = computed(() => (user.value as { tenantId?: string })?.tenantId)
 const canReadPayments = computed(() =>
   can.value.canReadMerchantPayments || can.value.canReadPlatformPayments,
 )
+const canSearchEntities = computed(() => can.value.canReadMerchants || canReadPayments.value)
 
 const MERCHANT_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -304,6 +305,13 @@ watch(searchTerm, async (raw) => {
   const q = raw.trim().slice(0, 80)
   searchAbort?.abort()
   if (!q) {
+    searchSeq += 1
+    entityMerchants.value = []
+    entityPayments.value = []
+    searchLoading.value = false
+    return
+  }
+  if (!canSearchEntities.value) {
     searchSeq += 1
     entityMerchants.value = []
     entityPayments.value = []

@@ -1,19 +1,14 @@
 import { expect, test } from '../fixtures'
 import { merchantAlphaId, merchantBetaId } from '../auth/accounts'
-import { pomAuthFiles } from '../utils/env'
 import { expectProblem } from '../utils/http'
 import { expectNoTokenInBrowserStorage } from '../utils/storage-safety'
-import { App } from '../pages/App'
 
-test('real roles see Alpha payments; merchant manager is denied Beta and Users', async ({ browser }) => {
-  const platformContext = await browser.newContext({ storageState: pomAuthFiles.platformAdmin })
-  const managerContext = await browser.newContext({ storageState: pomAuthFiles.merchantManager })
-  const platformPage = await platformContext.newPage()
-  const managerPage = await managerContext.newPage()
-  const platform = new App(platformPage)
-  const manager = new App(managerPage)
+test('real roles see Alpha payments; merchant manager is denied Beta and Users', async ({ actors }) => {
+  const platformActor = await actors.open('platformAdmin')
+  const managerActor = await actors.open('merchantManager')
+  const { page: platformPage, app: platform } = platformActor
+  const { page: managerPage, app: manager } = managerActor
 
-  try {
     await platform.payments.gotoForMerchant(merchantAlphaId)
     await manager.payments.gotoForMerchant(merchantAlphaId)
 
@@ -22,10 +17,10 @@ test('real roles see Alpha payments; merchant manager is denied Beta and Users',
     await expect(platformPage.getByText(/[1-9]\d* order\(s\) across/)).toBeVisible()
     await expect(managerPage.getByText(/[1-9]\d* order\(s\) across/)).toBeVisible()
 
-    await platform.sidebar.expectUsersVisible(true)
-    await platform.sidebar.expectAuditVisible(true)
-    await manager.sidebar.expectUsersVisible(false)
-    await manager.sidebar.expectAuditVisible(false)
+    await expect(platform.sidebar.users()).toBeVisible()
+    await expect(platform.sidebar.audit()).toBeVisible()
+    await expect(manager.sidebar.users()).toHaveCount(0)
+    await expect(manager.sidebar.audit()).toHaveCount(0)
     await expectNoTokenInBrowserStorage(platformPage)
     await expectNoTokenInBrowserStorage(managerPage)
 
@@ -42,8 +37,4 @@ test('real roles see Alpha payments; merchant manager is denied Beta and Users',
     expect(usersResponse.status()).toBe(403)
     expect(usersResponse.status()).not.toBe(502)
     expectProblem(await usersResponse.json(), 403)
-  } finally {
-    await platformContext.close()
-    await managerContext.close()
-  }
 })

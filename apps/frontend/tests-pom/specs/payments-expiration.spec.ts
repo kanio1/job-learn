@@ -1,5 +1,5 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { expectStatus } from '../api/bff-client'
 import { etagOf } from '../utils/http'
 
@@ -9,8 +9,8 @@ import { etagOf } from '../utils/http'
  * wait for the scheduler.
  */
 test('CREATED has no countdown; AUTHORIZED shows a live expiresAt countdown', async ({ app, api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
-  const created = await client.createPaymentOrder(
+  const client = api
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     {
       amountMinor: 2200,
@@ -25,10 +25,10 @@ test('CREATED has no countdown; AUTHORIZED shows a live expiresAt countdown', as
 
   await app.paymentDetail.gotoOrder(ownedMerchantId, paymentOrderId!)
   await app.paymentDetail.expectLoaded()
-  await expect(app.page.getByTestId('expiration-countdown')).toHaveCount(0)
+  await expect(app.paymentDetail.expirationCountdown()).toHaveCount(0)
 
-  const before = await client.getPaymentOrder(ownedMerchantId, paymentOrderId!)
-  const authorized = await client.authorizePayment(
+  const before = await client.payments.get(ownedMerchantId, paymentOrderId!)
+  const authorized = await client.payments.authorize(
     ownedMerchantId,
     paymentOrderId!,
     etagOf(before.headers),
@@ -38,8 +38,8 @@ test('CREATED has no countdown; AUTHORIZED shows a live expiresAt countdown', as
 
   await app.paymentDetail.refreshStatus()
   await expect(app.paymentDetail.statusInDetail('Authorized')).toBeVisible()
-  const after = await client.getPaymentOrder(ownedMerchantId, paymentOrderId!)
+  const after = await client.payments.get(ownedMerchantId, paymentOrderId!)
   expect(after.body?.expiresAt).toBeTruthy()
-  await expect(app.page.getByTestId('expiration-countdown')).toBeVisible()
-  await expect(app.page.getByTestId('expiration-countdown-remaining')).toBeVisible()
+  await expect(app.paymentDetail.expirationCountdown()).toBeVisible()
+  await expect(app.paymentDetail.expirationCountdownRemaining()).toBeVisible()
 })

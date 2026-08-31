@@ -1,19 +1,24 @@
 import { test, expect } from '../fixtures'
-import { parseJson } from '../utils/http'
+import { parseJsonWithSchema } from '../utils/http'
 import {
   expectNoTokenInBrowserStorage,
   expectSessionCookieHttpOnly,
   expectSessionCookieSameSiteLax,
   expectSessionCookieUnderUaLimit,
 } from '../utils/storage-safety'
+import { z } from 'zod'
+
+// Success is `{ status: 'ok' }`; Nitro's 403 problem has numeric HTTP status.
+const csrfResponseSchema = z.object({ status: z.union([z.string(), z.number()]).optional(), error: z.string().optional() }).passthrough()
+const csrfTokenSchema = z.object({ token: z.string().optional() }).passthrough()
 
 test('session lab shows HttpOnly policy vs empty document.cookie', { tag: ['@security'] }, async ({ app }) => {
   await app.sessionLab.goto()
   await app.sessionLab.expectLoaded()
-  const jsCookies = await app.page.getByTestId('session-lab-js-cookies').innerText()
+  const jsCookies = await app.sessionLab.jsCookies().innerText()
   expect(jsCookies.includes('nuxt-session'), 'HttpOnly nuxt-session must not appear in document.cookie').toBe(false)
-  await expect(app.page.getByTestId('session-lab-cookie-policy')).toContainText('nuxt-session')
-  await expect(app.page.getByTestId('session-lab-cookie-policy')).toContainText('httpOnly')
+  await expect(app.sessionLab.cookiePolicy()).toContainText('nuxt-session')
+  await expect(app.sessionLab.cookiePolicy()).toContainText('httpOnly')
   const policy = await app.page.request.get('/api/session-lab/cookie-policy')
   expect(policy.status()).toBe(200)
   await expectSessionCookieHttpOnly(app.page)
@@ -75,9 +80,9 @@ test('csrf demo with token returns ok', { tag: ['@security'] }, async ({ app }) 
   await app.sessionLab.csrfOk()
   const response = await responsePromise
   expect(response.status()).toBe(200)
-  const body = await parseJson<{ status?: string, error?: string }>(response)
-  expect(body?.error).not.toBe('csrf_failed')
-  expect(body?.status).toBe('ok')
+  const body = parseJsonWithSchema(await response.text(), csrfResponseSchema, 'POST /api/session-lab/csrf-demo')
+  expect(body.error).not.toBe('csrf_failed')
+  expect(body.status).toBe('ok')
 })
 
 test('csrf demo with a wrong X-CSRF-Token returns 403 csrf_failed', { tag: ['@security'] }, async ({ app, page }) => {
@@ -89,8 +94,8 @@ test('csrf demo with a wrong X-CSRF-Token returns 403 csrf_failed', { tag: ['@se
     headers: { 'X-CSRF-Token': 'not-the-cookie-token' },
   })
   expect(mismatched.status()).toBe(403)
-  const body = await parseJson<{ error?: string }>(mismatched)
-  expect(body?.error).toBe('csrf_failed')
+  const body = parseJsonWithSchema(await mismatched.text(), csrfResponseSchema, 'POST /api/session-lab/csrf-demo')
+  expect(body.error).toBe('csrf_failed')
 })
 
 test('mrl-csrf is visible on document.cookie after GET csrf', { tag: ['@security'] }, async ({ app, page }) => {
@@ -98,11 +103,10 @@ test('mrl-csrf is visible on document.cookie after GET csrf', { tag: ['@security
   await app.sessionLab.expectLoaded()
   const issued = await page.request.get('/api/session-lab/csrf')
   expect(issued.status()).toBe(200)
-  const token = (await parseJson<{ token?: string }>(issued))?.token
+  const token = parseJsonWithSchema(await issued.text(), csrfTokenSchema, 'GET /api/session-lab/csrf').token
   expect(token).toBeTruthy()
   await page.reload()
   await app.sessionLab.expectLoaded()
-  const jsCookies = await page.getByTestId('session-lab-js-cookies').innerText()
+  const jsCookies = await app.sessionLab.jsCookies().innerText()
   expect(jsCookies.includes('mrl-csrf'), 'non-HttpOnly mrl-csrf must appear in document.cookie').toBe(true)
 })
-

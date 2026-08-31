@@ -1,8 +1,9 @@
 import { z } from 'zod'
 import { merchantAlphaId } from '../auth/accounts'
 import { uniqueIdempotencyKey, uniqueMerchantReference, uniqueOrderReference, uniqueToken } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { expectStatus } from '../api/bff-client'
+import { expectError } from '../api/contracts/http-result'
 import { expectMerchantError, expectProblem } from '../utils/http'
 
 const merchantListPageSchema = z.object({
@@ -12,10 +13,14 @@ const merchantListPageSchema = z.object({
   totalElements: z.number().int().nonnegative(),
   totalPages: z.number().int().nonnegative(),
 })
+const merchantCreatedSchema = z.object({
+  error: z.string().optional(),
+  merchantId: z.string().optional(),
+}).passthrough()
 
 test('platform admin POST payment-order is 403', async ({ api }, testInfo) => {
-  const client = requireApi(api)
-  const created = await client.createPaymentOrder(
+  const client = api
+  const created = await client.payments.createOrder(
     merchantAlphaId,
     {
       amountMinor: 900,
@@ -29,8 +34,8 @@ test('platform admin POST payment-order is 403', async ({ api }, testInfo) => {
 })
 
 test('POST merchant without tenantReference is 400', async ({ api }) => {
-  const client = requireApi(api)
-  const created = await client.createMerchant(`NO-TENANT-${uniqueToken()}`, 'Missing tenant', null)
+  const client = api
+  const created = await client.merchants.create(`NO-TENANT-${uniqueToken()}`, 'Missing tenant', null)
   expectStatus(created, 400)
   expectMerchantError(created.body, 'validation')
 })
@@ -45,51 +50,51 @@ test('POST merchant without CSRF token is 201 not csrf_failed', { tag: ['@securi
     },
   })
   expect(response.status()).toBe(201)
-  const body = await response.json() as { error?: string, merchantId?: string }
+  const body = merchantCreatedSchema.parse(await response.json())
   expect(body.error).not.toBe('csrf_failed')
   expect(body.merchantId).toBeTruthy()
 })
 
 test('GET unknown merchant is 404', async ({ api }) => {
-  const client = requireApi(api)
-  const missing = await client.getMerchant('00000000-0000-0000-0000-000000000000')
-  expectStatus(missing, 404)
-  expectProblem(missing.body, 404)
+  const client = api
+  const missing = await client.merchants.get('00000000-0000-0000-0000-000000000000')
+  const error = expectError(missing, 404)
+  expectProblem(error.body, 404)
 })
 
 test('platform admin expiration sweep is 200 with expiredCount', async ({ api }) => {
-  const client = requireApi(api)
-  const sweep = await client.runExpirationSweep()
+  const client = api
+  const sweep = await client.operations.runExpirationSweep()
   expectStatus(sweep, 200)
-  expect(typeof sweep.body?.expiredCount).toBe('number')
+  expect(sweep.body.expiredCount).toEqual(expect.any(Number))
 })
 
 test('PW-M360-API-001 GET merchants returns content and totalElements', async ({ api }) => {
-  const client = requireApi(api)
-  const listed = await client.listMerchants({ page: 0, size: 20 })
+  const client = api
+  const listed = await client.merchants.list({ page: 0, size: 20 })
   expectStatus(listed, 200)
-  expect(Array.isArray(listed.body?.content)).toBe(true)
-  expect(listed.body.content!.length).toBeLessThanOrEqual(20)
-  expect(typeof listed.body?.totalElements).toBe('number')
+  const body = merchantListPageSchema.parse(listed.body)
+  expect(body.content.length).toBeLessThanOrEqual(20)
+  expect(body.totalElements).toEqual(expect.any(Number))
 })
 
 test('PW-M360-API-002 illegal sort is 400 problem+json', async ({ api }) => {
-  const client = requireApi(api)
-  const listed = await client.listMerchants({ sort: 'revenue,desc' })
+  const client = api
+  const listed = await client.merchants.list({ sort: 'revenue,desc' })
   expectStatus(listed, 400)
   expect(listed.headers['content-type'] ?? '').toContain('application/problem+json')
   expectMerchantError(listed.body, 'validation')
 })
 
 test('PW-M360-API-003 payment list status=CAPTURED is 200', async ({ api }) => {
-  const client = requireApi(api)
-  const listed = await client.listPaymentOrders(merchantAlphaId, { status: 'CAPTURED' })
+  const client = api
+  const listed = await client.payments.list(merchantAlphaId, { status: 'CAPTURED' })
   expectStatus(listed, 200)
 })
 
 test('PW-M360-API-004 merchant list Zod safeParse', async ({ api }) => {
-  const client = requireApi(api)
-  const listed = await client.listMerchants()
+  const client = api
+  const listed = await client.merchants.list()
   expectStatus(listed, 200)
   expect(merchantListPageSchema.safeParse(listed.body).success).toBe(true)
 })

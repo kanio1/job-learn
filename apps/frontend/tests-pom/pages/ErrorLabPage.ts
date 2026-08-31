@@ -1,11 +1,11 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 import { BasePage } from './BasePage'
 import { ProblemDetailsCard } from './components/ProblemDetailsCard'
 
 export class ErrorLabPage extends BasePage {
   readonly problem: ProblemDetailsCard
 
-  constructor(page: import('@playwright/test').Page) {
+  constructor(page: Page) {
     super(page)
     this.problem = new ProblemDetailsCard(page)
   }
@@ -18,11 +18,13 @@ export class ErrorLabPage extends BasePage {
     await expect(this.page.getByText('Learning surface')).toBeVisible()
   }
 
-  triggerButton(status: 400 | 401 | 403 | 404 | 406 | 409 | 412 | 415 | 428 | 304) {
+  triggerButton(status: 400 | 401 | 403 | 404 | 406 | 409 | 412 | 415 | 428 | 429 | 304): Locator {
     return this.byTestId(`error-lab-trigger-${status}`)
   }
 
-  async trigger(status: 400 | 401 | 403 | 404 | 406 | 409 | 412 | 415 | 428 | 304): Promise<void> {
+  pspRedirectTrigger(): Locator { return this.byTestId('psp-redirect-trigger') }
+
+  async trigger(status: 400 | 401 | 403 | 404 | 406 | 409 | 412 | 415 | 428 | 429 | 304): Promise<void> {
     await this.assertNoDevErrorOverlay()
     const button = this.triggerButton(status)
     await button.scrollIntoViewIfNeeded()

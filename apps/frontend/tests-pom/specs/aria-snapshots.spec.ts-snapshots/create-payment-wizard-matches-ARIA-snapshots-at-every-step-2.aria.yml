@@ -1,0 +1,4 @@
+- text: Currency
+- combobox "Currency": Select currency
+- button "Back"
+- button "Next"

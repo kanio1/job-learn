@@ -1,5 +1,5 @@
 import { uniqueToken } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { expectStatus } from '../api/bff-client'
 import { pomAuthFiles } from '../utils/env'
 import { requestHeader } from '../utils/network'
@@ -10,8 +10,8 @@ test.use({ storageState: pomAuthFiles.platformAdmin })
 let snapshot: { settings: TenantSettingsBody, etag: string } | undefined
 
 test.beforeEach(async ({ api }) => {
-  const client = requireApi(api)
-  const get = await client.getTenantSettings()
+  const client = api
+  const get = await client.identity.getTenantSettings()
   expectStatus(get, 200, 'PLATFORM_ADMIN must have platform:tenant:settings:read')
   snapshot = {
     settings: get.body,
@@ -23,10 +23,10 @@ test.afterEach(async ({ api }) => {
   if (!snapshot) {
     return
   }
-  const client = requireApi(api)
-  const fresh = await client.getTenantSettings()
+  const client = api
+  const fresh = await client.identity.getTenantSettings()
   const etag = fresh.headers['etag'] || snapshot.etag
-  await client.updateTenantSettings(
+  await client.identity.updateTenantSettings(
     {
       contactEmail: snapshot.settings.contactEmail ?? undefined,
       timezone: snapshot.settings.timezone,
@@ -60,7 +60,9 @@ test('PW-OPS-E2E-182 slider 0 and 100 saved', async ({ app, page }) => {
   const slider = app.tenantSettings.rules.riskSlider()
   await slider.focus()
   await slider.press('Home')
-  await app.tenantSettings.rules.expectSlider(0)
+  await expect(slider).toHaveAttribute('aria-valuenow', '0')
+  await expect(slider).toHaveAttribute('aria-valuemin', '0')
+  await expect(slider).toHaveAttribute('aria-valuemax', '100')
   const zeroPatch = page.waitForResponse(response =>
     response.url().includes('/api/tenants/current/settings') && response.request().method() === 'PATCH',
   )
@@ -68,11 +70,15 @@ test('PW-OPS-E2E-182 slider 0 and 100 saved', async ({ app, page }) => {
   expect((await zeroPatch).status()).toBe(200)
   await app.tenantSettings.goto()
   await app.tenantSettings.expectLoaded()
-  await app.tenantSettings.rules.expectSlider(0)
+  await expect(app.tenantSettings.rules.riskSlider()).toHaveAttribute('aria-valuenow', '0')
+  await expect(app.tenantSettings.rules.riskSlider()).toHaveAttribute('aria-valuemin', '0')
+  await expect(app.tenantSettings.rules.riskSlider()).toHaveAttribute('aria-valuemax', '100')
 
   await slider.focus()
   await slider.press('End')
-  await app.tenantSettings.rules.expectSlider(100)
+  await expect(slider).toHaveAttribute('aria-valuenow', '100')
+  await expect(slider).toHaveAttribute('aria-valuemin', '0')
+  await expect(slider).toHaveAttribute('aria-valuemax', '100')
   const hundredPatch = page.waitForResponse(response =>
     response.url().includes('/api/tenants/current/settings') && response.request().method() === 'PATCH',
   )
@@ -80,7 +86,9 @@ test('PW-OPS-E2E-182 slider 0 and 100 saved', async ({ app, page }) => {
   expect((await hundredPatch).status()).toBe(200)
   await app.tenantSettings.goto()
   await app.tenantSettings.expectLoaded()
-  await app.tenantSettings.rules.expectSlider(100)
+  await expect(app.tenantSettings.rules.riskSlider()).toHaveAttribute('aria-valuenow', '100')
+  await expect(app.tenantSettings.rules.riskSlider()).toHaveAttribute('aria-valuemin', '0')
+  await expect(app.tenantSettings.rules.riskSlider()).toHaveAttribute('aria-valuemax', '100')
 })
 
 test('PW-OPS-E2E-183 Home → 0; End → 100', async ({ app }) => {
@@ -89,13 +97,21 @@ test('PW-OPS-E2E-183 Home → 0; End → 100', async ({ app }) => {
   const slider = app.tenantSettings.rules.riskSlider()
   await slider.focus()
   await slider.press('End')
-  await app.tenantSettings.rules.expectSlider(100)
+  await expect(slider).toHaveAttribute('aria-valuenow', '100')
+  await expect(slider).toHaveAttribute('aria-valuemin', '0')
+  await expect(slider).toHaveAttribute('aria-valuemax', '100')
   await slider.press('Home')
-  await app.tenantSettings.rules.expectSlider(0)
+  await expect(slider).toHaveAttribute('aria-valuenow', '0')
+  await expect(slider).toHaveAttribute('aria-valuemin', '0')
+  await expect(slider).toHaveAttribute('aria-valuemax', '100')
   await slider.press('ArrowRight')
-  await app.tenantSettings.rules.expectSlider(1)
+  await expect(slider).toHaveAttribute('aria-valuenow', '1')
+  await expect(slider).toHaveAttribute('aria-valuemin', '0')
+  await expect(slider).toHaveAttribute('aria-valuemax', '100')
   await slider.press('ArrowLeft')
-  await app.tenantSettings.rules.expectSlider(0)
+  await expect(slider).toHaveAttribute('aria-valuenow', '0')
+  await expect(slider).toHaveAttribute('aria-valuemin', '0')
+  await expect(slider).toHaveAttribute('aria-valuemax', '100')
 })
 
 test('PW-OPS-E2E-184 RadioGroup Manual vs Automatic keyboard', async ({ app, page }) => {

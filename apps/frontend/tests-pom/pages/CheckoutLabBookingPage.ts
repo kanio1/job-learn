@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class CheckoutLabBookingPage extends BasePage {
@@ -20,15 +20,28 @@ export class CheckoutLabBookingPage extends BasePage {
     await this.page.getByRole('option', { name: mode }).click()
   }
 
+  async chooseScenario(scenario: string): Promise<void> {
+    await this.byTestId('checkout-booking-scenario').click()
+    await this.page.getByRole('option', { name: scenario, exact: true }).click()
+  }
+
   async submit(): Promise<void> {
     await this.byTestId('checkout-booking-submit').click()
   }
 
   async hostedCheckoutHref(): Promise<string | null> {
-    return this.byTestId('checkout-open-hosted').getAttribute('href')
+    return this.hostedCheckoutLink().getAttribute('href')
+  }
+
+  hostedCheckoutLink(): Locator {
+    return this.byTestId('checkout-open-hosted')
+  }
+
+  fulfillmentStatus(): Locator {
+    return this.byTestId('fulfillment-status')
   }
 
   async openHostedCheckout(): Promise<void> {
-    await this.byTestId('checkout-open-hosted').click()
+    await this.hostedCheckoutLink().click()
   }
 }

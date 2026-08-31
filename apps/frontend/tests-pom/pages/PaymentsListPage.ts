@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator } from '@playwright/test'
 import { BasePage } from './BasePage'
 import { PaymentFiltersComponent } from './components/PaymentFiltersComponent'
 import { SavedViewsComponent } from './components/SavedViewsComponent'
@@ -20,49 +20,26 @@ export class PaymentsListPage extends BasePage {
     await this.byTestId('run-expiration-sweep').click()
   }
 
+  expirationSweepComplete(): Locator { return this.page.getByText('Expiration sweep complete', { exact: true }) }
+  expirationSweepCount(count: number | undefined): Locator { return this.page.getByText(`${count} order(s) expired`, { exact: true }) }
+  heading(): Locator { return this.page.getByRole('heading', { name: 'Payment Orders', exact: true }) }
+  columnHeader(name: string): Locator { return this.page.getByRole('columnheader', { name, exact: true }) }
+  offlineBanner(): Locator { return this.byTestId('payments-offline-banner') }
+  asyncExportStatus(): Locator { return this.byTestId('async-export-status') }
+  totalOrdersCard(): Locator { return this.page.getByRole('region', { name: 'Total orders' }) }
+  totalOrdersValue(total: number): Locator { return this.totalOrdersCard().getByText(String(total), { exact: true }) }
+
   async openCreate(): Promise<void> {
     await this.page.getByRole('link', { name: 'New payment' }).click()
   }
 
-  private filterInput(testId: string) {
-    return this.page.locator(`[data-testid="${testId}"] input, input[data-testid="${testId}"]`).first()
-  }
-
-  async applyDateFilter(fromDate: string, toDate: string): Promise<void> {
-    await this.page.getByLabel('Created from').fill(fromDate)
-    await this.page.getByLabel('Created to').fill(toDate)
-    await this.byTestId('payment-filter-apply').click()
-  }
-
-  async applyStatusFilter(label: string): Promise<void> {
-    await this.byTestId('payment-filter-status').click()
-    await this.page.getByRole('option', { name: label }).click()
-    await this.byTestId('payment-filter-apply').click()
-  }
-
-  async applyAmountFilter(minAmount: number, maxAmount: number): Promise<void> {
-    await this.filterInput('payment-filter-min-amount').fill(String(minAmount))
-    await this.filterInput('payment-filter-max-amount').fill(String(maxAmount))
-    await this.byTestId('payment-filter-apply').click()
-  }
-
-  async applyCurrencyFilter(label: string): Promise<void> {
-    await this.byTestId('payment-filter-currency').click()
-    await this.page.getByRole('option', { name: label }).click()
-    await this.byTestId('payment-filter-apply').click()
-  }
-
-  async filterByClientReference(reference: string): Promise<void> {
-    await this.filterInput('payment-filter-reference').fill(reference)
-    await this.byTestId('payment-filter-apply').click()
-  }
-
-  async clearFilters(): Promise<void> {
-    await this.byTestId('payment-filter-clear').click()
-  }
-
   async sortByAmount(): Promise<void> {
     await this.page.getByRole('columnheader', { name: /Amount/i }).click()
+  }
+
+  amountColumnButton(): Locator { return this.page.getByRole('button', { name: 'Amount', exact: true }) }
+  paymentAccessDenied(): Locator {
+    return this.page.getByRole('alert').filter({ hasText: 'You do not have permission to view payment orders' })
   }
 
   async gotoPage(displayPage: number): Promise<void> {
@@ -71,15 +48,12 @@ export class PaymentsListPage extends BasePage {
       .click()
   }
 
-  async expectReferenceVisible(reference: string): Promise<void> {
-    await expect(this.byTestId('payment-orders-table').getByText(reference)).toBeVisible()
-  }
-
-  async expectReferenceHidden(reference: string): Promise<void> {
-    await expect(this.byTestId('payment-orders-table').getByText(reference)).toHaveCount(0)
+  referenceInTable(reference: string): Locator {
+    return this.byTestId('payment-orders-table').getByText(reference)
   }
 
   statusBadgeForReference(reference: string) {
+    // Table is a Nuxt UI grid in one route and a semantic table in another.
     return this.byTestId('payment-orders-table')
       .locator('[role="row"], tr')
       .filter({ hasText: reference })

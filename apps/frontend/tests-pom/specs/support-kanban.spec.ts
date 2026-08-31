@@ -1,9 +1,8 @@
 import { uniqueCaseReference, uniqueMerchantReference } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { etagOf } from '../utils/http'
 import { waitForBffResponse } from '../utils/wait-bff'
-import { pomAuthFiles } from '../utils/env'
-import { BffClient , expectStatus } from '../api/bff-client'
+import { type BffClient, expectStatus } from '../api/bff-client'
 
 async function seedNewCase(
   api: BffClient,
@@ -11,7 +10,7 @@ async function seedNewCase(
   testInfo: import('@playwright/test').TestInfo,
   title: string,
 ) {
-  const created = await api.createSupportCase({
+  const created = await api.operations.createCase({
     merchantId,
     title,
     caseReference: uniqueCaseReference(testInfo),
@@ -30,8 +29,8 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
     api,
     page,
   }, testInfo) => {
-    const client = requireApi(api)
-    const merchant = await client.createMerchant(
+    const client = api
+    const merchant = await client.merchants.create(
       uniqueMerchantReference(testInfo),
       'Support kanban merchant',
     )
@@ -54,7 +53,7 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
     await page.reload()
     await app.support.expectLoaded()
     await app.support.openWorkQueue()
-    await app.support.board.expectCardIn(seeded.caseId, 'IN_PROGRESS')
+    await expect(app.support.board.cardInColumn(seeded.caseId, 'IN_PROGRESS')).toBeVisible()
   })
 
   test('PW-OPS-E2E-111 dragTo NEW onto IN_PROGRESS', { tag: ['@flaky'] }, async ({
@@ -62,8 +61,8 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
     api,
     page,
   }, testInfo) => {
-    const client = requireApi(api)
-    const merchant = await client.createMerchant(
+    const client = api
+    const merchant = await client.merchants.create(
       uniqueMerchantReference(testInfo),
       'Support drag merchant',
     )
@@ -79,17 +78,17 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
     })
     await app.support.board.card(seeded.caseId).dragToColumn(app.support.board.column('IN_PROGRESS'))
     expect((await patched).status()).toBe(200)
-    await app.support.board.expectCardIn(seeded.caseId, 'IN_PROGRESS')
+    await expect(app.support.board.cardInColumn(seeded.caseId, 'IN_PROGRESS')).toBeVisible()
   })
 
   test('PW-OPS-E2E-112 second context PATCH yields 412 rollback and toast', async ({
     app,
     api,
     page,
-    playwright,
+    actors,
   }, testInfo) => {
-    const client = requireApi(api)
-    const merchant = await client.createMerchant(
+    const client = api
+    const merchant = await client.merchants.create(
       uniqueMerchantReference(testInfo),
       'Support conflict merchant',
     )
@@ -101,17 +100,13 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
     await app.support.openWorkQueue()
     await expect(app.support.board.card(seeded.caseId).root()).toBeVisible()
 
-    const operatorApi = await BffClient.create(playwright, pomAuthFiles.platformOperator)
-    try {
-      const raced = await operatorApi.patchSupportCase(
-        seeded.caseId,
-        { status: 'IN_PROGRESS' },
-        seeded.etag,
-      )
-      expectStatus(raced, 200)
-    } finally {
-      await operatorApi.dispose()
-    }
+    const operatorApi = (await actors.open('platformOperator')).api
+    const raced = await operatorApi.operations.patchCase(
+      seeded.caseId,
+      { status: 'IN_PROGRESS' },
+      seeded.etag,
+    )
+    expectStatus(raced, 200)
 
     const patched = waitForBffResponse(page, {
       method: 'PATCH',
@@ -119,13 +114,13 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
     })
     await app.support.board.card(seeded.caseId).moveTo('IN_PROGRESS')
     expect((await patched).status()).toBe(412)
-    await app.support.board.expectCardIn(seeded.caseId, 'NEW')
-    await expect(page.locator('.toast-error')).toBeVisible()
+    await expect(app.support.board.cardInColumn(seeded.caseId, 'NEW')).toBeVisible()
+    await expect(app.support.errorToast()).toBeVisible()
   })
 
   test('PW-OPS-E2E-113 board fragment matches ARIA snapshot', async ({ app, api }, testInfo) => {
-    const client = requireApi(api)
-    const merchant = await client.createMerchant(
+    const client = api
+    const merchant = await client.merchants.create(
       uniqueMerchantReference(testInfo),
       'Support aria merchant',
     )
@@ -148,8 +143,8 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
     api,
     page,
   }, testInfo) => {
-    const client = requireApi(api)
-    const merchant = await client.createMerchant(
+    const client = api
+    const merchant = await client.merchants.create(
       uniqueMerchantReference(testInfo),
       'Support illegal merchant',
     )
@@ -165,6 +160,6 @@ test.describe('Support work queue', { tag: ['@kanban'] }, () => {
     })
     await app.support.board.card(seeded.caseId).dragToColumn(app.support.board.column('RESOLVED'))
     expect((await patched).status()).toBe(409)
-    await app.support.board.expectCardIn(seeded.caseId, 'NEW')
+    await expect(app.support.board.cardInColumn(seeded.caseId, 'NEW')).toBeVisible()
   })
 })

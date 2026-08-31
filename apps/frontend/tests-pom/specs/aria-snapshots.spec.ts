@@ -1,24 +1,27 @@
 import { merchantAlphaId } from '../auth/accounts'
-import { pomAuthFiles } from '../utils/env'
 import { test, expect } from '../fixtures'
-import { App } from '../pages/App'
 
-test('PW-M360-E2E-073 create-merchant form matches ARIA snapshot', { tag: ['@visual'] }, async ({ app }) => {
-  await app.merchants.goto()
-  await app.merchants.expectLoaded()
-  await app.merchants.openCreateForm()
-  await expect(app.page.getByTestId('create-merchant-form')).toMatchAriaSnapshot()
-})
-
-test('create-payment form matches ARIA snapshot', { tag: ['@visual'] }, async ({ browser }) => {
-  const context = await browser.newContext({ storageState: pomAuthFiles.merchantManager })
-  const page = await context.newPage()
-  const manager = new App(page)
-  try {
+test('create-payment wizard matches ARIA snapshots at every step', { tag: ['@visual'] }, async ({ actors }) => {
+  test.setTimeout(60_000)
+  const { app: manager } = await actors.open('merchantManager')
     await manager.paymentCreate.gotoForMerchant(merchantAlphaId)
     await manager.paymentCreate.expectLoaded()
-    await expect(page.getByTestId('create-payment-order-form')).toMatchAriaSnapshot()
-  } finally {
-    await context.close()
-  }
+    await test.step('amount step', async () => {
+      await expect(manager.paymentCreate.form()).toMatchAriaSnapshot()
+    })
+    await test.step('currency step', async () => {
+      await manager.paymentCreate.fillAmount(1200)
+      await manager.paymentCreate.next()
+      await expect(manager.paymentCreate.form()).toMatchAriaSnapshot()
+    })
+    await test.step('reference step', async () => {
+      await manager.paymentCreate.chooseCurrency('PLN')
+      await manager.paymentCreate.next()
+      await expect(manager.paymentCreate.form()).toMatchAriaSnapshot()
+    })
+    await test.step('review step', async () => {
+      await manager.paymentCreate.fillReference('ARIA-WIZARD-001')
+      await manager.paymentCreate.next()
+      await expect(manager.paymentCreate.form()).toMatchAriaSnapshot()
+    })
 })

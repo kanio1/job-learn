@@ -1,0 +1,8 @@
+- term: Amount (minor units)
+- definition: /\d+/
+- term: Currency
+- definition: PLN
+- term: Client Order Reference
+- definition: /ARIA-WIZARD-\d+/
+- button "Back"
+- button "Create payment order": Create Payment Order

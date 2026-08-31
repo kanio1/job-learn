@@ -14,12 +14,12 @@ export type OrderReferencePartition = {
 
 export const MAX_ORDER_REFERENCE_LENGTH = 120
 
-export const orderReferencePartitions: readonly OrderReferencePartition[] = [
+export const orderReferencePartitions = [
   { id: 'SCN-PAY-12', kind: 'blank', expectStatus: 400 },
   { id: 'SCN-PAY-13', kind: 'min', expectStatus: 201 },
   { id: 'SCN-PAY-14', kind: 'max', expectStatus: 201 },
   { id: 'SCN-PAY-15', kind: 'over', expectStatus: 400 },
-]
+] as const satisfies readonly OrderReferencePartition[]
 
 export function orderReferenceFor(kind: OrderReferencePartition['kind'], uniqueSeed: string): string {
   const seed = uniqueSeed.replace(/[^A-Za-z0-9]/g, '').toUpperCase() || 'X'

@@ -11,27 +11,41 @@ export class PinChallengeComponent {
     return this.page.getByTestId('refund-pin-input')
   }
 
+  verifyButton(): Locator {
+    return this.page.getByTestId('refund-pin-verify')
+  }
+
+  error(): Locator {
+    return this.page.getByTestId('refund-pin-error')
+  }
+
+  lockedAlert(): Locator {
+    return this.page.getByTestId('refund-pin-locked')
+  }
+
+  pinLabel(): Locator {
+    return this.page.getByLabel('Refund approval PIN')
+  }
+
   async expectOpen(): Promise<void> {
     await expect(this.root()).toBeVisible()
-    await expect(this.page.getByLabel('Refund approval PIN')).toBeVisible()
+    await expect(this.pinLabel()).toBeVisible()
   }
 
   async typePin(pin: string): Promise<void> {
+    // Six visual slots implement one PIN field; slot zero is the intentional keyboard entry point.
     const slots = this.input().locator('input')
     await slots.first().click()
     await this.page.keyboard.type(pin)
   }
 
   async pastePin(pin: string): Promise<void> {
+    // Six visual slots implement one PIN field; slot zero is the intentional paste target.
     const slots = this.input().locator('input')
     await slots.first().fill(pin)
   }
 
-  /** Submit the PIN when the verify button is enabled (PIN may need typing). */
-  async submitIfEnabled(): Promise<void> {
-    const verify = this.page.getByTestId('refund-pin-verify')
-    if (await verify.isEnabled()) {
-      await verify.click()
-    }
+  async submit(): Promise<void> {
+    await this.verifyButton().click()
   }
 }

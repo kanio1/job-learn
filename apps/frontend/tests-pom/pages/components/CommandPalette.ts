@@ -29,7 +29,15 @@ export class CommandPalette {
     await this.searchInput().fill(text)
   }
 
-  async selectOption(name: string): Promise<void> {
-    await this.dialog().getByRole('option', { name, exact: true }).first().click()
+  option(name: string): Locator {
+    return this.dialog().getByRole('option', { name })
+  }
+
+  optionInGroup(group: string, name: string): Locator {
+    return this.dialog().getByLabel(group).getByRole('option', { name, exact: true })
+  }
+
+  async selectOptionInGroup(group: string, name: string): Promise<void> {
+    await this.optionInGroup(group, name).click()
   }
 }

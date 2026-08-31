@@ -1,5 +1,5 @@
 import { uniqueToken } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { expectStatus } from '../api/bff-client'
 import { pomAuthFiles } from '../utils/env'
 import { requestHeader } from '../utils/network'
@@ -10,8 +10,8 @@ test.use({ storageState: pomAuthFiles.platformAdmin })
 let snapshot: { settings: TenantSettingsBody, etag: string } | undefined
 
 test.beforeEach(async ({ api }) => {
-  const client = requireApi(api)
-  const get = await client.getTenantSettings()
+  const client = api
+  const get = await client.identity.getTenantSettings()
   expectStatus(get, 200, 'PLATFORM_ADMIN must have platform:tenant:settings:read')
   snapshot = {
     settings: get.body,
@@ -23,10 +23,10 @@ test.afterEach(async ({ api }) => {
   if (!snapshot) {
     return
   }
-  const client = requireApi(api)
-  const fresh = await client.getTenantSettings()
+  const client = api
+  const fresh = await client.identity.getTenantSettings()
   const etag = fresh.headers['etag'] || snapshot.etag
-  await client.updateTenantSettings(
+  await client.identity.updateTenantSettings(
     {
       contactEmail: snapshot.settings.contactEmail ?? undefined,
       timezone: snapshot.settings.timezone,
@@ -38,12 +38,12 @@ test.afterEach(async ({ api }) => {
 })
 
 test('PATCH tenant settings without If-Match is 428; stale If-Match is 412', async ({ api }) => {
-  const client = requireApi(api)
-  const get = await client.getTenantSettings()
+  const client = api
+  const get = await client.identity.getTenantSettings()
   expectStatus(get, 200)
-  const missing = await client.updateTenantSettings({ timezone: get.body?.timezone })
+  const missing = await client.identity.updateTenantSettings({ timezone: get.body?.timezone })
   expectStatus(missing, 428)
-  const stale = await client.updateTenantSettings({ timezone: get.body?.timezone }, '"v99"')
+  const stale = await client.identity.updateTenantSettings({ timezone: get.body?.timezone }, '"v99"')
   expectStatus(stale, 412)
 })
 
@@ -73,5 +73,5 @@ test('PATCH tenant settings forwards GET ETag as If-Match', async ({ app, page }
   expect(requestHeader(posted, 'If-Match')).toBe(etag)
   expect(patch.status()).toBe(200)
   expect(patch.headers()['etag']).toBeTruthy()
-  await expect(app.page.getByText('Settings saved', { exact: true })).toBeVisible()
+  await expect(app.tenantSettings.savedNotice()).toBeVisible()
 })

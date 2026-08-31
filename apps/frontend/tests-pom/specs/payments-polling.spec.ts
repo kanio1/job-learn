@@ -1,11 +1,11 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { expectStatus } from '../api/bff-client'
 import { waitForBffResponse } from '../utils/wait-bff'
 
 test('manual refresh GETs the live order and then shows Authorized after API authorize', async ({ app, api, page, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
-  const created = await client.createPaymentOrder(
+  const client = api
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 2100, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'POLL') },
     uniqueIdempotencyKey(testInfo, 'POLL'),
@@ -28,7 +28,7 @@ test('manual refresh GETs the live order and then shows Authorized after API aut
   await expect(app.paymentDetail.currentStatus()).toHaveAttribute('data-status', 'CREATED')
 
   const etag = refreshed.headers()['etag'] ?? created.headers['etag'] ?? ''
-  const authorized = await client.authorizePayment(
+  const authorized = await client.payments.authorize(
     ownedMerchantId,
     paymentOrderId!,
     etag,
@@ -43,8 +43,8 @@ test('manual refresh GETs the live order and then shows Authorized after API aut
 })
 
 test('auto refresh issues a live GET without a mocked status flip', async ({ app, api, page, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
-  const created = await client.createPaymentOrder(
+  const client = api
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 1800, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'AUTOPOLL') },
     uniqueIdempotencyKey(testInfo, 'AUTOPOLL'),

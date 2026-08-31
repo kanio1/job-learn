@@ -17,14 +17,14 @@ export type IfMatchActionRow = {
   to: PaymentStatus
 }
 
-export const ifMatchActionMatrix: readonly IfMatchActionRow[] = [
+export const ifMatchActionMatrix = [
   { id: 'SCN-IFM-01', from: 'CREATED', action: 'cancel', ifMatch: 'absent', expectStatus: 428, to: 'CREATED' },
   { id: 'SCN-IFM-02', from: 'AUTHORIZED', action: 'capture', ifMatch: 'v99', expectStatus: 412, to: 'AUTHORIZED' },
   { id: 'SCN-IFM-03', from: 'CREATED', action: 'cancel', ifMatch: 'malformed', expectStatus: 400, to: 'CREATED' },
   { id: 'SCN-IFM-04', from: 'AUTHORIZED', action: 'capture', ifMatch: 'absent', expectStatus: 428, to: 'AUTHORIZED' },
-]
+] as const satisfies readonly IfMatchActionRow[]
 
-export const ifMatchPatchMatrix: readonly IfMatchActionRow[] = [
+export const ifMatchPatchMatrix = [
   { id: 'SCN-IFM-05', from: 'CREATED', action: 'patch', ifMatch: 'v99', expectStatus: 412, to: 'CREATED' },
   { id: 'SCN-IFM-06', from: 'CREATED', action: 'patch', ifMatch: 'absent', expectStatus: 428, to: 'CREATED' },
-]
+] as const satisfies readonly IfMatchActionRow[]

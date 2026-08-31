@@ -27,12 +27,12 @@ export class EvidenceCarouselComponent {
     return this.page.getByTestId('evidence-error-slide')
   }
 
-  async expectOpen(): Promise<void> {
-    await expect(this.root()).toBeVisible()
+  activeIndex(): Locator {
+    return this.root()
   }
 
-  async expectIndex(index: number): Promise<void> {
-    await expect(this.root()).toHaveAttribute('data-active-index', String(index))
+  async expectOpen(): Promise<void> {
+    await expect(this.root()).toBeVisible()
   }
 
   async goNext(): Promise<void> {

@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class SessionLabPage extends BasePage {
@@ -21,6 +21,9 @@ export class SessionLabPage extends BasePage {
   async csrfFail(): Promise<void> {
     await this.byTestId('session-lab-csrf-fail').click()
   }
+
+  jsCookies(): Locator { return this.byTestId('session-lab-js-cookies') }
+  cookiePolicy(): Locator { return this.byTestId('session-lab-cookie-policy') }
 
   deviceList() {
     return this.byTestId('session-lab-device-list')

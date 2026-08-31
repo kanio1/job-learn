@@ -12,7 +12,17 @@ This tree is the **only product Playwright suite** (UI/E2E + BFF REST). Write a 
 - Error Lab **429** is a BFF mock — this suite does not call it.
 - Hosted checkout is a **new tab**, not an iframe.
 - Assert Idempotency-Key / If-Match / ETag with `page.waitForRequest` (never mocks).
-- Guest project (`chromium-guest`) uses empty `storageState` — do not destructure `api`.
+- Guest project (`chromium-guest`) uses empty `storageState`; its required `api`
+  fixture intentionally proves unauthenticated 401 responses and never falls back
+  to credentials.
+
+### `test.step()`
+
+Use two to four outcome-oriented steps only for multi-phase E2E journeys (for
+example: API arrangement, actor action, then a visible or network outcome).
+Use `test.step(row.id, ...)` for method-table loops when it identifies a failed
+row. Keep simple single-oracle BFF tests unwrapped; do not nest steps or put
+them inside page objects.
 
 ## Tags
 
@@ -178,4 +188,4 @@ Method playbook: [`docs/testing/playwright-method-playbook/`](../../../docs/test
 | `fixtures/index.ts` | `fixtures/index.ts` |
 | …same folder names… | copy then rename |
 
-Patterns: POM (intent methods), fixture DI, `App` facade, data factory, API client for preconditions. Assertions stay in specs except `expectLoaded()`. Agent placement: `.agents/skills/playwright-pom`.
+Patterns: POM (intent methods), fixture DI, `App` facade, data factory, API client for preconditions. Business assertions (status, value, count, data presence and security outcome) stay in specs. The only POM assertion exceptions are route/component readiness (`expectLoaded`), open/closed overlays (`expectOpen`/`expectClosed`), and load-time access outcomes (`expectAccessDenied`, `expectForbidden`, `expectNotFound`, `expectRegistryTable`). These methods establish safe use of the object; every other observable is exposed as a named locator. Agent placement: `.agents/skills/playwright-pom`.

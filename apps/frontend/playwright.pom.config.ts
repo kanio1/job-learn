@@ -29,6 +29,11 @@ const workers = Math.min(requested, POM_WORKER_COUNT)
 // Fresh parallel Keycloak logins during stack warm-up exceed the 30s default
 // test timeout (keycloak.setup.ts already allows 120s for the OIDC redirect).
 const setupTimeout = 120_000
+
+function authSetupProject(name: string, testMatch: RegExp) {
+  return { name, testMatch, fullyParallel: false, timeout: setupTimeout }
+}
+
 export default defineConfig({
   testDir: './tests-pom',
   fullyParallel: true,
@@ -46,60 +51,15 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   projects: [
-    {
-      name: 'setup-platform-admin',
-      testMatch: /auth\/platform-admin\.setup\.ts/,
-      fullyParallel: false,
-      timeout: setupTimeout,
-    },
-    {
-      name: 'setup-platform-operator',
-      testMatch: /auth\/platform-operator\.setup\.ts/,
-      fullyParallel: false,
-      timeout: setupTimeout,
-    },
-    {
-      name: 'setup-platform-admin-session',
-      testMatch: /auth\/platform-admin-session\.setup\.ts/,
-      fullyParallel: false,
-      timeout: setupTimeout,
-    },
-    {
-      name: 'setup-tenant-admin',
-      testMatch: /auth\/tenant-admin\.setup\.ts/,
-      fullyParallel: false,
-      timeout: setupTimeout,
-    },
-    {
-      name: 'setup-merchant-manager',
-      testMatch: /auth\/merchant-manager\.setup\.ts/,
-      fullyParallel: false,
-      timeout: setupTimeout,
-    },
-    {
-      name: 'setup-worker-managers',
-      testMatch: /auth\/worker-managers\.setup\.ts/,
-      fullyParallel: false,
-      timeout: setupTimeout,
-    },
-    {
-      name: 'setup-support-agent',
-      testMatch: /auth\/support-agent\.setup\.ts/,
-      fullyParallel: false,
-      timeout: setupTimeout,
-    },
-    {
-      name: 'setup-read-only-user',
-      testMatch: /auth\/read-only-user\.setup\.ts/,
-      fullyParallel: false,
-      timeout: setupTimeout,
-    },
-    {
-      name: 'setup-merchant-denied',
-      testMatch: /auth\/merchant-denied\.setup\.ts/,
-      fullyParallel: false,
-      timeout: setupTimeout,
-    },
+    authSetupProject('setup-platform-admin', /auth\/platform-admin\.setup\.ts/),
+    authSetupProject('setup-platform-operator', /auth\/platform-operator\.setup\.ts/),
+    authSetupProject('setup-platform-admin-session', /auth\/platform-admin-session\.setup\.ts/),
+    authSetupProject('setup-tenant-admin', /auth\/tenant-admin\.setup\.ts/),
+    authSetupProject('setup-merchant-manager', /auth\/merchant-manager\.setup\.ts/),
+    authSetupProject('setup-worker-managers', /auth\/worker-managers\.setup\.ts/),
+    authSetupProject('setup-support-agent', /auth\/support-agent\.setup\.ts/),
+    authSetupProject('setup-read-only-user', /auth\/read-only-user\.setup\.ts/),
+    authSetupProject('setup-merchant-denied', /auth\/merchant-denied\.setup\.ts/),
     {
       name: 'chromium-guest',
       testMatch: /specs\/session-guest\.spec\.ts/,

@@ -1,8 +1,6 @@
 import { uniqueMerchantReference } from '../data/factories'
-import { BffClient , expectStatus } from '../api/bff-client'
-import { pomAuthFiles } from '../utils/env'
-import { test, expect, requireApi } from '../fixtures'
-import { App } from '../pages/App'
+import { expectStatus } from '../api/bff-client'
+import { test, expect } from '../fixtures'
 import { etagOf, expectProblem } from '../utils/http'
 import { waitForBffResponse } from '../utils/wait-bff'
 import { merchantIfMatchMatrix } from '../methods/decision-table/MerchantIfMatchMatrix'
@@ -10,60 +8,52 @@ import { merchantIfMatchMatrix } from '../methods/decision-table/MerchantIfMatch
 test.describe('Merchant ETag / If-Match', { tag: ['@security'] }, () => {
   test('PW-M360-API-041 BFF activate stale ETag is 412', async ({ api }, testInfo) => {
     expect(merchantIfMatchMatrix.find(row => row.testId === 'RA-M360-052')?.expectStatus).toBe(412)
-    const client = requireApi(api)
+    const client = api
     const reference = uniqueMerchantReference(testInfo)
-    const created = await client.createMerchant(reference, `Stale ${reference}`)
+    const created = await client.merchants.create(reference, `Stale ${reference}`)
     expectStatus(created, 201)
     const merchantId = created.body.merchantId!
-    const stale = await client.activateMerchant(merchantId, '"v99"')
+    const stale = await client.merchants.activate(merchantId, '"v99"')
     expectStatus(stale, 412)
     expectProblem(stale.body, 412, 'merchant_version_mismatch')
   })
 
   test('PW-M360-SEC-020 two contexts stale If-Match shows Reload', async ({
-    browser,
-    playwright,
     api,
+    actors,
   }, testInfo) => {
-    const seed = requireApi(api)
+    const seed = api
     const reference = uniqueMerchantReference(testInfo)
-    const created = await seed.createMerchant(reference, `Race ${reference}`)
+    const created = await seed.merchants.create(reference, `Race ${reference}`)
     expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
-    const contextA = await browser.newContext({ storageState: pomAuthFiles.platformAdmin })
-    const apiB = await BffClient.create(playwright, pomAuthFiles.platformAdmin)
-    const appA = new App(await contextA.newPage())
-    try {
-      await appA.merchantDetail.gotoMerchant(merchantId)
-      await appA.merchantDetail.expectLoaded()
-      await appA.merchantDetail.expectStatus('Draft')
+    const firstAdmin = await actors.open('platformAdmin')
+    const secondAdmin = await actors.open('platformAdmin')
+    await firstAdmin.app.merchantDetail.gotoMerchant(merchantId)
+    await firstAdmin.app.merchantDetail.expectLoaded()
+    await expect(firstAdmin.app.merchantDetail.statusBadge()).toContainText('Draft')
 
-      const current = await apiB.getMerchant(merchantId)
-      expect((await apiB.activateMerchant(merchantId, etagOf(current.headers)!)).status).toBe(200)
+    const current = await secondAdmin.api.merchants.get(merchantId)
+    expect((await secondAdmin.api.merchants.activate(merchantId, etagOf(current.headers)!)).status).toBe(200)
 
-      const activate = waitForBffResponse(appA.page, {
-        method: 'POST',
-        pathExact: `/api/merchants/${merchantId}/activate`,
-      })
-      await appA.merchantDetail.activate()
-      expect((await activate).status()).toBe(412)
-      await appA.problem.expectVisible()
-      await appA.problem.expectStatusBadge(412)
-      await expect(appA.page.getByRole('button', { name: 'Reload' })).toBeVisible()
+    const activate = waitForBffResponse(firstAdmin.page, {
+      method: 'POST',
+      pathExact: `/api/merchants/${merchantId}/activate`,
+    })
+    await firstAdmin.app.merchantDetail.activate()
+    expect((await activate).status()).toBe(412)
+    await firstAdmin.app.problem.expectVisible()
+    await expect(firstAdmin.app.problem.statusBadge(412)).toBeVisible()
+    await expect(firstAdmin.app.merchantDetail.reloadButton()).toBeVisible()
 
-      const reloaded = waitForBffResponse(appA.page, {
-        method: 'GET',
-        pathExact: `/api/merchants/${merchantId}`,
-      })
-      await appA.merchantDetail.reloadAfterConflict()
-      expect((await reloaded).status()).toBe(200)
-      await appA.merchantDetail.expectStatus('Active')
-      await expect(appA.problem.root()).toHaveCount(0)
-    }
-    finally {
-      await contextA.close()
-      await apiB.dispose()
-    }
+    const reloaded = waitForBffResponse(firstAdmin.page, {
+      method: 'GET',
+      pathExact: `/api/merchants/${merchantId}`,
+    })
+    await firstAdmin.app.merchantDetail.reloadAfterConflict()
+    expect((await reloaded).status()).toBe(200)
+    await expect(firstAdmin.app.merchantDetail.statusBadge()).toContainText('Active')
+    await expect(firstAdmin.app.problem.root()).toHaveCount(0)
   })
 })

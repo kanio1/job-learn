@@ -13,7 +13,7 @@ export type MerchantIfMatchRow = {
   testId: string
 }
 
-export const merchantIfMatchMatrix: readonly MerchantIfMatchRow[] = [
+export const merchantIfMatchMatrix = [
   {
     id: 'DT-M360-02-absent',
     ifMatch: 'absent',
@@ -34,4 +34,4 @@ export const merchantIfMatchMatrix: readonly MerchantIfMatchRow[] = [
     expectStatus: 200,
     testId: 'RA-M360-053',
   },
-]
+] as const satisfies readonly MerchantIfMatchRow[]

@@ -28,7 +28,7 @@ export class KanbanBoardComponent {
     await expect(this.column('RESOLVED')).toBeVisible()
   }
 
-  async expectCardIn(caseId: string, status: string): Promise<void> {
-    await expect(this.column(status).getByTestId(`support-card-${caseId}`)).toBeVisible()
+  cardInColumn(caseId: string, status: string): Locator {
+    return this.column(status).getByTestId(`support-card-${caseId}`)
   }
 }

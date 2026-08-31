@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class EventLabPage extends BasePage {
@@ -11,35 +11,26 @@ export class EventLabPage extends BasePage {
   }
 
   async expectLoaded(): Promise<void> {
-    await expect(this.page.getByRole('heading', { name: /Event Lab/i }).first()).toBeVisible()
+    await expect(this.heading()).toBeVisible()
   }
 
-  async expectLoading(): Promise<void> {
-    await expect(this.byTestId('event-lab-loading')).toBeVisible()
-  }
-
-  async expectEmpty(): Promise<void> {
-    await expect(this.byTestId('event-lab-empty')).toBeVisible()
-  }
-
-  async expectFilteredEmpty(): Promise<void> {
-    await expect(this.byTestId('event-lab-filtered-empty')).toBeVisible()
-  }
+  heading(): Locator { return this.page.getByRole('heading', { name: /Event Lab/i }) }
+  loading(): Locator { return this.byTestId('event-lab-loading') }
+  filteredEmpty(): Locator { return this.byTestId('event-lab-filtered-empty') }
+  forbidden(): Locator { return this.byTestId('event-lab-forbidden') }
+  error(): Locator { return this.byTestId('event-lab-error') }
+  notFound(): Locator { return this.byTestId('event-lab-not-found') }
+  table(): Locator { return this.byTestId('event-lab-table') }
+  empty(): Locator { return this.byTestId('event-lab-empty') }
+  settledListState(): Locator { return this.table().or(this.filteredEmpty()).or(this.empty()) }
+  duplicateConfirmation(): Locator { return this.byTestId('confirm-inject-duplicate') }
+  poisonConfirmation(): Locator { return this.byTestId('confirm-inject-poison') }
+  dltBanner(): Locator { return this.byTestId('event-lab-dlt-banner') }
+  eventRow(targetId: string): Locator { return this.table().getByText(targetId, { exact: true }) }
+  payloadColumn(): Locator { return this.table().getByRole('columnheader', { name: /payload/i }) }
 
   async expectForbidden(): Promise<void> {
-    await expect(this.byTestId('event-lab-forbidden')).toBeVisible()
-  }
-
-  async expectError(): Promise<void> {
-    await expect(this.byTestId('event-lab-error')).toBeVisible()
-  }
-
-  override async expectNotFound(): Promise<void> {
-    await expect(this.byTestId('event-lab-not-found')).toBeVisible()
-  }
-
-  async expectRowVisible(targetId: string): Promise<void> {
-    await expect(this.page.getByTestId('event-lab-table').getByText(targetId).first()).toBeVisible()
+    await expect(this.forbidden()).toBeVisible()
   }
 
   async search(value: string): Promise<void> {
@@ -61,40 +52,14 @@ export class EventLabPage extends BasePage {
 
   async injectPoison(): Promise<void> {
     await this.byTestId('event-lab-inject-poison').click()
-    await expect(this.page.getByTestId('confirm-inject-poison')).toBeVisible()
+    await expect(this.poisonConfirmation()).toBeVisible()
   }
 
   async confirmPoison(): Promise<void> {
     await this.byTestId('confirm-inject-poison').click()
   }
 
-  async expectDltBanner(): Promise<void> {
-    await expect(this.byTestId('event-lab-dlt-banner')).toBeVisible()
-  }
-
-  async expectDeliveryPending(): Promise<void> {
-    await expect(this.byTestId('eventlab-delivery-pending')).toBeVisible()
-  }
-
-  async expectDeliveryProcessed(): Promise<void> {
-    await expect(this.byTestId('eventlab-delivery-processed')).toBeVisible()
-  }
-
-  async expectDeliveryDead(): Promise<void> {
-    await expect(this.byTestId('eventlab-delivery-dlt-banner')).toBeVisible()
-  }
-
   async rowCount(): Promise<number> {
-    return this.page.getByTestId('event-lab-table').locator('tbody tr').count()
-  }
-
-  async hasNoPayloadColumn(): Promise<boolean> {
-    const headers = this.page.getByTestId('event-lab-table').locator('th')
-    const count = await headers.count()
-    for (let i = 0; i < count; i++) {
-      const text = (await headers.nth(i).textContent()) || ''
-      if (/payload/i.test(text)) return false
-    }
-    return true
+    return (await this.table().getByRole('row').count()) - 1
   }
 }

@@ -1,12 +1,12 @@
 import { uniqueMerchantReference } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { expectStatus } from '../api/bff-client'
 
 test.describe('Merchant unsaved guard', () => {
   test('PW-OPS-E2E-160 goBack Stay keeps edit URL', async ({ app, api, page }, testInfo) => {
-    const client = requireApi(api)
+    const client = api
     const reference = uniqueMerchantReference(testInfo)
-    const created = await client.createMerchant(reference, `Dirty ${reference}`)
+    const created = await client.merchants.create(reference, `Dirty ${reference}`)
     expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
@@ -23,9 +23,9 @@ test.describe('Merchant unsaved guard', () => {
   })
 
   test('PW-OPS-E2E-161 NuxtLink Discard goes to list', async ({ app, api, page }, testInfo) => {
-    const client = requireApi(api)
+    const client = api
     const reference = uniqueMerchantReference(testInfo)
-    const created = await client.createMerchant(reference, `Leave ${reference}`)
+    const created = await client.merchants.create(reference, `Leave ${reference}`)
     expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
@@ -39,9 +39,9 @@ test.describe('Merchant unsaved guard', () => {
   })
 
   test('PW-OPS-E2E-162 clean form Back has no dialog', async ({ app, api, page }, testInfo) => {
-    const client = requireApi(api)
+    const client = api
     const reference = uniqueMerchantReference(testInfo)
-    const created = await client.createMerchant(reference, `Clean ${reference}`)
+    const created = await client.merchants.create(reference, `Clean ${reference}`)
     expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
@@ -53,9 +53,9 @@ test.describe('Merchant unsaved guard', () => {
   })
 
   test('PW-OPS-E2E-163 dirty close runBeforeUnload is beforeunload', async ({ app, api, page }, testInfo) => {
-    const client = requireApi(api)
+    const client = api
     const reference = uniqueMerchantReference(testInfo)
-    const created = await client.createMerchant(reference, `Unload ${reference}`)
+    const created = await client.merchants.create(reference, `Unload ${reference}`)
     expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 
@@ -74,9 +74,9 @@ test.describe('Merchant unsaved guard', () => {
   })
 
   test('PW-OPS-E2E-164 Stay sends zero PATCH', async ({ app, api, page }, testInfo) => {
-    const client = requireApi(api)
+    const client = api
     const reference = uniqueMerchantReference(testInfo)
-    const created = await client.createMerchant(reference, `Zero ${reference}`)
+    const created = await client.merchants.create(reference, `Zero ${reference}`)
     expectStatus(created, 201)
     const merchantId = created.body.merchantId!
 

@@ -1,6 +1,5 @@
 import AxeBuilder from '@axe-core/playwright'
 import { test, expect } from '../fixtures'
-import { App } from '../pages/App'
 
 async function expectNoSeriousAxeViolations(page: import('@playwright/test').Page) {
   const results = await new AxeBuilder({ page })
@@ -11,17 +10,11 @@ async function expectNoSeriousAxeViolations(page: import('@playwright/test').Pag
   expect(serious, JSON.stringify(serious, null, 2)).toEqual([])
 }
 
-test('login page has no serious axe violations', { tag: ['@a11y'] }, async ({ browser }) => {
-  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
-  const page = await context.newPage()
-  const guest = new App(page)
-  try {
-    await guest.login.goto()
-    await guest.login.expectLoaded()
-    await expectNoSeriousAxeViolations(page)
-  } finally {
-    await context.close()
-  }
+test('login page has no serious axe violations', { tag: ['@a11y'] }, async ({ actors }) => {
+  const guest = await actors.open('guest')
+  await guest.app.login.goto()
+  await guest.app.login.expectLoaded()
+  await expectNoSeriousAxeViolations(guest.page)
 })
 
 test('merchants registry has no serious axe violations', { tag: ['@a11y'] }, async ({ app }) => {

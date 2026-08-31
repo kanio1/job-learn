@@ -16,7 +16,7 @@ export type AmountPartition = {
 /** Domain/Bean Validation: 1 .. 100_000_000 inclusive (`PaymentAmount`, `@Min`/`@Max`). */
 export const MAX_AMOUNT_MINOR = 100_000_000
 
-export const amountPartitions: readonly AmountPartition[] = [
+export const amountPartitions = [
   { id: 'SCN-PAY-06', amountMinor: 0, currency: 'PLN', expectStatus: 400 },
   { id: 'SCN-PAY-07', amountMinor: 1, currency: 'PLN', expectStatus: 201 },
   { id: 'SCN-PAY-10', amountMinor: 2, currency: 'PLN', expectStatus: 201 },
@@ -25,4 +25,4 @@ export const amountPartitions: readonly AmountPartition[] = [
   { id: 'SCN-PAY-09a', amountMinor: 1999, currency: 'PL', expectStatus: 400 },
   { id: 'SCN-PAY-09b', amountMinor: 1999, currency: 'XXX', expectStatus: 400 },
   { id: 'SCN-PAY-09c', amountMinor: 1999, currency: 'PLNX', expectStatus: 400 },
-]
+] as const satisfies readonly AmountPartition[]

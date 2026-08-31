@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class AuditPage extends BasePage {
@@ -7,7 +7,8 @@ export class AuditPage extends BasePage {
   }
 
   async expectLoaded(): Promise<void> {
-    await expect(this.page.getByRole('heading', { name: 'Audit log' }).first()).toBeVisible()
+    // The dashboard navbar and content both expose this name; the content h1 is the focus target.
+    await expect(this.page.locator('h1[tabindex="-1"]', { hasText: 'Audit log' })).toBeVisible()
     await expect(this.byTestId('audit-filters')).toBeVisible()
   }
 
@@ -15,7 +16,11 @@ export class AuditPage extends BasePage {
     await this.byTestId('export-audit-log').click()
   }
 
+  table(): Locator { return this.byTestId('audit-table') }
+  entryDrawer(): Locator { return this.byTestId('audit-entry-drawer') }
+
   async openFirstRow(): Promise<void> {
+    // Rows have dynamic test ids; the first visible result is the documented audit-list action.
     await this.page.locator('[data-testid^="audit-row-"]').first().click()
   }
 

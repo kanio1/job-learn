@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 import { BasePage } from './BasePage'
 import { ConfirmModal } from './components/ConfirmModal'
 import { PinChallengeComponent } from './components/PinChallengeComponent'
@@ -9,7 +9,7 @@ export class PaymentDetailPage extends BasePage {
   readonly pinChallenge: PinChallengeComponent
   readonly evidenceCarousel: EvidenceCarouselComponent
 
-  constructor(page: import('@playwright/test').Page) {
+  constructor(page: Page) {
     super(page)
     this.confirm = new ConfirmModal(page)
     this.pinChallenge = new PinChallengeComponent(page)
@@ -24,15 +24,22 @@ export class PaymentDetailPage extends BasePage {
     await expect(this.byTestId('payment-order-detail')).toBeVisible()
   }
 
-  amount(): import('@playwright/test').Locator {
+  amount(): Locator {
     return this.byTestId('payment-amount')
   }
 
-  createdAt(): import('@playwright/test').Locator {
+  heading(name: string): Locator { return this.byTestId('payment-order-detail').getByRole('heading', { name, exact: true }) }
+  fieldLabel(name: string): Locator { return this.page.getByText(name, { exact: true }) }
+  displayedReference(reference: string): Locator { return this.byTestId('payment-order-detail').getByText(reference, { exact: true }) }
+  expirationCountdown(): Locator { return this.byTestId('expiration-countdown') }
+  expirationCountdownRemaining(): Locator { return this.byTestId('expiration-countdown-remaining') }
+  lifecycleAction(action: 'authorize' | 'capture' | 'cancel'): Locator { return this.byTestId(`lifecycle-${action}`) }
+
+  createdAt(): Locator {
     return this.byTestId('payment-created-at')
   }
 
-  statusInDetail(label: string) {
+  statusInDetail(label: string): Locator {
     return this.byTestId('payment-order-detail').getByText(label, { exact: true })
   }
 
@@ -44,6 +51,10 @@ export class PaymentDetailPage extends BasePage {
 
   async fillIfMatch(value: string): Promise<void> {
     await this.page.getByLabel('If-Match').fill(value)
+  }
+
+  lifecycleAmountInput(): Locator {
+    return this.byTestId('lifecycle-amount-input')
   }
 
   async ifMatchValue(): Promise<string> {
@@ -62,7 +73,7 @@ export class PaymentDetailPage extends BasePage {
   async capture(amountMinor?: number): Promise<void> {
     await this.openLifecycle('capture')
     if (amountMinor != null) {
-      await this.byTestId('lifecycle-amount-input').fill(String(amountMinor))
+      await this.lifecycleAmountInput().fill(String(amountMinor))
     }
     await this.submitLifecycle()
   }
@@ -86,18 +97,43 @@ export class PaymentDetailPage extends BasePage {
     await this.byTestId('evidence-upload-submit').click()
   }
 
+  async uploadEvidencePayload(file: Parameters<Locator['setInputFiles']>[0]): Promise<void> {
+    await this.byTestId('evidence-upload-input').setInputFiles(file)
+    await this.byTestId('evidence-upload-submit').click()
+  }
+
+  evidenceFile(name: string): Locator { return this.byTestId('evidence-file-name').filter({ hasText: name }) }
+  evidenceFileName(): Locator { return this.byTestId('evidence-file-name') }
+  evidenceDownload(): Locator { return this.byTestId('evidence-download') }
+
   async addNote(body: string): Promise<void> {
-    const editor = this.byTestId('payment-note-body').locator('[contenteditable="true"]')
+    const editor = this.noteEditor()
     await editor.click()
     await editor.fill(body)
     await this.byTestId('payment-note-submit').click()
   }
 
-  async expectNoteVisible(text: string): Promise<void> {
-    await expect(this.byTestId('payment-note-item').filter({ hasText: text })).toBeVisible()
+  noteByText(text: string): Locator {
+    return this.byTestId('payment-note-item').filter({ hasText: text })
   }
 
-  currentStatus() {
+  notesForm(): Locator {
+    return this.byTestId('payment-note-body')
+  }
+
+  internalNotes(): Locator { return this.byTestId('payment-internal-notes') }
+  noteEditor(): Locator {
+    // Nuxt UI renders this rich-text editing surface without an accessible role.
+    return this.notesForm().locator('[contenteditable="true"]')
+  }
+  errorAlert(): Locator { return this.page.getByRole('alert').or(this.byTestId('error-state')) }
+  noteScripts(): Locator {
+    // Security oracle: this inspects rendered DOM nodes, which have no accessible locator.
+    return this.internalNotes().locator('script')
+  }
+
+  currentStatus(): Locator {
+    // During migration either polling state or current status is rendered, never both as the oracle target.
     return this.page.locator('[data-testid="payment-status-polling"] [data-status], [data-testid="payment-status-current"]').first()
   }
 
@@ -110,8 +146,47 @@ export class PaymentDetailPage extends BasePage {
   }
 
   async openHistoryTab(): Promise<void> {
-    await this.page.getByRole('tab', { name: 'History' }).click()
+    await this.historyTab().click()
   }
+
+  historyTab(): Locator {
+    return this.page.getByRole('tab', { name: 'History' })
+  }
+
+  historyEntry(text: string): Locator {
+    return this.page.getByText(text, { exact: true })
+  }
+
+  emptyHistory(): Locator {
+    return this.page.getByText('No lifecycle history recorded.')
+  }
+
+  dualControlHint(): Locator {
+    return this.byTestId('lifecycle-refund-dual-control-hint')
+  }
+
+  refundApprovalCreate(): Locator {
+    return this.byTestId('refund-approval-create')
+  }
+
+  refundApprovalApprove(): Locator {
+    return this.byTestId('refund-approval-approve')
+  }
+
+  refundApprovalPending(): Locator {
+    return this.page.getByText('PENDING')
+  }
+
+  refundApprovalSelfApprovalError(): Locator {
+    return this.page.getByText(/dual_control_self_approve|Maker cannot approve/i)
+  }
+
+  deliveryCard(): Locator { return this.byTestId('eventlab-delivery-card') }
+  deliveryStatus(): Locator { return this.byTestId('eventlab-delivery-status') }
+  deliveryPending(): Locator { return this.byTestId('eventlab-delivery-pending') }
+  deliveryProcessed(): Locator { return this.byTestId('eventlab-delivery-processed') }
+  deliveryEmpty(): Locator { return this.byTestId('eventlab-delivery-empty') }
+  deliveryState(): Locator { return this.deliveryPending().or(this.deliveryProcessed()).or(this.deliveryEmpty()) }
 
   /** Approve a pending refund approval (the spec owns the outcome assertion). */
   async approveRefundApproval(): Promise<void> {
@@ -119,7 +194,7 @@ export class PaymentDetailPage extends BasePage {
     await this.byTestId('refund-approval-approve').click()
   }
 
-  historyTimeline() {
+  historyTimeline(): Locator {
     return this.page.getByTestId('payment-history-timeline')
   }
 

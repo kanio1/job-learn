@@ -4,10 +4,10 @@ import { App } from '../pages/App'
 test('opens PSP simulator in a new tab, approves, and returns', { tag: ['@ux'] }, async ({ app, context }) => {
   await app.errorLab.goto()
   await app.errorLab.expectLoaded()
-  await expect(app.page.getByTestId('psp-redirect-trigger')).toBeVisible()
+  await expect(app.errorLab.pspRedirectTrigger()).toBeVisible()
 
   const newPagePromise = context.waitForEvent('page')
-  await app.page.getByTestId('psp-redirect-trigger').click()
+  await app.errorLab.pspRedirectTrigger().click()
   const pspPage = await newPagePromise
   const simulator = new App(pspPage).pspSimulator
   await simulator.expectLoaded()
@@ -33,20 +33,14 @@ test('opens PSP simulator in a new tab, approves, and returns', { tag: ['@ux'] }
   await simulator.approve()
   expect(await approveClicks, 'approve must be clicked exactly once').toBe(1)
   await expect(simulator.outcome()).toContainText('Payment approved')
-  await expect(app.page.getByTestId('psp-redirect-trigger')).toBeVisible()
+  await expect(app.errorLab.pspRedirectTrigger()).toBeVisible()
   await pspPage.close()
 })
 
-test('PSP simulator is reachable without an authenticated session', async ({ browser }) => {
-  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
-  const page = await context.newPage()
-  const guest = new App(page)
-  try {
-    await page.goto('/psp-redirect-simulator')
-    await expect(page.getByTestId('psp-redirect-simulator')).toBeVisible()
-    await expect(page).toHaveURL(/\/psp-redirect-simulator$/)
-    await expect(guest.page.getByTestId('psp-approve')).toBeVisible()
-  } finally {
-    await context.close()
-  }
+test('PSP simulator is reachable without an authenticated session', async ({ actors }) => {
+  const { page, app: guest } = await actors.open('guest')
+  await page.goto('/psp-redirect-simulator')
+  await expect(guest.pspSimulator.root()).toBeVisible()
+  await expect(page).toHaveURL(/\/psp-redirect-simulator$/)
+  await expect(guest.pspSimulator.approveButton()).toBeVisible()
 })

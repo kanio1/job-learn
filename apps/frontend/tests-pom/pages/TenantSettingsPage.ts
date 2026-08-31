@@ -1,11 +1,11 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 import { BasePage } from './BasePage'
 import { RuleConfiguratorComponent } from './components/RuleConfiguratorComponent'
 
 export class TenantSettingsPage extends BasePage {
   readonly rules: RuleConfiguratorComponent
 
-  constructor(page: import('@playwright/test').Page) {
+  constructor(page: Page) {
     super(page)
     this.rules = new RuleConfiguratorComponent(page)
   }
@@ -26,6 +26,8 @@ export class TenantSettingsPage extends BasePage {
   saveButton() {
     return this.byTestId('tenant-settings-save')
   }
+
+  savedNotice(): Locator { return this.page.getByText('Settings saved', { exact: true }) }
 
   async save(): Promise<void> {
     await this.saveButton().click()

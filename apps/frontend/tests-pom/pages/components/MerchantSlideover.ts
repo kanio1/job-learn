@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 import { ConfirmModal } from './ConfirmModal'
 
 /**
@@ -14,7 +14,7 @@ export class MerchantSlideover {
     this.confirm = new ConfirmModal(page)
   }
 
-  dialog() {
+  dialog(): Locator {
     return this.page.getByRole('dialog', { name: 'Merchant 360' })
   }
 
@@ -30,6 +30,8 @@ export class MerchantSlideover {
   timeline() {
     return this.dialog().getByTestId('merchant-360-timeline')
   }
+
+  sectionHeading(name: string): Locator { return this.dialog().getByRole('heading', { name, exact: true }) }
 
   async expectClosed(): Promise<void> {
     await expect(this.dialog()).toHaveCount(0)

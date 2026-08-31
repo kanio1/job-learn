@@ -5,7 +5,7 @@
   >
     <UCard class="w-full max-w-md text-center">
       <template #header>
-        <h1 class="text-xl font-semibold">
+        <h1 ref="heading" tabindex="-1" class="text-xl font-semibold">
           Access Denied
         </h1>
       </template>
@@ -56,9 +56,9 @@ const roles = computed<string[]>(() => {
   return Array.isArray(r) ? (r as string[]) : []
 })
 
-// Move focus to the heading on mount for keyboard/AT users
+const heading = ref<HTMLElement | null>(null)
+
 onMounted(() => {
-  const heading = document.querySelector<HTMLElement>('[data-testid="forbidden-page"] h1')
-  heading?.focus()
+  heading.value?.focus()
 })
 </script>

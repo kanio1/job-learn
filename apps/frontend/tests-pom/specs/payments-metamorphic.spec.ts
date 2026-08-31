@@ -1,25 +1,25 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { expectStatus } from '../api/bff-client'
 import { mrIdem, mrUniq } from '../methods/metamorphic/IdempotentIdentity'
 import { mrEtag } from '../methods/metamorphic/EtagStability'
 import { metamorphicListFilter } from '../methods/combinations/MetamorphicListFilter'
 
 test('MR-IDEM replay keeps the same paymentOrderId; MR-UNIQ issues two ids', async ({ api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const payload = {
     amountMinor: 2100,
     currency: 'PLN',
     clientOrderReference: uniqueOrderReference(testInfo, mrIdem.id),
   }
   const key = uniqueIdempotencyKey(testInfo, mrIdem.id)
-  const first = await client.createPaymentOrder(ownedMerchantId, payload, key)
+  const first = await client.payments.createOrder(ownedMerchantId, payload, key)
   expectStatus(first, 201)
-  const replay = await client.createPaymentOrder(ownedMerchantId, payload, key)
+  const replay = await client.payments.createOrder(ownedMerchantId, payload, key)
   expectStatus(replay, mrIdem.replayStatus)
   expect(replay.body.paymentOrderId).toBe(first.body.paymentOrderId)
 
-  const second = await client.createPaymentOrder(
+  const second = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 2100, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, mrUniq.id) },
     uniqueIdempotencyKey(testInfo, mrUniq.id),
@@ -29,48 +29,48 @@ test('MR-IDEM replay keeps the same paymentOrderId; MR-UNIQ issues two ids', asy
 })
 
 test('MR-ETAG is stable across GET then changes after authorize', async ({ api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
-  const created = await client.createPaymentOrder(
+  const client = api
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 1800, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, mrEtag.id) },
     uniqueIdempotencyKey(testInfo, mrEtag.id),
   )
   expectStatus(created, 201)
   const paymentOrderId = created.body.paymentOrderId!
-  const first = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
-  const second = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
+  const first = await client.payments.get(ownedMerchantId, paymentOrderId)
+  const second = await client.payments.get(ownedMerchantId, paymentOrderId)
   expect(first.headers['etag']).toBeTruthy()
   expect(second.headers['etag']).toBe(first.headers['etag'])
 
-  const authorized = await client.authorizePayment(
+  const authorized = await client.payments.authorize(
     ownedMerchantId, paymentOrderId, first.headers['etag']!, uniqueIdempotencyKey(testInfo, `${mrEtag.id}-A`),
   )
   expectStatus(authorized, 200)
-  const after = await client.getPaymentOrder(ownedMerchantId, paymentOrderId)
+  const after = await client.payments.get(ownedMerchantId, paymentOrderId)
   expect(after.headers['etag']).toBeTruthy()
   expect(after.headers['etag']).not.toBe(first.headers['etag'])
 })
 
 test('MR-FILTER: narrower minAmount results are included in the wider list', async ({ api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const highRef = uniqueOrderReference(testInfo, 'MRHI')
   const lowRef = uniqueOrderReference(testInfo, 'MRLO')
-  expect((await client.createPaymentOrder(
+  expect((await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: metamorphicListFilter.highAmount, currency: 'PLN', clientOrderReference: highRef },
     uniqueIdempotencyKey(testInfo, 'MRHI'),
   )).status).toBe(201)
-  expect((await client.createPaymentOrder(
+  expect((await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: metamorphicListFilter.lowAmount, currency: 'PLN', clientOrderReference: lowRef },
     uniqueIdempotencyKey(testInfo, 'MRLO'),
   )).status).toBe(201)
 
-  const narrow = await client.listPaymentOrders(ownedMerchantId, {
+  const narrow = await client.payments.list(ownedMerchantId, {
     minAmount: metamorphicListFilter.narrowMin,
     size: 200,
   })
-  const wide = await client.listPaymentOrders(ownedMerchantId, {
+  const wide = await client.payments.list(ownedMerchantId, {
     minAmount: metamorphicListFilter.wideMin,
     size: 200,
   })

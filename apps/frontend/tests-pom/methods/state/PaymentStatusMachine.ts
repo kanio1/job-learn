@@ -19,7 +19,7 @@ export type PaymentEdge = {
   to: PaymentStatus
 }
 
-export const paymentStatusEdges: readonly PaymentEdge[] = [
+export const paymentStatusEdges = [
   { id: 'SCN-LIF-01', from: 'CREATED', action: 'authorize', ifMatch: 'fresh', expectStatus: 200, to: 'AUTHORIZED' },
   { id: 'SCN-LIF-02', from: 'AUTHORIZED', action: 'capture', ifMatch: 'fresh', expectStatus: 200, to: 'CAPTURED' },
   { id: 'SCN-LIF-03', from: 'CREATED', action: 'authorize', ifMatch: 'v99', expectStatus: 412, to: 'CREATED' },
@@ -31,4 +31,4 @@ export const paymentStatusEdges: readonly PaymentEdge[] = [
   { id: 'SCN-ILL-03', from: 'AUTHORIZED', action: 'authorize', ifMatch: 'fresh', expectStatus: 422, to: 'AUTHORIZED' },
   { id: 'SCN-ILL-04', from: 'CAPTURED', action: 'capture', ifMatch: 'fresh', expectStatus: 422, to: 'CAPTURED' },
   { id: 'SCN-ILL-05', from: 'CANCELLED', action: 'authorize', ifMatch: 'fresh', expectStatus: 422, to: 'CANCELLED' },
-]
+] as const satisfies readonly PaymentEdge[]

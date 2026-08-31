@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 import { BasePage } from './BasePage'
 import { ProblemDetailsCard } from './components/ProblemDetailsCard'
 import { KanbanBoardComponent } from './components/KanbanBoardComponent'
@@ -7,7 +7,7 @@ export class SupportPage extends BasePage {
   readonly problem: ProblemDetailsCard
   readonly board: KanbanBoardComponent
 
-  constructor(page: import('@playwright/test').Page) {
+  constructor(page: Page) {
     super(page)
     this.problem = new ProblemDetailsCard(page)
     this.board = new KanbanBoardComponent(page)
@@ -26,6 +26,11 @@ export class SupportPage extends BasePage {
     await this.board.expectLoaded()
   }
 
+  queueTab(): Locator { return this.page.getByRole('tab', { name: 'Kolejka' }) }
+  resultsTable(): Locator { return this.page.getByRole('table', { name: 'Support search results' }) }
+  errorState(): Locator { return this.byTestId('error-state') }
+  errorToast(): Locator { return this.page.getByRole('alert') }
+
   async selectCases(caseIds: readonly string[]): Promise<void> {
     for (const caseId of caseIds) {
       await this.board.card(caseId).select().click()
@@ -40,16 +45,8 @@ export class SupportPage extends BasePage {
     await this.byTestId('support-search-button').click()
   }
 
-  async expectProblem(): Promise<void> {
-    await expect(this.byTestId('error-state')).toBeVisible()
-    await this.problem.expectVisible()
-  }
-
-  async expectResults(): Promise<void> {
-    await expect(this.byTestId('support-search-results')).toBeVisible()
-    await expect(this.page.getByText(/^Results \([1-9]/)).toBeVisible()
-    await expect(this.page.getByRole('table', { name: 'Support search results' })).toBeVisible()
-  }
+  results(): Locator { return this.byTestId('support-search-results') }
+  resultsSummary(): Locator { return this.page.getByText(/^Results \([1-9]/) }
 
   /** Open the bulk-assign dialog (business assertions stay in the spec). */
   async openBulkAssign(): Promise<void> {
@@ -69,19 +66,20 @@ export class SupportPage extends BasePage {
     await this.byTestId('bulk-retry-failed').click()
   }
 
-  bulkResult(): import('@playwright/test').Locator {
+  bulkResult(): Locator {
     return this.byTestId('bulk-assign-result')
   }
 
-  bulkProgress(): import('@playwright/test').Locator {
+  bulkProgress(): Locator {
     return this.byTestId('bulk-assign-progress')
   }
 
-  bulkSuccessCount(): import('@playwright/test').Locator {
+  bulkSuccessCount(): Locator {
     return this.byTestId('bulk-success-count')
   }
 
-  bulkFailureRows(): import('@playwright/test').Locator {
+  bulkFailureRows(): Locator {
+    // Each server-created failure row has a dynamic test id; the collection is the oracle.
     return this.page.locator('[data-testid^="bulk-failure-row-"]')
   }
 }

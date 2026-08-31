@@ -1,14 +1,14 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 
 test('PW-OPS-SEC-040 manager search has no Merchants group and shows own payment', async ({
   app,
   api,
   ownedMerchantId,
 }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const reference = uniqueOrderReference(testInfo, 'SRCH')
-  const created = await client.createPaymentOrder(
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 2100, currency: 'EUR', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, 'SRCH'),

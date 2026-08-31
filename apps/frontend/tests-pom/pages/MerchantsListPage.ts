@@ -1,4 +1,4 @@
-import { expect, type Locator } from '@playwright/test'
+import { expect, type Download, type Locator } from '@playwright/test'
 import { BasePage } from './BasePage'
 import { waitForBffResponse } from '../utils/wait-bff'
 
@@ -16,6 +16,38 @@ export class MerchantsListPage extends BasePage {
   caption(): Locator {
     return this.byTestId('merchant-registry-caption')
   }
+
+  registryTable(): Locator {
+    return this.page.getByRole('table').filter({
+      has: this.page.getByRole('columnheader', { name: 'Reference' }),
+    })
+  }
+  heading(name: string): Locator { return this.page.getByRole('heading', { name, exact: true }) }
+  columnHeader(name: string): Locator { return this.page.getByRole('columnheader', { name, exact: true }) }
+  statusFilter(): Locator { return this.page.getByLabel('Filter status') }
+  filterOption(label: string): Locator { return this.page.getByRole('option', { name: label }) }
+  applyButton(): Locator { return this.byTestId('merchant-filter-apply') }
+  filteredEmpty(): Locator { return this.page.getByText('No merchants match the current filters.') }
+  loadingStatus(): Locator { return this.page.getByRole('status', { name: 'Loading merchants…' }) }
+  createButton(): Locator { return this.byTestId('action-create-merchant') }
+  bulkActivateButton(): Locator { return this.byTestId('merchant-bulk-activate') }
+  importButton(): Locator { return this.page.getByRole('button', { name: /Import/ }) }
+  riskToggle(): Locator { return this.byTestId('merchant-risk-toggle') }
+  tenantColumn(): Locator { return this.page.getByRole('columnheader', { name: 'Tenant' }) }
+  mutationButtons(): Locator { return this.page.getByRole('button', { name: /Activate|Suspend|Create merchant/ }) }
+  activateButtons(): Locator { return this.page.getByRole('button', { name: /^Activate / }) }
+  selectionCheckboxes(): Locator { return this.page.getByRole('checkbox', { name: /Select / }) }
+  activationFailure(): Locator { return this.page.getByText('Activation failed', { exact: true }) }
+  nameInput(): Locator { return this.byTestId('merchant-name-input') }
+  saveButton(): Locator { return this.byTestId('merchant-save') }
+  saveLikeButtons(): Locator { return this.page.getByRole('button', { name: /save|zapisz|spara/i }) }
+  errorState(): Locator { return this.byTestId('error-state') }
+  createForm(): Locator { return this.byTestId('create-merchant-form') }
+  tenantReferenceInput(): Locator { return this.byTestId('create-merchant-tenant-reference') }
+  referenceInput(): Locator { return this.page.getByLabel('Merchant reference') }
+  createAlert(): Locator { return this.page.getByRole('alert').filter({ hasText: /already exists/i }) }
+  openButton(reference: string): Locator { return this.page.getByRole('button', { name: `Open ${reference}` }) }
+  tokenRows(token: string): Locator { return this.registryTable().getByRole('row').filter({ hasText: token }) }
 
   /** SCN-ISO-09: merchants:read is false — alert, no registry table. */
   async expectAccessDenied(): Promise<void> {
@@ -38,9 +70,7 @@ export class MerchantsListPage extends BasePage {
     return this.page.getByRole('row').filter({ hasText: reference })
   }
 
-  async expectRowAbsent(text: string): Promise<void> {
-    await expect(this.page.getByRole('table').getByText(text, { exact: true })).toHaveCount(0)
-  }
+  tableText(text: string): Locator { return this.registryTable().getByText(text, { exact: true }) }
 
   async openCreateForm(): Promise<void> {
     await this.byTestId('action-create-merchant').click()
@@ -59,13 +89,13 @@ export class MerchantsListPage extends BasePage {
     await this.byTestId('create-merchant-form').getByRole('button', { name: 'Create merchant' }).click()
   }
 
-  async expectCreateFieldError(message: string | RegExp): Promise<void> {
-    await expect(this.byTestId('create-merchant-form').getByText(message)).toBeVisible()
+  createFieldError(message: string | RegExp): Locator {
+    return this.byTestId('create-merchant-form').getByText(message)
   }
 
-  async expectRiskBadgeFor(displayName: string): Promise<void> {
+  riskBadgeFor(displayName: string): Locator {
     const row = this.page.getByRole('row').filter({ hasText: displayName })
-    await expect(row.getByTestId('merchant-risk-badge')).toBeVisible()
+    return row.getByTestId('merchant-risk-badge')
   }
 
   async filterByText(text: string): Promise<void> {
@@ -79,8 +109,8 @@ export class MerchantsListPage extends BasePage {
   }
 
   async filterByStatus(label: string): Promise<void> {
-    await this.page.getByLabel('Filter status').click()
-    await this.page.getByRole('option', { name: label }).click()
+    await this.statusFilter().click()
+    await this.filterOption(label).click()
     await this.applyFilters()
   }
 
@@ -98,14 +128,11 @@ export class MerchantsListPage extends BasePage {
     await this.byTestId('merchant-bulk-activate').click()
   }
 
-  async sortBy(column: RegExp | string): Promise<void> {
-    const name = typeof column === 'string' ? new RegExp(column, 'i') : column
-    await this.page.getByRole('columnheader', { name }).click()
+  async sortBy(column: RegExp): Promise<void> {
+    await this.page.getByRole('columnheader', { name: column }).click()
   }
 
-  async expectRowVisible(text: string): Promise<void> {
-    await expect(this.page.getByRole('table').getByRole('cell', { name: text, exact: true })).toBeVisible()
-  }
+  rowCell(text: string): Locator { return this.registryTable().getByRole('cell', { name: text, exact: true }) }
 
   async openMerchantByDisplayName(displayName: string): Promise<void> {
     await this.page.getByRole('button', { name: displayName }).click()
@@ -136,8 +163,23 @@ export class MerchantsListPage extends BasePage {
     await expect(this.byTestId('merchant-import-panel')).toBeVisible()
   }
 
-  csvInput() {
+  csvInput(): Locator {
     return this.page.getByLabel('Upload CSV')
+  }
+
+  importValidCount(): Locator { return this.byTestId('merchant-import-valid') }
+  importRejectedCount(): Locator { return this.byTestId('merchant-import-rejected') }
+  importCommitButton(): Locator { return this.byTestId('merchant-import-commit') }
+  importedMerchantName(name: string): Locator { return this.page.getByText(name, { exact: true }) }
+
+  async downloadRejected(): Promise<Download> {
+    const download = this.page.waitForEvent('download')
+    await this.page.getByRole('button', { name: 'Download rejected' }).click()
+    return download
+  }
+
+  async commitImport(): Promise<void> {
+    await this.importCommitButton().click()
   }
 
   orgTree(): Locator {

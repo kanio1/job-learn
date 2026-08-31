@@ -1,38 +1,17 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { expectNoAuthorizationInNetworkResponse } from '../utils/network'
+import { expectProblemStatus, liveErrorLabTrigger } from '../utils/error-lab'
 
-function triggerMethod(status: number): 'GET' | 'POST' {
-  return status === 304 ? 'GET' : 'POST'
-}
-
-async function liveTrigger(
-  page: import('@playwright/test').Page,
-  status: number,
-) {
-  return page.request.fetch(`/api/error-lab/trigger-${status}`, {
-    method: triggerMethod(status),
-  })
-}
-
-async function expectProblemStatus(
-  response: import('@playwright/test').APIResponse,
-  status: number,
-) {
-  expect(response.status()).toBe(status)
-  expect(response.headers()['content-type'] ?? '').toMatch(/application\/problem\+json/)
-  const body = await response.json() as { status?: number }
-  expect(body.status).toBe(status)
-  expectNoAuthorizationInNetworkResponse(response)
-}
+const managerGetStatuses = [304] as const
 
 test.describe('Error Lab live triggers (merchant manager)', () => {
   test('Error Lab 400 is a live backend validation problem (not a 429 mock)', async ({ app, page }) => {
     await app.errorLab.goto()
     await app.errorLab.expectLoaded()
     await expect(app.errorLab.triggerButton(400)).toBeVisible()
-    await expect(app.page.getByTestId('error-lab-trigger-429')).toBeVisible()
-    const response = await liveTrigger(page, 400)
+    await expect(app.errorLab.triggerButton(429)).toBeVisible()
+    const response = await liveErrorLabTrigger(page, 400, managerGetStatuses)
     await expectProblemStatus(response, 400)
   })
 
@@ -40,7 +19,7 @@ test.describe('Error Lab live triggers (merchant manager)', () => {
     await app.errorLab.goto()
     await app.errorLab.expectLoaded()
     await expect(app.errorLab.triggerButton(409)).toBeVisible()
-    const response = await liveTrigger(page, 409)
+    const response = await liveErrorLabTrigger(page, 409, managerGetStatuses)
     await expectProblemStatus(response, 409)
   })
 
@@ -48,7 +27,7 @@ test.describe('Error Lab live triggers (merchant manager)', () => {
     await app.errorLab.goto()
     await app.errorLab.expectLoaded()
     await expect(app.errorLab.triggerButton(412)).toBeVisible()
-    const response = await liveTrigger(page, 412)
+    const response = await liveErrorLabTrigger(page, 412, managerGetStatuses)
     await expectProblemStatus(response, 412)
   })
 
@@ -56,12 +35,12 @@ test.describe('Error Lab live triggers (merchant manager)', () => {
     await app.errorLab.goto()
     await app.errorLab.expectLoaded()
     await expect(app.errorLab.triggerButton(428)).toBeVisible()
-    const response = await liveTrigger(page, 428)
+    const response = await liveErrorLabTrigger(page, 428, managerGetStatuses)
     await expectProblemStatus(response, 428)
   })
 
   test('Error Lab 304 is a live conditional GET', async ({ app, page, api, ownedMerchantId }, testInfo) => {
-    const created = await requireApi(api).createPaymentOrder(
+    const created = await api.payments.createOrder(
       ownedMerchantId,
       {
         amountMinor: 1999,
@@ -75,7 +54,7 @@ test.describe('Error Lab live triggers (merchant manager)', () => {
     await app.errorLab.goto()
     await app.errorLab.expectLoaded()
     await expect(app.errorLab.triggerButton(304)).toBeVisible()
-    const response = await liveTrigger(page, 304)
+    const response = await liveErrorLabTrigger(page, 304, managerGetStatuses)
     expect(response.status()).toBe(304)
     expectNoAuthorizationInNetworkResponse(response)
   })

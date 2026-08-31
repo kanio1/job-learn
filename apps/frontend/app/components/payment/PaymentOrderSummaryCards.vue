@@ -15,13 +15,13 @@
 
       <!-- Total payment orders -->
       <UCard>
-        <div class="flex items-center justify-between">
+        <section aria-label="Total orders" class="flex items-center justify-between">
           <div>
             <p class="text-sm text-muted">Total orders</p>
             <p class="mt-1 text-3xl font-semibold text-highlighted">{{ summary.totalOrders }}</p>
           </div>
           <UIcon name="i-lucide-receipt" class="size-8 shrink-0 text-muted" />
-        </div>
+        </section>
       </UCard>
 
       <!-- Total amount (kept from original) -->

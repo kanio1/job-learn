@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator } from '@playwright/test'
 import { BasePage } from './BasePage'
 import { OpsFeedComponent } from './components/OpsFeedComponent'
 import { NotificationCenterComponent } from './components/NotificationCenterComponent'
@@ -21,4 +21,8 @@ export class OverviewPage extends BasePage {
     await expect(this.page.getByTestId('nav-link-overview')).toBeVisible()
     await this.opsFeed.expectLoaded()
   }
+
+  summary(): Locator { return this.page.getByRole('region', { name: 'Summary' }) }
+  summaryHeading(): Locator { return this.page.getByRole('heading', { name: 'Platform Summary' }) }
+  merchantForbiddenHint(): Locator { return this.page.getByTestId('overview-merchant-forbidden-hint') }
 }

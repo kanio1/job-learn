@@ -2,57 +2,53 @@ import { merchantAlphaId } from '../auth/accounts'
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
 import { test, expect } from '../fixtures'
 import { pomAuthFiles } from '../utils/env'
-import { App } from '../pages/App'
 import { dualControlSteps } from '../methods/combinations/DualControlStDt'
 import { BffClient, expectStatus } from '../api/bff-client'
-import { etagOf, expectProblem } from '../utils/http'
+import { etagOf, expectProblem, requireEtag } from '../utils/http'
 import type { TestInfo } from '@playwright/test'
 
 test.use({ storageState: pomAuthFiles.merchantManager })
 
 async function captureOrder(client: BffClient, testInfo: TestInfo, tag: string, amountMinor = 2500) {
   const reference = uniqueOrderReference(testInfo, tag)
-  const created = await client.createPaymentOrder(
+  const created = await client.payments.createOrder(
     merchantAlphaId,
     { amountMinor, currency: 'PLN', clientOrderReference: reference },
     uniqueIdempotencyKey(testInfo, `${tag}-CREATE`),
   )
   expectStatus(created, 201)
-  const paymentOrderId = created.body.paymentOrderId!
-  const detail = await client.getPaymentOrder(merchantAlphaId, paymentOrderId)
-  const authorized = await client.authorizePayment(
+  const paymentOrderId = created.body.paymentOrderId
+  const detail = await client.payments.get(merchantAlphaId, paymentOrderId)
+  const authorized = await client.payments.authorize(
     merchantAlphaId,
     paymentOrderId,
     etagOf(detail.headers),
     uniqueIdempotencyKey(testInfo, `${tag}-AUTH`),
   )
   expectStatus(authorized, 200)
-  const captured = await client.capturePayment(
+  const captured = await client.payments.capture(
     merchantAlphaId,
     paymentOrderId,
-    etagOf(authorized.headers) ?? etagOf((await client.getPaymentOrder(merchantAlphaId, paymentOrderId)).headers),
+    etagOf(authorized.headers) ?? etagOf((await client.payments.get(merchantAlphaId, paymentOrderId)).headers),
     uniqueIdempotencyKey(testInfo, `${tag}-CAP`),
     amountMinor,
   )
   expectStatus(captured, 200)
-  const afterCapture = await client.getPaymentOrder(merchantAlphaId, paymentOrderId)
-  return { paymentOrderId, amountMinor, etag: etagOf(afterCapture.headers)! }
+  const afterCapture = await client.payments.get(merchantAlphaId, paymentOrderId)
+  return { paymentOrderId, amountMinor, etag: requireEtag(afterCapture.headers) }
 }
 
 test('maker cannot self-approve a real payment refund; platform checker can', { tag: ['@serial'] }, async ({
   api,
   app,
-  browser,
+  actors,
 }, testInfo) => {
-  if (!api) {
-    throw new Error('BffClient required')
-  }
   expect(dualControlSteps[0].expectStatus).toBe(409)
   const { paymentOrderId } = await captureOrder(api, testInfo, 'DC')
 
   await app.paymentDetail.gotoOrder(merchantAlphaId, paymentOrderId)
   await app.paymentDetail.expectLoaded()
-  await expect(app.page.getByTestId('lifecycle-refund-dual-control-hint')).toBeVisible()
+  await expect(app.paymentDetail.dualControlHint()).toBeVisible()
   const refundPosts: string[] = []
   app.page.on('request', request => {
     const url = request.url()
@@ -60,37 +56,28 @@ test('maker cannot self-approve a real payment refund; platform checker can', { 
       refundPosts.push(url)
     }
   })
-  await app.page.getByTestId('refund-approval-create').click()
-  await expect(app.page.getByText('PENDING')).toBeVisible()
+  await app.paymentDetail.refundApprovalCreate().click()
+  await expect(app.paymentDetail.refundApprovalPending()).toBeVisible()
   expect(refundPosts, 'SCN-DC-01 UI must not POST /refund').toEqual([])
 
-  await app.page.getByTestId('refund-approval-approve').click()
-  await expect(app.page.getByText(/dual_control_self_approve|Maker cannot approve/i)).toBeVisible()
+  await app.paymentDetail.refundApprovalApprove().click()
+  await expect(app.paymentDetail.refundApprovalSelfApprovalError()).toBeVisible()
 
-  const adminContext = await browser.newContext({ storageState: pomAuthFiles.platformAdmin })
-  const admin = new App(await adminContext.newPage())
-  try {
-    await admin.paymentDetail.gotoOrder(merchantAlphaId, paymentOrderId)
-    await admin.paymentDetail.expectLoaded()
-    await admin.page.getByTestId('refund-approval-approve').click()
-    await expect(admin.paymentDetail.statusInDetail('Refunded')).toBeVisible({ timeout: 20_000 })
-  } finally {
-    await adminContext.close()
-  }
+  const admin = await actors.open('platformAdmin')
+  await admin.app.paymentDetail.gotoOrder(merchantAlphaId, paymentOrderId)
+  await admin.app.paymentDetail.expectLoaded()
+  await admin.app.paymentDetail.refundApprovalApprove().click()
+  await expect(admin.app.paymentDetail.statusInDetail('Refunded')).toBeVisible({ timeout: 20_000 })
 })
 
 test('dual-control refund HTTP is 409 then 201 then 409 then 200 (SCN-DC-01…04)', { tag: ['@serial'] }, async ({
   api,
-  playwright,
+  actors,
 }, testInfo) => {
   const maker = api
-  if (!maker) {
-    throw new Error('BffClient required')
-  }
-  const checker = await BffClient.create(playwright, pomAuthFiles.platformAdmin)
-  try {
+  const checker = (await actors.open('platformAdmin')).api
     const { paymentOrderId, amountMinor, etag } = await captureOrder(maker, testInfo, 'DCREST')
-    const direct = await maker.refundPayment(
+    const direct = await maker.payments.refund(
       merchantAlphaId,
       paymentOrderId,
       etag,
@@ -100,64 +87,55 @@ test('dual-control refund HTTP is 409 then 201 then 409 then 200 (SCN-DC-01…04
     expect(direct.status).toBe(dualControlSteps[0].expectStatus)
     expectProblem(direct.body, 409, dualControlSteps[0].error)
 
-    const requested = await maker.createRefundApproval(merchantAlphaId, paymentOrderId, {
+    const requested = await maker.payments.createRefundApproval(merchantAlphaId, paymentOrderId, {
       amountMinor,
       reason: 'pom-dc',
     })
     expectStatus(requested, dualControlSteps[1].expectStatus)
     const approvalId = requested.body?.approvalId
-    expect(approvalId).toBeTruthy()
+    ok(approvalId, 'refund approval id must be present after 201')
 
-    const self = await maker.approveRefundApproval(
+    const self = await maker.payments.approveRefundApproval(
       merchantAlphaId,
       paymentOrderId,
-      approvalId!,
+      approvalId,
       etag,
       uniqueIdempotencyKey(testInfo, 'DC-03'),
     )
     expect(self.status).toBe(dualControlSteps[2].expectStatus)
     expectProblem(self.body, 409, dualControlSteps[2].error)
 
-    const approved = await checker.approveRefundApproval(
+    const approved = await checker.payments.approveRefundApproval(
       merchantAlphaId,
       paymentOrderId,
-      approvalId!,
+      approvalId,
       etag,
       uniqueIdempotencyKey(testInfo, 'DC-04'),
     )
     expect(approved.status).toBe(dualControlSteps[3].expectStatus)
-    expect((approved.body as { status?: string } | undefined)?.status).toBe('REFUNDED')
-  } finally {
-    await checker.dispose()
-  }
+    expect(approved.body?.status).toBe('REFUNDED')
 })
 
 test('refund-approval amount above captured is 422 on checker approve', { tag: ['@serial'] }, async ({
   api,
-  playwright,
+  actors,
 }, testInfo) => {
   const maker = api
-  if (!maker) {
-    throw new Error('BffClient required')
-  }
-  const checker = await BffClient.create(playwright, pomAuthFiles.platformAdmin)
-  try {
+  const checker = (await actors.open('platformAdmin')).api
     const { paymentOrderId, amountMinor, etag } = await captureOrder(maker, testInfo, 'DCOVER', 1800)
-    const requested = await maker.createRefundApproval(merchantAlphaId, paymentOrderId, {
+    const requested = await maker.payments.createRefundApproval(merchantAlphaId, paymentOrderId, {
       amountMinor: amountMinor + 1,
       reason: 'too-much',
     })
     expectStatus(requested, 201)
-    const approved = await checker.approveRefundApproval(
+    const approved = await checker.payments.approveRefundApproval(
       merchantAlphaId,
       paymentOrderId,
-      requested.body?.approvalId!,
+      requested.body.approvalId,
       etag,
       uniqueIdempotencyKey(testInfo, 'DCOVER'),
     )
     expectStatus(approved, 422)
     expectProblem(approved.body, 422, 'refund_amount_exceeds_captured')
-  } finally {
-    await checker.dispose()
-  }
 })
+import { ok } from 'node:assert/strict'

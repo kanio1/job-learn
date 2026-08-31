@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class HostedCheckoutPage extends BasePage {
@@ -18,12 +18,12 @@ export class HostedCheckoutPage extends BasePage {
     await this.byTestId('psp-decline').click()
   }
 
-  async expectExpired(): Promise<void> {
-    await expect(this.byTestId('psp-link-expired')).toBeVisible()
+  expiredNotice(): Locator {
+    return this.byTestId('psp-link-expired')
   }
 
-  async expectOutcome(): Promise<void> {
-    await expect(this.byTestId('psp-outcome')).toBeVisible()
+  outcome(): Locator {
+    return this.byTestId('psp-outcome')
   }
 
   async returnToMerchant(): Promise<void> {

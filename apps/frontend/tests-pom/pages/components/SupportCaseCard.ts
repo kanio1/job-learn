@@ -20,6 +20,7 @@ export class SupportCaseCard {
   }
 
   async dragToColumn(column: Locator): Promise<void> {
+    // Drop targets carry status-specific dynamic test ids, not accessible names.
     const drop = column.locator('[data-testid^="kanban-drop-"]')
     await this.root().scrollIntoViewIfNeeded()
     await drop.scrollIntoViewIfNeeded()

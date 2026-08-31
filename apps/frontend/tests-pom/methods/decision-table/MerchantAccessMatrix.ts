@@ -18,7 +18,7 @@ export type MerchantAccessRow = {
   outcome: string
 }
 
-export const merchantAccessMatrix: readonly MerchantAccessRow[] = [
+export const merchantAccessMatrix = [
   {
     id: 'SCN-ISO-06',
     actor: 'PLATFORM_ADMIN',
@@ -75,4 +75,4 @@ export const merchantAccessMatrix: readonly MerchantAccessRow[] = [
     layer: 'e2e',
     outcome: 'registry visible; no create; no lifecycle; no notes form',
   },
-]
+] as const satisfies readonly MerchantAccessRow[]

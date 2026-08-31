@@ -93,7 +93,7 @@ export function readOnlyUserAccount(): PomAccount {
 }
 
 /** Authenticated realm user with no platform:* / merchant:* roles. */
-export function merchantDeniedAccount(): { username: string, password: string } {
+export function merchantDeniedAccount() {
   return {
     username: optionalEnv('PLAYWRIGHT_MERCHANT_DENIED_USERNAME', 'merchant.denied'),
     password: requiredEnv('PLAYWRIGHT_MERCHANT_DENIED_PASSWORD'),

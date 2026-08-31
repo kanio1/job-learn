@@ -20,20 +20,17 @@ export class OpsFeedComponent {
   }
 
   rows(): Locator {
+    // The live feed is an unordered timeline whose individual rows have no stable accessible name.
     return this.timeline().locator('li')
+  }
+
+  rowLabels(): Locator {
+    return this.rows().getByTestId('ops-feed-label')
   }
 
   async expectLoaded(): Promise<void> {
     await expect(this.root()).toBeVisible()
     await expect(this.chip()).toBeVisible()
-  }
-
-  async expectConnected(): Promise<void> {
-    await expect(this.chip()).toHaveText('connected')
-  }
-
-  async expectDisconnected(): Promise<void> {
-    await expect(this.chip()).toHaveText('disconnected')
   }
 
   async waitForOpsEvent(match: { eventId?: string, type?: string, orderRef?: string }): Promise<void> {
@@ -46,10 +43,13 @@ export class OpsFeedComponent {
       throw new Error('waitForOpsEvent requires eventId, type, or orderRef')
     }
     const needle = parts.join('  ')
+    // Multiple feed entries may match; the contract is that at least one matching entry arrives.
     await expect(this.page.getByTestId('ops-feed-label').filter({ hasText: needle }).first()).toBeVisible()
   }
 
   attachWebSocket(): Promise<WebSocket> {
     return this.page.waitForEvent('websocket', ws => ws.url().includes('/api/ops/feed'))
   }
+
+  invalidEventToast(): Locator { return this.page.getByText('Ignored invalid event', { exact: true }) }
 }

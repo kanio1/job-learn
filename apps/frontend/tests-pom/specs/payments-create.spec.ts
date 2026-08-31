@@ -1,5 +1,5 @@
 import { uniqueIdempotencyKey, uniqueOrderReference } from '../data/factories'
-import { test, expect, requireApi } from '../fixtures'
+import { test, expect } from '../fixtures'
 import { expectStatus } from '../api/bff-client'
 import { correlationIdOf, expectNoAuthTokenLeak, expectProblem, headerOf, locationOf } from '../utils/http'
 import { requestHeader } from '../utils/network'
@@ -31,33 +31,33 @@ test('creates a payment order with Idempotency-Key and lands on detail', async (
   expect(requestHeader(posted, 'Idempotency-Key')).toBe(idempotencyKey)
 
   await app.paymentDetail.expectLoaded()
-  await expect(app.page.getByTestId('payment-order-detail').getByText(reference)).toBeVisible()
+  await expect(app.paymentDetail.displayedReference(reference)).toBeVisible()
   await expect(app.page).toHaveURL(new RegExp(`/admin/merchants/${ownedMerchantId}/payments/[0-9a-f-]{36}`))
 })
 
 test('replaying the same Idempotency-Key returns the same order; mismatch is 409', async ({ api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const reference = uniqueOrderReference(testInfo, 'IDEM')
   const key = uniqueIdempotencyKey(testInfo, 'REPLAY')
   const payload = { amountMinor: 1700, currency: 'PLN' as const, clientOrderReference: reference }
 
-  const first = await client.createPaymentOrder(ownedMerchantId, payload, key)
+  const first = await client.payments.createOrder(ownedMerchantId, payload, key)
   expectStatus(first, 201)
   expect(first.body.paymentOrderId).toBeTruthy()
   expect(locationOf(first.headers) ?? '').toMatch(/\/payment-orders\//)
   expect(headerOf(first.headers, 'idempotency-replayed') ?? 'false').toBe('false')
 
-  const replay = await client.createPaymentOrder(ownedMerchantId, payload, key)
+  const replay = await client.payments.createOrder(ownedMerchantId, payload, key)
   expectStatus(replay, 200)
   expect(replay.body.paymentOrderId).toBe(first.body.paymentOrderId)
   expect(headerOf(replay.headers, 'idempotency-replayed')).toBe('true')
   expect(headerOf(replay.headers, 'etag')).toBe(headerOf(first.headers, 'etag'))
 
-  const persisted = await client.getPaymentOrder(ownedMerchantId, first.body.paymentOrderId!)
+  const persisted = await client.payments.get(ownedMerchantId, first.body.paymentOrderId!)
   expectStatus(persisted, 200)
   expect(persisted.body?.clientOrderReference).toBe(reference)
 
-  const listed = await client.listPaymentOrders(ownedMerchantId, {
+  const listed = await client.payments.list(ownedMerchantId, {
     clientOrderReference: reference,
     page: 0,
     size: 20,
@@ -66,7 +66,7 @@ test('replaying the same Idempotency-Key returns the same order; mismatch is 409
   expect(listed.body?.totalElements).toBe(1)
   expect((listed.body?.content ?? []).map(row => row.paymentOrderId)).toEqual([first.body.paymentOrderId])
 
-  const conflict = await client.createPaymentOrder(
+  const conflict = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 9999, currency: 'EUR', clientOrderReference: `${reference}-X` },
     key,
@@ -76,9 +76,9 @@ test('replaying the same Idempotency-Key returns the same order; mismatch is 409
 })
 
 test('BFF forwards a caller correlation id on create without exposing session material', async ({ api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const correlationId = `pom-correlation-${testInfo.workerIndex}-${testInfo.testId}`
-  const created = await client.createPaymentOrder(
+  const created = await client.payments.createOrder(
     ownedMerchantId,
     { amountMinor: 1600, currency: 'PLN', clientOrderReference: uniqueOrderReference(testInfo, 'CORR') },
     uniqueIdempotencyKey(testInfo, 'CORR'),
@@ -90,10 +90,10 @@ test('BFF forwards a caller correlation id on create without exposing session ma
 })
 
 test('create-order amount BVA/EP partitions stay on BFF REST (SCN-PAY-06..11)', async ({ api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   for (const row of createUcEpRest.amountPartitions) {
     await test.step(row.id, async () => {
-      const created = await client.createPaymentOrder(
+      const created = await client.payments.createOrder(
         ownedMerchantId,
         {
           amountMinor: row.amountMinor,
@@ -114,10 +114,10 @@ test('create-order amount BVA/EP partitions stay on BFF REST (SCN-PAY-06..11)', 
 })
 
 test('create-order reference length BVA stays on BFF REST (SCN-PAY-12..15)', async ({ api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   for (const row of createUcEpRest.orderReferencePartitions) {
     await test.step(row.id, async () => {
-      const created = await client.createPaymentOrder(
+      const created = await client.payments.createOrder(
         ownedMerchantId,
         {
           amountMinor: 1500,
@@ -138,11 +138,11 @@ test('create-order reference length BVA stays on BFF REST (SCN-PAY-12..15)', asy
 })
 
 test('BFF mints a key when Idempotency-Key is missing or empty (SCN-PAY-04/05)', async ({ api, ownedMerchantId }, testInfo) => {
-  const client = requireApi(api)
+  const client = api
   const ids: string[] = []
   for (const row of createUcEpRest.idempotencyKeyBoundaries) {
     const key = row.keyMode === 'empty' ? '' : undefined
-    const created = await client.createPaymentOrder(
+    const created = await client.payments.createOrder(
       ownedMerchantId,
       {
         amountMinor: 1500,
@@ -163,7 +163,7 @@ test('PW-M360-E2E-134 Next without amount shows field error', async ({ app, owne
   await app.paymentCreate.gotoForMerchant(ownedMerchantId)
   await app.paymentCreate.expectLoaded()
   await app.paymentCreate.next()
-  await expect(app.page.getByText('Amount must be at least 1')).toBeVisible()
+  await expect(app.paymentCreate.amountError()).toBeVisible()
 })
 
 test('PW-M360-E2E-135 full wizard POSTs create 201', async ({ app, page, ownedMerchantId }, testInfo) => {
@@ -178,7 +178,7 @@ test('PW-M360-E2E-135 full wizard POSTs create 201', async ({ app, page, ownedMe
   await app.paymentCreate.next()
   await app.paymentCreate.fillReference(reference)
   await app.paymentCreate.next()
-  await expect(app.page.getByTestId('create-payment-order-review')).toContainText(reference)
+  await expect(app.paymentCreate.review()).toContainText(reference)
 
   const created = waitForBffResponse(page, {
     method: 'POST',
@@ -214,6 +214,6 @@ test('PW-M360-E2E-136 double click Create is 201 then replay 200', async ({ app,
       // ignore
     }
   })
-  await app.page.getByTestId('action-create-payment-order').dblclick()
+  await app.paymentCreate.submitButton().dblclick()
   await expect.poll(() => statuses.slice().sort((a, b) => a - b)).toEqual([200, 201])
 })

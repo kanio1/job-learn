@@ -7,6 +7,13 @@ export class ConflictDiffComponent {
     return this.page.getByTestId('merchant-conflict-dialog')
   }
 
+  yours(): Locator { return this.page.getByTestId('conflict-yours') }
+  latest(): Locator { return this.page.getByTestId('conflict-latest') }
+
+  async openLatest(): Promise<void> {
+    await this.page.getByRole('tab', { name: /latest version/i }).click()
+  }
+
   async expectOpen(): Promise<void> {
     await expect(this.dialog()).toBeVisible()
     await expect(this.page.getByRole('tab', { name: /your changes/i })).toBeVisible()

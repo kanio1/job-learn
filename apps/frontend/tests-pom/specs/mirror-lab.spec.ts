@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { test, expect } from '../fixtures'
+import { App } from '../pages/App'
 
 test('mirror hub and bank statements download', async ({ app }) => {
   await app.mirrorHub.goto()
@@ -24,19 +25,18 @@ test('bank statement PDF download starts with PDF magic bytes', async ({ app }) 
 test('expired hosted checkout exposes test id', async ({ app, context }) => {
   await app.checkoutBooking.goto()
   await app.checkoutBooking.expectLoaded()
-  await app.page.getByTestId('checkout-booking-scenario').click()
-  await app.page.getByRole('option', { name: 'EXPIRED_LINK' }).click()
+  await app.checkoutBooking.chooseScenario('EXPIRED_LINK')
   await app.checkoutBooking.fillExtOrderId(`EXP-${Date.now()}`)
   await app.checkoutBooking.submit()
   const hostedPromise = context.waitForEvent('page')
-  await app.page.getByTestId('checkout-open-hosted').click()
+  await app.checkoutBooking.openHostedCheckout()
   const hostedPage = await hostedPromise
-  await expect(hostedPage.getByTestId('psp-link-expired')).toBeVisible()
+  await expect(new App(hostedPage).hostedCheckout.expiredNotice()).toBeVisible()
 })
 
 test('widget iframe is same-origin', async ({ app }) => {
   await app.checkoutHub.goto()
   await app.checkoutHub.expectLoaded()
   await app.checkoutHub.openWidget()
-  await expect(app.page.getByTestId('widget-session-id')).toBeVisible()
+  await app.checkoutWidget.expectLoaded()
 })

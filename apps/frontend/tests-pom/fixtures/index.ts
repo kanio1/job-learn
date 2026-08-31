@@ -1,10 +1,12 @@
 import { test as base, expect } from '@playwright/test'
 import '../utils/ipv4-first'
 import { App } from '../pages/App'
-import { BffClient } from '../api/bff-client'
+import { BffClient, type StorageState } from '../api/bff-client'
 import { POM_WORKER_COUNT, workerMerchant } from '../auth/accounts'
 import { pomBrowserBaseURL, pomNodeBaseURL, workerManagerAuthFile } from '../utils/env'
 import { ensureWorkerWorld, type WorkerWorld } from './worker-session'
+import { ActorFactory } from './actors'
+import { z } from 'zod'
 
 /** Live POM suite: never use page.route / route.fulfill. */
 
@@ -12,10 +14,11 @@ export type { WorkerWorld }
 
 type PomFixtures = {
   app: App
-  api: BffClient | undefined
+  api: BffClient
+  actors: ActorFactory
   workerApp: App
   ownedMerchantId: string
-  storageState: string | { cookies: [], origins: [] }
+  storageState: StorageState
 }
 
 type PomWorkerFixtures = {
@@ -23,6 +26,7 @@ type PomWorkerFixtures = {
 }
 
 export const test = base.extend<PomFixtures, PomWorkerFixtures>({
+  // oxlint-disable-next-line eslint/no-empty-pattern -- Playwright fixtures require destructured dependencies.
   storageState: async ({}, use, testInfo) => {
     if (testInfo.project.name === 'chromium-manager') {
       const index = testInfo.parallelIndex % POM_WORKER_COUNT
@@ -30,12 +34,14 @@ export const test = base.extend<PomFixtures, PomWorkerFixtures>({
       return
     }
     const configured = testInfo.project.use.storageState
-    if (typeof configured === 'string') {
-      await use(configured)
+    const storageStatePath = z.string().safeParse(configured)
+    if (storageStatePath.success) {
+      await use(storageStatePath.data)
       return
     }
     await use({ cookies: [], origins: [] })
   },
+  // oxlint-disable-next-line eslint/no-empty-pattern -- Playwright fixtures require destructured dependencies.
   ownedMerchantId: async ({}, use, testInfo) => {
     const index = testInfo.parallelIndex % POM_WORKER_COUNT
     await use(workerMerchant(index).merchantId)
@@ -44,13 +50,18 @@ export const test = base.extend<PomFixtures, PomWorkerFixtures>({
     await use(new App(page))
   },
   api: async ({ playwright, storageState }, use) => {
-    if (typeof storageState !== 'string') {
-      await use(undefined)
-      return
-    }
     const client = await BffClient.create(playwright, storageState, pomNodeBaseURL())
     await use(client)
     await client.dispose()
+  },
+  actors: async ({ browser, playwright }, use) => {
+    const actors = new ActorFactory(browser, playwright)
+    try {
+      await use(actors)
+    }
+    finally {
+      await actors.dispose()
+    }
   },
   workerWorld: [async ({ browser, playwright }, use, testInfo) => {
     const world = await ensureWorkerWorld(browser, playwright, testInfo)
@@ -69,10 +80,3 @@ export const test = base.extend<PomFixtures, PomWorkerFixtures>({
 })
 
 export { expect }
-
-export function requireApi(api: BffClient | undefined): BffClient {
-  if (!api) {
-    throw new Error('BffClient requires project.use.storageState (not chromium-guest).')
-  }
-  return api
-}

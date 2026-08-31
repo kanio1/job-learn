@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test'
+import { expect, type Locator } from '@playwright/test'
 import { BasePage } from './BasePage'
 
 export class CheckoutLabInspectorPage extends BasePage {
@@ -13,5 +13,9 @@ export class CheckoutLabInspectorPage extends BasePage {
   async loadSession(sessionId: string): Promise<void> {
     await this.byTestId('inspector-session-id').fill(sessionId)
     await this.byTestId('inspector-load').click()
+  }
+
+  processStatus(): Locator {
+    return this.byTestId('inspector-process-status')
   }
 }

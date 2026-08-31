@@ -18,12 +18,12 @@ export type MerchantReferenceLengthRow = {
 }
 
 /** Backend + Zod: 3..64, start/end alphanumeric (`MerchantReference`). */
-export const merchantReferenceLengthPartitions: readonly MerchantReferenceLengthRow[] = [
+export const merchantReferenceLengthPartitions = [
   { id: 'SCN-MER-07', length: 2, expectStatus: 400 },
   { id: 'SCN-MER-11', length: 3, expectStatus: 201 },
   { id: 'SCN-MER-08', length: 64, expectStatus: 201 },
   { id: 'SCN-MER-10', length: 65, expectStatus: 400 },
-]
+] as const satisfies readonly MerchantReferenceLengthRow[]
 
 export function merchantReferenceForLength(length: number, uniqueSeed: string): string {
   const seed = uniqueSeed.replace(/[^A-Za-z0-9]/g, '').toUpperCase() || 'X'

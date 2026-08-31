@@ -26,8 +26,7 @@ export class CheckoutLabWidgetPage extends BasePage {
     await this.frame().getByTestId('psp-approve').click()
   }
 
-  async expectApprovedInFrame(): Promise<void> {
-    await expect(this.frame().getByTestId('psp-outcome')).toBeVisible()
-    await expect(this.frame().getByTestId('psp-outcome')).toContainText(/approved/i)
+  outcomeInFrame(): ReturnType<FrameLocator['getByTestId']> {
+    return this.frame().getByTestId('psp-outcome')
   }
 }
